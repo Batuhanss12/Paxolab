@@ -1,5 +1,6 @@
 import type { DesignBrief, StructureId, StyleType } from '../../types'
 import { styleProfile } from '../artwork/languages'
+import { resolveMarkRecipe } from '../marks/MarkMatrix'
 import { categoryFor, pickDecor, pickLockup, typeScaleFor } from './kits'
 import { resolveSector, sectorBlob } from './sector'
 import type { DesignSystem, LegalBlockDef, MarkSet, SurfaceMode } from './types'
@@ -29,6 +30,12 @@ function legalPlan(sector: DesignSystem['sector']): LegalBlockDef[] {
       { id: 'safety', title: 'WEEE · SAFETY', source: 'warnings' },
     ]
   }
+  if (sector === 'cleaning') {
+    return [
+      { id: 'directions', title: 'DIRECTIONS', source: 'ingredients' },
+      { id: 'caution', title: 'KEEP OUT OF REACH', source: 'warnings' },
+    ]
+  }
   return [
     { id: 'spec', title: 'SPECIFICATION', source: 'ingredients' },
     { id: 'caution', title: 'DIRECTIONS · CAUTION', source: 'warnings' },
@@ -38,6 +45,7 @@ function legalPlan(sector: DesignSystem['sector']): LegalBlockDef[] {
 function markSet(sector: DesignSystem['sector']): MarkSet {
   if (sector === 'food') return 'food'
   if (sector === 'electronics') return 'electronics'
+  if (sector === 'cleaning') return 'generic'
   return 'cosmetics'
 }
 
@@ -63,6 +71,7 @@ export function resolveDesignSystem(brief: DesignBrief, structureId?: StructureI
     density: sw.density,
     type: typeScaleFor(style, grammar),
     marks: markSet(sector),
+    markRecipe: resolveMarkRecipe(sector, surfaceMode),
     legal: legalPlan(sector),
     category: categoryFor(sector, blob),
     flammable: sector === 'perfume',

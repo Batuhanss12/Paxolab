@@ -79,5 +79,21 @@ export function evaluateDesignGates(
     ),
   )
 
+  const recipe = system.markRecipe
+  const perfumeOnly = new Set(['flammable', 'pao'])
+  const foreignPerfume =
+    (system.sector === 'food' || system.sector === 'electronics') &&
+    recipe.requiredMarks.some((m) => perfumeOnly.has(m) && (m === 'flammable' || (m === 'pao' && system.sector === 'food')))
+  items.push(
+    item(
+      'ds-marks',
+      'İşaret matrisi',
+      foreignPerfume
+        ? 'Gıda/elektronik parfüm işaret seti taşıyor'
+        : `${recipe.key} · ${recipe.requiredMarks.join(' / ')}`,
+      foreignPerfume ? 'fail' : 'pass',
+    ),
+  )
+
   return items
 }

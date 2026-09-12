@@ -1,4 +1,4 @@
-export type { DesignSystem, SectorId, LockupId, DecorFamily } from './types'
+export type { DesignSystem, SectorId, LockupId, DecorFamily, TypeScale } from './types'
 export { resolveDesignSystem } from './resolve'
 export { resolveSector } from './sector'
 export { evaluateDesignGates, isKraftLike } from './gates'

@@ -1,9 +1,20 @@
 import type { ArtworkModel, DesignBrief, DesignOverrides, DesignSpec, DielineModel, Palette, Panel } from '../../types'
 import type { DesignSystem } from '../designSystem/types'
 import { resolveDesignSystem } from '../designSystem/resolve'
-import { iconStrip } from './icons'
+import { renderMarkStrip } from '../marks/render'
+import type { CraftPlan } from './craft'
+import { buildCraftPlan } from './craft'
 import { languageId } from './languages'
 import { monogram } from './copy'
+import {
+  claimCapsules,
+  contourGoldField,
+  diagonalFoil,
+  geoLattice,
+  lBrackets,
+  leafStampField,
+  ornamentalRail,
+} from './motifs'
 
 function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -278,7 +289,7 @@ function goldBar(panel: Panel, p: Palette, volume: string, estimated: boolean): 
   return `
     <rect x="${panel.x}" y="${y}" width="${panel.w}" height="${bh}" fill="${p.accent}" />
     <rect x="${panel.x + 1.15}" y="${y + 1.05}" width="${panel.w - 2.3}" height="${bh - 2.1}" fill="none" stroke="${p.bg}" stroke-opacity="0.38" stroke-width="0.22" />
-    <text x="${panel.x + panel.w / 2}" y="${y + bh * 0.64}" text-anchor="middle" fill="${p.bg}" font-family="Inter, Arial, sans-serif" font-size="3.15" letter-spacing="1.75">${esc(label)}</text>
+    <text x="${panel.x + panel.w / 2}" y="${y + bh * 0.64}" text-anchor="middle" fill="${p.bg}" font-family="Inter, Arial, sans-serif" font-size="3.15" letter-spacing="2.05">${esc(label)}</text>
   `
 }
 
@@ -360,11 +371,13 @@ function legalBlock(
   return { markup, height: h }
 }
 
-function marksBar(x: number, y: number, w: number, p: Palette, marks: DesignSystem['marks']): string {
+function marksBar(x: number, y: number, w: number, p: Palette, plan: CraftPlan): string {
+  const ids = plan.grammar === 'label' ? plan.marks.labelStrip : plan.marks.strip
+  const gap = Math.min(plan.marks.recipe.placement.gapMm + plan.marks.recipe.placement.minMm, (w - 8) / Math.max(1, ids.length))
   return `
     <rect x="${x}" y="${y}" width="${w}" height="11.4" fill="${p.paper}" opacity="0.35" />
     <line x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="${p.accent}" stroke-opacity="0.45" stroke-width="0.2" />
-    ${iconStrip(x + 2.2, y + 1.7, p.muted, marks, Math.min(8.6, (w - 8) / 4))}
+    ${renderMarkStrip(x + 2.2, y + 1.7, p.muted, ids, plan.marks.recipe, plan.allowPerfumeAssets, gap, plan.marks.recipe.placement.minMm)}
   `
 }
 
@@ -386,21 +399,32 @@ function flapGround(panel: Panel, p: Palette, luxuryTick: boolean): string {
 function frontDecor(panel: Panel, system: DesignSystem, p: Palette): string {
   const { style, decor, grammar, sector } = system
   if (grammar === 'label') {
-    if (style === 'luxury') return frames(panel, p, 1, false, false)
-    if (style === 'playful' || style === 'eco') return frames(panel, p, 1, true)
-    if (style === 'modern') return modernStripe(panel, p)
-    return ''
+    let out = ''
+    if (style === 'luxury') out += frames(panel, p, 1, false, false) + lBrackets(panel, p.accent)
+    else if (style === 'playful' || style === 'eco') out += frames(panel, p, 1, true)
+    else if (style === 'modern') out += modernStripe(panel, p)
+    if (style === 'eco') out += leafStampField(panel, p.accent)
+    return out
   }
   let out = ''
   if (style === 'luxury') {
+    out += contourGoldField(panel, p.accent, sector === 'perfume' ? 0.2 : 0.12)
+    if (sector === 'electronics' || sector === 'food') out += diagonalFoil(panel, p.accent)
     out += foilHairline(panel, p)
     out += frames(panel, p, 3, false, true)
     out += corners(panel, p)
+    out += lBrackets(panel, p.accent)
     out += cornerDiamonds(panel, p)
     if (sector === 'perfume') out += sideTicks(panel, p)
   } else {
     out += frames(panel, p, style === 'classic' ? 2 : style === 'playful' || style === 'eco' ? 1 : 0, style === 'playful' || style === 'eco')
-    if (style === 'modern') out += modernStripe(panel, p)
+    if (style === 'modern') {
+      out += modernStripe(panel, p)
+      out += geoLattice(panel, p.fg, 0.08)
+    }
+    if (style === 'classic') out += ornamentalRail(panel, p.accent)
+    if (style === 'eco') out += leafStampField(panel, p.accent)
+    if (style === 'playful') out += claimCapsules(panel, p)
   }
   if (decor === 'crest') out += perfumeCrest(panel, p, true)
   else if (decor === 'cartouche') out += classicCartouche(panel, p)
@@ -421,6 +445,7 @@ function panelArt(
   p: Palette,
   overrides: DesignOverrides,
   system: DesignSystem,
+  plan: CraftPlan,
   logoHref?: string,
 ): string {
   const style = system.style
@@ -458,10 +483,16 @@ function panelArt(
   } else if (isBack) {
     body += frames(panel, p, style === 'luxury' ? 1 : 0, false)
   } else if (isSide) {
-    if (style === 'modern') body += `<rect x="${x}" y="${y}" width="${w}" height="2.2" fill="${p.accent}" />`
+    if (style === 'modern') {
+      body += `<rect x="${x}" y="${y}" width="${w}" height="2.2" fill="${p.accent}" />`
+      body += geoLattice(panel, p.fg, 0.07)
+    }
     if (style === 'luxury') {
+      body += contourGoldField(panel, p.accent, 0.14)
       body += `<line x1="${x + 1.3}" y1="${y + 3.5}" x2="${x + 1.3}" y2="${y + h - 3.5}" stroke="${p.accent}" stroke-width="0.18" />`
     }
+    if (style === 'eco') body += leafStampField(panel, p.accent)
+    if (style === 'classic') body += `<line x1="${x + 1.4}" y1="${y + 4}" x2="${x + w - 1.4}" y2="${y + 4}" stroke="${p.accent}" stroke-width="0.2" />`
   }
 
   if (isFront) {
@@ -483,9 +514,9 @@ function panelArt(
       body += `<text x="${x + w - 5.2}" y="${y + 6.4}" text-anchor="end" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="2.15" letter-spacing="1.8">${system.sector === 'electronics' ? 'SPEC' : '01'}</text>`
     }
 
-    const brandY = y + h * (style === 'minimal' ? 0.46 : system.lockup === 'metal-plaque' ? 0.48 : 0.4)
-    const brandSize = mm(Math.min(system.type.brandMm, w * (style === 'minimal' ? 0.1 : 0.128)) * t, min)
-    body += `<text x="${ax}" y="${brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${font}" font-size="${brandSize}" letter-spacing="${style === 'modern' ? 0.36 : 0.95}">${esc(copy.brand.toUpperCase())}</text>`
+    const brandY = y + h * ((style === 'minimal' ? 0.46 : system.lockup === 'metal-plaque' ? 0.48 : 0.4) - system.type.opticalLift)
+    const brandSize = mm(Math.min(system.type.displayMm, w * (style === 'minimal' ? 0.1 : 0.128)) * t, min)
+    body += `<text x="${ax}" y="${brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${font}" font-size="${brandSize}" letter-spacing="${system.type.trackingDisplay}">${esc(copy.brand.toUpperCase())}</text>`
 
     if (style === 'luxury' && !labelFace) {
       const ruleW = w * 0.18
@@ -506,17 +537,31 @@ function panelArt(
     }
 
     const prodY = brandY + (style === 'minimal' ? 7.4 : 8.6)
-    body += `<text x="${ax}" y="${prodY}" text-anchor="${anchor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${mm(Math.min(system.type.productMm, w * 0.05) * t, min)}" letter-spacing="${style === 'modern' ? 2.2 : 1.15}" opacity="0.92">${esc(copy.product.toUpperCase())}</text>`
+    body += `<text x="${ax}" y="${prodY}" text-anchor="${anchor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${mm(Math.min(system.type.productMm, w * 0.05) * t, min)}" letter-spacing="${system.type.trackingProduct}" opacity="0.92">${esc(copy.product.toUpperCase())}</text>`
     if (cat && style !== 'minimal') {
-      body += `<text x="${ax}" y="${prodY + 4.55}" text-anchor="${anchor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.categoryMm, min - 0.4)}" letter-spacing="${labelFace ? 0.85 : 1.75}">${esc(cat)}</text>`
+      body += `<text x="${ax}" y="${prodY + 4.55}" text-anchor="${anchor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.metaMm, min - 0.4)}" letter-spacing="${system.type.trackingMeta}">${esc(cat)}</text>`
     }
     body += `<text x="${ax}" y="${y + h * (style === 'minimal' ? 0.64 : labelFace ? 0.58 : 0.61)}" text-anchor="${anchor}" fill="${p.muted}" font-family="${system.serif ? 'Georgia, serif' : 'Inter, Arial, sans-serif'}" font-size="${mm(system.type.taglineMm, min)}" font-style="${system.serif ? 'italic' : 'normal'}">${esc(copy.tagline)}</text>`
 
     if (labelFace && copy.ingredients) {
-      const line = wrapLines(copy.ingredients, Math.max(18, Math.floor(w / 2.2)), 2)[0]
+      const line = wrapLines(copy.ingredients, Math.max(18, Math.floor(w / 2.2)), system.wrapSeam ? 2 : 3)[0]
       if (line) {
-        body += `<text x="${ax}" y="${y + h * 0.72}" text-anchor="${anchor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.legalMm, 2.2)}">${esc(line)}</text>`
+        body += `<text x="${ax}" y="${y + h * 0.72}" text-anchor="${anchor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.legalMm, 2.2)}" letter-spacing="${system.type.trackingLegal}">${esc(line)}</text>`
       }
+    }
+    if (labelFace) {
+      const ids = plan.marks.labelStrip
+      const gap = Math.min(7.2, (w - 10) / Math.max(1, ids.length))
+      body += renderMarkStrip(
+        left ? ax : cx - (ids.length * gap) / 2,
+        y + h - 8.6,
+        p.muted,
+        ids,
+        plan.marks.recipe,
+        plan.allowPerfumeAssets,
+        gap,
+        Math.min(5.6, plan.marks.recipe.placement.minMm),
+      )
     }
 
     if (system.goldBar && copy.volume && !labelFace) {
@@ -528,7 +573,7 @@ function panelArt(
     } else if (style === 'modern' && copy.volume) {
       body += outlineVolume(panel, p, copy.volume, left, ax)
     } else if (copy.volume) {
-      body += `<text x="${ax}" y="${y + h * (labelFace ? 0.86 : 0.82)}" text-anchor="${anchor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.volumeMm, min)}" letter-spacing="1.6">${esc((perfume || system.sector === 'food' ? '℮  ' : '') + copy.volume.toUpperCase())}</text>`
+      body += `<text x="${ax}" y="${y + h * (labelFace ? 0.78 : 0.82)}" text-anchor="${anchor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.volumeMm, min)}" letter-spacing="${system.type.volumeCase === 'smallcaps' ? 2.05 : 1.6}">${esc((perfume || system.sector === 'food' ? '℮  ' : '') + copy.volume.toUpperCase())}</text>`
     }
 
     if (showBarcode && style === 'luxury' && !labelFace) {
@@ -580,7 +625,7 @@ function panelArt(
     }
 
     const markY = y + h - 13.6
-    body += marksBar(x + padX, markY, blockW, p, system.marks)
+    body += marksBar(x + padX, markY, blockW, p, plan)
   } else if (isSide) {
     const spine = (copy.volume || cat || copy.product).toUpperCase()
     body += `<line x1="${cx}" y1="${y + 5.2}" x2="${cx}" y2="${y + 9.4}" stroke="${p.accent}" stroke-width="0.2" />`
@@ -594,7 +639,16 @@ function panelArt(
     } else if (copy.volume) {
       body += `<text x="${cx}" y="${y + h * 0.42}" text-anchor="middle" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="2.4">${esc(copy.volume)}</text>`
     }
-    body += iconStrip(x + Math.max(3.2, w / 2 - 16), y + h - 9.0, p.muted, system.marks, 8.0)
+    body += renderMarkStrip(
+      x + Math.max(3.2, w / 2 - 14),
+      y + h - 9.0,
+      p.muted,
+      plan.marks.strip.slice(0, 3),
+      plan.marks.recipe,
+      plan.allowPerfumeAssets,
+      7.6,
+      6.4,
+    )
   }
 
   return `<g clip-path="${clip(panel)}">${body}</g>`
@@ -609,9 +663,10 @@ export function composeArtwork(
   logoHref?: string,
   system = resolveDesignSystem(brief, dieline.structureId),
 ): ArtworkModel {
+  const plan = buildCraftPlan(brief, dieline, copy, system)
   const layers = dieline.panels.map((panel) => ({
     panelId: panel.id,
-    markup: panelArt(panel, brief, copy, palette, overrides, system, logoHref),
+    markup: panelArt(panel, brief, copy, palette, overrides, system, plan, logoHref),
   }))
   const frontPanelId =
     dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')?.id ??

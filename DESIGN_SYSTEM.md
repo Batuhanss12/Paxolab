@@ -47,6 +47,10 @@ Style grammars stay distinct. Eco is kraft; luxury never borrows eco grain.
 - Warn: empty / lorem legal; luxury palette reading as kraft
 - Barcode: still NA if the user did not provide one — never invented
 
+## Craft + marks (F1-MASTER)
+
+See `DESIGN_CRAFT.md` (staged designer workflow + vector motifs) and `MARKS_MATRIX.md` (sector × surface marks, PARFUM İCON mapping).
+
 ## Code
 
-`src/engine/designSystem/` → `FormaLocalEngine` → `composeArtwork` + `runPreflight`
+`src/engine/designSystem/` + `src/engine/marks/` → `FormaLocalEngine` → `composeArtwork` + `runPreflight`

@@ -15,11 +15,13 @@ export function categoryFor(sector: SectorId, blob: string): string {
     if (/kablo|şarj/.test(blob)) return 'POWER ACCESSORY'
     return 'PRECISION SERIES'
   }
+  if (sector === 'cleaning') return 'SURFACE CARE'
   return ''
 }
 
 export function pickLockup(style: StyleType, sector: SectorId, grammar: 'box' | 'label', wrap: boolean): LockupId {
   if (grammar === 'label') return wrap ? 'label-wrap' : 'label-stack'
+  if (sector === 'cleaning') return style === 'classic' ? 'serif-cartouche' : 'left-index'
   if (style === 'luxury') {
     if (sector === 'food') return 'harvest-seal'
     if (sector === 'electronics') return 'metal-plaque'
@@ -49,73 +51,75 @@ export function pickDecor(style: StyleType, sector: SectorId, lockup: LockupId):
   return 'none'
 }
 
+function ramp(
+  display: number,
+  product: number,
+  meta: number,
+  legal: number,
+  volume: number,
+  minMm: number,
+  tracking: { d: number; p: number; m: number; l: number },
+  volumeCase: TypeScale['volumeCase'] = 'upper',
+  opticalLift = 0.018,
+): TypeScale {
+  return {
+    displayMm: display,
+    productMm: product,
+    metaMm: meta,
+    legalMm: legal,
+    brandMm: display,
+    categoryMm: meta,
+    taglineMm: Math.max(meta + 0.55, 2.9),
+    volumeMm: volume,
+    minMm,
+    trackingDisplay: tracking.d,
+    trackingProduct: tracking.p,
+    trackingMeta: tracking.m,
+    trackingLegal: tracking.l,
+    volumeCase,
+    opticalLift,
+  }
+}
+
 export function typeScaleFor(style: StyleType, grammar: 'box' | 'label'): TypeScale {
-  const labelBoost = grammar === 'label'
-  const minMm = labelBoost ? 2.8 : 1.9
+  const label = grammar === 'label'
+  const minMm = label ? 2.8 : 1.9
   if (style === 'luxury') {
-    return {
-      brandMm: labelBoost ? 7.4 : 9.4,
-      productMm: labelBoost ? 3.6 : 3.4,
-      categoryMm: 2.45,
-      taglineMm: 3.15,
-      legalMm: labelBoost ? 2.25 : 2.02,
-      volumeMm: 3.1,
+    return ramp(
+      label ? 7.4 : 9.4,
+      label ? 3.6 : 3.4,
+      2.45,
+      label ? 2.25 : 2.02,
+      3.1,
       minMm,
-    }
+      { d: 0.95, p: 1.15, m: 1.75, l: 0.35 },
+      'smallcaps',
+      0.022,
+    )
   }
   if (style === 'modern') {
-    return {
-      brandMm: labelBoost ? 6.8 : 7.4,
-      productMm: 3.3,
-      categoryMm: 2.3,
-      taglineMm: 3.0,
-      legalMm: 2.05,
-      volumeMm: 2.4,
+    return ramp(
+      label ? 6.8 : 7.4,
+      3.3,
+      2.3,
+      2.05,
+      2.4,
       minMm,
-    }
+      { d: 0.36, p: 2.2, m: 1.8, l: 0.2 },
+      'upper',
+      0.012,
+    )
   }
   if (style === 'minimal') {
-    return {
-      brandMm: labelBoost ? 6.2 : 6.1,
-      productMm: 2.95,
-      categoryMm: 2.1,
-      taglineMm: 3.0,
-      legalMm: 2.0,
-      volumeMm: 2.5,
-      minMm,
-    }
+    return ramp(label ? 6.2 : 6.1, 2.95, 2.1, 2.0, 2.5, minMm, { d: 1.1, p: 1.4, m: 1.6, l: 0.15 }, 'upper', 0)
   }
   if (style === 'eco') {
-    return {
-      brandMm: labelBoost ? 6.8 : 8.2,
-      productMm: 3.2,
-      categoryMm: 2.35,
-      taglineMm: 3.1,
-      legalMm: 2.05,
-      volumeMm: 2.7,
-      minMm,
-    }
+    return ramp(label ? 6.8 : 8.2, 3.2, 2.35, 2.05, 2.7, minMm, { d: 0.7, p: 1.1, m: 1.2, l: 0.2 }, 'upper', 0.014)
   }
   if (style === 'playful') {
-    return {
-      brandMm: labelBoost ? 6.6 : 8.0,
-      productMm: 3.3,
-      categoryMm: 2.4,
-      taglineMm: 3.1,
-      legalMm: 2.05,
-      volumeMm: 2.85,
-      minMm,
-    }
+    return ramp(label ? 6.6 : 8.0, 3.3, 2.4, 2.05, 2.85, minMm, { d: 0.25, p: 0.8, m: 0.9, l: 0.15 }, 'upper', 0.01)
   }
-  return {
-    brandMm: labelBoost ? 6.8 : 8.4,
-    productMm: 3.25,
-    categoryMm: 2.35,
-    taglineMm: 3.15,
-    legalMm: 2.02,
-    volumeMm: 2.6,
-    minMm,
-  }
+  return ramp(label ? 6.8 : 8.4, 3.25, 2.35, 2.02, 2.6, minMm, { d: 0.85, p: 1.2, m: 1.4, l: 0.25 }, 'smallcaps', 0.016)
 }
 
 export const STYLE_KITS: Record<StyleType, LockupId[]> = {

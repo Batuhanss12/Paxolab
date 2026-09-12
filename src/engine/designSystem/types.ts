@@ -1,6 +1,7 @@
 import type { PackagingMode, StyleType } from '../../types'
+import type { MarkRecipe } from '../marks/types'
 
-export type SectorId = 'perfume' | 'cream' | 'serum' | 'food' | 'electronics' | 'generic'
+export type SectorId = 'perfume' | 'cream' | 'serum' | 'food' | 'electronics' | 'cleaning' | 'generic'
 export type SurfaceMode = PackagingMode
 export type Grammar = 'box' | 'label'
 export type DecorFamily =
@@ -29,17 +30,25 @@ export type LockupId =
   | 'serif-cartouche'
   | 'label-stack'
   | 'label-wrap'
-export type MarkSet = 'cosmetics' | 'food' | 'electronics'
+export type MarkSet = 'cosmetics' | 'food' | 'electronics' | 'generic'
 export type Density = 'sparse' | 'balanced' | 'dense'
 
 export type TypeScale = {
-  brandMm: number
+  displayMm: number
   productMm: number
+  metaMm: number
+  legalMm: number
+  brandMm: number
   categoryMm: number
   taglineMm: number
-  legalMm: number
   volumeMm: number
   minMm: number
+  trackingDisplay: number
+  trackingProduct: number
+  trackingMeta: number
+  trackingLegal: number
+  volumeCase: 'upper' | 'smallcaps'
+  opticalLift: number
 }
 
 export type LegalBlockDef = {
@@ -59,6 +68,7 @@ export type DesignSystem = {
   density: Density
   type: TypeScale
   marks: MarkSet
+  markRecipe: MarkRecipe
   legal: LegalBlockDef[]
   category: string
   flammable: boolean

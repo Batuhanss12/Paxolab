@@ -72,6 +72,39 @@ export function iconGreenDot(x: number, y: number, s: number, color: string): st
   </g>`
 }
 
+export function iconLeaflet(x: number, y: number, s: number, color: string): string {
+  return `<g transform="translate(${x} ${y}) scale(${s / 12})" fill="none" stroke="${color}" stroke-width="0.7">
+    <path d="M2.2 2.35h4.05v8.1H2.2Z" />
+    <path d="M6.25 2.35h3.55v8.1H6.25" />
+    <path d="M6.25 2.35v8.1" />
+    <path d="M3.15 4.15h2.1M3.15 5.85h2.1M3.15 7.55h1.55" />
+  </g>`
+}
+
+export function iconFlammable(x: number, y: number, s: number, color: string): string {
+  return `<g transform="translate(${x} ${y}) scale(${s / 12})" fill="none" stroke="${color}" stroke-width="0.72">
+    <path d="M6 1.35 10.65 6 6 10.65 1.35 6Z" />
+    <path d="M6 8.35c1.15 0 1.85-.85 1.85-1.85 0-1.15-1.1-1.85-1.85-2.85-.75 1-1.85 1.7-1.85 2.85 0 1 .7 1.85 1.85 1.85Z" />
+  </g>`
+}
+
+export function iconKeepAway(x: number, y: number, s: number, color: string): string {
+  return `<g transform="translate(${x} ${y}) scale(${s / 12})" fill="none" stroke="${color}" stroke-width="0.7">
+    <circle cx="6" cy="3.15" r="1.15" />
+    <path d="M6 4.55v3.15M4.15 6.15h3.7M4.55 10.55 6 7.7 7.45 10.55" />
+  </g>`
+}
+
+export function iconGlassFork(x: number, y: number, s: number, color: string): string {
+  return `<g transform="translate(${x} ${y}) scale(${s / 12})" fill="none" stroke="${color}" stroke-width="0.7">
+    <path d="M3.35 2.25v3.4c0 1.15.85 1.85 1.7 1.85h.15V10.7" />
+    <path d="M2.55 2.25v2.35M4.15 2.25v2.35" />
+    <path d="M7.15 2.4c1.55 0 2.55 1.15 2.55 2.55S8.7 7.5 7.15 7.5 4.6 6.35 4.6 4.95 5.6 2.4 7.15 2.4Z" />
+    <path d="M7.15 7.5v3.2" />
+  </g>`
+}
+
+/** Legacy kind strip — prefer renderMarkStrip from the marks matrix. */
 export function iconStrip(
   x: number,
   y: number,
@@ -83,7 +116,9 @@ export function iconStrip(
     kind === 'electronics'
       ? [iconWeee, iconRecycle, iconThisWayUp, iconKeepDry]
       : kind === 'food'
-        ? [iconEmark, iconRecycle, iconPap21, iconKeepDry]
-        : [iconPao, iconRecycle, iconEmark, iconGreenDot]
+        ? [iconEmark, iconRecycle, iconGlassFork, iconPap21]
+        : kind === 'cosmetics'
+          ? [iconPao, iconLeaflet, iconRecycle, iconFlammable]
+          : [iconRecycle, iconEmark]
   return pack.map((fn, i) => fn(x + i * gap, y, 7.5, color)).join('')
 }

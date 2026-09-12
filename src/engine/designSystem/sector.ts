@@ -8,6 +8,7 @@ export function resolveSector(brief: DesignBrief): SectorId {
   if (/krem|cream/.test(blob)) return 'cream'
   if (/elektronik|teknoloji|kulaklık|kablo|cihaz|earbuds/.test(blob)) return 'electronics'
   if (/gıda|yağ|çay|atıştırmalık|reçel|bal|çikolata|zeytin/.test(blob)) return 'food'
+  if (/temizlik|cleaning|deterjan|yüzey/.test(blob)) return 'cleaning'
   if (/kozmetik|cilt/.test(blob)) return 'cream'
   return 'generic'
 }

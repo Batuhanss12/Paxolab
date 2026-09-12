@@ -1,6 +1,7 @@
 import type { DesignBrief } from '../../types'
 import { categoryFor } from '../designSystem/kits'
 import { resolveSector, sectorBlob } from '../designSystem/sector'
+import { resolveMarkRecipe } from '../marks/MarkMatrix'
 
 export function monogram(brand: string): string {
   const parts = brand.trim().split(/\s+/).filter(Boolean)
@@ -23,13 +24,15 @@ export function sampleCopy(brief: DesignBrief): {
   const sector = resolveSector(brief)
   const sub = `${brief.subProduct} ${brief.productName}`.toLocaleLowerCase('tr')
   const custom = brief.copyOverrides.trim()
+  const surface = brief.packagingMode === 'label' ? 'label' : 'box'
+  const markWarn = resolveMarkRecipe(sector, surface).requiredTextWarnings.join(' ')
 
   if (sector === 'perfume') {
     return {
       tagline: custom || 'Sessiz bir yoğunluk.',
       volume: brief.volume || '50 ml',
-      ingredients: 'Alcohol Denat., Parfum (Fragrance), Aqua (Water), Linalool, Limonene, Coumarin, Citronellol, Geraniol.',
-      warnings: 'Alev alabilir. Gözle temasından kaçının. Ciltte tahriş yaparsa kullanımı bırakın. Çocukların ulaşamayacağı yerde saklayın. 12M.',
+      ingredients: 'Alcohol Denat., Parfum (Fragrance), Aqua (Water), Linalool, Limonene, Coumarin, Citronellol, Geraniol. Örnek / düzenlenebilir.',
+      warnings: markWarn,
       cta: 'Üretime al',
     }
   }
@@ -38,7 +41,7 @@ export function sampleCopy(brief: DesignBrief): {
       tagline: custom || 'Tek damla. Net sonuç.',
       volume: brief.volume || '30 ml',
       ingredients: 'Aqua, Propanediol, Niacinamide, Sodium Hyaluronate, Panthenol, Tocopherol, Glycerin. pH 5.5.',
-      warnings: 'Sabah ve akşam 2–3 damla. Güneş koruyucu kullanın. Göz çevresine sürmeyin. 12M.',
+      warnings: markWarn,
       cta: 'Üretime al',
     }
   }
@@ -47,7 +50,7 @@ export function sampleCopy(brief: DesignBrief): {
       tagline: custom || 'Gece boyunca onarır.',
       volume: brief.volume || '50 ml',
       ingredients: 'Aqua, Butyrospermum Parkii, Glycerin, Cetearyl Alcohol, Niacinamide, Ceramide NP, Tocopherol, Sodium Hyaluronate.',
-      warnings: 'Temiz cilde uygulayın. Gözle temasından kaçının. Tahrişte bırakın. Çocuklardan uzak tutun. 12M.',
+      warnings: markWarn,
       cta: 'Üretime al',
     }
   }
@@ -60,8 +63,8 @@ export function sampleCopy(brief: DesignBrief): {
         ? '100% soğuk sıkım sızma zeytinyağı. Menşei: Ege, TR. Asit ≤ 0,8%. Lot / SKT kapakta.'
         : 'Buğday unu, tereyağı, kakao kitlesi, deniz tuzu. Alerjen: gluten, süt. Üretim yeri: TR.',
       warnings: oil
-        ? 'Serin ve karanlıkta saklayın. Işıktan koruyun. Açıldıktan sonra 90 gün içinde tüketin.'
-        : 'Serin ve kuru yerde saklayın. Alerjen: gluten, süt. Çocuklara küçük parça riski.',
+        ? `${markWarn} Işıktan koruyun.`
+        : `${markWarn} Alerjen: gluten, süt.`,
       cta: 'Üretime al',
     }
   }
@@ -73,7 +76,16 @@ export function sampleCopy(brief: DesignBrief): {
       ingredients: buds
         ? 'BT 5.3 · 18h + case 24h · IPX4 · 5V⎓1A · 42g. Driver 10mm.'
         : 'Input 5V⎓1A · cable 1.2m · 480Mbps. Housing: recycled ABS.',
-      warnings: 'WEEE: elektronik atık olarak ayırın. Lityum pili evsel atığa atmayın. Nemden koruyun.',
+      warnings: markWarn,
+      cta: 'Üretime al',
+    }
+  }
+  if (sector === 'cleaning') {
+    return {
+      tagline: custom || 'Temiz yüzey. Net sonuç.',
+      volume: brief.volume || '750 ml',
+      ingredients: 'Örnek formülasyon satırı — düzenlenebilir. GHS uydurulmadı.',
+      warnings: markWarn,
       cta: 'Üretime al',
     }
   }
