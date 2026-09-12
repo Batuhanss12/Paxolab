@@ -69,7 +69,7 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
 
   if (!patch.brandName || !patch.productName) {
     const cut = raw.split(/[,.;]/)[0] ?? raw
-    const words = cut.split(/\s+/).filter((w) => !/^(için|bir|ve|ile|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|siyah|altın|luxury)$/i.test(w))
+    const words = cut.split(/\s+/).filter((w) => !/^(için|bir|ve|ile|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|siyah|altın|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks)$/i.test(w))
     if (!patch.brandName && words[0] && looksLikeName(words[0])) patch.brandName = words[0]
     if (!patch.productName && words.length > 1) {
       const rest = words.slice(1, 3).join(' ')

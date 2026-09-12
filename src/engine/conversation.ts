@@ -34,12 +34,11 @@ export function runConversation(input: {
   hasDesign: boolean
 }): EngineResult {
   const text = input.text.trim()
-  const brief = applyExtraction(input.brief, text, input.attachments, input.awaiting)
 
   if (input.hasDesign && isIteration(text)) {
     const parsed = parseIntent(text)
     return {
-      brief: { ...brief, ...parsed.briefPatch },
+      brief: { ...input.brief, ...parsed.briefPatch },
       awaiting: null,
       replies: [parsed.note],
       shouldGenerate: true,
@@ -49,6 +48,8 @@ export function runConversation(input: {
       note: parsed.note,
     }
   }
+
+  const brief = applyExtraction(input.brief, text, input.attachments, input.awaiting)
 
   const ready = isCoreReady(brief)
   const missing = nextMissing(brief)
