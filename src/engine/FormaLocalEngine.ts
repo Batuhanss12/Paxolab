@@ -4,6 +4,7 @@ import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor } from './artwork/languages'
 import { sampleCopy } from './artwork/copy'
+import { resolveDesignSystem } from './designSystem'
 import { runPreflight } from './production/preflight'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
@@ -57,8 +58,9 @@ export class FormaLocalEngine implements EnginePort {
     }
     overrides.barcodeVisible = overrides.barcodeVisible && !!copy.barcode
 
+    const system = resolveDesignSystem(brief, template.structureId)
     const palette = paletteFor(brief, brief.styleType || 'classic', overrides.premium)
-    const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref)
+    const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system)
     const layout = {
       widthMm: dieline.dimensions.L,
       depthMm: dieline.dimensions.W,
@@ -72,8 +74,10 @@ export class FormaLocalEngine implements EnginePort {
       layout,
       overrides,
       kind,
+      structureId: template.structureId,
+      palette,
     }
-    const preflight = runPreflight(draft)
+    const preflight = runPreflight(draft, system)
 
     return {
       id: input.prev?.id ?? uid(),

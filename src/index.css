@@ -434,6 +434,110 @@ h2 {
   color: #e8e8e8;
 }
 
+.girdiler__row.is-style dd {
+  color: #c9a86c;
+  font-weight: 600;
+}
+
+/* ——— Style chips ——— */
+.style-bar {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #080808;
+}
+
+.style-bar__label {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.style-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.style-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: #c8c8c8;
+  border-radius: 999px;
+  padding: 5px 10px 5px 7px;
+  font-size: 12px;
+}
+
+.style-chip:hover {
+  background: #111;
+  border-color: #333;
+}
+
+.style-chip.is-active {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.style-chip__swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.style-chip.is-active .style-chip__swatch {
+  box-shadow: 0 0 0 1px #0003;
+}
+
+.style-chip__hint {
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.style-chip.is-active .style-chip__hint {
+  color: #555;
+}
+
+.style-bar__dims {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.style-bar__dims-label,
+.style-bar__dims-unit {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.style-bar__dims label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.style-bar__dims input {
+  width: 56px;
+  background: #0c0c0c;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: #eee;
+  font-size: 12px;
+}
+
 /* ——— Chat ——— */
 .chat {
   flex: 1;

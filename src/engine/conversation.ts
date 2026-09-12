@@ -8,11 +8,11 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
   sector: 'Sektör nedir — kozmetik, gıda, elektronik?',
   brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
   productName: 'Ürünün adı veya hattı nedir?',
-  styleType: 'Duruş: luxury, modern, minimal, eco, playful, classic?',
+  styleType: 'Soldaki stil çiplerinden seçin: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik.',
   templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
 }
 
-const ASK_SEQUENCE: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'productName', 'styleType']
+const ASK_SEQUENCE: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'productName']
 
 function nextMissing(brief: DesignBrief): AwaitingKey | null {
   for (const key of ASK_SEQUENCE) {
@@ -20,7 +20,6 @@ function nextMissing(brief: DesignBrief): AwaitingKey | null {
     if (key === 'sector' && !brief.sector.trim()) return key
     if (key === 'brandName' && !brief.brandName.trim()) return key
     if (key === 'productName' && !brief.productName.trim()) return key
-    if (key === 'styleType' && !brief.styleType) return key
   }
   if (!brief.templateId) return 'templateId'
   return null
@@ -81,7 +80,7 @@ export function runConversation(input: {
     return {
       brief,
       awaiting: null,
-      replies: ['İterasyon: “logoyu büyüt”, “daha premium”, “metni … yap”, “baskıya hazırla”.'],
+      replies: ['İterasyon: stil çipi, “luxury yap / eco’ya geç”, “logoyu büyüt”, “daha premium”, “metni … yap”, “baskıya hazırla”.'],
       shouldGenerate: false,
       showTemplates: false,
       overridePatch: {},
@@ -94,7 +93,7 @@ export function runConversation(input: {
     replies.push(
       `${ack || 'Brief yeterli.'} FORMA tasarım motorunu çalıştırıyorum — dieline, vektör artwork ve üretim kapısı aynı anda çıkacak.`,
     )
-    replies.push('İterasyon için soldan yazın: “logoyu büyüt”, “daha premium”, “baskıya hazırla”.')
+    replies.push('Stil çiplerinden duruşu değiştirin veya yazın: “luxury yap”, “eco’ya geç”, “logoyu büyüt”, “daha premium”.')
     return {
       brief,
       awaiting: null,

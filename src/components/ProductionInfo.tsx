@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DesignSpec } from '../types'
-import { downloadSvg, printPdf } from '../engine/production/exportDoc'
+import { downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
@@ -14,7 +14,11 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
 
   function onSvg() {
     const ok = downloadSvg(design)
-    setExportNote(ok ? 'SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
+    setExportNote(ok ? 'Combined SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
+  }
+  function onZip() {
+    const ok = downloadZip(design)
+    setExportNote(ok ? 'ZIP: dieline + artwork + combined.' : 'ZIP yok — kapı kırmızı.')
   }
   function onPdf() {
     const ok = printPdf(design)
@@ -61,6 +65,9 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       <div className="prod__actions">
         <button type="button" className="ghost-btn" onClick={onSvg} disabled={!design.preflight.exportOk}>
           SVG indir
+        </button>
+        <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
+          ZIP (dieline + art)
         </button>
         <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
           Yazdır / PDF

@@ -24,7 +24,7 @@ export function InputsPanel({ brief, open, onToggle }: InputsPanelProps) {
           ) : (
             <dl>
               {keys.map((row) => (
-                <div key={row.key} className="girdiler__row">
+                <div key={row.key} className={`girdiler__row ${row.key === 'styleType' ? 'is-style' : ''}`}>
                   <dt>{row.label}</dt>
                   <dd>{row.value}</dd>
                 </div>

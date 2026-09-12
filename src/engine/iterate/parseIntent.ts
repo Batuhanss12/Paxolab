@@ -8,12 +8,12 @@ export type IterateIntent = {
 }
 
 const STYLES: [RegExp, StyleType][] = [
-  [/daha\s*premium|daha\s*lüks|luxury|gold|altın/i, 'luxury'],
-  [/daha\s*minimal|sadeleştir|daha\s*sade/i, 'minimal'],
-  [/daha\s*modern/i, 'modern'],
-  [/daha\s*eco|organik|doğal/i, 'eco'],
-  [/daha\s*eğlenc|playful|renkli/i, 'playful'],
-  [/daha\s*klasik|classic/i, 'classic'],
+  [/luxury\s*yap|lüks\s*yap|luxury['’]?ya\s*geç|stil\s*luxury|altın\s*çerçeve|daha\s*premium|daha\s*lüks|\bluxury\b|\bgold\b|\baltın\b/i, 'luxury'],
+  [/minimal\s*(yap|stil)|sadeleştir|daha\s*minimal|daha\s*sade|\bminimal\b/i, 'minimal'],
+  [/modern\s*(yap|stil)|modern['’]?[aeıy]\s*geç|daha\s*modern|\bmodern\b/i, 'modern'],
+  [/eco['’]?ya\s*geç|eco\s*(yap|stil)|daha\s*eco|\beco\b|organik|doğal/i, 'eco'],
+  [/playful\s*(yap|stil)|eğlenc\w*\s*(yap|stil)|daha\s*eğlenc|renkli\s*yap|\bplayful\b/i, 'playful'],
+  [/klasik\s*(yap|stil)|classic\s*(yap|stil)|daha\s*klasik|\bclassic\b|\bklasik\b/i, 'classic'],
 ]
 
 export function parseIntent(text: string): IterateIntent {
@@ -109,7 +109,7 @@ export function parseIntent(text: string): IterateIntent {
 }
 
 export function isIteration(text: string): boolean {
-  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|stil|eco|modern|klasik/i.test(
+  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç/i.test(
     text,
   )
 }

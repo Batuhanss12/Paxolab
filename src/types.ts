@@ -104,6 +104,7 @@ export type ArtworkModel = {
   layers: ArtworkLayer[]
   frontPanelId: string
   language: string
+  systemKey?: string
 }
 
 export type PreflightStatus = 'pass' | 'warn' | 'fail' | 'na'

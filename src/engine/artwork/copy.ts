@@ -1,5 +1,6 @@
 import type { DesignBrief } from '../../types'
-import { languageId } from './languages'
+import { categoryFor } from '../designSystem/kits'
+import { resolveSector, sectorBlob } from '../designSystem/sector'
 
 export function monogram(brand: string): string {
   const parts = brand.trim().split(/\s+/).filter(Boolean)
@@ -9,18 +10,7 @@ export function monogram(brand: string): string {
 }
 
 export function categoryLine(brief: DesignBrief): string {
-  const blob = `${brief.subProduct} ${brief.productName} ${brief.sector}`.toLocaleLowerCase('tr')
-  if (/parfüm|perfume|eau de|edp/.test(blob)) return 'EAU DE PARFUM'
-  if (/kolonya/.test(blob)) return 'EAU DE COLOGNE'
-  if (/serum/.test(blob)) return 'CONCENTRATE SERUM'
-  if (/krem|cream/.test(blob)) return 'FACE CREAM'
-  if (/zeytin|yağ/.test(blob)) return 'EXTRA VIRGIN'
-  if (/atıştırmalık|çikolata|kurabiye/.test(blob)) return 'NET WEIGHT'
-  if (/gıda/.test(blob)) return 'ARTISAN FOOD'
-  if (/kulaklık|earbuds/.test(blob)) return 'WIRELESS AUDIO'
-  if (/kablo|şarj/.test(blob)) return 'POWER ACCESSORY'
-  if (/elektronik|teknoloji/.test(blob)) return 'PRECISION SERIES'
-  return ''
+  return categoryFor(resolveSector(brief), sectorBlob(brief))
 }
 
 export function sampleCopy(brief: DesignBrief): {
@@ -30,11 +20,11 @@ export function sampleCopy(brief: DesignBrief): {
   warnings: string
   cta: string
 } {
-  const lang = languageId(brief)
+  const sector = resolveSector(brief)
   const sub = `${brief.subProduct} ${brief.productName}`.toLocaleLowerCase('tr')
   const custom = brief.copyOverrides.trim()
 
-  if (lang === 'perfume-luxury') {
+  if (sector === 'perfume') {
     return {
       tagline: custom || 'Sessiz bir yoğunluk.',
       volume: brief.volume || '50 ml',
@@ -43,7 +33,7 @@ export function sampleCopy(brief: DesignBrief): {
       cta: 'Üretime al',
     }
   }
-  if (/serum/.test(sub)) {
+  if (sector === 'serum' || /serum/.test(sub)) {
     return {
       tagline: custom || 'Tek damla. Net sonuç.',
       volume: brief.volume || '30 ml',
@@ -52,7 +42,7 @@ export function sampleCopy(brief: DesignBrief): {
       cta: 'Üretime al',
     }
   }
-  if (/krem|cream/.test(sub) || lang === 'cosmetics-soft') {
+  if (sector === 'cream' || /krem|cream/.test(sub)) {
     return {
       tagline: custom || 'Gece boyunca onarır.',
       volume: brief.volume || '50 ml',
@@ -61,25 +51,28 @@ export function sampleCopy(brief: DesignBrief): {
       cta: 'Üretime al',
     }
   }
-  if (lang === 'food-harvest') {
+  if (sector === 'food') {
     const oil = /yağ|zeytin/.test(sub)
     return {
       tagline: custom || (oil ? 'Soğuk sıkım. Tek bahçe.' : 'Fırından, olduğu gibi.'),
       volume: brief.volume || (oil ? '500 ml' : '180 g'),
       ingredients: oil
-        ? 'Soğuk sıkım sızma zeytinyağı. Menşei: Ege. Asit ≤ 0,8%.'
-        : 'Buğday unu, tereyağı, kakao kitlesi, deniz tuzu. Alerjen: gluten, süt.',
+        ? '100% soğuk sıkım sızma zeytinyağı. Menşei: Ege, TR. Asit ≤ 0,8%. Lot / SKT kapakta.'
+        : 'Buğday unu, tereyağı, kakao kitlesi, deniz tuzu. Alerjen: gluten, süt. Üretim yeri: TR.',
       warnings: oil
-        ? 'Serin, karanlık yerde saklayın. Işıktan koruyun. Best before pakette.'
-        : 'Serin ve kuru yerde saklayın. Alerjen bilgisi yukarıdadır.',
+        ? 'Serin ve karanlıkta saklayın. Işıktan koruyun. Açıldıktan sonra 90 gün içinde tüketin.'
+        : 'Serin ve kuru yerde saklayın. Alerjen: gluten, süt. Çocuklara küçük parça riski.',
       cta: 'Üretime al',
     }
   }
-  if (lang === 'electronics-precision') {
+  if (sector === 'electronics') {
+    const buds = /kulaklık|earbuds|audio/i.test(sub)
     return {
-      tagline: custom || 'Kesin. Sessiz. Kalıcı.',
+      tagline: custom || (buds ? 'Sessiz sahne. Gün boyu.' : 'Kesin. Sessiz. Kalıcı.'),
       volume: brief.volume || '',
-      ingredients: 'Input 5V ⎓ 1A · Bluetooth 5.3 · IPX4 · 18h playback. Designed for daily carry.',
+      ingredients: buds
+        ? 'BT 5.3 · 18h + case 24h · IPX4 · 5V⎓1A · 42g. Driver 10mm.'
+        : 'Input 5V⎓1A · cable 1.2m · 480Mbps. Housing: recycled ABS.',
       warnings: 'WEEE: elektronik atık olarak ayırın. Lityum pili evsel atığa atmayın. Nemden koruyun.',
       cta: 'Üretime al',
     }

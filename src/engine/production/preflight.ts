@@ -1,10 +1,18 @@
-import type { DesignSpec, PreflightItem, PreflightReport } from '../../types'
+import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../types'
+import { evaluateDesignGates, resolveDesignSystem } from '../designSystem'
+import type { DesignSystem } from '../designSystem/types'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
   return { id, label, detail, status }
 }
 
-export function runPreflight(spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline' | 'layout' | 'overrides' | 'kind'>): PreflightReport {
+export function runPreflight(
+  spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline' | 'layout' | 'overrides' | 'kind' | 'structureId'> & {
+    palette?: Palette
+  },
+  system?: DesignSystem,
+): PreflightReport {
+  const sys = system ?? resolveDesignSystem(spec.brief, spec.structureId)
   const collisions = detectCollisions(spec)
   const missingBrand = !spec.copy.brand.trim()
   const missingProduct = !spec.copy.product.trim()
@@ -12,7 +20,20 @@ export function runPreflight(spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline'
   const noCut = spec.dieline.cut.length === 0
   const noCrease = spec.kind === 'packaging' && spec.dieline.crease.length === 0
   const userBarcode = !!spec.brief.barcode.trim()
-  const exportOk = !collisions && !badDie && !noCut && !missingBrand
+  const palette = spec.palette ?? { bg: '#111', fg: '#eee', accent: '#aaa', muted: '#888', paper: '#000' }
+
+  const gates = evaluateDesignGates(
+    {
+      brief: spec.brief,
+      copy: spec.copy,
+      kind: spec.kind,
+      palette,
+      structureId: spec.structureId,
+    },
+    sys,
+  )
+  const gateFail = gates.some((g) => g.status === 'fail')
+  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail
 
   const items: PreflightItem[] = [
     item('brand', 'Marka kimliği', 'Ön yüz lockup', missingBrand ? 'fail' : 'pass'),
@@ -32,6 +53,7 @@ export function runPreflight(spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline'
       userBarcode ? spec.brief.barcode : 'Kullanıcı vermedi — uydurulmadı',
       userBarcode ? 'pass' : 'na',
     ),
+    ...gates,
     item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '3 mm taşma + 5 mm güvenli' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
     item('export', 'Dışa aktarma', exportOk ? 'SVG üretilebilir' : 'Engel var — dışa aktarma yeşil değil', exportOk ? 'pass' : 'fail'),
   ]
@@ -40,7 +62,7 @@ export function runPreflight(spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline'
   return { items, blocking, exportOk, collisions }
 }
 
-function detectCollisions(spec: Pick<DesignSpec, 'copy' | 'dieline' | 'artwork'> | Pick<DesignSpec, 'copy' | 'dieline'>): boolean {
+function detectCollisions(spec: Pick<DesignSpec, 'copy' | 'dieline'>): boolean {
   const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
   if (!front) return true
   const brand = spec.copy.brand.length * 0.55

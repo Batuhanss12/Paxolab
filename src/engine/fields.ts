@@ -1,4 +1,5 @@
 import type { AwaitingKey, DesignBrief, DimensionsMm, StyleType } from '../types'
+import { styleLabel } from './styles'
 
 export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
   brandName: 'Marka',
@@ -91,7 +92,7 @@ export function filledEntries(brief: DesignBrief): { key: string; label: string;
   push('subProduct', brief.subProduct)
   push('packagingMode', brief.packagingMode)
   push('templateId', brief.templateId)
-  push('styleType', brief.styleType)
+  push('styleType', styleLabel(brief.styleType) || brief.styleType)
   push('dimensionsMm', formatDimensions(brief.dimensionsMm))
   push('colors', brief.colors)
   push('volume', brief.volume)
@@ -104,7 +105,7 @@ export function filledEntries(brief: DesignBrief): { key: string; label: string;
 
 export function parseStyle(text: string): StyleType | '' {
   const t = text.toLocaleLowerCase('tr')
-  if (/lüks|luxury|premium|şık/.test(t)) return 'luxury'
+  if (/lüks|luxury|premium|şık|altın\s*çerçeve/.test(t)) return 'luxury'
   if (/minimal|sade/.test(t)) return 'minimal'
   if (/eco|organik|doğal/.test(t)) return 'eco'
   if (/playful|eğlenc|renkli/.test(t)) return 'playful'

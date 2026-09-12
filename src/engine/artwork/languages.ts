@@ -10,6 +10,8 @@ export type StyleProfile = {
   goldBar: boolean
   corners: boolean
   density: 'sparse' | 'balanced' | 'dense'
+  align: 'center' | 'left'
+  paperFill: boolean
 }
 
 export function languageId(brief: DesignBrief): LanguageId {
@@ -29,65 +31,98 @@ export function paletteFor(brief: DesignBrief, style: StyleType, _premium: boole
 
   if (style === 'luxury') {
     if (lang === 'food-harvest') {
-      return { bg: '#1a120c', fg: '#f3e6c8', accent: '#c4a15a', muted: '#9a7d52', paper: '#24180f' }
+      return { bg: '#16100a', fg: '#f4e6c4', accent: '#c9a24e', muted: '#9a7c4a', paper: '#22180e' }
     }
     if (lang === 'electronics-precision') {
-      return { bg: '#08090b', fg: '#ece8e1', accent: '#b7a48a', muted: '#7a7468', paper: '#101114' }
+      return { bg: '#07080a', fg: '#ece6dc', accent: '#b8a48c', muted: '#7a7368', paper: '#101214' }
     }
     if (lang === 'cosmetics-soft') {
-      return { bg: '#0c0a0b', fg: '#f6eee8', accent: '#c9a090', muted: '#8a7068', paper: '#161214' }
+      return { bg: '#0b090a', fg: '#f7efe8', accent: '#c9a090', muted: '#8a7068', paper: '#161214' }
     }
     return {
-      bg: wantBlack ? '#050505' : '#070707',
-      fg: '#f4efe6',
-      accent: wantGold ? '#d4b56a' : '#c9a86c',
-      muted: '#8a7a5c',
-      paper: '#101010',
+      bg: wantBlack ? '#040404' : '#060606',
+      fg: '#f6f0e4',
+      accent: wantGold ? '#d8bc72' : '#c9a86c',
+      muted: '#8d7b58',
+      paper: '#0c0c0c',
     }
   }
 
   if (style === 'modern') {
     if (lang === 'food-harvest') {
-      return { bg: '#16120e', fg: '#f2eee8', accent: '#d26a3a', muted: '#8a7a6c', paper: '#1c1814' }
+      return { bg: '#1c1612', fg: '#f3eee6', accent: '#e06a32', muted: '#8a7a6c', paper: '#241c16' }
     }
-    return { bg: '#101318', fg: '#eef2f6', accent: '#9aa8b4', muted: '#6d7884', paper: '#161a20' }
+    if (lang === 'perfume-luxury') {
+      return { bg: '#12151c', fg: '#eef2f8', accent: '#c5ccd6', muted: '#7a8490', paper: '#181c24' }
+    }
+    return { bg: '#10141a', fg: '#eef3f8', accent: '#7ec8d4', muted: '#6d7a86', paper: '#161b22' }
   }
 
   if (style === 'minimal') {
-    return { bg: '#0b0b0b', fg: '#f7f7f7', accent: '#f7f7f7', muted: '#7a7a7a', paper: '#111111' }
+    if (lang === 'food-harvest') {
+      return { bg: '#f3eee4', fg: '#2a241c', accent: '#2a241c', muted: '#7a7268', paper: '#e8e2d6' }
+    }
+    return { bg: '#f4f1ea', fg: '#1a1a1a', accent: '#1a1a1a', muted: '#7a7a7a', paper: '#ebe7de' }
   }
 
   if (style === 'eco') {
-    return { bg: '#c4b396', fg: '#2a2418', accent: '#3f4a32', muted: '#5c5344', paper: '#b6a686' }
+    if (lang === 'electronics-precision') {
+      return { bg: '#b7b09a', fg: '#1e2418', accent: '#2f3d28', muted: '#5a5848', paper: '#a8a088' }
+    }
+    if (lang === 'perfume-luxury') {
+      return { bg: '#c6b492', fg: '#2a2216', accent: '#3a4630', muted: '#5c5344', paper: '#b8a682' }
+    }
+    return { bg: '#cbb892', fg: '#2a2418', accent: '#3f4a32', muted: '#5c5344', paper: '#b6a686' }
   }
 
   if (style === 'playful') {
-    return { bg: '#1c1218', fg: '#fff6ea', accent: '#e59a4a', muted: '#c4a090', paper: '#261820' }
+    if (lang === 'food-harvest') {
+      return { bg: '#2a1410', fg: '#fff4e4', accent: '#f0a040', muted: '#d4a080', paper: '#341c14' }
+    }
+    if (lang === 'perfume-luxury') {
+      return { bg: '#2a1020', fg: '#fff4ea', accent: '#f08a6a', muted: '#d0a090', paper: '#381828' }
+    }
+    return { bg: '#1c1018', fg: '#fff6ea', accent: '#e88a4a', muted: '#c4a090', paper: '#281820' }
   }
 
-  // classic
-  if (lang === 'food-harvest') {
-    return { bg: '#2a1c12', fg: '#f6ecd4', accent: '#c45c38', muted: '#a08058', paper: '#1e140c' }
+  if (style === 'classic') {
+    if (lang === 'perfume-luxury') {
+      return { bg: '#f3ead8', fg: '#2a1418', accent: '#6b1d2a', muted: '#8a6a58', paper: '#e6d8c0' }
+    }
+    if (lang === 'food-harvest') {
+      return { bg: '#f0e4cc', fg: '#2a1810', accent: '#8b3d1d', muted: '#8a6e50', paper: '#e4d4b4' }
+    }
+    if (lang === 'electronics-precision') {
+      return { bg: '#0e1624', fg: '#efe6d4', accent: '#c4a574', muted: '#7a6e5c', paper: '#141c2a' }
+    }
+    return { bg: '#f2e8d6', fg: '#1c1410', accent: '#6b1d2a', muted: '#8a6e58', paper: '#e6d8c0' }
   }
-  return { bg: '#14110e', fg: '#f0e6d4', accent: '#8b3d3d', muted: '#8a7460', paper: '#1a1612' }
+
+  if (lang === 'food-harvest') {
+    return { bg: '#2a1a10', fg: '#f6ecd4', accent: '#c45c30', muted: '#a08058', paper: '#1e140c' }
+  }
+  if (lang === 'electronics-precision') {
+    return { bg: '#14120e', fg: '#efe8d8', accent: '#8b4040', muted: '#8a7460', paper: '#1a1814' }
+  }
+  return { bg: '#16120e', fg: '#f0e6d4', accent: '#8b3d3d', muted: '#8a7460', paper: '#1c1814' }
 }
 
 export function styleProfile(style: StyleType): StyleProfile {
   switch (style) {
     case 'luxury':
-      return { ornament: 1, tracking: 6.4, frame: 3, serif: true, goldBar: true, corners: true, density: 'dense' }
+      return { ornament: 1, tracking: 6.6, frame: 3, serif: true, goldBar: true, corners: true, density: 'dense', align: 'center', paperFill: false }
     case 'classic':
-      return { ornament: 0.8, tracking: 5.2, frame: 2, serif: true, goldBar: true, corners: true, density: 'balanced' }
+      return { ornament: 0.7, tracking: 5.4, frame: 2, serif: true, goldBar: false, corners: false, density: 'balanced', align: 'center', paperFill: true }
     case 'modern':
-      return { ornament: 0.3, tracking: 2.8, frame: 1, serif: false, goldBar: false, corners: false, density: 'balanced' }
+      return { ornament: 0.2, tracking: 2.4, frame: 0, serif: false, goldBar: false, corners: false, density: 'balanced', align: 'left', paperFill: false }
     case 'minimal':
-      return { ornament: 0, tracking: 5.6, frame: 0, serif: false, goldBar: false, corners: false, density: 'sparse' }
+      return { ornament: 0, tracking: 6.2, frame: 0, serif: false, goldBar: false, corners: false, density: 'sparse', align: 'center', paperFill: true }
     case 'eco':
-      return { ornament: 0.5, tracking: 3.2, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced' }
+      return { ornament: 0.55, tracking: 3.0, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced', align: 'center', paperFill: true }
     case 'playful':
-      return { ornament: 0.6, tracking: 1.8, frame: 1, serif: false, goldBar: true, corners: false, density: 'dense' }
+      return { ornament: 0.65, tracking: 1.4, frame: 1, serif: false, goldBar: true, corners: false, density: 'dense', align: 'center', paperFill: false }
     default:
-      return { ornament: 0.4, tracking: 4, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced' }
+      return { ornament: 0.4, tracking: 4, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced', align: 'center', paperFill: false }
   }
 }
 

@@ -4,6 +4,7 @@ import { Workspace } from './components/Workspace'
 import { openingReply, runConversation } from './engine/conversation'
 import { getEngine } from './engine/EnginePort'
 import { emptyBrief, mergeBrief, uid } from './engine/fields'
+import { styleLabel } from './engine/styles'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
 import type {
@@ -14,6 +15,7 @@ import type {
   ChatMessage,
   DesignSpec,
   DimensionsMm,
+  StyleType,
   TabId,
 } from './types'
 
@@ -105,15 +107,20 @@ export default function App() {
     setPending((p) => p.filter((a) => a.id !== id))
   }, [])
 
-  const runGenerate = useCallback((nextBrief: DesignBrief, result: ReturnType<typeof runConversation>) => {
+  const dimTimer = useRef<number>(0)
+
+  const runGenerate = useCallback((
+    nextBrief: DesignBrief,
+    result?: { overridePatch?: ReturnType<typeof runConversation>['overridePatch']; copyPatch?: ReturnType<typeof runConversation>['copyPatch'] },
+  ) => {
     setGenerating(true)
     window.setTimeout(() => {
       const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
       const next = engine.generate({
         brief: nextBrief,
         prev: designRef.current,
-        overridePatch: result.overridePatch,
-        copyPatch: result.copyPatch,
+        overridePatch: result?.overridePatch,
+        copyPatch: result?.copyPatch,
         logoHref: logo?.dataUrl,
       })
       designRef.current = next
@@ -121,7 +128,7 @@ export default function App() {
       setBrief(next.brief)
       setDesign(next)
       setShowTemplates(false)
-      if (result.overridePatch.printReady) setTab('uretim')
+      if (result?.overridePatch?.printReady) setTab('uretim')
       else setTab((t) => (t === 'konusma' ? 'vektor' : t))
       setGenerating(false)
     }, 720)
@@ -236,7 +243,26 @@ export default function App() {
     const next = { ...briefRef.current, dimensionsMm: dims }
     briefRef.current = next
     setBrief(next)
-  }, [])
+    if (!designRef.current) return
+    window.clearTimeout(dimTimer.current)
+    dimTimer.current = window.setTimeout(() => {
+      runGenerate(briefRef.current)
+    }, 420)
+  }, [runGenerate])
+
+  const onStyle = useCallback((style: StyleType) => {
+    const next = { ...briefRef.current, styleType: style }
+    briefRef.current = next
+    setBrief(next)
+    setAwaiting((prev) => (prev === 'styleType' ? null : prev))
+    awaitingRef.current = awaitingRef.current === 'styleType' ? null : awaitingRef.current
+    if (!designRef.current) return
+    setMessages((m) => [
+      ...m,
+      { id: uid(), role: 'assistant', content: `Stil ${styleLabel(style)} — yüzey yeniden kuruldu.` },
+    ])
+    runGenerate(next)
+  }, [runGenerate])
 
   return (
     <div className="app">
@@ -268,6 +294,7 @@ export default function App() {
           showTemplates={showTemplates}
           onPickTemplate={onPickTemplate}
           onDims={onDims}
+          onStyle={onStyle}
           tab={tab}
           onTab={setTab}
           onReset={reset}

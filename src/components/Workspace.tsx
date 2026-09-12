@@ -1,10 +1,12 @@
-import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, TabId } from '../types'
+import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
+import { isCoreReady } from '../engine/fields'
 import { Chat } from './Chat'
 import { DielinePreview } from './DielinePreview'
 import { InputsPanel } from './InputsPanel'
 import { Preview2D } from './Preview2D'
 import { Preview3D } from './Preview3D'
 import { ProductionInfo } from './ProductionInfo'
+import { StyleBar } from './StyleBar'
 import { TemplatePicker } from './TemplatePicker'
 
 const TABS: { id: TabId; label: string }[] = [
@@ -33,6 +35,7 @@ type WorkspaceProps = {
   showTemplates: boolean
   onPickTemplate: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
+  onStyle: (style: StyleType) => void
   tab: TabId
   onTab: (tab: TabId) => void
   onReset: () => void
@@ -83,12 +86,14 @@ export function Workspace({
   showTemplates,
   onPickTemplate,
   onDims,
+  onStyle,
   tab,
   onTab,
   onReset,
 }: WorkspaceProps) {
   const showPreview = !!design || generating || showTemplates
   const showTabs = !!design
+  const showStyles = !!design || showTemplates || isCoreReady(brief)
 
   return (
     <div className="workspace">
@@ -118,6 +123,9 @@ export function Workspace({
       <div className={`workspace__body ${showPreview ? 'has-preview' : ''}`}>
         <aside className="workspace__left">
           <InputsPanel brief={brief} open={inputsOpen} onToggle={onToggleInputs} />
+          {showStyles && (
+            <StyleBar brief={brief} design={design} onStyle={onStyle} onDims={onDims} />
+          )}
           <Chat
             messages={messages}
             prompt={prompt}
