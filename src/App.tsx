@@ -2,17 +2,22 @@ import { useCallback, useRef, useState } from 'react'
 import { Landing } from './components/Landing'
 import { Workspace } from './components/Workspace'
 import { openingReply, runConversation } from './engine/conversation'
-import { generateDesign } from './engine/designEngine'
-import { emptyBrief, uid } from './engine/fields'
+import { getEngine } from './engine/EnginePort'
+import { emptyBrief, mergeBrief, uid } from './engine/fields'
+import { getTemplate } from './engine/catalog/catalog'
+import { extractBriefWithLlm } from './engine/nlu'
 import type {
   AppPhase,
   Attachment,
-  BriefFields,
+  AwaitingKey,
+  DesignBrief,
   ChatMessage,
   DesignSpec,
-  FieldKey,
+  DimensionsMm,
   TabId,
 } from './types'
+
+const engine = getEngine()
 
 function readFiles(list: FileList | null): Promise<Attachment[]> {
   if (!list) return Promise.resolve([])
@@ -43,17 +48,19 @@ export default function App() {
   const [pending, setPending] = useState<Attachment[]>([])
   const [allAttachments, setAllAttachments] = useState<Attachment[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [brief, setBrief] = useState<BriefFields>(emptyBrief)
-  const [awaiting, setAwaiting] = useState<FieldKey | null>(null)
+  const [brief, setBrief] = useState<DesignBrief>(emptyBrief)
+  const [awaiting, setAwaiting] = useState<AwaitingKey | null>(null)
   const [design, setDesign] = useState<DesignSpec | null>(null)
   const [typing, setTyping] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [inputsOpen, setInputsOpen] = useState(true)
   const [tab, setTab] = useState<TabId>('vektor')
+  const [showTemplates, setShowTemplates] = useState(false)
 
   const briefRef = useRef(brief)
   const awaitingRef = useRef(awaiting)
   const designRef = useRef(design)
+  const attachRef = useRef(allAttachments)
   const startedRef = useRef(false)
 
   const reset = useCallback(() => {
@@ -61,6 +68,7 @@ export default function App() {
     setPrompt('')
     setPending([])
     setAllAttachments([])
+    attachRef.current = []
     setMessages([])
     const fresh = emptyBrief()
     setBrief(fresh)
@@ -73,6 +81,7 @@ export default function App() {
     setGenerating(false)
     setInputsOpen(true)
     setTab('vektor')
+    setShowTemplates(false)
     startedRef.current = false
   }, [])
 
@@ -83,13 +92,39 @@ export default function App() {
       const tagged = next.map((a, i) =>
         p.length + i === 0 ? { ...a, kind: 'logo' as const } : a,
       )
-      setAllAttachments((all) => [...all, ...tagged])
+      setAllAttachments((all) => {
+        const merged = [...all, ...tagged]
+        attachRef.current = merged
+        return merged
+      })
       return [...p, ...tagged]
     })
   }, [])
 
   const removePending = useCallback((id: string) => {
     setPending((p) => p.filter((a) => a.id !== id))
+  }, [])
+
+  const runGenerate = useCallback((nextBrief: DesignBrief, result: ReturnType<typeof runConversation>) => {
+    setGenerating(true)
+    window.setTimeout(() => {
+      const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
+      const next = engine.generate({
+        brief: nextBrief,
+        prev: designRef.current,
+        overridePatch: result.overridePatch,
+        copyPatch: result.copyPatch,
+        logoHref: logo?.dataUrl,
+      })
+      designRef.current = next
+      briefRef.current = next.brief
+      setBrief(next.brief)
+      setDesign(next)
+      setShowTemplates(false)
+      if (result.overridePatch.printReady) setTab('uretim')
+      else setTab((t) => (t === 'konusma' ? 'vektor' : t))
+      setGenerating(false)
+    }, 720)
   }, [])
 
   const process = useCallback((text: string, files: Attachment[]) => {
@@ -104,11 +139,11 @@ export default function App() {
     setMessages((m) => [...m, user])
     setTyping(true)
 
-    window.setTimeout(() => {
+    const finish = (mergedBrief: DesignBrief) => {
       const result = runConversation({
         text: user.content,
         attachments: files,
-        brief: briefRef.current,
+        brief: mergedBrief,
         awaiting: awaitingRef.current,
         hasDesign: !!designRef.current,
       })
@@ -117,9 +152,10 @@ export default function App() {
       awaitingRef.current = result.awaiting
       setBrief(result.brief)
       setAwaiting(result.awaiting)
+      setShowTemplates(result.showTemplates)
 
       const replies = [...result.replies]
-      if (first) {
+      if (first && !result.brief.brandName) {
         const open = openingReply(user.content)
         if (open && !result.shouldGenerate) replies[0] = open
       }
@@ -137,27 +173,22 @@ export default function App() {
       }
 
       if (result.shouldGenerate) {
-        setGenerating(true)
-        window.setTimeout(() => {
-          const next = generateDesign(
-            result.brief,
-            designRef.current,
-            result.overridePatch,
-            result.copyPatch,
-          )
-          designRef.current = next
-          setDesign(next)
-          if (result.overridePatch.printReady) setTab('uretim')
-          else setTab((t) => (t === 'konusma' ? 'vektor' : t))
-          setGenerating(false)
-          publish()
-        }, 880)
+        publish()
+        runGenerate(result.brief, result)
         return
       }
-
       publish()
-    }, 380)
-  }, [])
+    }
+
+    window.setTimeout(() => {
+      void extractBriefWithLlm(user.content)
+        .then((llm) => {
+          const merged = llm ? mergeBrief(briefRef.current, llm) : briefRef.current
+          finish(merged)
+        })
+        .catch(() => finish(briefRef.current))
+    }, 280)
+  }, [runGenerate])
 
   const send = useCallback(
     (forced?: string) => {
@@ -171,6 +202,41 @@ export default function App() {
     },
     [pending, phase, process, prompt],
   )
+
+  const onPickTemplate = useCallback(
+    (templateId: string, dims: DimensionsMm) => {
+      const tmpl = getTemplate(templateId)
+      const next = {
+        ...briefRef.current,
+        templateId,
+        dimensionsMm: dims,
+        packagingMode: briefRef.current.packagingMode || tmpl?.packagingMode || 'box',
+        sector: briefRef.current.sector || tmpl?.sectors[0] || '',
+      }
+      briefRef.current = next
+      setBrief(next)
+      setPhase('workspace')
+      const result = runConversation({
+        text: 'şablon seçildi',
+        attachments: [],
+        brief: next,
+        awaiting: 'templateId',
+        hasDesign: false,
+      })
+      setMessages((m) => [
+        ...m,
+        { id: uid(), role: 'assistant', content: result.replies[0] || 'Motor çalışıyor.' },
+      ])
+      runGenerate(next, result)
+    },
+    [runGenerate],
+  )
+
+  const onDims = useCallback((dims: DimensionsMm) => {
+    const next = { ...briefRef.current, dimensionsMm: dims }
+    briefRef.current = next
+    setBrief(next)
+  }, [])
 
   return (
     <div className="app">
@@ -199,6 +265,9 @@ export default function App() {
           inputsOpen={inputsOpen}
           onToggleInputs={() => setInputsOpen((v) => !v)}
           design={design}
+          showTemplates={showTemplates}
+          onPickTemplate={onPickTemplate}
+          onDims={onDims}
           tab={tab}
           onTab={setTab}
           onReset={reset}

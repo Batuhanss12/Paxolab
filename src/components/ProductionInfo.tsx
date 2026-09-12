@@ -1,94 +1,25 @@
+import { useState } from 'react'
 import type { DesignSpec } from '../types'
-
-type Item = {
-  id: string
-  label: string
-  detail: string
-  ready: (d: DesignSpec) => boolean
-}
-
-const ITEMS: Item[] = [
-  {
-    id: 'brand',
-    label: 'Marka kimliği',
-    detail: 'İsim ve monogram / logo yerleşimi',
-    ready: (d) => !!d.copy.brand,
-  },
-  {
-    id: 'product',
-    label: 'Ürün adı',
-    detail: 'Ön yüz hiyerarşisi',
-    ready: (d) => !!d.copy.product,
-  },
-  {
-    id: 'size',
-    label: 'Net ölçü',
-    detail: 'Bıçak izi için kutu / etiket boyutu',
-    ready: (d) => d.kind === 'landing' || d.layout.widthMm > 0,
-  },
-  {
-    id: 'palette',
-    label: 'Renk seti',
-    detail: 'Spot + proses karşılıkları',
-    ready: (d) => !!d.brief.renkler || d.overrides.paletteShift !== 'default',
-  },
-  {
-    id: 'copy',
-    label: 'Metin kilidi',
-    detail: 'Slogan, hacim, yasal satır',
-    ready: (d) => !!d.copy.tagline,
-  },
-  {
-    id: 'barcode',
-    label: 'Barkod / QR',
-    detail: 'EAN-13 sessiz alanı',
-    ready: (d) => d.overrides.barcodeVisible && !!d.copy.barcode,
-  },
-  {
-    id: 'bleed',
-    label: 'Taşma payı 3 mm',
-    detail: 'Kesim dışı güvenli taşma',
-    ready: (d) => d.overrides.printReady,
-  },
-  {
-    id: 'safe',
-    label: 'Güvenli alan',
-    detail: 'Tipografi kesimden 5 mm içeride',
-    ready: (d) => d.overrides.printReady,
-  },
-  {
-    id: 'dieline',
-    label: 'Kesim bıçağı',
-    detail: 'Dieline + crease kat izleri',
-    ready: (d) => d.overrides.printReady && d.kind !== 'landing',
-  },
-  {
-    id: 'cmyk',
-    label: 'CMYK dönüşümü',
-    detail: 'RGB önizleme → proses renk',
-    ready: (d) => d.overrides.printReady,
-  },
-  {
-    id: 'stock',
-    label: 'Malzeme',
-    detail: '350 gsm kuşe + mat selefon',
-    ready: (d) => d.overrides.printReady && d.kind === 'packaging',
-  },
-  {
-    id: 'warn',
-    label: 'Uyarı metinleri',
-    detail: 'INCI / yasal zorunlu satırlar',
-    ready: (d) => !!d.copy.warnings || d.kind === 'landing',
-  },
-]
+import { downloadSvg, printPdf } from '../engine/production/exportDoc'
+import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
   design: DesignSpec
 }
 
 export function ProductionInfo({ design }: ProductionInfoProps) {
-  const done = ITEMS.filter((i) => i.ready(design)).length
-  const print = design.overrides.printReady
+  const [exportNote, setExportNote] = useState('')
+  const passed = design.preflight.items.filter((i) => i.status === 'pass').length
+  const blocked = design.preflight.blocking
+
+  function onSvg() {
+    const ok = downloadSvg(design)
+    setExportNote(ok ? 'SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
+  }
+  function onPdf() {
+    const ok = printPdf(design)
+    setExportNote(ok ? 'Yazdır / PDF penceresi açıldı.' : 'PDF yok — kapı kırmızı.')
+  }
 
   return (
     <div className="prod">
@@ -100,56 +31,65 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
           </h2>
         </div>
         <div className="prod__score">
-          <strong>{done}</strong>
-          <span>/{ITEMS.length} hazır</span>
+          <strong>{passed}</strong>
+          <span>/{design.preflight.items.length} geçti</span>
         </div>
       </header>
 
       <p className="prod__lead">
-        {print
-          ? 'Baskıya hazır profil açık. Taşma, güvenli alan ve CMYK notları kilitlendi. Ofset için PDF/X-4 dışa aktarılabilir.'
-          : 'Tasarım motoru ön yüzü üretti. “baskıya hazırla” yazarak checklist’i kapatabilirsiniz.'}
+        {blocked
+          ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
+          : design.overrides.printReady
+            ? 'Ön kontrol geçti. SVG dışa aktarılabilir; PDF yazıcı diyaloğu ile alınır.'
+            : 'Motor yüzeyi üretti. “baskıya hazırla” yazınca taşma kilitlenir — yine de fail varsa yeşil olmaz.'}
       </p>
 
       <ul className="prod__list">
-        {ITEMS.map((item) => {
-          const ok = item.ready(design)
-          return (
-            <li key={item.id} className={ok ? 'is-ready' : ''}>
-              <span className="check">{ok ? '●' : '○'}</span>
-              <div>
-                <strong>{item.label}</strong>
-                <small>{item.detail}</small>
-              </div>
-            </li>
-          )
-        })}
+        {design.preflight.items.map((item) => (
+          <li key={item.id} className={`is-${item.status}`}>
+            <span className="check">
+              {item.status === 'pass' ? '●' : item.status === 'fail' ? '×' : item.status === 'na' ? '–' : '○'}
+            </span>
+            <div>
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+            </div>
+          </li>
+        ))}
       </ul>
+
+      <div className="prod__actions">
+        <button type="button" className="ghost-btn" onClick={onSvg} disabled={!design.preflight.exportOk}>
+          SVG indir
+        </button>
+        <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
+          Yazdır / PDF
+        </button>
+        {exportNote && <span className="prod__export-note">{exportNote}</span>}
+      </div>
 
       <dl className="prod__spec">
         <div>
-          <dt>Format</dt>
-          <dd>
-            {design.kind === 'landing'
-              ? 'Web · 1440×900'
-              : `${design.layout.widthMm} × ${design.layout.depthMm || '—'} × ${design.layout.heightMm} mm`}
-          </dd>
+          <dt>Yapı</dt>
+          <dd>{design.structureId}</dd>
         </div>
         <div>
-          <dt>Renk</dt>
+          <dt>Şablon</dt>
+          <dd>{design.templateId}</dd>
+        </div>
+        <div>
+          <dt>Ölçü</dt>
           <dd>
-            {design.palette.bg} / {design.palette.accent}
+            {design.layout.widthMm} × {design.layout.depthMm || '—'} × {design.layout.heightMm} mm
           </dd>
         </div>
         <div>
           <dt>Barkod</dt>
-          <dd>{design.copy.barcode}</dd>
-        </div>
-        <div>
-          <dt>Revizyon</dt>
-          <dd>{design.revision}</dd>
+          <dd>{design.copy.barcode || 'yok (uydurulmadı)'}</dd>
         </div>
       </dl>
+
+      <RatingBar designId={design.id} />
     </div>
   )
 }

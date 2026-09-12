@@ -1,20 +1,20 @@
-import type { BriefFields } from '../types'
-import { FIELD_LABELS, filledKeys } from '../engine/fields'
+import type { DesignBrief } from '../types'
+import { filledEntries } from '../engine/fields'
 import { IconChevron } from './Icons'
 
 type InputsPanelProps = {
-  brief: BriefFields
+  brief: DesignBrief
   open: boolean
   onToggle: () => void
 }
 
 export function InputsPanel({ brief, open, onToggle }: InputsPanelProps) {
-  const keys = filledKeys(brief)
+  const keys = filledEntries(brief)
   return (
     <section className={`girdiler ${open ? 'is-open' : ''}`}>
       <button type="button" className="girdiler__head" onClick={onToggle}>
         <span>Girdiler</span>
-        <span className="girdiler__count">{keys.length}/14</span>
+        <span className="girdiler__count">{keys.length}</span>
         <IconChevron className="girdiler__chev" />
       </button>
       {open && (
@@ -23,10 +23,10 @@ export function InputsPanel({ brief, open, onToggle }: InputsPanelProps) {
             <p className="girdiler__empty">Konuşma ilerledikçe alanlar dolacak.</p>
           ) : (
             <dl>
-              {keys.map((key) => (
-                <div key={key} className="girdiler__row">
-                  <dt>{FIELD_LABELS[key]}</dt>
-                  <dd>{brief[key]}</dd>
+              {keys.map((row) => (
+                <div key={row.key} className="girdiler__row">
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
                 </div>
               ))}
             </dl>

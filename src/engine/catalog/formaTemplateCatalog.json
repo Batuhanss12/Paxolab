@@ -1,0 +1,134 @@
+[
+  {
+    "id": "fm-cos-tuck-perfume",
+    "title": "Parfüm tuck-end",
+    "templateGroup": "cosmetics-tuck",
+    "sectors": ["kozmetik", "parfüm"],
+    "subProducts": ["parfüm", "eau de parfum", "kolonya"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 70, "W": 35, "H": 140 },
+    "status": "active"
+  },
+  {
+    "id": "fm-cos-tuck-cream",
+    "title": "Krem kutusu",
+    "templateGroup": "cosmetics-tuck",
+    "sectors": ["kozmetik"],
+    "subProducts": ["krem", "cream", "night cream"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 80, "W": 40, "H": 80 },
+    "status": "active"
+  },
+  {
+    "id": "fm-cos-tuck-serum",
+    "title": "Serum kutusu",
+    "templateGroup": "cosmetics-tuck",
+    "sectors": ["kozmetik"],
+    "subProducts": ["serum", "ampul"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 45, "W": 45, "H": 120 },
+    "status": "active"
+  },
+  {
+    "id": "fm-cos-label-bottle",
+    "title": "Şişe wrap etiket",
+    "templateGroup": "cosmetics-label",
+    "sectors": ["kozmetik", "parfüm"],
+    "subProducts": ["parfüm", "serum", "krem"],
+    "structureId": "wrap-label",
+    "packagingMode": "label",
+    "defaultsMm": { "L": 90, "W": 0, "H": 70 },
+    "status": "active"
+  },
+  {
+    "id": "fm-food-tuck-oil",
+    "title": "Yağ / sos kutusu",
+    "templateGroup": "food-tuck",
+    "sectors": ["gıda", "içecek"],
+    "subProducts": ["yağ", "zeytinyağı", "sos"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 80, "W": 50, "H": 180 },
+    "status": "active"
+  },
+  {
+    "id": "fm-food-tray-snack",
+    "title": "Atıştırmalık tepsisi",
+    "templateGroup": "food-tray",
+    "sectors": ["gıda"],
+    "subProducts": ["atıştırmalık", "çikolata", "kurabiye"],
+    "structureId": "simple-tray",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 160, "W": 100, "H": 40 },
+    "status": "active"
+  },
+  {
+    "id": "fm-food-label-jar",
+    "title": "Kavanoz etiketi",
+    "templateGroup": "food-label",
+    "sectors": ["gıda"],
+    "subProducts": ["reçel", "bal", "sos", "çay"],
+    "structureId": "flat-label",
+    "packagingMode": "label",
+    "defaultsMm": { "L": 70, "W": 0, "H": 90 },
+    "status": "active"
+  },
+  {
+    "id": "fm-elec-tuck-earbuds",
+    "title": "Kulaklık kutusu",
+    "templateGroup": "electronics-tuck",
+    "sectors": ["elektronik", "teknoloji"],
+    "subProducts": ["kulaklık", "earbuds", "aksesuar"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 90, "W": 45, "H": 90 },
+    "status": "active"
+  },
+  {
+    "id": "fm-elec-tuck-cable",
+    "title": "Aksesuar kutusu",
+    "templateGroup": "electronics-tuck",
+    "sectors": ["elektronik", "teknoloji"],
+    "subProducts": ["kablo", "şarj", "aksesuar"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 120, "W": 40, "H": 80 },
+    "status": "active"
+  },
+  {
+    "id": "fm-elec-label-device",
+    "title": "Cihaz düz etiket",
+    "templateGroup": "electronics-label",
+    "sectors": ["elektronik", "teknoloji"],
+    "subProducts": ["cihaz", "modül"],
+    "structureId": "flat-label",
+    "packagingMode": "label",
+    "defaultsMm": { "L": 60, "W": 0, "H": 40 },
+    "status": "active"
+  },
+  {
+    "id": "fm-box-tuck-universal",
+    "title": "Evrensel tuck-end",
+    "templateGroup": "universal-tuck",
+    "sectors": ["kozmetik", "gıda", "elektronik"],
+    "subProducts": ["genel"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 80, "W": 40, "H": 120 },
+    "status": "active"
+  },
+  {
+    "id": "fm-box-sleeve-soon",
+    "title": "Sleeve kutu",
+    "templateGroup": "sleeve",
+    "sectors": ["kozmetik", "elektronik"],
+    "subProducts": ["genel"],
+    "structureId": "tuck-end-box",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 90, "W": 30, "H": 150 },
+    "status": "soon"
+  }
+]

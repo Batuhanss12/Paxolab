@@ -2,7 +2,7 @@ import { useRef, type ChangeEvent, type KeyboardEvent } from 'react'
 import type { Attachment } from '../types'
 import { IconArrowUp, IconPaperclip } from './Icons'
 
-const CHIPS = ['Kozmetik kutusu', 'Etiket', 'Kutu ambalaj', 'Landing page'] as const
+const CHIPS = ['Kozmetik kutusu', 'Gıda ambalajı', 'Elektronik kutusu', 'Etiket'] as const
 
 type LandingProps = {
   prompt: string
@@ -46,7 +46,7 @@ export function Landing({
         <p className="eyebrow">Talk → Engine → Edit → Print</p>
         <h1 className="landing__title">Ne tasarlamak istiyorsunuz?</h1>
         <p className="landing__sub">
-          Görsel üretmiyoruz. Brief konuşulur, motor yüzey üretir, siz iterasyon yaparsınız.
+          AI ile konuş → FORMA tasarım motoru üretir. Nihai baskı vektördür, görsel üretim değil.
         </p>
 
         <div className="composer composer--hero">

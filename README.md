@@ -1,49 +1,64 @@
 # FORMA — AI Tasarım Atölyesi
 
-Tek sayfalık, ön yüzde çalışan bir **tasarım motoru** arayüzü. Bu bir görsel üretici değil.
+Tek sayfalık tasarım motoru. AI konuşur ve brief çıkarır; **nihai baskı yüzeyi FORMA’nın belirleyici vektör motorudur** (dieline + artwork). Görsel üretim modeli kullanılmaz.
 
-Akış: **Konuş → Motor üretir → Kullanıcı iterasyon yapar → Baskıya hazırla.**
-
-Proje yolu: `/workspace/ai-design-workspace`
+Akış: **Konuş → Şablon / dieline → Artwork → İterasyon → Üretim kapısı.**
 
 ## Çalıştırma
 
 ```bash
-cd /workspace/ai-design-workspace
 npm install
 npm run dev
 ```
 
-Tarayıcıda açın: [http://localhost:5173](http://localhost:5173)
-
-Üretim derlemesi:
+Tarayıcı: [http://localhost:5173](http://localhost:5173)
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Ne yapar
+## Mimari
 
-1. Karşılama ekranı: *Ne tasarlamak istiyorsunuz?*
-2. Prompt veya hızlı chip (Kozmetik kutusu, Etiket, Kutu ambalaj, Landing page).
-3. Sol sohbet eksik alanları konuşarak sorar (gerçek LLM yok, sezgisel motor).
-4. **Girdiler** paneli doldukça açılır.
-5. Marka + ürün + ambalaj (veya eşdeğeri) hazır olunca mock motor:
-   - 2D SVG ambalaj / etiket / landing
-   - CSS 3D hacim
-   - Üretim checklist’i
-6. Sekmeler yalnızca önizleme sonrası görünür: Konuşma · 2D Vektör · 3D Önizleme · Üretim Bilgisi.
-7. İterasyon: `logoyu büyüt`, `daha premium`, `metni … yap`, `baskıya hazırla`.
+```
+src/engine/
+  EnginePort.ts          FormaLocalEngine (varsayılan) | FormaMockEngine (VITE_ENGINE=mock)
+  conversation.ts        sohbet + eksik alan
+  extract.ts             sezgisel brief (NLU opsiyonel)
+  nlu.ts                 VITE_FORMA_LLM_* ile yalnızca JSON brief
+  dieline/               tuck-end-box, simple-tray, flat-label, wrap-label
+  catalog/               formaTemplateCatalog.json (id: fm-…)
+  artwork/               panele bağlı vektör, sektör dilleri, stil
+  iterate/               sohbet niyeti → graph
+  production/            dürüst preflight + SVG / yazdır-PDF
+```
 
-## Alanlar
+AI yalnızca: konuşma, brief çıkarımı, iterasyon niyeti.  
+Kesim ve grafik: `buildDieline` + `composeArtwork`.
 
-`markaAdi`, `urunAdi`, `kategori`, `ambalajTipi`, `olculer`, `metinler`, `renkler`, `stil`, `logo`, `gorseller`, `icerik`, `uyarilar`, `barkodQr`, `diger`.
+### DesignBrief v2
+
+`brandName`, `productName`, `sector`, `subProduct`, `packagingMode` (box|label), `templateId`, `dimensionsMm`, `styleType`, `colors`, `volume`, `barcode` (yalnızca kullanıcı; uydurulmaz), `logo`, `references`, `copyOverrides`.
+
+### Motor portu
+
+`getEngine()` → `FormaLocalEngine`. Harici paketleme API’si yoktur. `VITE_ENGINE=mock` yalnızca yerel sahneleme içindir.
+
+## Yapılar
+
+| structureId     | Not |
+|-----------------|-----|
+| tuck-end-box    | Ön/arka = L×H, yan = W×H, kapak = L×W, tutarlılık kontrolü |
+| simple-tray     | Taban + 4 duvar |
+| flat-label      | Tek panel |
+| wrap-label      | Yüz + glue overlap |
+
+Katalog: kozmetik tuck-end (parfüm / krem / serum), gıda (kutu, tepsi, etiket), elektronik (kutu + etiket). `soon` kartlar seçilemez.
+
+## Ortam
+
+`.env.example` — yalnızca FORMA anahtarları. Harici monorepo adresi konmaz.
 
 ## Yığın
 
-Vite · React 19 · TypeScript. Ekstra UI kütüphanesi yok.
-
-## Not
-
-Tasarım motoru belirleyicidir: aynı brief aynı palet, ölçü ve kopyayı üretir. Ağ çağrısı yoktur.
+Vite · React 19 · TypeScript. Ek UI kütüphanesi yok.

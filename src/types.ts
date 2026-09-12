@@ -7,24 +7,36 @@ export type Attachment = {
   dataUrl: string
 }
 
-export type BriefFields = {
-  markaAdi: string
-  urunAdi: string
-  kategori: string
-  ambalajTipi: string
-  olculer: string
-  metinler: string
-  renkler: string
-  stil: string
-  logo: string
-  gorseller: string
-  icerik: string
-  uyarilar: string
-  barkodQr: string
-  diger: string
+export type PackagingMode = 'box' | 'label'
+export type StyleType = 'luxury' | 'modern' | 'minimal' | 'eco' | 'playful' | 'classic'
+export type StructureId = 'tuck-end-box' | 'simple-tray' | 'flat-label' | 'wrap-label'
+export type TemplateStatus = 'active' | 'soon'
+export type DesignKind = 'packaging' | 'label'
+
+export type DimensionsMm = {
+  L: number
+  W: number
+  H: number
 }
 
-export type FieldKey = keyof BriefFields
+export type DesignBrief = {
+  brandName: string
+  productName: string
+  sector: string
+  subProduct: string
+  packagingMode: PackagingMode | ''
+  templateId: string
+  dimensionsMm: DimensionsMm
+  styleType: StyleType | ''
+  colors: string
+  volume: string
+  barcode: string
+  logo: string
+  references: string
+  copyOverrides: string
+}
+
+export type BriefFieldKey = keyof DesignBrief
 
 export type ChatRole = 'user' | 'assistant'
 
@@ -55,12 +67,65 @@ export type Palette = {
   paper: string
 }
 
-export type DesignKind = 'packaging' | 'label' | 'landing'
+export type Point = { x: number; y: number }
+
+export type PanelRole = 'body' | 'flap' | 'glue' | 'tuck'
+
+export type Panel = {
+  id: string
+  role: PanelRole
+  x: number
+  y: number
+  w: number
+  h: number
+  polygon: Point[]
+}
+
+export type DielineModel = {
+  structureId: StructureId
+  unit: 'mm'
+  width: number
+  height: number
+  dimensions: DimensionsMm
+  panels: Panel[]
+  cut: Point[][]
+  crease: [Point, Point][]
+  glueIds: string[]
+  consistent: boolean
+  issues: string[]
+}
+
+export type ArtworkLayer = {
+  panelId: string
+  markup: string
+}
+
+export type ArtworkModel = {
+  layers: ArtworkLayer[]
+  frontPanelId: string
+  language: string
+}
+
+export type PreflightStatus = 'pass' | 'warn' | 'fail' | 'na'
+
+export type PreflightItem = {
+  id: string
+  label: string
+  detail: string
+  status: PreflightStatus
+}
+
+export type PreflightReport = {
+  items: PreflightItem[]
+  blocking: boolean
+  exportOk: boolean
+  collisions: boolean
+}
 
 export type DesignSpec = {
   id: string
   kind: DesignKind
-  brief: BriefFields
+  brief: DesignBrief
   palette: Palette
   layout: {
     widthMm: number
@@ -80,18 +145,45 @@ export type DesignSpec = {
   overrides: DesignOverrides
   generatedAt: number
   revision: number
+  templateId: string
+  structureId: StructureId
+  dieline: DielineModel
+  artwork: ArtworkModel
+  preflight: PreflightReport
 }
 
-export type TabId = 'konusma' | 'vektor' | 'onizleme3d' | 'uretim'
+export type TabId = 'konusma' | 'vektor' | 'dieline' | 'onizleme3d' | 'uretim'
 
 export type AppPhase = 'landing' | 'workspace'
 
+export type AwaitingKey = BriefFieldKey | 'templateId'
+
 export type EngineResult = {
-  brief: BriefFields
-  awaiting: FieldKey | null
+  brief: DesignBrief
+  awaiting: AwaitingKey | null
   replies: string[]
   shouldGenerate: boolean
+  showTemplates: boolean
   overridePatch: Partial<DesignOverrides>
   copyPatch: Partial<DesignSpec['copy']>
   note: string
+}
+
+export type DesignRating = {
+  designId: string
+  stars: number
+  tags: string[]
+  at: number
+}
+
+export type FormaTemplate = {
+  id: string
+  title: string
+  templateGroup: string
+  sectors: string[]
+  subProducts: string[]
+  structureId: StructureId
+  packagingMode: PackagingMode
+  defaultsMm: DimensionsMm
+  status: TemplateStatus
 }

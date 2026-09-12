@@ -1,91 +1,116 @@
-import type { BriefFields, FieldKey } from '../types'
+import type { AwaitingKey, DesignBrief, DimensionsMm, StyleType } from '../types'
 
-export const FIELD_ORDER: FieldKey[] = [
-  'ambalajTipi',
-  'markaAdi',
-  'urunAdi',
-  'stil',
-  'renkler',
-  'olculer',
-  'metinler',
-  'icerik',
-  'uyarilar',
-  'barkodQr',
-  'kategori',
-  'logo',
-  'gorseller',
-  'diger',
-]
-
-export const FIELD_LABELS: Record<FieldKey, string> = {
-  markaAdi: 'Marka adı',
-  urunAdi: 'Ürün adı',
-  kategori: 'Kategori',
-  ambalajTipi: 'Ambalaj tipi',
-  olculer: 'Ölçüler',
-  metinler: 'Metinler',
-  renkler: 'Renkler',
-  stil: 'Stil',
+export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
+  brandName: 'Marka',
+  productName: 'Ürün',
+  sector: 'Sektör',
+  subProduct: 'Alt ürün',
+  packagingMode: 'Yüzey',
+  templateId: 'Şablon',
+  dimensionsMm: 'Ölçüler',
+  styleType: 'Stil',
+  colors: 'Renkler',
+  volume: 'Hacim',
+  barcode: 'Barkod',
   logo: 'Logo',
-  gorseller: 'Görseller',
-  icerik: 'İçerik',
-  uyarilar: 'Uyarılar',
-  barkodQr: 'Barkod / QR',
-  diger: 'Diğer',
+  references: 'Referans',
+  copyOverrides: 'Metin',
 }
 
-export const CORE_FIELDS: FieldKey[] = ['markaAdi', 'urunAdi', 'ambalajTipi']
-
-export function emptyBrief(): BriefFields {
+export function emptyBrief(): DesignBrief {
   return {
-    markaAdi: '',
-    urunAdi: '',
-    kategori: '',
-    ambalajTipi: '',
-    olculer: '',
-    metinler: '',
-    renkler: '',
-    stil: '',
+    brandName: '',
+    productName: '',
+    sector: '',
+    subProduct: '',
+    packagingMode: '',
+    templateId: '',
+    dimensionsMm: { L: 0, W: 0, H: 0 },
+    styleType: '',
+    colors: '',
+    volume: '',
+    barcode: '',
     logo: '',
-    gorseller: '',
-    icerik: '',
-    uyarilar: '',
-    barkodQr: '',
-    diger: '',
+    references: '',
+    copyOverrides: '',
   }
 }
 
-export function filledKeys(brief: BriefFields): FieldKey[] {
-  return FIELD_ORDER.filter((key) => brief[key].trim().length > 0)
+export function formatDimensions(d: DimensionsMm): string {
+  if (!d.L && !d.H) return ''
+  if (!d.W) return `${d.L} × ${d.H} mm`
+  return `${d.L} × ${d.W} × ${d.H} mm`
 }
 
-export function mergeBrief(base: BriefFields, patch: Partial<BriefFields>): BriefFields {
-  const next = { ...base }
-  for (const key of FIELD_ORDER) {
-    const value = patch[key]
+export function parseDimensions(text: string): DimensionsMm | null {
+  const m = text.match(
+    /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)(?:\s*[x×]\s*(\d+(?:[.,]\d+)?))?/i,
+  )
+  if (!m) return null
+  const a = Number(m[1].replace(',', '.'))
+  const b = Number(m[2].replace(',', '.'))
+  const c = m[3] ? Number(m[3].replace(',', '.')) : 0
+  if (c) return { L: a, W: b, H: c }
+  return { L: a, W: 0, H: b }
+}
+
+export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): DesignBrief {
+  const next = { ...base, dimensionsMm: { ...base.dimensionsMm } }
+  for (const [key, value] of Object.entries(patch)) {
+    if (key === 'dimensionsMm' && value && typeof value === 'object') {
+      next.dimensionsMm = { ...next.dimensionsMm, ...(value as DimensionsMm) }
+      continue
+    }
     if (typeof value === 'string' && value.trim()) {
-      next[key] = value.trim()
+      ;(next as Record<string, unknown>)[key] = value.trim()
     }
   }
   return next
 }
 
-export function isCoreReady(brief: BriefFields): boolean {
-  const brand = brief.markaAdi.trim().length > 0
-  const product = brief.urunAdi.trim().length > 0
-  const pack = brief.ambalajTipi.trim().length > 0 || brief.kategori.trim().length > 0
-  if (brand && product && pack) return true
-  if (brand && pack && brief.stil.trim() && brief.renkler.trim()) return true
-  return false
+export function isCoreReady(brief: DesignBrief): boolean {
+  const brand = brief.brandName.trim().length > 0
+  const product = brief.productName.trim().length > 0
+  const surface = brief.packagingMode !== '' || brief.sector.trim().length > 0
+  return brand && product && surface
 }
 
-export function briefSummary(brief: BriefFields): string {
-  const parts: string[] = []
-  if (brief.markaAdi) parts.push(brief.markaAdi)
-  if (brief.urunAdi) parts.push(brief.urunAdi)
-  if (brief.ambalajTipi) parts.push(brief.ambalajTipi.toLowerCase())
-  else if (brief.kategori) parts.push(brief.kategori.toLowerCase())
-  return parts.join(' · ')
+export function briefSummary(brief: DesignBrief): string {
+  return [brief.brandName, brief.productName, brief.sector || brief.packagingMode].filter(Boolean).join(' · ')
+}
+
+export function filledEntries(brief: DesignBrief): { key: string; label: string; value: string }[] {
+  const rows: { key: string; label: string; value: string }[] = []
+  const push = (key: AwaitingKey, value: string) => {
+    if (!value.trim()) return
+    rows.push({ key, label: FIELD_LABELS[key] || key, value })
+  }
+  push('brandName', brief.brandName)
+  push('productName', brief.productName)
+  push('sector', brief.sector)
+  push('subProduct', brief.subProduct)
+  push('packagingMode', brief.packagingMode)
+  push('templateId', brief.templateId)
+  push('styleType', brief.styleType)
+  push('dimensionsMm', formatDimensions(brief.dimensionsMm))
+  push('colors', brief.colors)
+  push('volume', brief.volume)
+  push('barcode', brief.barcode)
+  push('logo', brief.logo)
+  push('references', brief.references)
+  push('copyOverrides', brief.copyOverrides)
+  return rows
+}
+
+export function parseStyle(text: string): StyleType | '' {
+  const t = text.toLocaleLowerCase('tr')
+  if (/lüks|luxury|premium|şık/.test(t)) return 'luxury'
+  if (/minimal|sade/.test(t)) return 'minimal'
+  if (/eco|organik|doğal/.test(t)) return 'eco'
+  if (/playful|eğlenc|renkli/.test(t)) return 'playful'
+  if (/klasik|classic/.test(t)) return 'classic'
+  if (/modern/.test(t)) return 'modern'
+  return ''
 }
 
 export function uid(): string {
