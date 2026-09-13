@@ -3,6 +3,7 @@ import type { DecorFamily, Density, SectorId } from '../designSystem/types'
 import { lastFamilies, lastForStyle } from './DesignMemory'
 import { pickAllowed, studioRecipe } from './VariationRecipes'
 import type { VocabularyRow } from './SectorVisualVocabulary'
+import { styleForbiddenPatterns, vocabHeroRequired } from './SectorVisualVocabulary'
 import { visualConceptFor } from './VisualConcept'
 import type {
   ArtDirectionBlock,
@@ -31,6 +32,7 @@ export type ArtCtx = {
   prev?: DesignPlan
   variationIndex?: number
   vocab?: VocabularyRow
+  forceHero?: HeroFamily
 }
 
 const OVERLOAD_PRIMS: PrimitiveId[] = ['leaf', 'grain', 'diamond', 'wave', 'arc', 'dot', 'tick']
@@ -59,52 +61,89 @@ export function seedFrom(brief: DesignBrief, style: StyleType, templateId?: stri
   return h >>> 0
 }
 
-export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
+function styleHeroes(style: StyleType, sector: SectorId): HeroFamily[] {
   if (style === 'minimal') return ['none']
-  if (vocab) {
-    const safe = vocab.heroFamilies.filter((h) => !vocab.forbiddenHeroes.includes(h))
-    if (safe.length) return safe
-  }
   if (sector === 'perfume') {
     if (style === 'luxury') return ['crest', 'seal']
     if (style === 'classic') return ['seal', 'crest']
-    if (style === 'eco') return ['botanical']
-    if (style === 'playful') return ['emblem']
+    if (style === 'eco') return ['botanical', 'monstera']
+    if (style === 'playful') return ['emblem', 'seal']
     return ['none']
   }
   if (sector === 'cream') {
-    if (style === 'eco') return ['botanical']
-    if (style === 'playful') return ['emblem']
+    if (style === 'eco') return ['botanical', 'monstera', 'palm']
+    if (style === 'playful') return ['emblem', 'oval']
     if (style === 'classic') return ['oval', 'seal']
-    return ['oval']
+    if (style === 'modern') return ['oval', 'emblem']
+    return ['oval', 'botanical']
   }
   if (sector === 'serum') {
-    if (style === 'eco') return ['botanical']
-    return ['botanical']
+    if (style === 'eco') return ['botanical', 'monstera', 'palm']
+    if (style === 'playful') return ['emblem', 'oval']
+    if (style === 'modern') return ['oval', 'emblem']
+    return ['botanical', 'oval']
   }
-  if (sector === 'food') return ['harvest']
-  if (sector === 'electronics') return ['tech']
-  if (style === 'playful') return ['emblem']
-  if (style === 'eco') return ['botanical']
-  if (style === 'classic') return ['seal']
-  if (style === 'luxury') return ['crest']
+  if (sector === 'food') return ['harvest', 'botanical', 'seal']
+  if (sector === 'electronics') return ['tech', 'none']
+  if (style === 'playful') return ['emblem', 'oval']
+  if (style === 'eco') return ['botanical', 'monstera', 'palm']
+  if (style === 'classic') return ['seal', 'crest']
+  if (style === 'luxury') return ['crest', 'seal']
+  if (style === 'modern') return ['oval', 'none']
   return ['none']
 }
 
-export function allowedPatterns(style: StyleType, vocab?: VocabularyRow): PatternFamily[] {
+export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
+  if (style === 'minimal') return ['none']
+  const preferred = styleHeroes(style, sector)
   if (vocab) {
-    const safe = vocab.patternFamilies.filter((p) => !vocab.forbiddenPatterns.includes(p))
+    const safe = vocab.heroFamilies.filter((h) => !vocab.forbiddenHeroes.includes(h))
+    if (safe.length) {
+      const head = preferred.filter((h) => h !== 'none' && safe.includes(h))
+      const tail = safe.filter((h) => !head.includes(h))
+      return head.length ? [...head, ...tail] : safe
+    }
+  }
+  return preferred
+}
+
+export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?: SectorId): PatternFamily[] {
+  const leak = styleForbiddenPatterns(style, sector ?? vocab?.sectorId ?? 'generic')
+  // Sector-aware pattern enrichment: technical sectors get grids, organic sectors get weaves/waves.
+  const sectorBoost: PatternFamily[] =
+    sector === 'electronics' ? ['hexagon', 'dotgrid'] :
+    sector === 'food' || sector === 'beverage' ? ['weave'] :
+    sector === 'cleaning' ? ['wave'] :
+    []
+  const styleList: PatternFamily[] =
+    style === 'luxury'
+      ? ['contour', 'ornament']
+      : style === 'modern'
+        ? ['lattice', 'stripe', 'dotgrid', 'hexagon']
+        : style === 'eco'
+          ? ['grain', 'ornament', 'weave']
+          : style === 'playful'
+            ? ['capsule', 'wave', 'none']
+            : style === 'classic'
+              ? ['ornament', 'contour']
+              : ['none']
+  const merged = [...new Set([...styleList, ...sectorBoost])]
+  const styleSafe = merged.filter((p) => !leak.includes(p))
+  if (vocab) {
+    const safe = vocab.patternFamilies.filter((p) => !vocab.forbiddenPatterns.includes(p) && !leak.includes(p))
+    const head = styleSafe.filter((p) => safe.includes(p))
+    if (head.length) return [...head, ...safe.filter((p) => !head.includes(p))]
+    if (styleSafe.length) return styleSafe
     if (safe.length) return safe
   }
-  if (style === 'luxury') return ['contour', 'ornament']
-  if (style === 'modern') return ['lattice', 'stripe']
-  if (style === 'eco') return ['grain', 'ornament']
-  if (style === 'playful') return ['capsule', 'none']
-  if (style === 'classic') return ['ornament', 'contour']
-  return ['none']
+  return styleSafe.length ? styleSafe : ['none']
 }
 
-export function defaultPattern(style: StyleType): PatternFamily {
+export function defaultPattern(style: StyleType, sector?: SectorId): PatternFamily {
+  // Sector-aware defaults give each sector a distinctive surface at set 0.
+  if (sector === 'electronics' && (style === 'modern' || style === 'minimal')) return 'hexagon'
+  if ((sector === 'food' || sector === 'beverage') && style === 'eco') return 'weave'
+  if (sector === 'cleaning') return 'wave'
   if (style === 'luxury') return 'contour'
   if (style === 'modern') return 'lattice'
   if (style === 'eco') return 'grain'
@@ -138,8 +177,25 @@ function pickFromSet<T extends string>(allowed: T[], index: number, last?: T): T
   return allowed.find((item) => item !== avoid) ?? allowed[index % allowed.length] ?? preferred
 }
 
+function requiredHero(ctx: ArtCtx, allowed: HeroFamily[]): HeroFamily | null {
+  if (!ctx.vocab || !vocabHeroRequired(ctx.vocab, ctx.style, ctx.surface)) return null
+  if (ctx.sector === 'cream' || ctx.sector === 'serum') {
+    if (ctx.style === 'eco' && allowed.includes('monstera')) return 'monstera'
+    if (ctx.style === 'playful' && allowed.includes('emblem')) return 'emblem'
+    if (ctx.style === 'modern' && allowed.includes('oval')) return 'oval'
+  }
+  if (ctx.sector === 'food' && allowed.includes('harvest')) return 'harvest'
+  if (ctx.sector === 'perfume') {
+    if (ctx.style === 'classic' && allowed.includes('seal')) return 'seal'
+    if (allowed.includes('crest')) return 'crest'
+  }
+  const first = allowed.find((h) => h !== 'none')
+  return first ?? null
+}
+
 function pickHero(ctx: ArtCtx): HeroFamily {
   const allowed = allowedHeroes(ctx.style, ctx.sector, ctx.vocab)
+  if (ctx.forceHero && allowed.includes(ctx.forceHero)) return ctx.forceHero
   const preferred = allowed[0] ?? 'none'
   const index = ctx.variationIndex ?? 0
   const indexChanged = index !== (ctx.prev?.variationIndex ?? 0)
@@ -152,15 +208,19 @@ function pickHero(ctx: ArtCtx): HeroFamily {
   if (keepCue && !indexChanged && ctx.prev?.heroGraphic.family && allowed.includes(ctx.prev.heroGraphic.family)) {
     return ctx.prev.heroGraphic.family
   }
-  if (index <= 0) return preferred
+  if (index <= 0) {
+    const needed = requiredHero(ctx, allowed)
+    return needed ?? preferred
+  }
   const recipe = studioRecipe(index)
-  if (recipe) return pickAllowed(allowed, recipe.hero)
+  if (recipe) return pickAllowed(allowed, recipe.hero, index)
   return pickFromSet(allowed, index, lastForStyle(ctx.style)?.hero ?? ctx.prev?.heroGraphic.family)
 }
 
 function pickPattern(ctx: ArtCtx): PatternFamily {
-  const allowed = allowedPatterns(ctx.style, ctx.vocab)
-  const preferred = defaultPattern(ctx.style)
+  const allowed = allowedPatterns(ctx.style, ctx.vocab, ctx.sector)
+  const preferred = defaultPattern(ctx.style, ctx.sector)
+  const safePreferred = allowed.includes(preferred) ? preferred : (allowed[0] ?? 'none')
   const index = ctx.variationIndex ?? 0
   const indexChanged = index !== (ctx.prev?.variationIndex ?? 0)
   const keepCue =
@@ -168,11 +228,13 @@ function pickPattern(ctx: ArtCtx): PatternFamily {
     ctx.cue === 'luxury-arrive' ||
     ctx.cue === 'open-air' ||
     ctx.cue === 'warm-natural'
-  if (ctx.cue === 'force-overload') return preferred
-  if (keepCue && !indexChanged && ctx.prev?.patternSystem.family) return ctx.prev.patternSystem.family
-  if (index <= 0) return preferred
+  if (ctx.cue === 'force-overload') return safePreferred
+  if (keepCue && !indexChanged && ctx.prev?.patternSystem.family && allowed.includes(ctx.prev.patternSystem.family)) {
+    return ctx.prev.patternSystem.family
+  }
+  if (index <= 0) return safePreferred
   const recipe = studioRecipe(index)
-  if (recipe) return pickAllowed(allowed, recipe.pattern)
+  if (recipe) return pickAllowed(allowed, recipe.pattern, index)
   return pickFromSet(allowed, index, lastForStyle(ctx.style)?.pattern ?? ctx.prev?.patternSystem.family)
 }
 

@@ -55,6 +55,32 @@ Kesim ve grafik: `buildDieline` + `composeArtwork`.
 
 Katalog: kozmetik tuck-end (parfüm / krem / serum), gıda (kutu, tepsi, etiket), elektronik (kutu + etiket). `soon` kartlar seçilemez.
 
+## Platform (Phase 6–7)
+
+Yerel API temeli: Auth + SQLite proje senkronu + **kredi cüzdanı** (Phase 7). Stripe / iyzico ödemesi **henüz yok** (Phase 8).
+
+```bash
+# API (port 8787)
+npm run server
+
+# SPA (port 5173, /api → 8787 proxy)
+npm run dev
+
+# İkisi birlikte
+npm run dev:all
+```
+
+- Misafir: yalnızca `localStorage` (`forma.project.v1`) — **ücretsiz / sınırsız yerel**, kredi ölçümü yok.
+- Giriş sonrası: sunucuda proje varsa en yenisi oturuma yüklenir; yoksa yerel oturum buluta yazılır.
+- Kredi: kayıtta **50** başlangıç kredisi; `generate` = 3, `revise` = 2. Üretim öncesi `reserve` → başarıda `commit` / hatada `refund`.
+- Token: `localStorage` anahtarı `forma.auth.v1` (Bearer).
+- DB: `server/data/forma.sqlite` via Node built-in `node:sqlite` (Node ≥ 22.5; no native build tools)
+
+```bash
+npm test           # motor / SPA testleri
+npm run test:server
+```
+
 ## Ortam
 
 `.env.example` — yalnızca FORMA anahtarları. Harici monorepo adresi konmaz.

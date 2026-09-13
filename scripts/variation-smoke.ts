@@ -44,7 +44,7 @@ assert(set0.designPlan?.heroGraphic.family === 'crest', `set0 hero ${set0.design
 assert(set0.designPlan?.patternSystem.family === 'contour', `set0 pattern ${set0.designPlan?.patternSystem.family}`)
 const face0 = face(set0)
 assert(face0.includes('data-hero="crest"'), 'set0 missing crest')
-assert(face0.includes('fill-opacity="0.9"'), 'set0 lost diamonds')
+assert(!face0.includes('fill-opacity="0.9"'), 'set0 still paints diamonds')
 
 const set1 = engine.generate({
   brief: brief(),

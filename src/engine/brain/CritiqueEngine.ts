@@ -2,6 +2,7 @@ import { densityCap } from './CompositionGrammar'
 import type { DesignScorecard } from './DesignScore'
 import type { DesignPlan } from './DesignPlan'
 import { detectCrossSectorBleed, lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
+import { CRITIQUE_THRESHOLDS } from './scoreConfig'
 
 export type CritiqueHint = {
   action: 'KEEP' | 'MODIFY'
@@ -60,12 +61,15 @@ export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard, faceM
     hints.push({ action: 'MODIFY', topic: 'honesty', note: scorecard.notes.join(' · ') || 'Örnek legal / barkod dürüstlüğü.' })
   }
 
-  const densityFail = failed(scorecard.densityFront, 50)
-  const lockupFail = failed(scorecard.lockupClearance, 45)
-  const hierarchyFail = failed(scorecard.hierarchyStrength ?? scorecard.hierarchy, 50)
-  const sectorFail = failed(scorecard.sectorBlind, 40)
-  const sideFail = failed(scorecard.sideIntentionality, 35)
-  const repetitionFail = (scorecard.repetitionPenalty ?? 0) > 55
+  const densityFail = failed(scorecard.densityFront, CRITIQUE_THRESHOLDS.densityFront)
+  const lockupFail = failed(scorecard.lockupClearance, CRITIQUE_THRESHOLDS.lockupClearance)
+  const hierarchyFail = failed(
+    scorecard.hierarchyStrength ?? scorecard.hierarchy,
+    CRITIQUE_THRESHOLDS.hierarchyStrength,
+  )
+  const sectorFail = failed(scorecard.sectorBlind, CRITIQUE_THRESHOLDS.sectorBlind)
+  const sideFail = failed(scorecard.sideIntentionality, CRITIQUE_THRESHOLDS.sideIntentionality)
+  const repetitionFail = (scorecard.repetitionPenalty ?? 0) > CRITIQUE_THRESHOLDS.repetitionPenalty
   const cap = densityCap(plan.style, plan.decor.density)
 
   if (densityFail) {
@@ -91,7 +95,14 @@ export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard, faceM
     hints.push({ action: 'MODIFY', topic: 'sideIntentionality', note: 'Yan panel artık / gürültü değil, bilinçli pattern olmalı.' })
   }
 
-  const needsRepair = densityFail || lockupFail || hierarchyFail || sectorFail || repetitionFail || sideFail || crossBleed
+  const leak = faceMarkup && plan.sector === 'serum' && /data-pattern="contour"|data-pattern="ornament"/.test(faceMarkup)
+  if (leak || (plan.sector === 'serum' && (plan.patternSystem.family === 'contour' || plan.patternSystem.family === 'ornament'))) {
+    hints.push({ action: 'MODIFY', topic: 'styleLeakage', note: 'Serum y\u00fczeyinde contour/ornament s\u0131z\u0131nt\u0131s\u0131.' })
+  }
+
+  const needsRepair =
+    densityFail || lockupFail || hierarchyFail || sectorFail || repetitionFail || sideFail || crossBleed || !!leak ||
+    (plan.sector === 'serum' && (plan.patternSystem.family === 'contour' || plan.patternSystem.family === 'ornament'))
   return {
     verdict: needsRepair ? 'modify' : 'keep',
     hints,

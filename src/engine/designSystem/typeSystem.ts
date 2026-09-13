@@ -33,6 +33,9 @@ export type LockupLayout = {
   productFont: string
   metaFont: string
   legalFont: string
+  brandWeight: number
+  productWeight: number
+  metaWeight: number
   hasRule: boolean
   ruleKind: 'foil' | 'double' | 'hair' | 'eco' | 'none'
 }
@@ -172,7 +175,7 @@ export function fitLine(
   return { size: s, tracking: t, width: estimateLineWidth(text, s, t, face) }
 }
 
-function clamp(n: number, lo: number, hi: number): number {
+export function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n))
 }
 
@@ -183,12 +186,11 @@ function splitBrand(text: string): [string, string] | null {
   return [words[0], words.slice(1).join(' ')]
 }
 
-function ruleKindOf(system: DesignSystem, labelFace: boolean): LockupLayout['ruleKind'] {
+function ruleKindOf(system: DesignSystem, _labelFace: boolean): LockupLayout['ruleKind'] {
   if (system.style === 'luxury') return 'foil'
   if (system.style === 'classic') return 'double'
   if (system.style === 'minimal') return 'hair'
   if (system.style === 'eco') return 'eco'
-  if (labelFace && system.style === 'luxury') return 'foil'
   return 'none'
 }
 
@@ -205,10 +207,11 @@ export function layoutFrontLockup(
   const wrap = labelFace && system.wrapSeam
   const left = system.align === 'left' || wrap
   const tScale = overrides.titleScale || 1
-  const padX = type.lockupPadX + (left ? 1.4 : 0)
-  const frameReserve = system.style === 'luxury' || system.style === 'classic' ? 3.2 : 1.1
+  const narrow = w < 56
+  const padX = (narrow ? type.lockupPadX * 0.72 : type.lockupPadX) + (left ? 1.4 : 0)
+  const frameReserve = system.style === 'luxury' || system.style === 'classic' ? (narrow ? 1.6 : 3.2) : 1.1
   const seamReserve = wrap ? Math.max(12, w * 0.16) : 0
-  const ax = wrap ? x + Math.max(7.2, w * 0.1) : left ? x + (labelFace ? 6.4 : 8.2) : x + w / 2
+  const ax = wrap ? x + Math.max(7.2, w * 0.1) : left ? x + (labelFace ? 6.4 : narrow ? 5.4 : 8.2) : x + w / 2
   const maxTextW = wrap
     ? Math.max(28, x + w - seamReserve - padX - ax)
     : left
@@ -251,13 +254,39 @@ export function layoutFrontLockup(
     type.minMm,
     faces.product,
   )
-  const categorySize = Math.max(type.minMm - (labelFace ? 0 : 0.15), Math.min(type.metaMm, type.categoryMm))
-  const categoryTrack = type.trackingMeta
-  const taglineSize = Math.max(type.minMm, type.taglineMm)
+  const categoryFit = fitLine(
+    cat && system.style !== 'minimal' ? cat : '',
+    Math.max(type.minMm - (labelFace ? 0 : 0.15), Math.min(type.metaMm, type.categoryMm)),
+    type.trackingMeta,
+    maxTextW,
+    Math.max(1.7, type.minMm - 0.4),
+    faces.meta,
+  )
+  const categorySize = cat && system.style !== 'minimal' ? categoryFit.size : Math.max(type.minMm - (labelFace ? 0 : 0.15), Math.min(type.metaMm, type.categoryMm))
+  const categoryTrack = cat && system.style !== 'minimal' ? categoryFit.tracking : type.trackingMeta
+  const taglineFit = fitLine(copy.tagline, Math.max(type.minMm, type.taglineMm), 0, maxTextW, type.minMm, system.serif ? 'serif' : 'sans')
+  const taglineSize = taglineFit.size
 
   const kind = ruleKindOf(system, labelFace)
   const hasRule = kind !== 'none'
   const lineStep = brandLines.length > 1 ? brandFit.size * 1.14 : 0
+
+  // Font-weight hierarchy: brand carries authority, product supports, meta recedes.
+  // Minimal uses light weights for an airy editorial voice; luxury/classic lean heavier.
+  const brandWeight =
+    system.style === 'minimal' ? 500 :
+    system.style === 'luxury' || system.style === 'classic' ? 700 :
+    system.style === 'playful' ? 700 :
+    600
+  const productWeight =
+    system.style === 'minimal' ? 300 :
+    system.style === 'luxury' || system.style === 'classic' ? 500 :
+    400
+  const metaWeight =
+    system.style === 'minimal' ? 300 :
+    system.style === 'luxury' || system.style === 'classic' ? 500 :
+    400
+
   const afterBrand = (hasRule ? brandFit.size * 0.2 + type.ruleGapMm : brandFit.size * 0.42) + lineStep
   const afterRule = hasProduct ? productFit.size * 0.82 + (hasRule ? type.ruleGapMm * 0.55 : 0) : 0
   const afterProduct = cat && system.style !== 'minimal' ? categorySize * 1.55 : 0
@@ -271,8 +300,8 @@ export function layoutFrontLockup(
   const avail = bottomLimit - topLimit
   let gapScale = 1
   if (stackH > avail && avail > 12) {
-    gapScale = avail / stackH
-    stackH = avail
+    gapScale = Math.max(0.62, avail / stackH)
+    stackH = Math.min(stackH, avail)
   }
 
   const opticalY = y + h * type.opticalCenter
@@ -315,10 +344,13 @@ export function layoutFrontLockup(
     brandTracking: brandFit.tracking,
     productTracking: productFit.tracking,
     categoryTracking: categoryTrack,
-    brandFont: fontStack(faces.display),
-    productFont: fontStack(faces.product),
-    metaFont: fontStack(faces.meta),
-    legalFont: fontStack(faces.legal),
+    brandFont: fontStack(faces.display, { role: 'display', style: system.style, sector: system.sector }),
+    productFont: fontStack(faces.product, { role: 'product', style: system.style, sector: system.sector }),
+    metaFont: fontStack(faces.meta, { role: 'meta', style: system.style, sector: system.sector }),
+    legalFont: fontStack(faces.legal, { role: 'legal', style: system.style, sector: system.sector }),
+    brandWeight,
+    productWeight,
+    metaWeight,
     hasRule,
     ruleKind: kind,
   }
@@ -367,7 +399,7 @@ export function smallCapsText(
       return `<tspan font-size="${fs.toFixed(2)}">${esc(run.text)}</tspan>`
     })
     .join('')
-  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" letter-spacing="${tracking}">${tspans}</text>`
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" font-weight="600" letter-spacing="${tracking}">${tspans}</text>`
 }
 
 export function volumeMarkup(
@@ -385,5 +417,5 @@ export function volumeMarkup(
   if (type.volumeCase === 'smallcaps') {
     return smallCapsText(x, y, label, type.volumeMm, 1.15, fill, anchor, font, type.smallCapsRatio)
   }
-  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" font-size="${type.volumeMm}" letter-spacing="1.35">${esc(label.toUpperCase())}</text>`
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" font-weight="600" font-size="${type.volumeMm}" letter-spacing="1.35">${esc(label.toUpperCase())}</text>`
 }

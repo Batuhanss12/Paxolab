@@ -30,10 +30,10 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
     notes.push('Logo ölçeğini küçülttüm.')
   }
 
-  if (/yazıyı\s*büyüt|başlığı\s*büyüt/i.test(text)) {
+  if (/yazıyı\s*büyüt|başlığı\s*büyüt|ürün(?:ün)?\s*adın[ıi]\s*büyüt|ürünü\s*büyüt/i.test(text)) {
     overridePatch.titleScale = 1.28
     notes.push('Başlık tipografisini açtım.')
-  } else if (/yazıyı\s*küçült|başlığı\s*küçült/i.test(text)) {
+  } else if (/yazıyı\s*küçült|başlığı\s*küçült|ürün(?:ün)?\s*adın[ıi]\s*küçült|ürünü\s*küçült/i.test(text)) {
     overridePatch.titleScale = 0.82
     notes.push('Başlığı daha sessiz hale getirdim.')
   }
@@ -61,6 +61,29 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
       notes.push(`Stil ${style} yönüne çekildi — yüzey yeniden kuruldu.`)
       break
     }
+  }
+
+  if (/altın\s*ekle|gold\s*(?:ekle|add)|altın\s*vurgu|foil\s*ekle/i.test(text)) {
+    overridePatch.paletteShift = 'gold'
+    overridePatch.premium = true
+    if (!briefPatch.styleType) briefPatch.styleType = 'luxury'
+    notes.push('Altın vurgu ekledim.')
+  }
+
+  if (/daha\s*(cesur|grafik)|kontrastı\s*artır/i.test(text)) {
+    overridePatch.directorCue = 'graphic-push'
+    overridePatch.titleScale = Math.max(overridePatch.titleScale ?? 1, 1.12)
+    notes.push('Kontrastı ve grafik otoriteyi yükselttim.')
+  }
+  if (/daha\s*(genç|dinamik)/i.test(text)) {
+    briefPatch.styleType = 'playful'
+    overridePatch.directorCue = 'graphic-push'
+    notes.push('Duruşu daha genç ve dinamik yaptım.')
+  }
+  if (/daha\s*(olgun|zamansız|güvenilir)/i.test(text)) {
+    briefPatch.styleType = 'classic'
+    overridePatch.directorCue = 'open-air'
+    notes.push('Duruşu daha olgun ve zamansız yaptım.')
   }
 
   if (/daha\s*koyu|darker/i.test(text)) {
@@ -118,7 +141,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
 }
 
 export function isIteration(text: string): boolean {
-  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç/i.test(
+  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad/i.test(
     text,
   )
 }

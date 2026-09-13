@@ -1,6 +1,6 @@
 import { FormaLocalEngine } from '../src/engine/FormaLocalEngine'
 import { resetArtMemory } from '../src/engine/brain/DesignMemory'
-import { lookupVocabulary, resolveSubProduct, detectCrossSectorBleed } from '../src/engine/brain/SectorVisualVocabulary'
+import { lookupVocabulary, detectCrossSectorBleed } from '../src/engine/brain/SectorVisualVocabulary'
 import type { DesignBrief } from '../src/types'
 
 function brief(partial: Partial<DesignBrief> = {}): DesignBrief {

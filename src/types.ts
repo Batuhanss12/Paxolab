@@ -46,6 +46,8 @@ export type DesignBrief = {
   logo: string
   references: string
   copyOverrides: string
+  /** Ingredient claim badges for label front, e.g. "BIOTIN + COLLAGEN" or "KERATIN, ARGAN, COLLAGEN" */
+  ingredientClaims?: string
 }
 
 export type BriefFieldKey = keyof DesignBrief
@@ -73,6 +75,8 @@ export type DesignOverrides = {
   directorCue?: string
   /** v3.6 variation set. 0 = kit default. Each click bumps and picks another allowed hero/pattern. */
   variationIndex?: number
+  /** Pin a library hero (monstera / palm / organic-wave / zebra). Must stay vocab-legal. */
+  heroFamily?: import('./engine/brain/DesignPlan').HeroFamily
 }
 
 export type Palette = {
@@ -167,13 +171,14 @@ export type DesignSpec = {
   templateId: string
   structureId: StructureId
   dieline: DielineModel
+  document: import('./engine/document/types').DesignDocument
   artwork: ArtworkModel
   preflight: PreflightReport
   designPlan?: import('./engine/brain/DesignPlan').DesignPlan
   critique?: import('./engine/brain/CritiqueEngine').CritiqueReport
 }
 
-export type TabId = 'konusma' | 'vektor' | 'dieline' | 'onizleme3d' | 'uretim'
+export type TabId = 'konusma' | 'vektor' | 'karsilastir' | 'dieline' | 'onizleme3d' | 'uretim'
 
 export type AppPhase = 'landing' | 'workspace'
 

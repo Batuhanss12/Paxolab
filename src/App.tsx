@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { appReducer, createInitialAppState } from './appState'
 import { Landing } from './components/Landing'
 import { Workspace } from './components/Workspace'
 import { openingReply, runConversation } from './engine/conversation'
@@ -7,19 +8,32 @@ import { emptyBrief, mergeBrief, uid } from './engine/fields'
 import { styleLabel } from './engine/styles'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
-import type {
-  AppPhase,
-  Attachment,
-  AwaitingKey,
-  DesignBrief,
-  ChatMessage,
-  DesignSpec,
-  DimensionsMm,
-  StyleType,
-  TabId,
-} from './types'
+import { analyzeReferenceImage } from './engine/referenceAnalysis'
+import { ApiError, loadAuth, type AuthUser } from './api/client'
+import {
+  commitReservation,
+  refundReservation,
+  reserveCredits,
+} from './api/credits'
+import {
+  hydrateFromCloudAfterLogin,
+  loadSession,
+  saveSession,
+  setCloudProjectId,
+  syncSessionToCloud,
+} from './projectStore'
+import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
+
+function restoredAppState() {
+  return {
+    ...createInitialAppState(),
+    ...(loadSession() ?? {}),
+    pending: [],
+    allAttachments: [],
+  }
+}
 
 function readFiles(list: FileList | null): Promise<Attachment[]> {
   if (!list) return Promise.resolve([])
@@ -45,66 +59,116 @@ function readFiles(list: FileList | null): Promise<Attachment[]> {
 }
 
 export default function App() {
-  const [phase, setPhase] = useState<AppPhase>('landing')
-  const [prompt, setPrompt] = useState('')
-  const [pending, setPending] = useState<Attachment[]>([])
-  const [allAttachments, setAllAttachments] = useState<Attachment[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [brief, setBrief] = useState<DesignBrief>(emptyBrief)
-  const [awaiting, setAwaiting] = useState<AwaitingKey | null>(null)
-  const [design, setDesign] = useState<DesignSpec | null>(null)
-  const [typing, setTyping] = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const [inputsOpen, setInputsOpen] = useState(true)
-  const [tab, setTab] = useState<TabId>('vektor')
-  const [showTemplates, setShowTemplates] = useState(false)
+  const [state, dispatch] = useReducer(appReducer, undefined, restoredAppState)
+  const {
+    phase,
+    prompt,
+    pending,
+    allAttachments,
+    messages,
+    brief,
+    awaiting,
+    design,
+    designHistory,
+    designFuture,
+    typing,
+    generating,
+    inputsOpen,
+    tab,
+    showTemplates,
+  } = state
 
   const briefRef = useRef(brief)
   const awaitingRef = useRef(awaiting)
   const designRef = useRef(design)
   const attachRef = useRef(allAttachments)
-  const startedRef = useRef(false)
+  const startedRef = useRef(messages.length > 0)
+  const stateRef = useRef(state)
+  const [syncNote, setSyncNote] = useState<string | null>(null)
+  const syncNoteTimer = useRef(0)
+  const [creditsRefreshKey, setCreditsRefreshKey] = useState(0)
+
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => saveSession(state), 250)
+    return () => window.clearTimeout(timer)
+  }, [state])
+
+  useEffect(() => {
+    if (!loadAuth()?.token) return
+    const timer = window.setTimeout(() => {
+      void syncSessionToCloud(state)
+    }, 900)
+    return () => window.clearTimeout(timer)
+  }, [state])
+
+  const flashNote = useCallback((note: string) => {
+    setSyncNote(note)
+    window.clearTimeout(syncNoteTimer.current)
+    syncNoteTimer.current = window.setTimeout(() => setSyncNote(null), 5000)
+  }, [])
+
+  const authUserIdRef = useRef<string | null>(loadAuth()?.user?.id ?? null)
+
+  const onAuthChange = useCallback(
+    (user: AuthUser | null) => {
+      const nextId = user?.id ?? null
+      if (authUserIdRef.current === nextId) return
+      const wasLoggedIn = !!authUserIdRef.current
+      authUserIdRef.current = nextId
+      if (!user) {
+        setCloudProjectId(null)
+        if (wasLoggedIn) flashNote('Misafir modu — yerel kayıt.')
+        return
+      }
+      void hydrateFromCloudAfterLogin(stateRef.current).then((result) => {
+        if (result.kind === 'loaded') {
+          dispatch({ type: 'hydrate', state: result.state })
+          if (result.state.design) designRef.current = result.state.design
+          if (result.state.brief) briefRef.current = result.state.brief
+          if (result.state.awaiting !== undefined) awaitingRef.current = result.state.awaiting ?? null
+          if (result.state.messages && result.state.messages.length > 0) startedRef.current = true
+        }
+        flashNote(result.note)
+      })
+    },
+    [flashNote],
+  )
 
   const reset = useCallback(() => {
-    setPhase('landing')
-    setPrompt('')
-    setPending([])
-    setAllAttachments([])
+    dispatch({ type: 'reset' })
     attachRef.current = []
-    setMessages([])
     const fresh = emptyBrief()
-    setBrief(fresh)
     briefRef.current = fresh
-    setAwaiting(null)
     awaitingRef.current = null
-    setDesign(null)
     designRef.current = null
-    setTyping(false)
-    setGenerating(false)
-    setInputsOpen(true)
-    setTab('vektor')
-    setShowTemplates(false)
     startedRef.current = false
   }, [])
 
   const attach = useCallback(async (files: FileList | null) => {
     const next = await readFiles(files)
     if (next.length === 0) return
-    setPending((p) => {
-      const tagged = next.map((a, i) =>
-        p.length + i === 0 ? { ...a, kind: 'logo' as const } : a,
-      )
-      setAllAttachments((all) => {
-        const merged = [...all, ...tagged]
-        attachRef.current = merged
-        return merged
-      })
-      return [...p, ...tagged]
-    })
+    const hasLogo = attachRef.current.some((attachment) => attachment.kind === 'logo')
+    const tagged = next.map((attachment, index) =>
+      !hasLogo && index === 0 ? { ...attachment, kind: 'logo' as const } : attachment,
+    )
+    attachRef.current = [...attachRef.current, ...tagged]
+    dispatch({ type: 'attachments.add', attachments: tagged })
+    if (!briefRef.current.colors) {
+      const palette = await analyzeReferenceImage(tagged[0].dataUrl)
+      if (palette.length) {
+        const nextBrief = { ...briefRef.current, colors: palette.join(' · ') }
+        briefRef.current = nextBrief
+        dispatch({ type: 'brief', brief: nextBrief })
+      }
+    }
   }, [])
 
   const removePending = useCallback((id: string) => {
-    setPending((p) => p.filter((a) => a.id !== id))
+    dispatch({ type: 'pending.remove', id })
   }, [])
 
   const dimTimer = useRef<number>(0)
@@ -113,26 +177,81 @@ export default function App() {
     nextBrief: DesignBrief,
     result?: { overridePatch?: ReturnType<typeof runConversation>['overridePatch']; copyPatch?: ReturnType<typeof runConversation>['copyPatch'] },
   ) => {
-    setGenerating(true)
-    window.setTimeout(() => {
-      const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
-      const next = engine.generate({
-        brief: nextBrief,
-        prev: designRef.current,
-        overridePatch: result?.overridePatch,
-        copyPatch: result?.copyPatch,
-        logoHref: logo?.dataUrl,
+    dispatch({ type: 'generation.start' })
+    const attemptId = uid()
+    const hasPrev = !!designRef.current
+    const auth = loadAuth()
+
+    const finishFail = (message: string) => {
+      dispatch({ type: 'generation.abort' })
+      dispatch({
+        type: 'messages.add',
+        messages: [{ id: uid(), role: 'assistant', content: message }],
       })
-      designRef.current = next
-      briefRef.current = next.brief
-      setBrief(next.brief)
-      setDesign(next)
-      setShowTemplates(false)
-      if (result?.overridePatch?.printReady) setTab('uretim')
-      else setTab((t) => (t === 'konusma' ? 'vektor' : t))
-      setGenerating(false)
-    }, 720)
-  }, [])
+      flashNote(message)
+    }
+
+    void (async () => {
+      let reservationId: string | null = null
+      try {
+        if (auth?.token) {
+          const operation = hasPrev ? 'revise' : 'generate'
+          try {
+            const reserved = await reserveCredits({
+              operation,
+              clientRequestId: attemptId,
+            })
+            reservationId = reserved.reservationId
+            setCreditsRefreshKey((k) => k + 1)
+          } catch (err) {
+            if (err instanceof ApiError && err.status === 402) {
+              finishFail('Krediniz yetersiz')
+              return
+            }
+            finishFail(err instanceof Error ? err.message : 'Kredi rezervasyonu başarısız.')
+            return
+          }
+        }
+
+        await new Promise((r) => window.setTimeout(r, 720))
+
+        const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
+        const next = engine.generate({
+          brief: nextBrief,
+          prev: designRef.current,
+          overridePatch: result?.overridePatch,
+          copyPatch: result?.copyPatch,
+          logoHref: logo?.dataUrl,
+        })
+        designRef.current = next
+        briefRef.current = next.brief
+        dispatch({
+          type: 'generation.finish',
+          design: next,
+          printReady: !!result?.overridePatch?.printReady,
+        })
+
+        if (reservationId) {
+          try {
+            await commitReservation(reservationId)
+            setCreditsRefreshKey((k) => k + 1)
+          } catch {
+            /* ledger already debited on reserve; commit is best-effort note */
+          }
+        }
+      } catch (err) {
+        if (reservationId) {
+          try {
+            await refundReservation(reservationId, 'generation_failed')
+            setCreditsRefreshKey((k) => k + 1)
+          } catch {
+            /* ignore refund errors */
+          }
+        }
+        finishFail(err instanceof Error ? err.message : 'Üretim başarısız.')
+      }
+    })()
+  }, [flashNote])
 
   const process = useCallback((text: string, files: Attachment[]) => {
     const user: ChatMessage = {
@@ -143,8 +262,8 @@ export default function App() {
     }
     const first = !startedRef.current
     startedRef.current = true
-    setMessages((m) => [...m, user])
-    setTyping(true)
+    dispatch({ type: 'messages.add', messages: [user] })
+    dispatch({ type: 'typing', typing: true })
 
     const finish = (mergedBrief: DesignBrief) => {
       const result = runConversation({
@@ -157,9 +276,12 @@ export default function App() {
 
       briefRef.current = result.brief
       awaitingRef.current = result.awaiting
-      setBrief(result.brief)
-      setAwaiting(result.awaiting)
-      setShowTemplates(result.showTemplates)
+      dispatch({
+        type: 'conversation',
+        brief: result.brief,
+        awaiting: result.awaiting,
+        showTemplates: result.showTemplates,
+      })
 
       const replies = [...result.replies]
       if (first && !result.brief.brandName) {
@@ -168,15 +290,15 @@ export default function App() {
       }
 
       const publish = () => {
-        setMessages((m) => [
-          ...m,
-          ...replies.map((content) => ({
+        dispatch({
+          type: 'messages.add',
+          messages: replies.map((content) => ({
             id: uid(),
             role: 'assistant' as const,
             content,
           })),
-        ])
-        setTyping(false)
+        })
+        dispatch({ type: 'typing', typing: false })
       }
 
       if (result.shouldGenerate) {
@@ -202,9 +324,9 @@ export default function App() {
       const text = (forced ?? prompt).trim()
       const files = pending
       if (!text && files.length === 0) return
-      if (phase === 'landing') setPhase('workspace')
-      setPrompt('')
-      setPending([])
+      if (phase === 'landing') dispatch({ type: 'phase', phase: 'workspace' })
+      dispatch({ type: 'prompt', prompt: '' })
+      dispatch({ type: 'pending.clear' })
       process(text, files)
     },
     [pending, phase, process, prompt],
@@ -221,8 +343,8 @@ export default function App() {
         sector: briefRef.current.sector || tmpl?.sectors[0] || '',
       }
       briefRef.current = next
-      setBrief(next)
-      setPhase('workspace')
+      dispatch({ type: 'brief', brief: next })
+      dispatch({ type: 'phase', phase: 'workspace' })
       const result = runConversation({
         text: 'şablon seçildi',
         attachments: [],
@@ -230,10 +352,10 @@ export default function App() {
         awaiting: 'templateId',
         hasDesign: false,
       })
-      setMessages((m) => [
-        ...m,
-        { id: uid(), role: 'assistant', content: result.replies[0] || 'Motor çalışıyor.' },
-      ])
+      dispatch({
+        type: 'messages.add',
+        messages: [{ id: uid(), role: 'assistant', content: result.replies[0] || 'Motor çalışıyor.' }],
+      })
       runGenerate(next, result)
     },
     [runGenerate],
@@ -242,7 +364,7 @@ export default function App() {
   const onDims = useCallback((dims: DimensionsMm) => {
     const next = { ...briefRef.current, dimensionsMm: dims }
     briefRef.current = next
-    setBrief(next)
+    dispatch({ type: 'brief', brief: next })
     if (!designRef.current) return
     window.clearTimeout(dimTimer.current)
     dimTimer.current = window.setTimeout(() => {
@@ -253,48 +375,68 @@ export default function App() {
   const onStyle = useCallback((style: StyleType) => {
     const next = { ...briefRef.current, styleType: style }
     briefRef.current = next
-    setBrief(next)
-    setAwaiting((prev) => (prev === 'styleType' ? null : prev))
+    dispatch({ type: 'brief', brief: next })
     awaitingRef.current = awaitingRef.current === 'styleType' ? null : awaitingRef.current
+    dispatch({ type: 'awaiting', awaiting: awaitingRef.current })
     if (!designRef.current) return
-    setMessages((m) => [
-      ...m,
-      { id: uid(), role: 'assistant', content: `Stil ${styleLabel(style)} — yüzey yeniden kuruldu.` },
-    ])
+    dispatch({
+      type: 'messages.add',
+      messages: [{ id: uid(), role: 'assistant', content: `Stil ${styleLabel(style)} — yüzey yeniden kuruldu.` }],
+    })
     runGenerate(next)
   }, [runGenerate])
 
   const onVary = useCallback(() => {
     if (!designRef.current) return
     const nextIndex = (designRef.current.designPlan?.variationIndex ?? 0) + 1
-    setMessages((m) => [
-      ...m,
-      {
-        id: uid(),
-        role: 'assistant',
-        content: `Varyasyon seti ${nextIndex + 1} — aynı brief, yeni kahraman / pattern.`,
-      },
-    ])
-    setTab('vektor')
+    dispatch({
+      type: 'messages.add',
+      messages: [
+        {
+          id: uid(),
+          role: 'assistant',
+          content: `Varyasyon seti ${nextIndex + 1} — aynı brief, yeni kahraman / pattern.`,
+        },
+      ],
+    })
+    dispatch({ type: 'tab', tab: 'vektor' })
     runGenerate(briefRef.current, { overridePatch: { variationIndex: nextIndex } })
   }, [runGenerate])
+
+  const onUndo = useCallback(() => {
+    const previous = designHistory.at(-1)
+    if (!previous) return
+    designRef.current = previous
+    briefRef.current = previous.brief
+    dispatch({ type: 'history.undo' })
+  }, [designHistory])
+
+  const onRedo = useCallback(() => {
+    const next = designFuture[0]
+    if (!next) return
+    designRef.current = next
+    briefRef.current = next.brief
+    dispatch({ type: 'history.redo' })
+  }, [designFuture])
 
   return (
     <div className="app">
       {phase === 'landing' ? (
         <Landing
           prompt={prompt}
-          onPrompt={setPrompt}
+          onPrompt={(value) => dispatch({ type: 'prompt', prompt: value })}
           attachments={pending}
           onAttach={attach}
           onRemoveAttach={removePending}
           onSend={send}
+          onAuthChange={onAuthChange}
+          creditsRefreshKey={creditsRefreshKey}
         />
       ) : (
         <Workspace
           messages={messages}
           prompt={prompt}
-          onPrompt={setPrompt}
+          onPrompt={(value) => dispatch({ type: 'prompt', prompt: value })}
           attachments={pending}
           allAttachments={allAttachments}
           onAttach={attach}
@@ -304,16 +446,23 @@ export default function App() {
           generating={generating}
           brief={brief}
           inputsOpen={inputsOpen}
-          onToggleInputs={() => setInputsOpen((v) => !v)}
+          onToggleInputs={() => dispatch({ type: 'inputs.toggle' })}
           design={design}
+          designHistory={designHistory}
+          canRedo={designFuture.length > 0}
+          onUndo={onUndo}
+          onRedo={onRedo}
           showTemplates={showTemplates}
           onPickTemplate={onPickTemplate}
           onDims={onDims}
           onStyle={onStyle}
           onVary={onVary}
           tab={tab}
-          onTab={setTab}
+          onTab={(nextTab) => dispatch({ type: 'tab', tab: nextTab })}
           onReset={reset}
+          onAuthChange={onAuthChange}
+          syncNote={syncNote}
+          creditsRefreshKey={creditsRefreshKey}
         />
       )}
     </div>

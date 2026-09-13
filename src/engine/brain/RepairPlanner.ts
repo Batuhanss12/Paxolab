@@ -1,4 +1,4 @@
-import { allowedHeroes, defaultBackground, defaultPattern } from './ArtDirection'
+import { allowedHeroes } from './ArtDirection'
 import { lookupVocabulary, resolveSubProduct, vocabSafeBackground, vocabSafeHero, vocabSafePattern } from './SectorVisualVocabulary'
 import { densityCap } from './CompositionGrammar'
 import type { CritiqueReport } from './CritiqueEngine'
@@ -58,6 +58,11 @@ export function repairPlan(plan: DesignPlan, report: CritiqueReport): DesignPlan
     const current = next.heroGraphic.family
     const swap = allowed.find((family) => family !== current) as HeroFamily | undefined
     if (swap) next.heroGraphic.family = swap
+  }
+
+  if (topicFailed(report, 'styleLeakage')) {
+    const vocab = lookupVocabulary(next.sector, resolveSubProduct(next.sector, next.subProduct || next.sector))
+    next.patternSystem.family = vocabSafePattern(vocab, next.style)
   }
 
   if (topicFailed(report, 'crossSectorBleed')) {

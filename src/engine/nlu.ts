@@ -2,15 +2,15 @@ import type { DesignBrief } from '../types'
 
 /** Optional FORMA-owned LLM extract. Heuristic engine stays the default. */
 export async function extractBriefWithLlm(text: string): Promise<Partial<DesignBrief> | null> {
-  const key = import.meta.env.VITE_FORMA_LLM_KEY
   const url = import.meta.env.VITE_FORMA_LLM_URL
-  if (!key || !url) return null
+  if (!url) return null
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
     },
+    credentials: 'same-origin',
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
@@ -34,7 +34,7 @@ export async function extractBriefWithLlm(text: string): Promise<Partial<DesignB
   if (brandKey && parsed.productName?.trim().toLocaleLowerCase('tr') === brandKey) delete parsed.productName
   if (brandKey && parsed.sector?.trim().toLocaleLowerCase('tr') === brandKey) delete parsed.sector
   if (brandKey && parsed.subProduct?.trim().toLocaleLowerCase('tr') === brandKey) delete parsed.subProduct
-  if (parsed.sector && !/kozmetik|gıda|elektronik|parfüm|parfum|krem|serum|yağ|temizlik/i.test(parsed.sector)) {
+  if (parsed.sector && !/kozmetik|gıda|içecek|sağlık|takviye|bebek|elektronik|parfüm|parfum|krem|serum|yağ|temizlik/i.test(parsed.sector)) {
     delete parsed.sector
   }
   return parsed

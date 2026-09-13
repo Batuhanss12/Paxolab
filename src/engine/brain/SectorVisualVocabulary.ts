@@ -14,6 +14,7 @@ export type SubProductId =
   | 'parfum' | 'cologne' | 'serum' | 'cream'
   | 'honey' | 'oil' | 'snack' | 'bakery' | 'beverage' | 'food-generic'
   | 'audio' | 'cable' | 'elec-generic'
+  | 'beverage' | 'health' | 'baby'
   | 'gift' | 'cleaning' | 'generic'
 
 export function resolveSubProduct(sector: SectorId, blob: string): SubProductId {
@@ -33,6 +34,9 @@ export function resolveSubProduct(sector: SectorId, blob: string): SubProductId 
     if (/kablo|şarj|cable/.test(blob)) return 'cable'
     return 'elec-generic'
   }
+  if (sector === 'beverage') return 'beverage'
+  if (sector === 'health') return 'health'
+  if (sector === 'baby') return 'baby'
   if (sector === 'cleaning') return 'cleaning'
   return 'generic'
 }
@@ -112,7 +116,7 @@ const VOCAB: VocabularyRow[] = [
     id: 'cream:cream',
     sectorId: 'cream', subProductId: 'cream',
     paletteFamilies: ['paper-clean', 'warm-cream'],
-    heroFamilies: ['oval', 'botanical', 'seal'],
+    heroFamilies: ['oval', 'botanical', 'seal', 'emblem', 'monstera', 'palm', 'organic-wave', 'zebra'],
     patternFamilies: ['contour', 'grain', 'none'],
     backgroundTreatments: ['quiet-paper', 'dark-field'],
     ornamentLevel: 1,
@@ -130,8 +134,8 @@ const VOCAB: VocabularyRow[] = [
     id: 'serum:serum',
     sectorId: 'serum', subProductId: 'serum',
     paletteFamilies: ['paper-clean', 'cool-neutral'],
-    heroFamilies: ['botanical', 'oval'],
-    patternFamilies: ['none', 'contour'],
+    heroFamilies: ['botanical', 'oval', 'emblem', 'monstera', 'palm', 'organic-wave', 'zebra'],
+    patternFamilies: ['none', 'stripe'],
     backgroundTreatments: ['quiet-paper'],
     ornamentLevel: 0,
     primitives: ['dot'],
@@ -139,7 +143,7 @@ const VOCAB: VocabularyRow[] = [
     legalKitId: 'inci',
     typographyVoice: 'clean-sans',
     forbiddenHeroes: ['harvest', 'tech', 'crest'],
-    forbiddenPatterns: ['capsule', 'lattice'],
+    forbiddenPatterns: ['capsule', 'lattice', 'contour', 'ornament'],
     forbiddenMotifs: ['bee', 'mountain', 'flammable', 'weee'],
     frontRole: 'lockup-hero',
     backRole: 'legal-stack',
@@ -150,7 +154,7 @@ const VOCAB: VocabularyRow[] = [
     sectorId: 'food', subProductId: 'honey',
     paletteFamilies: ['warm-cream', 'kraft-natural'],
     heroFamilies: ['harvest', 'botanical', 'seal'],
-    patternFamilies: ['ornament', 'grain', 'contour'],
+    patternFamilies: ['ornament', 'grain', 'contour', 'weave'],
     backgroundTreatments: ['kraft', 'quiet-paper', 'dark-field'],
     ornamentLevel: 3,
     primitives: ['grain', 'leaf', 'diamond'],
@@ -168,7 +172,7 @@ const VOCAB: VocabularyRow[] = [
     sectorId: 'food', subProductId: 'oil',
     paletteFamilies: ['warm-cream', 'dark-gold', 'kraft-natural'],
     heroFamilies: ['harvest', 'seal'],
-    patternFamilies: ['ornament', 'contour', 'grain'],
+    patternFamilies: ['ornament', 'contour', 'grain', 'weave'],
     backgroundTreatments: ['dark-field', 'kraft', 'quiet-paper'],
     ornamentLevel: 2,
     primitives: ['grain', 'leaf'],
@@ -223,7 +227,7 @@ const VOCAB: VocabularyRow[] = [
     sectorId: 'electronics', subProductId: 'audio',
     paletteFamilies: ['cool-neutral', 'dark-gold'],
     heroFamilies: ['tech', 'none'],
-    patternFamilies: ['lattice', 'stripe', 'none'],
+    patternFamilies: ['lattice', 'stripe', 'hexagon', 'dotgrid', 'none'],
     backgroundTreatments: ['quiet-paper', 'dark-field'],
     ornamentLevel: 0,
     primitives: ['dot', 'rule'],
@@ -241,7 +245,7 @@ const VOCAB: VocabularyRow[] = [
     sectorId: 'electronics', subProductId: 'cable',
     paletteFamilies: ['cool-neutral', 'paper-clean'],
     heroFamilies: ['tech', 'none'],
-    patternFamilies: ['lattice', 'stripe', 'none'],
+    patternFamilies: ['lattice', 'stripe', 'hexagon', 'dotgrid', 'none'],
     backgroundTreatments: ['quiet-paper'],
     ornamentLevel: 0,
     primitives: ['dot'],
@@ -259,7 +263,7 @@ const VOCAB: VocabularyRow[] = [
     sectorId: 'electronics', subProductId: 'elec-generic',
     paletteFamilies: ['cool-neutral'],
     heroFamilies: ['tech', 'none'],
-    patternFamilies: ['lattice', 'stripe', 'none'],
+    patternFamilies: ['lattice', 'stripe', 'hexagon', 'dotgrid', 'none'],
     backgroundTreatments: ['quiet-paper', 'dark-field'],
     ornamentLevel: 0,
     primitives: ['dot', 'rule'],
@@ -271,6 +275,60 @@ const VOCAB: VocabularyRow[] = [
     forbiddenMotifs: ['bee', 'mountain', 'honey', 'flammable', 'pao', 'nutrition-table'],
     frontRole: 'lockup-spec',
     backRole: 'spec-compliance',
+  },
+  {
+    id: 'beverage:beverage',
+    sectorId: 'beverage', subProductId: 'beverage',
+    paletteFamilies: ['bright-pop', 'kraft-natural', 'cool-neutral'],
+    heroFamilies: ['botanical', 'emblem', 'organic-wave', 'none'],
+    patternFamilies: ['grain', 'stripe', 'weave', 'none'],
+    backgroundTreatments: ['dual-tone', 'quiet-paper', 'kraft'],
+    ornamentLevel: 1,
+    primitives: ['wave', 'leaf', 'dot'],
+    claimStrip: true,
+    legalKitId: 'nutrition',
+    typographyVoice: 'mixed',
+    forbiddenHeroes: ['tech', 'crest'],
+    forbiddenPatterns: ['ornament', 'lattice'],
+    forbiddenMotifs: ['flammable', 'pao', 'weee'],
+    frontRole: 'lockup-claim',
+    backRole: 'nutrition-table',
+  },
+  {
+    id: 'health:health',
+    sectorId: 'health', subProductId: 'health',
+    paletteFamilies: ['paper-clean', 'cool-neutral'],
+    heroFamilies: ['oval', 'emblem', 'none'],
+    patternFamilies: ['stripe', 'capsule', 'none'],
+    backgroundTreatments: ['quiet-paper', 'dual-tone'],
+    ornamentLevel: 0,
+    primitives: ['rule', 'dot'],
+    claimStrip: true,
+    legalKitId: 'directions',
+    typographyVoice: 'clean-sans',
+    forbiddenHeroes: ['harvest', 'crest', 'seal'],
+    forbiddenPatterns: ['ornament', 'contour', 'grain'],
+    forbiddenMotifs: ['bee', 'flammable', 'nutrition-table'],
+    frontRole: 'lockup-spec',
+    backRole: 'legal-stack',
+  },
+  {
+    id: 'baby:baby',
+    sectorId: 'baby', subProductId: 'baby',
+    paletteFamilies: ['warm-cream', 'paper-clean', 'bright-pop'],
+    heroFamilies: ['organic-wave', 'emblem', 'oval', 'none'],
+    patternFamilies: ['capsule', 'stripe', 'none'],
+    backgroundTreatments: ['quiet-paper', 'dual-tone'],
+    ornamentLevel: 1,
+    primitives: ['wave', 'dot'],
+    claimStrip: true,
+    legalKitId: 'directions',
+    typographyVoice: 'mixed',
+    forbiddenHeroes: ['tech', 'crest', 'harvest'],
+    forbiddenPatterns: ['ornament', 'contour', 'lattice'],
+    forbiddenMotifs: ['flammable', 'weee'],
+    frontRole: 'lockup-claim',
+    backRole: 'legal-stack',
   },
   // ── CLEANING ──
   {
@@ -384,7 +442,8 @@ export function vocabSafeHero(vocab: VocabularyRow, style: StyleType): HeroFamil
 
 /** Style-safe pattern: vocabulary first. */
 export function vocabSafePattern(vocab: VocabularyRow, style: StyleType): PatternFamily {
-  const allowed = vocab.patternFamilies
+  const leak = styleForbiddenPatterns(style, vocab.sectorId)
+  const allowed = vocab.patternFamilies.filter((p) => !leak.includes(p) && !vocab.forbiddenPatterns.includes(p))
   if (style === 'minimal') return 'none'
   if (style === 'eco' && allowed.includes('grain')) return 'grain'
   if (style === 'modern' && allowed.includes('lattice')) return 'lattice'
@@ -394,6 +453,23 @@ export function vocabSafePattern(vocab: VocabularyRow, style: StyleType): Patter
 }
 
 /** Style-safe background. */
+/** Hero is required unless the style is air or the vocab is utility-only. */
+export function vocabHeroRequired(vocab: VocabularyRow, style: StyleType, surface: 'box' | 'label'): boolean {
+  if (style === 'minimal') return false
+  if (vocab.sectorId === 'cleaning' || vocab.sectorId === 'generic') return false
+  if (vocab.sectorId === 'electronics' && surface === 'label') return false
+  return true
+}
+
+/** Style-token leak list. Semantic: contour / ornament never on clinical serum. */
+export function styleForbiddenPatterns(style: StyleType, sector: SectorId): PatternFamily[] {
+  if (sector === 'serum') return ['contour', 'ornament', 'grain']
+  if (style === 'modern' && sector !== 'perfume') return ['contour', 'ornament']
+  if (style === 'playful') return ['contour']
+  if (style === 'minimal') return ['contour', 'ornament', 'lattice']
+  return []
+}
+
 export function vocabSafeBackground(vocab: VocabularyRow, style: StyleType): BackgroundTreatment {
   if (style === 'eco' && vocab.backgroundTreatments.includes('kraft')) return 'kraft'
   if ((style === 'luxury' || style === 'classic') && vocab.backgroundTreatments.includes('dark-field')) return 'dark-field'

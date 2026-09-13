@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local API database
+server/data/*
+!server/data/.gitkeep

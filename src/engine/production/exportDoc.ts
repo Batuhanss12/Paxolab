@@ -2,6 +2,8 @@ import type { DesignSpec } from '../../types'
 import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { renderStructureDoc } from '../dieline/renderDielineSvg'
+import { buildDielineDxf } from './dxf'
+import { artworkFromDocument } from '../document'
 
 function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -10,6 +12,7 @@ function escapeXml(value: string): string {
 export function buildCombinedSvg(spec: DesignSpec): string | null {
   if (spec.preflight.collisions || !spec.dieline.consistent) return null
   if (isInventedRegisteredGtin(spec.copy.barcode, spec.brief.barcodeDefaulted)) return null
+  const artwork = artworkFromDocument(spec.document)
   const pad = 8
   const w = spec.dieline.width + pad * 2
   const h = spec.dieline.height + pad * 2
@@ -28,22 +31,29 @@ export function buildCombinedSvg(spec: DesignSpec): string | null {
   const sampleNote = isFormaSampleEan(spec.copy.barcode)
     ? '\n  <!-- FORMA: sample barcode 200… is not a GS1 GTIN. Replace before production. -->'
     : ''
-  const proofNote = '\n  <!-- FORMA proof: 2 mm safe inset · not PDF/X. -->'
-  const safe =
-    spec.overrides.printReady
-      ? spec.dieline.panels
-          .filter((p) => !spec.dieline.glueIds.includes(p.id))
-          .map((p) => {
-            const inset = 2
-            return `<rect x="${p.x + pad + inset}" y="${p.y + pad + inset}" width="${Math.max(0, p.w - inset * 2)}" height="${Math.max(0, p.h - inset * 2)}" fill="none" stroke="rgba(90,180,120,0.32)" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
-          })
-          .join('')
-      : ''
+  // Proof overlays only: 2 mm safe (inward) + 2 mm bleed guide (outward). Not press bleed / not PDF/X.
+  const proofNote = '\n  <!-- FORMA proof: 2 mm safe inset · 2 mm bleed guide (overlay only) · not PDF/X. -->'
+  const proofPanels = spec.overrides.printReady
+    ? spec.dieline.panels.filter((p) => !spec.dieline.glueIds.includes(p.id))
+    : []
+  const safe = proofPanels
+    .map((p) => {
+      const inset = 2
+      return `<rect x="${p.x + pad + inset}" y="${p.y + pad + inset}" width="${Math.max(0, p.w - inset * 2)}" height="${Math.max(0, p.h - inset * 2)}" fill="none" stroke="rgba(90,180,120,0.32)" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
+    })
+    .join('')
+  const bleed = proofPanels
+    .map((p) => {
+      const out = 2
+      return `<rect x="${p.x + pad - out}" y="${p.y + pad - out}" width="${p.w + out * 2}" height="${p.h + out * 2}" fill="none" stroke="rgba(200,120,80,0.28)" stroke-width="0.15" stroke-dasharray="1.2 0.9" data-proof="bleed" />`
+    })
+    .join('')
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">${sampleNote}${proofNote}
   <title>${escapeXml(spec.copy.brand)} — FORMA combined</title>
   <defs>${clipDefs(spec.dieline)}</defs>
-  <g transform="translate(${pad} ${pad})">${artworkMarkup(spec.artwork)}</g>
+  <g transform="translate(${pad} ${pad})">${artworkMarkup(artwork)}</g>
+  ${bleed ? `<g data-proof="bleed-set">${bleed}</g>` : ''}
   ${safe ? `<g data-proof="safe-set">${safe}</g>` : ''}
   ${crease}
   ${cut}
@@ -54,14 +64,17 @@ export function buildExportSvg(spec: DesignSpec): string | null {
   return buildCombinedSvg(spec)
 }
 
-export function buildExportBundle(spec: DesignSpec): { dieline: string; artwork: string; combined: string } | null {
+export function buildExportBundle(
+  spec: DesignSpec,
+): { dieline: string; artwork: string; combined: string; dxf: string } | null {
   const combined = buildCombinedSvg(spec)
   if (!combined) return null
   const slug = spec.copy.brand || 'forma'
   return {
     dieline: renderStructureDoc(spec.dieline, slug),
-    artwork: renderArtworkDoc(spec.dieline, spec.artwork, slug),
+    artwork: renderArtworkDoc(spec.dieline, artworkFromDocument(spec.document), slug),
     combined,
+    dxf: buildDielineDxf(spec.dieline),
   }
 }
 
@@ -81,6 +94,13 @@ export function downloadSvg(spec: DesignSpec): boolean {
   return true
 }
 
+export function downloadDxf(spec: DesignSpec): boolean {
+  if (!spec.preflight.exportOk) return false
+  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  triggerDownload(new Blob([buildDielineDxf(spec.dieline)], { type: 'application/dxf;charset=utf-8' }), `${slug}-dieline.dxf`)
+  return true
+}
+
 export function downloadZip(spec: DesignSpec): boolean {
   const bundle = buildExportBundle(spec)
   if (!bundle) return false
@@ -89,6 +109,7 @@ export function downloadZip(spec: DesignSpec): boolean {
     { name: `${slug}-dieline.svg`, data: bundle.dieline },
     { name: `${slug}-artwork.svg`, data: bundle.artwork },
     { name: `${slug}-combined.svg`, data: bundle.combined },
+    { name: `${slug}-dieline.dxf`, data: bundle.dxf },
   ])
   triggerDownload(blob, `${slug}-forma.zip`)
   return true
@@ -213,5 +234,8 @@ function zipStore(files: { name: string; data: string }[]): Blob {
     u32(offset),
     u16(0),
   ])
-  return new Blob([concat([...locals, centralDir, eocd])], { type: 'application/zip' })
+  const archive = concat([...locals, centralDir, eocd])
+  return new Blob([archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength) as ArrayBuffer], {
+    type: 'application/zip',
+  })
 }

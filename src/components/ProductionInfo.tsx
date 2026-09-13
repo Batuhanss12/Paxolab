@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DesignSpec } from '../types'
-import { downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
+import { downloadDxf, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
@@ -15,6 +15,10 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
   function onSvg() {
     const ok = downloadSvg(design)
     setExportNote(ok ? 'Combined SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
+  }
+  function onDxf() {
+    const ok = downloadDxf(design)
+    setExportNote(ok ? 'DXF dieline indirildi.' : 'DXF yok — kapı kırmızı.')
   }
   function onZip() {
     const ok = downloadZip(design)
@@ -45,8 +49,8 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
           : design.overrides.printReady
-            ? 'Ön kontrol geçti. SVG dışa aktarılabilir; PDF yazıcı diyaloğu ile alınır.'
-            : 'Motor yüzeyi üretti. “baskıya hazırla” yazınca taşma kilitlenir — yine de fail varsa yeşil olmaz.'}
+            ? 'Ön kontrol geçti. 2 mm güvenli + bleed guide (prova). SVG/DXF dışa aktarılır; PDF yazıcı diyaloğu — PDF/X değil.'
+            : 'Motor yüzeyi üretti. “baskıya hazırla” → 2 mm prova overlay; fail varsa yeşil olmaz.'}
       </p>
 
       <ul className="prod__list">
@@ -67,8 +71,11 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         <button type="button" className="ghost-btn" onClick={onSvg} disabled={!design.preflight.exportOk}>
           SVG indir
         </button>
+        <button type="button" className="ghost-btn" onClick={onDxf} disabled={!design.preflight.exportOk}>
+          DXF dieline
+        </button>
         <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
-          ZIP (dieline + art)
+          ZIP (SVG + DXF)
         </button>
         <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
           Yazdır / PDF

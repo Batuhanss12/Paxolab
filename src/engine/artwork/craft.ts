@@ -56,7 +56,7 @@ function hierarchyFor(system: DesignSystem): string {
 export function buildCraftPlan(
   brief: DesignBrief,
   dieline: DielineModel,
-  copy: DesignSpec['copy'],
+  _copy: DesignSpec['copy'],
   system: DesignSystem,
 ): CraftPlan {
   const face =

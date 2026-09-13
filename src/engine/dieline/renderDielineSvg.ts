@@ -5,6 +5,7 @@ const CREASE = '#cc3333'
 const GLUE = 'rgba(201, 168, 108, 0.32)'
 const PANEL = 'rgba(255,255,255,0.035)'
 const SAFE = 'rgba(90, 180, 120, 0.32)'
+const BLEED = 'rgba(200, 120, 80, 0.28)'
 
 export type DielineRenderMode = 'structure' | 'combined'
 
@@ -31,18 +32,22 @@ export function renderDielineSvg(
     )
     .join('')
 
+  // When printReady (safeInsetMm > 0): inward safe + outward bleed guide. Guide-only — not press bleed / PDF/X.
   const safeInset = opts?.safeInsetMm ?? 0
-  const combinedSafe =
-    combined && safeInset > 0
-      ? model.panels
-          .filter((p) => !model.glueIds.includes(p.id))
-          .map((p) => {
-            const w = Math.max(0, p.w - safeInset * 2)
-            const h = Math.max(0, p.h - safeInset * 2)
-            return `<rect x="${p.x + pad + safeInset}" y="${p.y + pad + safeInset}" width="${w}" height="${h}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
-          })
-          .join('')
-      : ''
+  const proofPanels =
+    combined && safeInset > 0 ? model.panels.filter((p) => !model.glueIds.includes(p.id)) : []
+  const combinedSafe = proofPanels
+    .map((p) => {
+      const w = Math.max(0, p.w - safeInset * 2)
+      const h = Math.max(0, p.h - safeInset * 2)
+      return `<rect x="${p.x + pad + safeInset}" y="${p.y + pad + safeInset}" width="${w}" height="${h}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
+    })
+    .join('')
+  const combinedBleed = proofPanels
+    .map((p) => {
+      return `<rect x="${p.x + pad - safeInset}" y="${p.y + pad - safeInset}" width="${p.w + safeInset * 2}" height="${p.h + safeInset * 2}" fill="none" stroke="${BLEED}" stroke-width="0.15" stroke-dasharray="1.2 0.9" data-proof="bleed" />`
+    })
+    .join('')
 
   const panels = model.panels
     .map((p) => {
@@ -63,6 +68,7 @@ export function renderDielineSvg(
     <rect width="${w}" height="${h}" fill="${paper}" />
     <g>${panels}</g>
     ${combined && opts?.artworkMarkup ? `<g transform="translate(${pad} ${pad})">${opts.artworkMarkup}</g>` : ''}
+    ${combinedBleed ? `<g data-proof="bleed-set">${combinedBleed}</g>` : ''}
     ${combinedSafe ? `<g data-proof="safe-set">${combinedSafe}</g>` : ''}
     <g>${crease}</g>
     <g>${cut}</g>

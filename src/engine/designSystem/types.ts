@@ -1,7 +1,17 @@
 import type { PackagingMode, StyleType } from '../../types'
 import type { MarkRecipe } from '../marks/types'
 
-export type SectorId = 'perfume' | 'cream' | 'serum' | 'food' | 'electronics' | 'cleaning' | 'generic'
+export type SectorId =
+  | 'perfume'
+  | 'cream'
+  | 'serum'
+  | 'food'
+  | 'beverage'
+  | 'health'
+  | 'baby'
+  | 'electronics'
+  | 'cleaning'
+  | 'generic'
 export type SurfaceMode = PackagingMode
 export type Grammar = 'box' | 'label'
 export type DecorFamily =

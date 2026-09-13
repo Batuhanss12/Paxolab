@@ -1,5 +1,6 @@
 import type { Attachment, DesignSpec } from '../types'
 import { renderFrontSvg } from '../engine/artwork/composeArtwork'
+import { artworkFromDocument } from '../engine/document'
 
 type Preview2DProps = {
   design: DesignSpec
@@ -7,7 +8,7 @@ type Preview2DProps = {
 }
 
 export function Preview2D({ design }: Preview2DProps) {
-  const svg = renderFrontSvg(design.dieline, design.artwork, design.palette)
+  const svg = renderFrontSvg(design.dieline, artworkFromDocument(design.document), design.palette)
   return (
     <div className="preview-stage">
       <div className="preview-stage__meta">

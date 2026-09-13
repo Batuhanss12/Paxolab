@@ -49,7 +49,7 @@ const wrapSys = resolveDesignSystem(wrapBrief, 'wrap-label')
 const flatSys = resolveDesignSystem(flatBrief, 'flat-label')
 
 assert(boxSys.lockup === 'centered-crest' && boxSys.decor === 'crest', `box lockup ${boxSys.lockup}/${boxSys.decor}`)
-assert(wrapSys.lockup === 'label-wrap' && wrapSys.decor === 'none' && wrapSys.wrapSeam && wrapSys.align === 'left', `wrap kit ${wrapSys.lockup}/${wrapSys.decor}`)
+assert(wrapSys.lockup === 'label-wrap' && wrapSys.decor === 'crest' && wrapSys.wrapSeam && wrapSys.align === 'left', `wrap kit ${wrapSys.lockup}/${wrapSys.decor}`)
 assert(flatSys.lockup === 'label-stack' && !flatSys.wrapSeam, `flat kit ${flatSys.lockup}`)
 assert(boxSys.key !== wrapSys.key, 'same brief collapsed to one kit')
 
@@ -68,6 +68,7 @@ const flatBack = flat.artwork.layers.find((l) => l.panelId === 'labelBack')?.mar
 
 assert(!boxFace.includes('SEAM'), 'box front has SEAM')
 assert(wrapFace.includes('SEAM'), 'wrap missing SEAM')
+assert(wrapFace.includes('data-hero="crest"') || wrapFace.includes('data-art="hero"'), 'wrap missing perfume hero')
 assert(!flatFace.includes('SEAM'), 'flat label has wrap SEAM')
 assert(boxBack.includes('COMPOSITION'), 'box back missing legal stack')
 assert(!wrapFace.includes('COMPOSITION') && !wrapFace.includes('FLAMMABLE'), 'wrap face has box legal')

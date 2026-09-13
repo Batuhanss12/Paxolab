@@ -69,9 +69,9 @@ export function lBrackets(panel: Panel, color: string): string {
     [x + w - o - L, y + h - o, x + w - o, y + h - o],
     [x + w - o, y + h - o, x + w - o, y + h - o - L],
   ]
-  return segs
+  return `<g data-art="l-bracket">${segs
     .map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${sw}" />`)
-    .join('')
+    .join('')}</g>`
 }
 
 /** Woo / eco botanical silhouettes — stamps, not photos. */
@@ -129,15 +129,24 @@ export function waveRibbon(panel: Panel, color: string, y0 = panel.y + 5.4, opac
   return `<path d="M${x} ${y0} C${x + w * 0.28} ${y0 - 3.2} ${x + w * 0.55} ${y0 + 3.6} ${x + w} ${y0}" fill="none" stroke="${color}" stroke-width="${weight}" stroke-opacity="${opacity}" />`
 }
 
-/** Wrap continuity: parallel waves + hairline that run to the SEAM edge. */
+/** Wrap continuity: layered wave field with accent dots that run to the SEAM edge. */
 export function wrapContinuity(panel: Panel, color: string): string {
   const { x, y, w, h } = panel
-  return [
-    waveRibbon(panel, color, y + Math.min(6.2, h * 0.08), 0.42, 0.7),
-    waveRibbon(panel, color, y + Math.min(8.4, h * 0.11), 0.22, 0.4),
-    `<line x1="${x + 2}" y1="${y + Math.min(9.6, h * 0.125)}" x2="${x + w - 1.2}" y2="${y + Math.min(9.6, h * 0.125)}" stroke="${color}" stroke-opacity="0.28" stroke-width="0.14" />`,
-    waveRibbon(panel, color, y + h - Math.min(7.2, h * 0.1), 0.38, 0.62),
-  ].join('')
+  // Layered top waves — three strokes with varying weight/opacity for depth
+  const topA = waveRibbon(panel, color, y + 5.4, 0.38, 0.48)
+  const topB = waveRibbon(panel, color, y + 6.8, 0.22, 0.28)
+  const topC = waveRibbon(panel, color, y + 8.1, 0.14, 0.18)
+  // Foot wave with echo
+  const foot = waveRibbon(panel, color, y + h - 5.8, 0.32, 0.4)
+  const footEcho = waveRibbon(panel, color, y + h - 4.4, 0.16, 0.2)
+  // Accent dots at wave peaks — registration marks
+  const dots: string[] = []
+  for (let i = 0; i < 4; i++) {
+    const dx = x + w * (0.15 + i * 0.24)
+    const dy = y + 5.4 + Math.sin(i * 1.2) * 1.8
+    dots.push(`<circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="0.18" fill="${color}" fill-opacity="0.3" />`)
+  }
+  return `<g data-art="wrap-continuity">${topA}${topB}${topC}${foot}${footEcho}${dots.join('')}</g>`
 }
 
 /** CF-style edition index — Nº 01, not a second billboard. */
@@ -151,7 +160,7 @@ export function lockupWindow(safe: SafeRect, color: string): string {
   return `<rect x="${safe.x - o}" y="${safe.y - o}" width="${safe.w + o * 2}" height="${safe.h + o * 2}" fill="none" stroke="${color}" stroke-opacity="0.38" stroke-width="0.16" />`
 }
 
-function contourBand(x: number, y: number, w: number, h: number, color: string, opacity: number, bands: number): string {
+export function contourBand(x: number, y: number, w: number, h: number, color: string, opacity: number, bands: number): string {
   let d = ''
   for (let i = 0; i < bands; i++) {
     const t = (i + 0.55) / (bands + 0.4)
@@ -163,7 +172,7 @@ function contourBand(x: number, y: number, w: number, h: number, color: string, 
   return d
 }
 
-function diamondAt(cx: number, cy: number, color: string, r = 0.7): string {
+export function diamondAt(cx: number, cy: number, color: string, r = 0.7): string {
   return `<path d="M${cx} ${cy - r} L${cx + r} ${cy} L${cx} ${cy + r} L${cx - r} ${cy} Z" fill="${color}" fill-opacity="0.85" />`
 }
 
@@ -171,20 +180,13 @@ function diamondAt(cx: number, cy: number, color: string, r = 0.7): string {
  * Luxury spine: foil rail + head/foot contour only.
  * Mid band stays clear for the brand line — not leftover front contour.
  */
-export function spineLuxuryField(panel: Panel, color: string, safe?: SafeRect, series = '01'): string {
+export function spineLuxuryField(panel: Panel, color: string, _safe?: SafeRect, _series = '01'): string {
   const { x, y, w, h } = panel
   const railX = x + 1.4
-  const headH = Math.min(h * 0.16, safe ? Math.max(8, safe.y - y - 1.2) : h * 0.16)
-  const footTop = safe ? safe.y + safe.h + 1.2 : y + h * 0.84
-  const footH = Math.max(8, y + h - footTop - 1.5)
-  return `
-    <line x1="${railX}" y1="${y + 3.1}" x2="${railX}" y2="${y + h - 3.1}" stroke="${color}" stroke-width="0.22" />
-    ${diamondAt(railX, y + 3.2, color)}
-    ${diamondAt(railX, y + h - 3.2, color)}
-    ${contourBand(x, y + 2.2, w, headH, color, 0.2, 3)}
-    ${footH > 6 ? contourBand(x, footTop, w, footH, color, 0.16, 3) : ''}
-    ${seriesMark(x + w / 2, y + 6.4, series, color, 'middle')}
-  `
+  const cap = Math.min(w - 2.2, 7.2)
+  return `<line x1="${railX}" y1="${y + 3.1}" x2="${railX}" y2="${y + h - 3.1}" stroke="${color}" stroke-width="0.22" />
+    <line x1="${railX}" y1="${y + 3.1}" x2="${railX + cap}" y2="${y + 3.1}" stroke="${color}" stroke-opacity="0.4" stroke-width="0.14" />
+    <line x1="${railX}" y1="${y + h - 3.1}" x2="${railX + cap}" y2="${y + h - 3.1}" stroke="${color}" stroke-opacity="0.4" stroke-width="0.14" />`
 }
 
 /** Glisso-style legal column: index plate + baseline ticks. */

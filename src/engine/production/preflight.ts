@@ -53,7 +53,7 @@ export function runPreflight(
     plan ? `set ${plan.variationIndex + 1}` : null,
     plan?.heroGraphic.family && plan.heroGraphic.family !== 'none' ? plan.heroGraphic.family : null,
     plan ? `crop ${plan.artDirection.crop}` : null,
-    spec.overrides.printReady ? '3 mm taşma · 2 mm güvenli' : '2 mm güvenli (structure)',
+    spec.overrides.printReady ? '2 mm güvenli + bleed guide · PDF/X yok' : '2 mm güvenli (structure)',
   ]
     .filter(Boolean)
     .join(' · ')
@@ -111,7 +111,7 @@ export function runPreflight(
       proofDetail || 'Kesim / kat + güvenli',
       spec.overrides.printReady && exportOk ? 'pass' : 'warn',
     ),
-    item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '3 mm taşma + 5 mm güvenli' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
+    item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '2 mm güvenli · 2 mm bleed guide (prova; press bleed yok)' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
     item('export', 'Dışa aktarma', exportOk ? 'SVG üretilebilir' : 'Engel var — dışa aktarma yeşil değil', exportOk ? 'pass' : 'fail'),
   ]
 

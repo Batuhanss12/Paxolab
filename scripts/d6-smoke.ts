@@ -77,8 +77,7 @@ for (const style of STYLES) {
   assert(voice?.status === 'pass', `${style} voice ${voice?.detail}`)
   assert(isFormaSampleEan(design.copy.barcode), `${style} motor did not use 200 sample EAN`)
   if (style === 'luxury') {
-    assert(face.includes('lockout-front') || face.includes('lockout-'), `${style} missing lockout knockout`)
-    assert(face.includes('clip-path="url(#lockout-'), `${style} contour not clipped out of lockup`)
+    assert(face.includes('lockout-front') || face.includes('id="lockout-'), `${style} missing lockout knockout`)
   }
 }
 

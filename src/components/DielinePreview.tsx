@@ -1,6 +1,7 @@
 import type { DesignSpec } from '../types'
 import { artworkMarkup, clipDefs } from '../engine/artwork/composeArtwork'
 import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
+import { artworkFromDocument } from '../engine/document'
 
 type DielinePreviewProps = {
   design: DesignSpec
@@ -8,9 +9,10 @@ type DielinePreviewProps = {
 
 export function DielinePreview({ design }: DielinePreviewProps) {
   const labelSet = design.kind === 'label'
+  const artwork = artworkFromDocument(design.document)
   const svg = renderDielineSvg(design.dieline, {
     showArtwork: true,
-    artworkMarkup: `<defs>${clipDefs(design.dieline)}</defs>${artworkMarkup(design.artwork)}`,
+    artworkMarkup: `<defs>${clipDefs(design.dieline)}</defs>${artworkMarkup(artwork)}`,
     safeInsetMm: design.overrides.printReady ? 2 : 0,
   })
   return (

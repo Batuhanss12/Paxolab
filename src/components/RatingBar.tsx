@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { RATING_TAGS, getRating, saveRating } from '../engine/rating'
 
 type RatingBarProps = {
@@ -6,20 +6,19 @@ type RatingBarProps = {
 }
 
 export function RatingBar({ designId }: RatingBarProps) {
-  const [stars, setStars] = useState(0)
-  const [tags, setTags] = useState<string[]>([])
+  return <RatingEditor key={designId} designId={designId} />
+}
 
-  useEffect(() => {
-    const existing = getRating(designId)
-    setStars(existing?.stars ?? 0)
-    setTags(existing?.tags ?? [])
-  }, [designId])
+function RatingEditor({ designId }: RatingBarProps) {
+  const existing = getRating(designId)
+  const [stars, setStars] = useState(existing?.stars ?? 0)
+  const [tags, setTags] = useState<string[]>(existing?.tags ?? [])
 
   function persist(nextStars: number, nextTags: string[]) {
     setStars(nextStars)
     setTags(nextTags)
     if (nextStars > 0) {
-      saveRating({ designId, stars: nextStars, tags: nextTags, at: Date.now() })
+      saveRating({ designId, stars: nextStars, tags: nextTags })
     }
   }
 

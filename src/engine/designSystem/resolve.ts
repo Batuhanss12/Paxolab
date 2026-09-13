@@ -24,6 +24,24 @@ function legalPlan(sector: DesignSystem['sector']): LegalBlockDef[] {
       { id: 'storage', title: 'STORAGE · ALLERGENS', source: 'warnings' },
     ]
   }
+  if (sector === 'beverage') {
+    return [
+      { id: 'ingredients', title: 'INGREDIENTS / NUTRITION', source: 'ingredients' },
+      { id: 'storage', title: 'STORAGE · SERVING', source: 'warnings' },
+    ]
+  }
+  if (sector === 'health') {
+    return [
+      { id: 'active', title: 'ACTIVE INGREDIENTS', source: 'ingredients' },
+      { id: 'directions', title: 'DIRECTIONS · WARNINGS', source: 'warnings' },
+    ]
+  }
+  if (sector === 'baby') {
+    return [
+      { id: 'ingredients', title: 'INGREDIENTS', source: 'ingredients' },
+      { id: 'care', title: 'USE · SAFETY', source: 'warnings' },
+    ]
+  }
   if (sector === 'electronics') {
     return [
       { id: 'spec', title: 'CONTENTS / SPEC', source: 'ingredients' },
@@ -43,7 +61,7 @@ function legalPlan(sector: DesignSystem['sector']): LegalBlockDef[] {
 }
 
 function markSet(sector: DesignSystem['sector']): MarkSet {
-  if (sector === 'food') return 'food'
+  if (sector === 'food' || sector === 'beverage') return 'food'
   if (sector === 'electronics') return 'electronics'
   if (sector === 'cleaning') return 'generic'
   return 'cosmetics'

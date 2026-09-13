@@ -13,9 +13,9 @@ export function loadRatings(): DesignRating[] {
   }
 }
 
-export function saveRating(rating: DesignRating): void {
+export function saveRating(rating: Omit<DesignRating, 'at'>): void {
   const all = loadRatings().filter((r) => r.designId !== rating.designId)
-  all.unshift(rating)
+  all.unshift({ ...rating, at: Date.now() })
   localStorage.setItem(KEY, JSON.stringify(all.slice(0, 80)))
 }
 

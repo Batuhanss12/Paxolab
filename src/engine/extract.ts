@@ -5,6 +5,9 @@ const MODE_RULES: { re: RegExp; mode: PackagingMode; sector?: string; sub?: stri
   { re: /kozmetik\s*kutusu|parfüm\s*kut/i, mode: 'box', sector: 'kozmetik', sub: 'parfüm' },
   { re: /gıda\s*ambalaj|gıda\s*kut/i, mode: 'box', sector: 'gıda' },
   { re: /elektronik\s*kut|kulaklık/i, mode: 'box', sector: 'elektronik', sub: 'kulaklık' },
+  { re: /takviye\s*kut|vitamin\s*kut|ilaç\s*kut/i, mode: 'box', sector: 'sağlık', sub: 'takviye' },
+  { re: /bebek\s*(ürün|bakım).*kut/i, mode: 'box', sector: 'bebek', sub: 'bakım' },
+  { re: /içecek\s*(etiket|şişe)|kombucha|meyve suyu/i, mode: 'label', sector: 'içecek' },
   { re: /kutu\s*ambalaj|\bkutu\b/i, mode: 'box' },
   { re: /etiket|label|wrap/i, mode: 'label' },
 ]
@@ -17,6 +20,9 @@ const SECTOR_RULES: { re: RegExp; sector: string; sub?: string }[] = [
   { re: /zeytinyağ|yağ\b/i, sector: 'gıda', sub: 'yağ' },
   { re: /atıştırmalık|çikolata|kurabiye/i, sector: 'gıda', sub: 'atıştırmalık' },
   { re: /gıda|reçel|bal|çay/i, sector: 'gıda' },
+  { re: /içecek|beverage|meyve suyu|soda|gazoz|kombucha|şarap|bira/i, sector: 'içecek' },
+  { re: /ilaç|pharma|eczane|takviye|supplement|vitamin|probiyotik|mineral/i, sector: 'sağlık', sub: 'takviye' },
+  { re: /bebek|baby|yenidoğan|newborn|çocuk bakım/i, sector: 'bebek', sub: 'bakım' },
   { re: /kulaklık|earbuds/i, sector: 'elektronik', sub: 'kulaklık' },
   { re: /kablo|şarj/i, sector: 'elektronik', sub: 'kablo' },
   { re: /elektronik|teknoloji/i, sector: 'elektronik' },
@@ -54,14 +60,14 @@ export function sameName(a: string, b: string): boolean {
 }
 
 export function looksLikeSector(value: string): boolean {
-  return /kozmetik|gıda|elektronik|parfüm|parfum|perfume|krem|serum|yağ|temizlik|food|cosmetic|tech/i.test(
+  return /kozmetik|gıda|içecek|sağlık|takviye|bebek|elektronik|parfüm|parfum|perfume|krem|serum|yağ|temizlik|food|beverage|health|baby|cosmetic|tech/i.test(
     value.trim(),
   )
 }
 
 /** Sector nouns are not SKU names — lockup must not read PARFÜM under EAU DE PARFUM. */
 export function isGenericProductName(value: string): boolean {
-  return /^(parfüm|parfum|perfume|krem|cream|serum|etiket|kutu|kutusu|ambalaj|kozmetik|gıda|şişe|wrap|label)$/i.test(
+  return /^(parfüm|parfum|perfume|krem|cream|serum|içecek|beverage|takviye|supplement|bebek|baby|etiket|kutu|kutusu|ambalaj|kozmetik|gıda|sağlık|şişe|wrap|label)$/i.test(
     value.trim(),
   )
 }
@@ -176,7 +182,7 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   if (vol) patch.volume = `${vol[1]} ${vol[2].toLowerCase()}`
 
   const pao =
-    raw.match(/\bpao\s*[:\-]?\s*(\d{1,2})\s*(?:m|ay)?\b/i) ||
+    raw.match(/\bpao\s*[:-]?\s*(\d{1,2})\s*(?:m|ay)?\b/i) ||
     raw.match(/\b(\d{1,2})\s*ay\b/i) ||
     raw.match(/\b(\d{1,2})M\b/)
   if (pao) patch.paoMonths = `${pao[1]}M`
@@ -191,6 +197,16 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
 
   const slogan = labeled(raw, ['slogan', 'tagline', 'metin'])
   if (slogan) patch.copyOverrides = slogan
+
+  const ingredientMatch = raw.match(/(?:içerik|ingredient|aktif|active|formül)\s*[:\-–]\s*([^.,;]{3,60})/i)
+  if (ingredientMatch) {
+    patch.ingredientClaims = ingredientMatch[1].trim()
+  } else {
+    const plusChain = raw.match(/\b([A-Za-zÇĞİÖŞÜçğıöşü]+\s*\+\s*[A-Za-zÇĞİÖŞÜçğıöşü]+(?:\s*\+\s*[A-Za-zÇĞİÖŞÜçğıöşü]+)*)\b/)
+    if (plusChain && /biotin|collagen|keratin|argan|vitamin|hyaluronic|niacinamide|retinol|peptide/i.test(plusChain[1])) {
+      patch.ingredientClaims = plusChain[1].trim()
+    }
+  }
 
   if (/\bbarkod\b|\bean[\s-]?13\b/i.test(raw)) {
     const digits = raw.match(/\b\d{8,14}\b/)

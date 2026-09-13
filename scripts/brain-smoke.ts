@@ -48,7 +48,7 @@ assert(luxury.critique?.hints.some((h) => h.action === 'KEEP'), 'critique has no
 
 const face = luxury.artwork.layers.find((l) => l.panelId === 'front')?.markup ?? ''
 assert(face.includes('lockout-'), 'luxury lost lockout')
-assert(face.includes('fill-opacity="0.9"'), 'default luxury missing corner diamonds')
+assert(!face.includes('fill-opacity="0.9"'), 'default luxury still paints corner diamonds')
 assert(!face.includes('data-mark="barcode"'), 'barcode on luxury front')
 
 const intent = parseIntent('daha lüks yap', 'luxury')

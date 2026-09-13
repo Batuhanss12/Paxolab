@@ -2,10 +2,19 @@ import type { ArtworkModel, DesignBrief, DesignOverrides, DesignSpec, DielineMod
 import { barcodeSvg } from '../barcode'
 import type { DesignPlan } from '../brain/DesignPlan'
 import type { DesignSystem } from '../designSystem/types'
-import { paintBackgroundTreatment } from './backgroundTreatments'
-import { heroPaintScale, heroYFrac, kitHeroFamily, paintHeroGraphic, wrapHero } from './heroGraphics'
-import { paintPrimitives } from './illustrationPrimitives'
-import { paintPatternFamily, wrapPattern, wrapSidePattern } from './patternFamilies'
+import { paintBackgroundTreatment, paintSectorBackground, paintStyleBackground } from './backgroundTreatments'
+import {
+  heroPaintScale,
+  heroYFrac,
+  kitHeroFamily,
+  paintBadgeMark,
+  paintCrestMark,
+  paintDropMark,
+  paintHeroGraphic,
+  paintOvalMark,
+  paintSealMark,
+  wrapHero,
+} from './heroGraphics'
 import { layoutFrontLockup, volumeMarkup } from '../designSystem/typeSystem'
 import { resolveDesignSystem } from '../designSystem/resolve'
 import { perfumeAssetsAllowed, resolveStickerMarks } from '../marks/MarkMatrix'
@@ -14,21 +23,12 @@ import type { CraftPlan } from './craft'
 import { buildCraftPlan } from './craft'
 import { fontStack, languageId } from './languages'
 import { backFill, frontSpecLine, monogram } from './copy'
-import {
-  claimCapsules,
-  contourGoldField,
-  diagonalFoil,
-  geoLattice,
-  lBrackets,
-  leafStampField,
-  legalColumnChrome,
-  lockupWindow,
-  ornamentalRail,
-  seriesMark,
-  spineLuxuryField,
-  wrapContinuity,
-  type SafeRect,
-} from './motifs'
+import { paintPrimitives } from './illustrationPrimitives'
+import { diamondAt, lBrackets, legalColumnChrome, lockupWindow, spineLuxuryField, wrapContinuity, type SafeRect } from './motifs'
+import { paintPatternFamily, wrapPattern, wrapSidePattern } from './patternFamilies'
+import { escapeSvg as esc, minMm as mm, panelClip as clip, wrapSvgLines as wrapLines } from './svgGeometry'
+
+export { artworkMarkup, clipDefs, renderArtNetSvg, renderArtworkDoc, renderFrontSvg } from './renderArtwork'
 
 function lockupRule(layout: ReturnType<typeof layoutFrontLockup>, panel: Panel, p: Palette): string {
   if (!layout.hasRule || layout.ruleY == null) return ''
@@ -61,48 +61,6 @@ function lockoutClip(id: string, panel: Panel, hole: SafeRect): string {
   return `<defs><clipPath id="lockout-${id}" clipPathUnits="userSpaceOnUse"><path fill-rule="evenodd" d="M${x} ${y}h${w}v${h}h${-w}z M${hole.x} ${hole.y}h${hole.w}v${hole.h}h${-hole.w}z" /></clipPath></defs>`
 }
 
-function esc(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-function clip(panel: Panel): string {
-  return `url(#clip-${panel.id})`
-}
-
-function clipDef(panel: Panel): string {
-  const pts = (panel.polygon?.length ? panel.polygon : [
-    { x: panel.x, y: panel.y },
-    { x: panel.x + panel.w, y: panel.y },
-    { x: panel.x + panel.w, y: panel.y + panel.h },
-    { x: panel.x, y: panel.y + panel.h },
-  ])
-    .map((p) => `${p.x},${p.y}`)
-    .join(' ')
-  return `<clipPath id="clip-${panel.id}" clipPathUnits="userSpaceOnUse"><polygon points="${pts}" /></clipPath>`
-}
-
-function wrapLines(text: string, maxChars: number, maxLines: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean)
-  const lines: string[] = []
-  let cur = ''
-  for (const word of words) {
-    const next = cur ? `${cur} ${word}` : word
-    if (next.length > maxChars && cur) {
-      lines.push(cur)
-      cur = word
-      if (lines.length >= maxLines) return lines
-    } else {
-      cur = next
-    }
-  }
-  if (cur && lines.length < maxLines) lines.push(cur)
-  return lines
-}
-
-function mm(size: number, min: number): number {
-  return Math.max(min, size)
-}
-
 function frames(panel: Panel, p: Palette, count: number, rounded: boolean, luxury = false): string {
   if (count <= 0) return ''
   const r = rounded ? 2.2 : 0
@@ -122,196 +80,152 @@ function frames(panel: Panel, p: Palette, count: number, rounded: boolean, luxur
     .join('')
 }
 
-function corners(panel: Panel, p: Palette): string {
-  const { x, y, w, h } = panel
-  const L = 5.4
-  const o = 2.05
-  const pts: [number, number, number, number, number, number][] = [
-    [x + o, y + o + L, x + o, y + o, x + o + L, y + o],
-    [x + w - o - L, y + o, x + w - o, y + o, x + w - o, y + o + L],
-    [x + o, y + h - o - L, x + o, y + h - o, x + o + L, y + h - o],
-    [x + w - o - L, y + h - o, x + w - o, y + h - o, x + w - o, y + h - o - L],
-  ]
-  return pts
-    .map(
-      ([x1, y1, x2, y2, x3, y3]) =>
-        `<path d="M${x1} ${y1} L${x2} ${y2} L${x3} ${y3}" fill="none" stroke="${p.accent}" stroke-width="0.42" />`,
-    )
-    .join('')
+/** Sector-specific frame: electronics uses corner brackets, food uses decorative corners. */
+function sectorFrame(panel: Panel, p: Palette, sector: string, style: string): string {
+  if (sector === 'electronics' && (style === 'modern' || style === 'minimal')) {
+    // L-brackets at corners — technical, precise.
+    return lBrackets(panel, p.accent)
+  }
+  if ((sector === 'food' || sector === 'beverage') && (style === 'luxury' || style === 'classic')) {
+    // Double-line with small decorative diamonds at corners.
+    const inset = 2.3
+    const d = diamondAt(panel.x + inset, panel.y + inset, p.accent, 0.6)
+    const d2 = diamondAt(panel.x + panel.w - inset, panel.y + inset, p.accent, 0.6)
+    const d3 = diamondAt(panel.x + inset, panel.y + panel.h - inset, p.accent, 0.6)
+    const d4 = diamondAt(panel.x + panel.w - inset, panel.y + panel.h - inset, p.accent, 0.6)
+    return `${frames(panel, p, 1, false, false)}${d}${d2}${d3}${d4}`
+  }
+  return frames(panel, p, 1, style === 'eco' || style === 'playful', style === 'luxury')
 }
 
-function cornerDiamonds(panel: Panel, p: Palette): string {
-  const { x, y, w, h } = panel
-  const o = 6.2
-  const d = 1.05
-  const pts = [
-    [x + o, y + o],
-    [x + w - o, y + o],
-    [x + o, y + h - o],
-    [x + w - o, y + h - o],
-  ]
-  return pts
-    .map(
-      ([cx, cy]) =>
-        `<path d="M${cx} ${cy - d} L${cx + d} ${cy} L${cx} ${cy + d} L${cx - d} ${cy} Z" fill="${p.accent}" fill-opacity="0.9" />`,
-    )
-    .join('')
-}
-
-function sideTicks(panel: Panel, p: Palette, safe?: SafeRect): string {
-  const { x, y, w, h } = panel
-  const midY = y + h / 2
-  const midX = x + w / 2
-  const midHits = safe && midY > safe.y - 2 && midY < safe.y + safe.h + 2
-  const sides = midHits
-    ? ''
-    : `
-    <line x1="${x + 1.25}" y1="${midY - 4.4}" x2="${x + 1.25}" y2="${midY + 4.4}" stroke="${p.accent}" stroke-width="0.24" />
-    <line x1="${x + w - 1.25}" y1="${midY - 4.4}" x2="${x + w - 1.25}" y2="${midY + 4.4}" stroke="${p.accent}" stroke-width="0.24" />`
-  return `
-    ${sides}
-    <line x1="${midX - 4.4}" y1="${y + 1.25}" x2="${midX + 4.4}" y2="${y + 1.25}" stroke="${p.accent}" stroke-width="0.24" />
-    <line x1="${midX - 4.4}" y1="${y + h - 1.25}" x2="${midX + 4.4}" y2="${y + h - 1.25}" stroke="${p.accent}" stroke-width="0.24" />
-  `
-}
-
-function foilHairline(panel: Panel, p: Palette): string {
-  return `
-    <rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="1.2" fill="${p.accent}" />
-    <rect x="${panel.x}" y="${panel.y + 1.2}" width="${panel.w}" height="0.28" fill="${p.paper}" opacity="0.45" />
-  `
-}
-
-function perfumeCrest(panel: Panel, p: Palette, dense: boolean, yFrac = 0.148, scale = 1): string {
-  const cx = panel.x + panel.w / 2
+function perfumeCrest(panel: Panel, p: Palette, dense: boolean, yFrac = 0.148, scale = 1, xFrac = 0.5): string {
+  const cx = panel.x + panel.w * xFrac
   const cy = panel.y + panel.h * yFrac
   const r = Math.min(panel.w, panel.h) * (dense ? 0.082 : 0.062) * scale
-  const ticks = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5]
-    .map((deg) => {
-      const a = (deg * Math.PI) / 180
-      const inner = r + (dense ? 0.55 : 0.85)
-      const outer = r + (dense ? 2.35 : 1.55)
-      const sw = deg % 45 === 0 ? 0.22 : 0.14
-      return `<line x1="${cx + Math.cos(a) * inner}" y1="${cy + Math.sin(a) * inner}" x2="${cx + Math.cos(a) * outer}" y2="${cy + Math.sin(a) * outer}" stroke="${p.accent}" stroke-width="${sw}" />`
-    })
-    .join('')
-  return `
-    <circle cx="${cx}" cy="${cy}" r="${r + 2.7}" fill="none" stroke="${p.accent}" stroke-opacity="0.28" stroke-width="0.14" />
-    <circle cx="${cx}" cy="${cy}" r="${r + 1.15}" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.16" />
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="0.36" />
-    <circle cx="${cx}" cy="${cy}" r="${r * 0.48}" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.15" />
-    <path d="M${cx} ${cy - r * 0.28} L${cx + r * 0.22} ${cy} L${cx} ${cy + r * 0.28} L${cx - r * 0.22} ${cy} Z" fill="${p.accent}" fill-opacity="0.85" />
-    ${dense ? ticks : ''}
-  `
+  return paintCrestMark(cx, cy, r, p.accent, dense)
 }
 
-function classicCartouche(panel: Panel, p: Palette, yFrac = 0.16, scale = 1): string {
-  const cx = panel.x + panel.w / 2
+function classicCartouche(panel: Panel, p: Palette, yFrac = 0.16, scale = 1, xFrac = 0.5): string {
+  const cx = panel.x + panel.w * xFrac
   const cy = panel.y + panel.h * yFrac
-  const rx = Math.min(8.4, panel.w * 0.18) * scale
-  return `
-    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="4.6" fill="none" stroke="${p.accent}" stroke-width="0.32" />
-    <ellipse cx="${cx}" cy="${cy}" rx="${rx - 1.15}" ry="3.45" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.16" />
-    <path d="M${cx} ${cy - 1.35} L${cx + 1.05} ${cy} L${cx} ${cy + 1.35} L${cx - 1.05} ${cy} Z" fill="${p.accent}" />
-  `
+  const r = Math.min(8.4, panel.w * 0.16) * scale
+  return paintSealMark(cx, cy, r, p.accent)
 }
 
-function ecoLeaf(panel: Panel, p: Palette, yFrac = 0.17, scale = 1): string {
-  const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * yFrac
-  return `
-    <ellipse cx="${cx}" cy="${cy}" rx="${Math.min(9.2, panel.w * 0.2) * scale}" ry="${Math.min(6.4, panel.h * 0.055) * scale}" fill="none" stroke="${p.accent}" stroke-width="0.32" />
-    <path d="M${cx} ${cy - 5.2 * scale} C${cx + 3.6 * scale} ${cy - 1.4 * scale} ${cx + 3.8 * scale} ${cy + 3.2 * scale} ${cx} ${cy + 5.6 * scale} C${cx - 3.8 * scale} ${cy + 3.2 * scale} ${cx - 3.6 * scale} ${cy - 1.4 * scale} ${cx} ${cy - 5.2 * scale}" fill="none" stroke="${p.accent}" stroke-width="0.3" />
-    <line x1="${cx}" y1="${cy - 4.6 * scale}" x2="${cx}" y2="${cy + 4.8 * scale}" stroke="${p.accent}" stroke-width="0.18" />
-  `
+function ecoLeaf(panel: Panel, p: Palette, yFrac = 0.17, scale = 1, xFrac = 0.5): string {
+  return paintHeroGraphic('botanical', panel, p, scale, yFrac, xFrac)
 }
 
-function playfulBadge(panel: Panel, p: Palette, yFrac = 0.18, scale = 1): string {
-  const cx = panel.x + panel.w / 2
+function playfulBadge(panel: Panel, p: Palette, yFrac = 0.18, scale = 1, xFrac = 0.5): string {
+  const cx = panel.x + panel.w * xFrac
   const cy = panel.y + panel.h * yFrac
   const r = Math.min(panel.w, panel.h) * 0.09 * scale
-  return `
-    <circle cx="${cx}" cy="${cy}" r="${r + 1.6}" fill="${p.accent}" opacity="0.18" />
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="0.42" />
-  `
+  return paintBadgeMark(cx, cy, r, p.accent)
 }
 
-function creamMotif(panel: Panel, p: Palette, yFrac = 0.18, scale = 1): string {
-  const cx = panel.x + panel.w / 2
+function creamMotif(panel: Panel, p: Palette, yFrac = 0.18, scale = 1, xFrac = 0.5): string {
+  const cx = panel.x + panel.w * xFrac
   const cy = panel.y + panel.h * yFrac
-  return `<ellipse cx="${cx}" cy="${cy}" rx="${Math.min(7.2, panel.w * 0.16) * scale}" ry="${3.4 * scale}" fill="none" stroke="${p.accent}" stroke-width="0.28" />`
+  const r = Math.min(7.2, panel.w * 0.14) * scale
+  return paintOvalMark(cx, cy, r, p.accent)
 }
 
-function serumMotif(panel: Panel, p: Palette, yFrac = 0.14, scale = 1): string {
-  const cx = panel.x + panel.w / 2
-  const y = panel.y + panel.h * yFrac
-  return `<path d="M${cx} ${y} C${cx + 2.4 * scale} ${y + 3.2 * scale} ${cx + 2.4 * scale} ${y + 7 * scale} ${cx} ${y + 9.2 * scale} C${cx - 2.4 * scale} ${y + 7 * scale} ${cx - 2.4 * scale} ${y + 3.2 * scale} ${cx} ${y}" fill="none" stroke="${p.accent}" stroke-width="0.3" />`
+function serumMotif(panel: Panel, p: Palette, yFrac = 0.14, scale = 1, xFrac = 0.5): string {
+  const cx = panel.x + panel.w * xFrac
+  const cy = panel.y + panel.h * yFrac
+  const r = Math.min(panel.w, panel.h) * 0.07 * scale
+  return paintDropMark(cx, cy, r, p.accent)
 }
 
-function foodOrnamentBorder(panel: Panel, p: Palette): string {
-  const { x, y, w, h } = panel
-  const inset = 3.8
-  const cx = x + w / 2
-  const cy = y + h / 2
-  const r = Math.min(w, h) * 0.018
-  return `
-    <rect x="${x + inset}" y="${y + inset}" width="${w - inset * 2}" height="${h - inset * 2}" rx="1.4" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.22" />
-    <path d="M${cx - r * 3} ${y + inset} L${cx} ${y + inset - r * 1.5} L${cx + r * 3} ${y + inset}" fill="none" stroke="${p.accent}" stroke-width="0.2" />
-    <path d="M${cx - r * 3} ${y + h - inset} L${cx} ${y + h - inset + r * 1.5} L${cx + r * 3} ${y + h - inset}" fill="none" stroke="${p.accent}" stroke-width="0.2" />
-    <circle cx="${x + inset + 1.6}" cy="${y + inset + 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
-    <circle cx="${x + w - inset - 1.6}" cy="${y + inset + 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
-    <circle cx="${x + inset + 1.6}" cy="${y + h - inset - 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
-    <circle cx="${x + w - inset - 1.6}" cy="${y + h - inset - 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
-  `
+function ingredientBadges(raw: string, ax: number, y: number, anchor: 'middle' | 'start', p: Palette, minMm: number): string {
+  const claims = raw.split(/[+,;·]/).map((s) => s.trim().toUpperCase()).filter(Boolean).slice(0, 4)
+  if (!claims.length) return ''
+  const badgeW = Math.max(14, Math.min(22, 60 / claims.length))
+  const badgeH = 4.8
+  const gap = 2.2
+  const totalW = claims.length * badgeW + (claims.length - 1) * gap
+  const startX = anchor === 'middle' ? ax - totalW / 2 : ax
+  const sz = Math.max(minMm, 1.6)
+  let out = ''
+  claims.forEach((label, i) => {
+    const bx = startX + i * (badgeW + gap)
+    out += `<rect x="${bx}" y="${y}" width="${badgeW}" height="${badgeH}" rx="${badgeH / 2}" fill="none" stroke="${p.accent}" stroke-width="0.24" />`
+    out += `<text x="${bx + badgeW / 2}" y="${y + badgeH * 0.62}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${sz}" letter-spacing="0.25">${label}</text>`
+  })
+  if (claims.length > 1) {
+    for (let i = 0; i < claims.length - 1; i++) {
+      const px = startX + (i + 1) * badgeW + i * gap + gap / 2
+      out += `<text x="${px}" y="${y + badgeH * 0.65}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="${Math.max(minMm, 1.4)}">+</text>`
+    }
+  }
+  return `<g data-art="ingredient-badges">${out}</g>`
+}
+
+function foodNutritionTable(x: number, y: number, w: number, p: Palette, system: DesignSystem, compact = false): string {
+  const rows = compact
+    ? [
+        ['Enerji', '1360 kJ / 320 kcal'],
+        ['Yağ', '0 g'],
+        ['Karbonhidrat', '80 g'],
+        ['Protein', '0,3 g'],
+      ]
+    : [
+        ['Enerji', '1360 kJ / 320 kcal'],
+        ['Yağ', '0 g'],
+        ['Karbonhidrat', '80 g'],
+        ['  - Şeker', '80 g'],
+        ['Protein', '0,3 g'],
+        ['Tuz', '0 g'],
+      ]
+  const colW = Math.min(w * (compact ? 0.62 : 0.48), compact ? 42 : 36)
+  const sz = Math.max(system.type.legalMm, compact ? 1.55 : 1.7)
+  const lineH = sz + (compact ? 0.7 : 0.95)
+  let out = ''
+  let cy = y
+  out += `<text x="${x}" y="${cy}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.0" letter-spacing="1.1">BESİN DEĞERLERİ (100 g)</text>`
+  cy += 3.2
+  out += `<line x1="${x}" y1="${cy}" x2="${x + colW}" y2="${cy}" stroke="${p.accent}" stroke-width="0.2" />`
+  cy += 1.2
+  rows.forEach(([label, value], i) => {
+    out += `<text x="${x}" y="${cy + i * lineH}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${sz}">${label}</text>`
+    out += `<text x="${x + colW}" y="${cy + i * lineH}" text-anchor="end" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="500" font-feature-settings="'tnum'" font-size="${sz}">${value}</text>`
+  })
+  cy += rows.length * lineH + 1.2
+  out += `<line x1="${x}" y1="${cy}" x2="${x + colW}" y2="${cy}" stroke="${p.accent}" stroke-width="0.14" />`
+  return `<g data-art="nutrition-table">${out}</g>`
 }
 
 function foodClaimStrip(panel: Panel, p: Palette, y: number, ax: number, anchor: 'middle' | 'start', minMm: number): string {
-  const claims = ['DOĞAL', 'KATKISIZ', '%100']
+  const claims: [string, string][] = [
+    ['%100', 'DOĞAL'],
+    ['✓', 'KATKISIZ'],
+    ['❋', 'DOĞAL ÜRÜN'],
+  ]
   const gap = Math.min(18, panel.w * 0.22)
-  const r = Math.min(3.8, panel.w * 0.048)
-  const sz = Math.max(minMm, 1.65)
+  const r = Math.min(4.2, panel.w * 0.054)
+  const sz = Math.max(minMm, 1.55)
+  const iconSz = Math.max(minMm + 0.5, 2.2)
   let out = ''
-  claims.forEach((label, i) => {
+  claims.forEach(([icon, label], i) => {
     const cx = anchor === 'middle' ? ax + (i - 1) * gap : ax + i * gap + 4
-    out += `<circle cx="${cx}" cy="${y}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="0.24" />`
-    out += `<text x="${cx}" y="${y + 0.55}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="${sz}" letter-spacing="0.3">${label}</text>`
+    out += `<rect x="${cx - r}" y="${y - r}" width="${r * 2}" height="${r * 2}" fill="${p.accent}" fill-opacity="0.08" stroke="${p.accent}" stroke-width="0.24" />`
+    out += `<line x1="${cx - r + 0.7}" y1="${y - r + 0.55}" x2="${cx + r - 0.7}" y2="${y - r + 0.55}" stroke="${p.accent}" stroke-opacity="0.4" stroke-width="0.12" />`
+    out += `<text x="${cx}" y="${y + 0.65}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="${iconSz}" letter-spacing="0.1">${icon}</text>`
+    out += `<text x="${cx}" y="${y + r + 2.4}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${sz}" letter-spacing="0.4">${label}</text>`
   })
   return `<g data-art="claim-strip">${out}</g>`
 }
 
-function foodStamp(panel: Panel, p: Palette): string {
-  const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.19
-  return `
-    <ellipse cx="${cx}" cy="${cy}" rx="${panel.w * 0.2}" ry="${panel.h * 0.062}" fill="none" stroke="${p.accent}" stroke-width="0.34" />
-    <ellipse cx="${cx}" cy="${cy}" rx="${panel.w * 0.155}" ry="${panel.h * 0.045}" fill="none" stroke="${p.accent}" stroke-width="0.18" />
-    <path d="M${cx} ${cy - 5} C${cx + 3.4} ${cy - 1.2} ${cx + 3.6} ${cy + 3.4} ${cx} ${cy + 6} C${cx - 3.6} ${cy + 3.4} ${cx - 3.4} ${cy - 1.2} ${cx} ${cy - 5}" fill="none" stroke="${p.accent}" stroke-width="0.28" />
-  `
+function oliveWreath(panel: Panel, p: Palette, yFrac = 0.165, scale = 1, xFrac = 0.5): string {
+  return paintHeroGraphic('harvest', panel, p, scale, yFrac, xFrac)
 }
 
-function oliveWreath(panel: Panel, p: Palette, yFrac = 0.165, scale = 1): string {
-  const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * yFrac
-  const leaves = [200, 220, 240, 260, 280, 300, 320, 340, 20, 40, 60, 80, 100, 120, 140, 160]
-    .map((deg) => {
-      const a = (deg * Math.PI) / 180
-      const r = Math.min(panel.w, panel.h) * 0.085 * scale
-      const x = cx + Math.cos(a) * r
-      const y = cy + Math.sin(a) * r * 0.72
-      return `<ellipse cx="${x}" cy="${y}" rx="1.15" ry="0.55" transform="rotate(${deg} ${x} ${y})" fill="none" stroke="${p.accent}" stroke-width="0.22" />`
-    })
-    .join('')
-  return `
-    ${leaves}
-    <circle cx="${cx}" cy="${cy}" r="1.05" fill="none" stroke="${p.accent}" stroke-width="0.28" />
-  `
-}
-
-function metalPlaque(panel: Panel, p: Palette): string {
+function metalPlaque(panel: Panel, p: Palette, xFrac = 0.5): string {
   const { x, y, w, h } = panel
-  const px = x + w * 0.14
-  const py = y + h * 0.34
+  const cx = x + w * xFrac
   const pw = w * 0.72
+  const px = cx - pw / 2
+  const py = y + h * 0.34
   const ph = h * 0.22
   return `
     <rect x="${px}" y="${py}" width="${pw}" height="${ph}" fill="none" stroke="${p.accent}" stroke-width="0.28" />
@@ -320,48 +234,28 @@ function metalPlaque(panel: Panel, p: Palette): string {
   `
 }
 
+function techSlab(panel: Panel, p: Palette, _dense: boolean): string {
+  const { x, y, h } = panel
+  return `<rect x="${x}" y="${y}" width="2.4" height="${h}" fill="${p.accent}" />`
+}
+
+/** Professional seam indicator: dashed registration line with tick marks. */
 function wrapSeam(panel: Panel, p: Palette): string {
-  const { x, y, w } = panel
-  return `
-    <polygon points="${x + w - 2.4},${y + 3.2} ${x + w - 0.7},${y + 4.6} ${x + w - 2.4},${y + 6}" fill="${p.accent}" />
-    <text x="${x + w - 3.4}" y="${y + 10.2}" text-anchor="end" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="1.7" letter-spacing="0.8">SEAM</text>
-  `
-}
-
-function wrapReadStart(panel: Panel, p: Palette): string {
-  const { x, y } = panel
-  return `
-    <polygon points="${x + 1.1},${y + 4.6} ${x + 2.8},${y + 3.2} ${x + 2.8},${y + 6}" fill="${p.accent}" />
-    <line x1="${x + 3.4}" y1="${y + 4.6}" x2="${x + 8.2}" y2="${y + 4.6}" stroke="${p.accent}" stroke-width="0.22" />
-  `
-}
-
-function ecoGrain(panel: Panel, p: Palette): string {
-  let lines = ''
-  for (let i = 0; i < 9; i++) {
-    const yy = panel.y + 3.2 + i * ((panel.h - 6.4) / 9)
-    const wobble = (i % 3) * 0.55
-    lines += `<line x1="${panel.x + 2.4}" y1="${yy}" x2="${panel.x + panel.w - 2.4}" y2="${yy + 0.9 + wobble * 0.15}" stroke="${p.fg}" stroke-opacity="0.07" stroke-width="0.38" />`
-  }
-  const seeds = [
-    [0.16, 0.22], [0.38, 0.31], [0.62, 0.18], [0.81, 0.36], [0.24, 0.55],
-    [0.71, 0.48], [0.48, 0.62], [0.19, 0.78], [0.86, 0.72], [0.55, 0.86],
-  ]
-  seeds.forEach(([fx, fy]) => {
-    lines += `<circle cx="${panel.x + panel.w * fx}" cy="${panel.y + panel.h * fy}" r="0.32" fill="${p.fg}" opacity="0.08" />`
-  })
-  return lines
-}
-
-function techSlab(panel: Panel, p: Palette, dense: boolean): string {
   const { x, y, w, h } = panel
-  let grid = `<rect x="${x}" y="${y}" width="2.4" height="${h}" fill="${p.accent}" />`
-  if (dense) {
-    for (let gx = x + 8; gx < x + w - 3; gx += 6.2) {
-      grid += `<line x1="${gx}" y1="${y + 3}" x2="${gx}" y2="${y + h - 3}" stroke="${p.fg}" stroke-opacity="0.07" stroke-width="0.16" />`
-    }
+  const sx = x + w - 1.6
+  const top = y + 2.5
+  const bot = y + h - 2.5
+  const ticks = 5
+  let tickMarks = ''
+  for (let i = 0; i <= ticks; i++) {
+    const ty = top + ((bot - top) / ticks) * i
+    tickMarks += `<line x1="${sx - 0.8}" y1="${ty}" x2="${sx + 0.4}" y2="${ty}" stroke="${p.accent}" stroke-opacity="0.35" stroke-width="0.1" />`
   }
-  return grid
+  return `
+    <line x1="${sx}" y1="${top}" x2="${sx}" y2="${bot}" stroke="${p.accent}" stroke-opacity="0.3" stroke-width="0.12" stroke-dasharray="0.8 0.6" />
+    ${tickMarks}
+    <text x="${sx - 1.2}" y="${y + h * 0.5}" text-anchor="end" transform="rotate(-90 ${sx - 1.2} ${y + h * 0.5})" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.4" letter-spacing="0.6">SEAM</text>
+  `
 }
 
 function modernStripe(panel: Panel, p: Palette): string {
@@ -396,8 +290,12 @@ function capsuleVolume(panel: Panel, p: Palette, volume: string, system: DesignS
 function stampVolume(panel: Panel, p: Palette, volume: string, system: DesignSystem): string {
   const cx = panel.x + panel.w / 2
   const cy = panel.y + panel.h * 0.84
+  const sw = Math.min(18, panel.w * 0.32)
+  const sh = 5.6
+  const inset = 0.6
   return `
-    <ellipse cx="${cx}" cy="${cy}" rx="${Math.min(16, panel.w * 0.28)}" ry="5.1" fill="none" stroke="${p.accent}" stroke-width="0.36" />
+    <rect x="${cx - sw / 2}" y="${cy - sh / 2}" width="${sw}" height="${sh}" rx="${sh * 0.12}" fill="none" stroke="${p.accent}" stroke-width="0.34" />
+    <rect x="${cx - sw / 2 + inset}" y="${cy - sh / 2 + inset}" width="${sw - inset * 2}" height="${sh - inset * 2}" rx="${sh * 0.08}" fill="none" stroke="${p.accent}" stroke-opacity="0.4" stroke-width="0.14" />
     ${volumeMarkup(cx, cy + 1.1, volume, system.type, p.fg, 'middle', fontStack('serif'), true)}
   `
 }
@@ -423,33 +321,37 @@ function labelBackArt(
   const sticker = resolveStickerMarks(system.sector, w, h, brief)
   const header = 11.2
   const footer = Math.min(22, Math.max(14, h * 0.22))
-  const lineH = 2.65
-  const maxLines = Math.max(3, Math.floor((h - header - footer - 8) / lineH))
+  const lineH = Math.max(2.65, h < 50 ? 2.35 : 2.65)
+  const bodySpace = h - header - footer - 8
+  const maxLines = Math.max(3, Math.floor(bodySpace / lineH))
   const usage = wrapLines(copy.warnings || sticker.warnings, Math.max(16, Math.floor((w - 8) / 1.9)), Math.ceil(maxLines * 0.55))
   const how = wrapLines(copy.ingredients, Math.max(16, Math.floor((w - 8) / 1.9)), Math.max(2, maxLines - usage.length - 2))
   const ids = sticker.strip
   const footY = y + h - footer
   let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}" />`
-  body += `<text x="${x + 4}" y="${y + 5.4}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="1.7" letter-spacing="1.2">ARKA YÜZ</text>`
-  body += `<text x="${x + w - 4}" y="${y + 5.4}" text-anchor="end" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="1.7" letter-spacing="0.8">${esc(copy.brand.toUpperCase())}</text>`
-  body += `<text x="${x + 4}" y="${y + 9.6}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="2.2" letter-spacing="1.05">KULLANIM</text>`
+  body += `<text x="${x + 4}" y="${y + 5.4}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.7" letter-spacing="1.2">ARKA YÜZ</text>`
+  body += `<text x="${x + w - 4}" y="${y + 5.4}" text-anchor="end" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="1.7" letter-spacing="0.8">${esc(copy.brand.toUpperCase())}</text>`
+  body += `<text x="${x + 4}" y="${y + 9.6}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.2" letter-spacing="1.05">KULLANIM</text>`
   let cursor = y + header + 1.2
   how.forEach((line) => {
-    body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="1.95">${esc(line)}</text>`
+    body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.95">${esc(line)}</text>`
     cursor += lineH
   })
   cursor += 2.4
-  body += `<text x="${x + 4}" y="${cursor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="2.05" letter-spacing="1.05">UYARI</text>`
+  body += `<text x="${x + 4}" y="${cursor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.05" letter-spacing="1.05">UYARI</text>`
   cursor += 3.1
   usage.forEach((line) => {
-    body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="1.95">${esc(line)}</text>`
+    body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.95">${esc(line)}</text>`
     cursor += lineH
   })
+  if (system.sector === 'food' && cursor + 14 < footY - 6) {
+    body += foodNutritionTable(x + 4, cursor + 2.2, w - 8, p, system, true)
+  }
   if (copy.manufacturer) {
-    body += `<text x="${x + 4}" y="${footY - 3.8}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="1.7">${esc(copy.manufacturer)}</text>`
+    body += `<text x="${x + 4}" y="${footY - 3.8}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.7">${esc(copy.manufacturer)}</text>`
   }
   if (copy.address) {
-    body += `<text x="${x + 4}" y="${footY - 1.6}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="1.55">${esc(copy.address)}</text>`
+    body += `<text x="${x + 4}" y="${footY - 1.6}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.55">${esc(copy.address)}</text>`
   }
   body += `<line x1="${x + 4}" y1="${footY}" x2="${x + w - 4}" y2="${footY}" stroke="${p.muted}" stroke-opacity="0.5" stroke-width="0.16" />`
   if (ids.length) {
@@ -465,7 +367,7 @@ function labelBackArt(
 
 function legalHead(x: number, y: number, label: string, p: Palette, serif: boolean, tracking: number): string {
   const font = serif ? "Georgia, 'Times New Roman', serif" : 'Inter, Arial, sans-serif'
-  return `<text x="${x}" y="${y}" fill="${p.accent}" font-family="${font}" font-size="1.95" letter-spacing="${tracking}">${esc(label)}</text>`
+  return `<text x="${x}" y="${y}" fill="${p.accent}" font-family="${font}" font-weight="600" font-size="1.95" letter-spacing="${tracking}">${esc(label)}</text>`
 }
 
 function legalBlock(
@@ -492,7 +394,7 @@ function legalBlock(
     ${lines
       .map(
         (line, i) =>
-          `<text x="${x + 8.0}" y="${y + 6.15 + i * lineH}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${legalMm}" letter-spacing="${trackingLegal}">${esc(line)}</text>`,
+          `<text x="${x + 8.0}" y="${y + 6.15 + i * lineH}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${legalMm}" letter-spacing="${trackingLegal}">${esc(line)}</text>`,
       )
       .join('')}
   `
@@ -527,115 +429,122 @@ function flapGround(panel: Panel, p: Palette, luxuryTick: boolean, mark = ''): s
 }
 
 function labelDecor(panel: Panel, system: DesignSystem, p: Palette): string {
-  const { x, y, w, h } = panel
   const { style } = system
-  if (system.wrapSeam) {
-    return `
-      <line x1="${x + 4}" y1="${y + 2.2}" x2="${x + w - 9}" y2="${y + 2.2}" stroke="${p.accent}" stroke-opacity="0.45" stroke-width="0.2" />
-      <line x1="${x + 4}" y1="${y + h - 2.2}" x2="${x + w - 9}" y2="${y + h - 2.2}" stroke="${p.accent}" stroke-opacity="0.45" stroke-width="0.2" />
-      ${wrapReadStart(panel, p)}
-    `
-  }
-  let out = ''
-  if (style === 'luxury' || style === 'classic') out += frames(panel, p, 1, false, false)
-  else if (style === 'playful' || style === 'eco') out += frames(panel, p, 1, true)
-  else if (style === 'modern') out += modernStripe(panel, p)
-  if (style === 'eco') out += leafStampField(panel, p.accent)
-  return out
+  if (system.wrapSeam) return ''
+  if (style === 'luxury' || style === 'classic') return frames(panel, p, 1, false, false)
+  if (style === 'playful' || style === 'eco') return frames(panel, p, 1, true)
+  if (style === 'modern') return modernStripe(panel, p)
+  return ''
 }
 
 function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan): string {
   const { decor, style } = system
   const scale = heroPaintScale(plan)
-  if (decor === 'crest') return perfumeCrest(panel, p, true, heroYFrac(plan, 0.148), scale)
-  if (decor === 'cartouche') return classicCartouche(panel, p, heroYFrac(plan, 0.16), scale)
-  if (decor === 'leaf') return ecoLeaf(panel, p, heroYFrac(plan, 0.17), scale)
-  if (decor === 'badge') return playfulBadge(panel, p, heroYFrac(plan, 0.18), scale)
-  if (decor === 'olive' || decor === 'harvest') return oliveWreath(panel, p, heroYFrac(plan, 0.165), scale)
-  if (decor === 'drop') return serumMotif(panel, p, heroYFrac(plan, 0.14), scale)
-  if (decor === 'oval') return creamMotif(panel, p, heroYFrac(plan, 0.18), scale)
-  if (decor === 'grid' && style === 'luxury') return metalPlaque(panel, p)
+  const xFrac = plan?.composition.heroZone.x ?? 0.5
+  if (decor === 'crest') return perfumeCrest(panel, p, true, heroYFrac(plan, 0.148), scale, xFrac)
+  if (decor === 'cartouche') return classicCartouche(panel, p, heroYFrac(plan, 0.16), scale, xFrac)
+  if (decor === 'leaf') return ecoLeaf(panel, p, heroYFrac(plan, 0.17), scale, xFrac)
+  if (decor === 'badge') return playfulBadge(panel, p, heroYFrac(plan, 0.18), scale, xFrac)
+  if (decor === 'olive' || decor === 'harvest') return oliveWreath(panel, p, heroYFrac(plan, 0.165), scale, xFrac)
+  if (decor === 'drop') return serumMotif(panel, p, heroYFrac(plan, 0.14), scale, xFrac)
+  if (decor === 'oval') return creamMotif(panel, p, heroYFrac(plan, 0.18), scale, xFrac)
+  if (decor === 'grid' && style === 'luxury') return metalPlaque(panel, p, xFrac)
   if (decor === 'grid') return techSlab(panel, p, system.density !== 'sparse')
   return ''
 }
 
-function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan): string {
-  const { style, decor, grammar, sector } = system
-  if (grammar === 'label') {
-    return labelDecor(panel, system, p)
-  }
-  let out = ''
-  const restrain = !!system.director?.restrainDecor
-  const patternFamily = plan?.patternSystem.family
-  const patternOp = plan?.patternSystem.opacity
-  if (style === 'luxury') {
-    const chrome = plan?.artDirection.chrome ?? 'full'
-    const ticks = sector === 'perfume' && !restrain && chrome !== 'quiet' ? sideTicks(panel, p, safe) : ''
-    const fam = patternFamily ?? 'contour'
-    const fieldCore =
-      fam === 'contour'
-        ? contourGoldField(panel, p.accent, sector === 'perfume' ? (restrain ? 0.12 : 0.2) : 0.12, safe)
-        : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.14, safe)
-    const field = `${fieldCore}${ticks}`
-    const tagged = wrapPattern(fam, field)
-    out += safe ? `<g clip-path="url(#lockout-${panel.id})">${tagged}</g>` : tagged
-    if ((sector === 'electronics' || sector === 'food') && !restrain) out += diagonalFoil(panel, p.accent)
-    const perfumeJewelry = sector === 'perfume' && chrome !== 'quiet'
-    if (perfumeJewelry) out += foilHairline(panel, p)
-    if (sector === 'food' && !restrain) {
-      out += frames(panel, p, 2, false, true)
-      out += corners(panel, p)
-      out += foodOrnamentBorder(panel, p)
-    } else {
-      out += frames(panel, p, 3, false, true)
-      out += corners(panel, p)
-      out += lBrackets(panel, p.accent)
-    }
-    if (perfumeJewelry && !restrain) out += cornerDiamonds(panel, p)
-  } else {
-    out += frames(panel, p, style === 'classic' ? 2 : style === 'playful' || style === 'eco' ? 1 : 0, style === 'playful' || style === 'eco')
-    if (style === 'modern') {
-      out += modernStripe(panel, p)
-      const fam = patternFamily ?? 'lattice'
-      const field = fam === 'lattice' ? geoLattice(panel, p.fg, 0.08, safe) : paintPatternFamily(fam, panel, p.fg, patternOp ?? 0.08, safe)
-      out += wrapPattern(fam, field)
-    }
-    if (style === 'classic') {
-      const fam = patternFamily ?? 'ornament'
-      const field = fam === 'ornament' ? ornamentalRail(panel, p.accent) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.14, safe)
-      out += wrapPattern(fam, field)
-    }
-    if (style === 'eco' && !restrain) {
-      const fam = patternFamily ?? 'grain'
-      const field = fam === 'grain' ? leafStampField(panel, p.accent) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.1, safe)
-      out += wrapPattern(fam, field)
-    }
-    if (style === 'playful' && !restrain) {
-      const fam = patternFamily ?? 'capsule'
-      const field = fam === 'capsule' ? claimCapsules(panel, p) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.16, safe)
-      out += wrapPattern(fam, field)
-    }
-  }
-  const kitFamily = kitHeroFamily(decor)
+function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan): string {
+  const kitFamily = kitHeroFamily(system.decor)
   const family = plan?.heroGraphic.family ?? kitFamily
+  const label = system.grammar === 'label'
+  const libY = label ? Math.min(0.12, plan?.composition.heroZone.y ?? 0.11) : (plan?.composition.heroZone.y ?? 0.148)
+  const libScale = ((plan?.heroGraphic.scale ?? 1) * (plan?.crop.heroCrop ?? 1)) * (label ? 0.82 : 1)
+  const libX = plan?.composition.heroZone.x ?? 0.5
   if (family !== 'none' && family !== kitFamily) {
-    const libScale = (plan?.heroGraphic.scale ?? 1) * (plan?.crop.heroCrop ?? 1)
-    const libY = plan?.composition.heroZone.y ?? 0.148
-    out += wrapHero(family, paintHeroGraphic(family, panel, p, libScale, libY))
+    return wrapHero(family, paintHeroGraphic(family, panel, p, libScale, libY, libX))
+  }
+  const kit = kitHeroMarkup(panel, system, p, plan)
+  if (kit) return wrapHero(kitFamily === 'none' ? family : kitFamily, kit)
+  if (family !== 'none') return wrapHero(family, paintHeroGraphic(family, panel, p, libScale, libY, libX))
+  return ''
+}
+
+function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan): string {
+  const { style, grammar } = system
+  let out = ''
+  if (grammar === 'label') {
+    out += labelDecor(panel, system, p)
+    out += paintPlanHero(panel, system, p, plan)
   } else {
-    out += wrapHero(kitFamily === 'none' ? family : kitFamily, kitHeroMarkup(panel, system, p, plan))
+    const sector = system.sector
+    if (style === 'luxury' || style === 'classic') {
+      out += sectorFrame(panel, p, sector, style)
+    } else if (style === 'modern') {
+      // Electronics gets corner brackets; others get modern stripe.
+      if (sector === 'electronics') out += sectorFrame(panel, p, sector, style)
+      else out += modernStripe(panel, p)
+    } else if (style === 'eco' || style === 'playful') {
+      out += sectorFrame(panel, p, sector, style)
+    }
+    // Grid intent: subtle column guides for modern/tech compositions.
+    if (plan?.composition.intent === 'grid' && style === 'modern') {
+      const { x, y, w, h } = panel
+      const cols = 3
+      for (let i = 1; i < cols; i++) {
+        const gx = x + (w / cols) * i
+        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.06" stroke-width="0.1" />`
+      }
+    }
+    out += paintPlanHero(panel, system, p, plan)
   }
-  if (plan?.cue === 'force-overload') {
-    out += wrapHero('seal', `<g transform="translate(0 ${panel.h * 0.22})">${paintHeroGraphic('seal', panel, p, 0.7)}</g>`)
-    out += wrapHero('emblem', `<g transform="translate(0 ${panel.h * 0.4})">${paintHeroGraphic('emblem', panel, p, 0.7)}</g>`)
+
+  const pattern = plan?.patternSystem
+  if (pattern && pattern.family !== 'none') {
+    const patternSafe = pattern.avoidLockup ? safe : undefined
+    const markup = paintPatternFamily(pattern.family, panel, p.accent, pattern.opacity, patternSafe)
+    out += wrapPattern(pattern.family, markup)
   }
-  if (plan?.illustrationSystem.primitives.length) {
-    const sw = style === 'luxury' ? 0.22 : style === 'modern' ? 0.16 : 0.24
-    const prims = paintPrimitives(panel, p, plan.illustrationSystem.primitives, sw, safe)
-    out += safe ? `<g clip-path="url(#lockout-${panel.id})">${prims}</g>` : prims
+
+  if (plan?.artDirection.chrome === 'full' && safe && grammar !== 'label') {
+    out += lockupWindow(safe, p.accent)
   }
-  if (safe && (style === 'luxury' || style === 'classic')) out += lockupWindow(safe, p.accent)
+
+  const prims = plan?.illustrationSystem.primitives ?? []
+  if (prims.length) {
+    const filtered =
+      system.decor === 'leaf' || system.decor === 'olive' ? prims.filter((id) => id !== 'leaf') : prims
+    if (filtered.length) out += paintPrimitives(panel, p, filtered, 0.22, safe)
+  }
+
   return out
+}
+
+function paintSidePattern(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan): string {
+  const style = system.style
+  const want = !!plan?.patternSystem.sideIntentional || style === 'luxury' || style === 'modern'
+  if (!want) return ''
+  if (panel.w < 8 || panel.h < 18) return ''
+
+  const planned = plan?.patternSystem.family
+  const family =
+    planned && planned !== 'none'
+      ? planned
+      : style === 'luxury'
+        ? 'contour'
+        : style === 'modern'
+          ? 'lattice'
+          : style === 'eco'
+            ? 'grain'
+            : 'stripe'
+
+  if (style === 'luxury') {
+    return wrapSidePattern(family, spineLuxuryField(panel, p.accent))
+  }
+
+  const dens = plan?.density.side ?? 'sparse'
+  const base = plan?.patternSystem.opacity ?? 0.1
+  const op = dens === 'sparse' ? Math.min(0.07, base * 0.45) : dens === 'dense' ? base : base * 0.72
+  return wrapSidePattern(family, paintPatternFamily(family, panel, p.accent, op))
 }
 
 function panelArt(
@@ -655,7 +564,6 @@ function panelArt(
   const cx = x + w / 2
   const id = panel.id
   const s = overrides.logoScale
-  const mark = monogram(copy.brand)
   const cat = system.category
   const perfume = system.sector === 'perfume'
   const min = system.type.minMm
@@ -667,8 +575,7 @@ function panelArt(
     return glueOnly(panel, p)
   }
   if (panel.role === 'tuck' || id.includes('Dust')) {
-    const tuckMark = copy.brand.trim() ? monogram(copy.brand) : ''
-    return flapGround(panel, p, style === 'luxury', tuckMark)
+    return flapGround(panel, p, false, '')
   }
 
   const isFront = id === 'front' || id === 'label' || id === 'trayFront'
@@ -679,37 +586,28 @@ function panelArt(
 
   const layout = isFront ? layoutFrontLockup(panel, system, copy, overrides, labelFace) : undefined
   const lockup = layout?.rect
-  const spineSafe: SafeRect | undefined = isSide
-    ? { x: x + w * 0.18, y: y + 10, w: w * 0.64, h: h - 20 }
-    : undefined
 
   let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}" />`
   if (lockup) body += lockoutClip(id, panel, lockup)
-  if (style === 'eco') body += ecoGrain(panel, p)
-  if (isFront) body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
+  if (isFront) {
+    body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
+    body += paintStyleBackground(panel, style, p)
+    if (designPlan) body += paintSectorBackground(panel, system.sector, style, p)
+  }
 
   if (isFront) {
     body += frontDecor(panel, system, p, lockup, designPlan)
     if (labelFace && system.wrapSeam) {
-      body += wrapContinuity(panel, p.accent)
       body += wrapSeam(panel, p)
+      body += wrapContinuity(panel, p.accent)
     }
   } else if (isBack) {
     body += frames(panel, p, style === 'luxury' ? 1 : 0, false)
   } else if (isSide) {
     if (style === 'modern') {
       body += `<rect x="${x}" y="${y}" width="${w}" height="2.2" fill="${p.accent}" />`
-      body += wrapSidePattern(designPlan?.patternSystem.family ?? 'lattice', geoLattice(panel, p.fg, 0.07, spineSafe))
-      body += seriesMark(cx, y + 7.2, id === 'right' || id === 'trayRight' ? '02' : '01', p.muted, 'middle')
     }
-    if (style === 'luxury') {
-      body += wrapSidePattern(
-        designPlan?.patternSystem.family ?? 'ornament',
-        spineLuxuryField(panel, p.accent, spineSafe, id === 'right' || id === 'trayRight' ? '02' : '01'),
-      )
-    }
-    if (style === 'eco') body += wrapSidePattern(designPlan?.patternSystem.family ?? 'grain', leafStampField(panel, p.accent))
-    if (style === 'classic') body += `<line x1="${x + 1.4}" y1="${y + 4}" x2="${x + w - 1.4}" y2="${y + 4}" stroke="${p.accent}" stroke-width="0.2" />`
+    body += paintSidePattern(panel, system, p, designPlan)
   }
 
   if (isFront && layout) {
@@ -723,44 +621,36 @@ function panelArt(
     if (logoHref) {
       const ls = 9.2 * s
       body += `<image href="${logoHref}" x="${ax - (left ? 0 : ls / 2)}" y="${logoY - ls / 2}" width="${ls}" height="${ls}" preserveAspectRatio="xMidYMid meet" />`
-    } else if (style !== 'minimal') {
-      const monoSize = mm((perfume ? 4.6 : 5.5) * s, min)
-      body += `<text x="${ax}" y="${logoY + 1.35}" text-anchor="${anchor}" fill="${p.accent}" font-family="${font}" font-size="${monoSize}" letter-spacing="${style === 'modern' ? 0.25 : 1.4}">${esc(mark)}</text>`
-    }
-
-    if (!labelFace && (style === 'modern' || system.lockup === 'tech-grid' || system.lockup === 'left-index')) {
-      body += `<text x="${x + w - 5.2}" y="${y + 6.4}" text-anchor="end" fill="${p.muted}" font-family="${layout.metaFont}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="${system.type.trackingMeta}">${system.sector === 'electronics' ? 'SPEC' : '01'}</text>`
-    } else if (style === 'luxury' && !labelFace) {
-      body += seriesMark(x + w - 5.4, y + 6.2, '01', p.accent, 'end')
     }
 
     const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
     const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
     brandLines.forEach((line, i) => {
-      body += `<text x="${ax}" y="${brandYs[i] ?? layout.brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.brandFont}" font-size="${layout.brandSize}" letter-spacing="${layout.brandTracking}">${esc(line)}</text>`
+      body += `<text x="${ax}" y="${brandYs[i] ?? layout.brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.brandFont}" font-weight="${layout.brandWeight}" font-size="${layout.brandSize}" letter-spacing="${layout.brandTracking}">${esc(line)}</text>`
     })
     body += lockupRule(layout, panel, p)
     if (copy.product.trim()) {
-      body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(copy.product.toUpperCase())}</text>`
+      body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-weight="${layout.productWeight}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(copy.product.toUpperCase())}</text>`
     }
     if (cat && style !== 'minimal') {
-      body += `<text x="${ax}" y="${layout.categoryY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-size="${layout.categorySize}" letter-spacing="${layout.categoryTracking}">${esc(cat)}</text>`
+      body += `<text x="${ax}" y="${layout.categoryY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${layout.categorySize}" letter-spacing="${layout.categoryTracking}">${esc(cat)}</text>`
     }
-    body += `<text x="${ax}" y="${layout.taglineY}" text-anchor="${anchor}" fill="${p.muted}" font-family="${system.serif ? 'Georgia, serif' : layout.metaFont}" font-size="${layout.taglineSize}" font-style="${system.serif ? 'italic' : 'normal'}">${esc(copy.tagline)}</text>`
-    if (!labelFace && system.sector === 'food') {
-      body += `<text x="${ax}" y="${layout.taglineY + 4.2}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="1.1">NET</text>`
+    body += `<text x="${ax}" y="${layout.taglineY}" text-anchor="${anchor}" fill="${p.muted}" font-family="${system.serif ? 'Georgia, serif' : layout.metaFont}" font-weight="${system.style === 'minimal' ? 300 : 400}" font-size="${layout.taglineSize}" font-style="${system.serif ? 'italic' : 'normal'}">${esc(copy.tagline)}</text>`
+    if (system.sector === 'food') {
+      const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
+      body += `<text x="${ax}" y="${netY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="1.1">NET</text>`
       if (copy.volume) {
-        body += `<text x="${ax}" y="${layout.taglineY + 7.2}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.metaFont}" font-size="${mm(system.type.metaMm + 0.5, min)}" letter-spacing="0.8">${esc(copy.volume.toUpperCase())}</text>`
+        body += `<text x="${ax}" y="${netY + (labelFace ? 2.6 : 3.0)}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${mm(system.type.metaMm + (labelFace ? 0.2 : 0.5), min)}" letter-spacing="0.8">${esc(copy.volume.toUpperCase())}</text>`
       }
-      const claimY = layout.taglineY + (copy.volume ? 11.4 : 8.6)
-      if (claimY + 8 < y + h - 14) {
+      const claimY = netY + (copy.volume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
+      if (claimY + (labelFace ? 6 : 8) < y + h - (labelFace ? 8 : 14)) {
         body += foodClaimStrip(panel, p, claimY, ax, anchor, system.type.minMm)
       }
     }
     if (!labelFace && system.sector === 'electronics') {
       const spec = frontSpecLine(copy.ingredients)
       if (spec) {
-        body += `<text x="${ax}" y="${y + h * 0.7}" text-anchor="${anchor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.legalMm, 2.0)}" letter-spacing="0.35">${esc(spec)}</text>`
+        body += `<text x="${ax}" y="${y + h * 0.7}" text-anchor="${anchor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${mm(system.type.legalMm, 2.0)}" letter-spacing="0.35">${esc(spec)}</text>`
       }
     }
 
@@ -785,6 +675,13 @@ function panelArt(
       )
     }
 
+    if (brief.ingredientClaims?.trim()) {
+      const badgeY = layout.taglineY + (labelFace ? 5.8 : 7.4)
+      if (badgeY + 5.5 < y + h - (system.goldBar ? 14 : 10)) {
+        body += ingredientBadges(brief.ingredientClaims, ax, badgeY, anchor, p, system.type.minMm)
+      }
+    }
+
   } else if (isBack) {
     const padX = 4.4
     const blockW = w - padX * 2
@@ -796,32 +693,55 @@ function panelArt(
 
     const first = system.legal[0]
     const second = system.legal[1]
-    const inci = wrapLines(copy.ingredients, Math.max(16, Math.floor(w / 2.05)), perfume ? 6 : 5)
-    const warns = wrapLines(copy.warnings, Math.max(16, Math.floor(w / 2.05)), 4)
+    const shortBack = h < 70
+    const inci = wrapLines(copy.ingredients, Math.max(16, Math.floor(w / 2.05)), shortBack && system.sector === 'food' ? 2 : perfume ? 6 : 5)
+    const warns = wrapLines(copy.warnings, Math.max(16, Math.floor(w / 2.05)), shortBack ? 2 : 4)
 
+    if (system.sector === 'food' && shortBack) {
+      body += foodNutritionTable(x + padX, cursor, blockW, p, system, true)
+      cursor += 14
+    }
+
+    const backFloor = y + h - (shortBack ? 14 : 32)
     if (style === 'minimal') {
       body += `<line x1="${x + padX}" y1="${cursor}" x2="${x + w - padX}" y2="${cursor}" stroke="${p.fg}" stroke-width="0.18" />`
       cursor += 4.2
       body += legalHead(x + padX, cursor, first?.title ?? 'SPEC', p, false, system.type.trackingMeta)
       cursor += 3.2
       inci.forEach((line) => {
-        body += `<text x="${x + padX}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.legalMm, 1.9)}" letter-spacing="${system.type.trackingLegal}">${esc(line)}</text>`
+        if (cursor > backFloor) return
+        body += `<text x="${x + padX}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${mm(system.type.legalMm, 1.9)}" letter-spacing="${system.type.trackingLegal}">${esc(line)}</text>`
         cursor += 2.9
       })
       cursor += 3.4
-      body += legalHead(x + padX, cursor, second?.title ?? 'CAUTION', p, false, system.type.trackingMeta)
-      cursor += 3.1
+      if (cursor < backFloor) {
+        body += legalHead(x + padX, cursor, second?.title ?? 'CAUTION', p, false, system.type.trackingMeta)
+        cursor += 3.1
+      }
       warns.forEach((line) => {
-        body += `<text x="${x + padX}" y="${cursor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="${mm(system.type.legalMm, 1.9)}" letter-spacing="${system.type.trackingLegal}">${esc(line)}</text>`
+        if (cursor > backFloor) return
+        body += `<text x="${x + padX}" y="${cursor}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${mm(system.type.legalMm, 1.9)}" letter-spacing="${system.type.trackingLegal}">${esc(line)}</text>`
         cursor += 2.8
       })
     } else {
-      const a = legalBlock(x + padX, cursor, blockW, first?.title ?? 'SPEC', inci, p, system.serif, 2.85, system.type.legalMm, system.type.trackingLegal, '01')
+      const a = legalBlock(x + padX, cursor, blockW, first?.title ?? 'SPEC', inci, p, system.serif, shortBack ? 2.35 : 2.85, system.type.legalMm, system.type.trackingLegal, '01')
       body += a.markup
       cursor += a.height + 2.2
-      const b = legalBlock(x + padX, cursor, blockW, second?.title ?? 'CAUTION', warns, p, system.serif, 2.75, system.type.legalMm, system.type.trackingLegal, '02')
-      body += b.markup
-      cursor += b.height + 2.0
+      if (!shortBack || cursor + 12 < y + h - 16) {
+        const b = legalBlock(x + padX, cursor, blockW, second?.title ?? 'CAUTION', warns, p, system.serif, shortBack ? 2.35 : 2.75, system.type.legalMm, system.type.trackingLegal, '02')
+        body += b.markup
+        cursor += b.height + 2.0
+      }
+    }
+
+    if (system.sector === 'food' && !shortBack) {
+      const compact = h < 90
+      const need = compact ? 16 : 28
+      const floor = compact ? 18 : 32
+      if (cursor + need < y + h - floor) {
+        body += foodNutritionTable(x + padX, cursor, blockW, p, system, compact)
+        cursor += need
+      }
     }
 
     const extras = backFill(brief, copy.volume)
@@ -856,9 +776,7 @@ function panelArt(
     if (quietH > 11) {
       const qx = x + padX
       const qy = cursor + 0.4
-      body += `<line x1="${qx}" y1="${qy}" x2="${qx + blockW}" y2="${qy}" stroke="${p.accent}" stroke-opacity="0.32" stroke-width="0.16" />`
-      body += `<text x="${cx}" y="${qy + quietH * 0.48}" text-anchor="middle" fill="${p.accent}" font-family="${font}" font-size="${Math.min(3.4, quietH * 0.28)}" letter-spacing="1.35">${esc(monogram(copy.brand))}</text>`
-      body += `<text x="${cx}" y="${qy + quietH * 0.48 + 3.6}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="1.75" letter-spacing="0.85">${esc(extras.seal)}</text>`
+      body += `<line x1="${qx}" y1="${qy}" x2="${qx + blockW}" y2="${qy}" stroke="${p.accent}" stroke-opacity="0.28" stroke-width="0.16" />`
     }
 
     const leftX = x + padX
@@ -888,23 +806,27 @@ function panelArt(
     const primary = (copy.brand.trim() || copy.product).toUpperCase()
     const maxChars = Math.max(6, Math.floor((h - 18) / 3.4))
     const spine = primary.length > maxChars ? monogram(copy.brand || copy.product) : primary
-    body += `<line x1="${cx}" y1="${y + 5.2}" x2="${cx}" y2="${y + 9.4}" stroke="${p.accent}" stroke-width="0.2" />`
-    body += `<text transform="translate(${cx + 1.05} ${y + h / 2}) rotate(-90)" text-anchor="middle" fill="${p.fg}" font-family="${font}" font-size="3.15" letter-spacing="1.5">${esc(spine)}</text>`
-    if (copy.volume) {
-      body += `<text x="${cx}" y="${y + h - 4.6}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-size="2.05">${esc(copy.volume)}</text>`
+    const spineSize = Math.min(3.15, (h - 20) / Math.max(1, spine.length) * 0.32, w * 0.28)
+    const spineTracking = Math.min(1.5, spineSize * 0.48)
+    body += `<line x1="${cx}" y1="${y + 5.2}" x2="${cx}" y2="${y + Math.min(9.4, h * 0.07)}" stroke="${p.accent}" stroke-width="0.2" />`
+    body += `<text transform="translate(${cx + 1.05} ${y + h / 2}) rotate(-90)" text-anchor="middle" fill="${p.fg}" font-family="${font}" font-weight="600" font-size="${spineSize}" letter-spacing="${spineTracking}">${esc(spine)}</text>`
+    if (copy.volume && h > 40) {
+      body += `<text x="${cx}" y="${y + h - 4.6}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${Math.min(2.05, w * 0.18)}">${esc(copy.volume)}</text>`
     }
   } else if (isTop) {
     const topBrand = copy.brand.trim()
+    const topSize = Math.min(2.55, h * 0.2, w * 0.065)
+    const catSize = Math.min(1.85, h * 0.15, w * 0.05)
     if (topBrand) {
-      const topLabel = topBrand.length > 14 ? monogram(topBrand) : topBrand.toUpperCase()
-      body += `<text x="${cx}" y="${y + h * 0.38}" text-anchor="middle" fill="${p.fg}" font-family="${font}" font-size="${Math.min(2.55, h * 0.22)}" letter-spacing="1.1">${esc(topLabel)}</text>`
-      if (cat) {
-        body += `<text x="${cx}" y="${y + h * 0.58}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="1.85" letter-spacing="0.9">${esc(cat)}</text>`
+      const topLabel = topBrand.length > Math.floor(w / 4.5) ? monogram(topBrand) : topBrand.toUpperCase()
+      body += `<text x="${cx}" y="${y + h * 0.38}" text-anchor="middle" fill="${p.fg}" font-family="${font}" font-weight="600" font-size="${topSize}" letter-spacing="1.1">${esc(topLabel)}</text>`
+      if (cat && h > 12) {
+        body += `<text x="${cx}" y="${y + h * 0.6}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${catSize}" letter-spacing="0.9">${esc(cat)}</text>`
       }
     } else if (cat) {
-      body += `<text x="${cx}" y="${y + h * 0.42}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="2.15" letter-spacing="1.2">${esc(cat)}</text>`
+      body += `<text x="${cx}" y="${y + h * 0.42}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${Math.min(2.15, topSize)}" letter-spacing="1.2">${esc(cat)}</text>`
     } else if (copy.volume) {
-      body += `<text x="${cx}" y="${y + h * 0.42}" text-anchor="middle" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="2.4">${esc(copy.volume)}</text>`
+      body += `<text x="${cx}" y="${y + h * 0.42}" text-anchor="middle" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-size="${Math.min(2.4, topSize)}">${esc(copy.volume)}</text>`
     }
   }
 
@@ -935,48 +857,4 @@ export function composeArtwork(
     language: languageId(brief),
     systemKey: system.key,
   }
-}
-
-export function artworkMarkup(artwork: ArtworkModel): string {
-  return artwork.layers.map((l) => l.markup).join('')
-}
-
-export function clipDefs(dieline: DielineModel): string {
-  return dieline.panels.map(clipDef).join('')
-}
-
-export function renderFrontSvg(
-  dieline: DielineModel,
-  artwork: ArtworkModel,
-  palette: Palette,
-): string {
-  const panel = dieline.panels.find((p) => p.id === artwork.frontPanelId)
-  if (!panel) return ''
-  const pad = 6
-  const layer = artwork.layers.find((l) => l.panelId === panel.id)?.markup ?? ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${panel.x - pad} ${panel.y - pad} ${panel.w + pad * 2} ${panel.h + pad * 2}">
-    <rect x="${panel.x - pad}" y="${panel.y - pad}" width="${panel.w + pad * 2}" height="${panel.h + pad * 2}" fill="${palette.paper}" />
-    <defs>${clipDefs(dieline)}</defs>
-    ${layer}
-  </svg>`
-}
-
-export function renderArtNetSvg(dieline: DielineModel, artwork: ArtworkModel): string {
-  const pad = 8
-  return `<g>
-    <defs>${clipDefs(dieline)}</defs>
-    <g transform="translate(${pad} ${pad})">${artworkMarkup(artwork)}</g>
-  </g>`
-}
-
-export function renderArtworkDoc(dieline: DielineModel, artwork: ArtworkModel, title: string): string {
-  const pad = 8
-  const w = dieline.width + pad * 2
-  const h = dieline.height + pad * 2
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
-  <title>${esc(title)} — FORMA artwork</title>
-  <defs>${clipDefs(dieline)}</defs>
-  <g transform="translate(${pad} ${pad})">${artworkMarkup(artwork)}</g>
-</svg>`
 }

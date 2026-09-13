@@ -174,7 +174,7 @@ export function paoMonthsFromBrief(brief: DesignBrief | undefined, fallback: str
   if (brief?.paoMonths?.trim()) return normalizePao(brief.paoMonths)
   const blob = `${brief?.copyOverrides ?? ''} ${brief?.productName ?? ''} ${brief?.subProduct ?? ''} ${brief?.volume ?? ''}`
   const hit =
-    blob.match(/\bpao\s*[:\-]?\s*(\d{1,2})\b/i) ||
+    blob.match(/\bpao\s*[:-]?\s*(\d{1,2})\b/i) ||
     blob.match(/\b(\d{1,2})\s*ay\b/i) ||
     blob.match(/\b(\d{1,2})M\b/)
   return hit ? normalizePao(hit[1]) : fallback
@@ -249,7 +249,7 @@ export function perfumeAssetsAllowed(sector: SectorId): boolean {
 export function resolveStickerMarks(
   sector: SectorId,
   widthMm: number,
-  heightMm: number,
+  _heightMm: number,
   brief?: DesignBrief,
 ): ResolvedMarks {
   if (sector !== 'perfume') {

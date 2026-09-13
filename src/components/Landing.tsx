@@ -1,6 +1,8 @@
 import { useRef, type ChangeEvent, type KeyboardEvent } from 'react'
 import type { Attachment } from '../types'
 import { IconArrowUp, IconPaperclip } from './Icons'
+import { AuthPanel } from './AuthPanel'
+import type { AuthUser } from '../api/client'
 
 const CHIPS = ['Kozmetik kutusu', 'Gıda ambalajı', 'Elektronik kutusu', 'Etiket'] as const
 
@@ -11,6 +13,8 @@ type LandingProps = {
   onAttach: (files: FileList | null) => void
   onRemoveAttach: (id: string) => void
   onSend: (text?: string) => void
+  onAuthChange?: (user: AuthUser | null) => void
+  creditsRefreshKey?: number
 }
 
 export function Landing({
@@ -20,6 +24,8 @@ export function Landing({
   onAttach,
   onRemoveAttach,
   onSend,
+  onAuthChange,
+  creditsRefreshKey = 0,
 }: LandingProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -39,7 +45,10 @@ export function Landing({
     <div className="landing">
       <header className="topbar topbar--landing">
         <span className="wordmark">FORMA</span>
-        <span className="topbar__meta">Tasarım motoru</span>
+        <div className="topbar__right">
+          <span className="topbar__meta">Tasarım motoru</span>
+          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} />
+        </div>
       </header>
 
       <main className="landing__hero">

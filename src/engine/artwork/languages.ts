@@ -107,6 +107,41 @@ export function paletteFor(brief: DesignBrief, style: StyleType, _premium: boole
   return { bg: '#16120e', fg: '#f0e6d4', accent: '#8b3d3d', muted: '#8a7460', paper: '#1c1814' }
 }
 
+function mixHex(a: string, b: string, amount: number): string {
+  const parse = (value: string) => [1, 3, 5].map((index) => Number.parseInt(value.slice(index, index + 2), 16))
+  const [ar, ag, ab] = parse(a)
+  const [br, bg, bb] = parse(b)
+  const channel = (from: number, to: number) => Math.round(from + (to - from) * amount).toString(16).padStart(2, '0')
+  return `#${channel(ar, br)}${channel(ag, bg)}${channel(ab, bb)}`
+}
+
+export function varyPalette(base: Palette, variationIndex: number): Palette {
+  const variant = Math.max(0, Math.floor(variationIndex)) % 4
+  if (variant === 0) return base
+  if (variant === 1) {
+    return {
+      ...base,
+      bg: mixHex(base.bg, '#000000', 0.18),
+      paper: mixHex(base.paper, '#000000', 0.12),
+      accent: mixHex(base.accent, base.fg, 0.12),
+    }
+  }
+  if (variant === 2) {
+    return {
+      ...base,
+      bg: mixHex(base.bg, base.fg, 0.12),
+      paper: mixHex(base.paper, base.fg, 0.08),
+      accent: mixHex(base.accent, base.fg, 0.24),
+    }
+  }
+  return {
+    ...base,
+    bg: mixHex(base.bg, base.accent, 0.14),
+    accent: mixHex(base.accent, base.fg, 0.18),
+    muted: mixHex(base.muted, base.accent, 0.2),
+  }
+}
+
 export function styleProfile(style: StyleType): StyleProfile {
   switch (style) {
     case 'luxury':
@@ -149,6 +184,40 @@ export function typeFaces(style: StyleType): TypeFaceRole {
   return { display: 'sans', product: 'sans', meta: 'sans', legal: 'sans' }
 }
 
-export function fontStack(face: 'serif' | 'sans'): string {
-  return face === 'serif' ? "Georgia, 'Times New Roman', serif" : 'Inter, Arial, sans-serif'
+export function fontStack(
+  face: 'serif' | 'sans',
+  opts: { role?: 'display' | 'product' | 'meta' | 'legal'; style?: StyleType; sector?: string } = {},
+): string {
+  const { role, style, sector } = opts
+  if (face === 'serif') {
+    if (sector === 'perfume' && (style === 'luxury' || style === 'classic')) {
+      return "Palatino Linotype, Palatino, Georgia, 'Times New Roman', serif"
+    }
+    if (sector === 'cream' || sector === 'serum') {
+      return "Palatino Linotype, Palatino, Georgia, 'Times New Roman', serif"
+    }
+    if (sector === 'food' || sector === 'beverage') {
+      return "'Cambria', Palatino, Georgia, 'Times New Roman', serif"
+    }
+    if (sector === 'baby' || sector === 'health') {
+      return "Garamond, Palatino, Georgia, 'Times New Roman', serif"
+    }
+    if (style === 'eco') {
+      return "Georgia, 'Cambria', Palatino, 'Times New Roman', serif"
+    }
+    if (style === 'classic') {
+      return "Constantia, Palatino, Georgia, 'Times New Roman', serif"
+    }
+    return "Georgia, 'Times New Roman', serif"
+  }
+  if (style === 'modern' || sector === 'electronics') {
+    return 'Segoe UI, Inter, Corbel, Arial, sans-serif'
+  }
+  if (style === 'playful' && role === 'display') {
+    return 'Trebuchet MS, Verdana, Inter, Arial, sans-serif'
+  }
+  if (style === 'minimal') {
+    return "Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+  }
+  return "Inter, 'Segoe UI', Arial, sans-serif"
 }

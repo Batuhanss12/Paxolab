@@ -13,8 +13,8 @@ export { buildDesignGraph } from './DesignGraph'
 export type { DesignGraph } from './DesignGraph'
 export { styleRule, sectorRisks } from './DesignRules'
 export { DESIGN_PRINCIPLES } from './DesignKnowledge'
-export { scoreDesign } from './DesignScore'
-export type { DesignScorecard } from './DesignScore'
+export { scoreDesign, scoreVisualCraft } from './DesignScore'
+export type { DesignScorecard, VisualCraftScorecard } from './DesignScore'
 export { critiquePlan } from './CritiqueEngine'
 export type { CritiqueReport } from './CritiqueEngine'
 export { applyPlanToSystem } from './applyPlan'
@@ -23,5 +23,11 @@ export { visualConceptFor } from './VisualConcept'
 export { composeGrammar } from './CompositionGrammar'
 export { repairPlan } from './RepairPlanner'
 export { resetArtMemory, lastFamilies, lastForStyle, rememberArt } from './DesignMemory'
-export { lookupVocabulary, resolveSubProduct, detectCrossSectorBleed } from './SectorVisualVocabulary'
+export {
+  lookupVocabulary,
+  resolveSubProduct,
+  detectCrossSectorBleed,
+  vocabHeroRequired,
+  styleForbiddenPatterns,
+} from './SectorVisualVocabulary'
 export type { VocabularyRow, SubProductId, BleedFault } from './SectorVisualVocabulary'

@@ -9,7 +9,7 @@ import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
 import { planSummaryTr, type DesignPlan, type DirectorCue, type NegativeSpace } from './DesignPlan'
 import { studioRecipe } from './VariationRecipes'
-import { lookupVocabulary, resolveSubProduct, vocabSafeBackground, vocabSafeHero, vocabSafePattern } from './SectorVisualVocabulary'
+import { lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
 
 export type DirectorInput = {
   brief: DesignBrief
@@ -18,6 +18,7 @@ export type DirectorInput = {
   prev?: DesignPlan
   cue?: DirectorCue | string
   variationIndex?: number
+  forceHero?: import('./DesignPlan').HeroFamily
 }
 
 function asCue(raw?: string): DirectorCue {
@@ -117,6 +118,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
       lockup: label && /wrap/i.test(input.template?.structureId ?? input.brief.templateId) ? 'left' : rule.lockup,
       negativeSpace,
       wrap: /wrap/i.test(input.template?.structureId ?? input.brief.templateId),
+      variationIndex,
     }),
     ...attachArtDirection({
       brief: input.brief,
@@ -130,6 +132,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
       prev: base ?? undefined,
       variationIndex,
       vocab,
+      forceHero: input.forceHero,
     }),
     decor: {
       density,
@@ -159,9 +162,14 @@ export function createPlan(input: DirectorInput): DesignPlan {
   }
   const studio = !restrainExtras ? studioRecipe(variationIndex) : null
   if (studio) {
+    const lockup = surface === 'label' && /wrap/i.test(input.template?.structureId ?? input.brief.templateId)
+      ? 'left'
+      : studio.lockup ?? plan.composition.lockup
     plan.composition = {
       ...plan.composition,
-      heroZone: { y: studio.heroY, h: studio.crop === 'open' ? 0.14 : 0.15 },
+      lockup,
+      focal: lockup,
+      heroZone: { y: studio.heroY, h: studio.crop === 'open' ? 0.14 : 0.15, x: plan.composition.heroZone.x },
       opticalCenter: studio.opticalCenter ?? plan.composition.opticalCenter,
     }
     plan.heroGraphic = {

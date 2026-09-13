@@ -10,6 +10,9 @@ export function categoryFor(sector: SectorId, blob: string): string {
     if (/atıştırmalık|çikolata|kurabiye/.test(blob)) return 'NET WEIGHT'
     return 'ARTISAN FOOD'
   }
+  if (sector === 'beverage') return /kombucha/.test(blob) ? 'FERMENTED TEA' : 'CRAFT BEVERAGE'
+  if (sector === 'health') return 'DAILY SUPPLEMENT'
+  if (sector === 'baby') return 'GENTLE BABY CARE'
   if (sector === 'electronics') {
     if (/kulaklık|earbuds/.test(blob)) return 'WIRELESS AUDIO'
     if (/kablo|şarj/.test(blob)) return 'POWER ACCESSORY'
@@ -23,26 +26,36 @@ export function pickLockup(style: StyleType, sector: SectorId, grammar: 'box' | 
   if (grammar === 'label') return wrap ? 'label-wrap' : 'label-stack'
   if (sector === 'cleaning') return style === 'classic' ? 'serif-cartouche' : 'left-index'
   if (style === 'luxury') {
-    if (sector === 'food') return 'harvest-seal'
+    if (sector === 'food' || sector === 'beverage') return 'harvest-seal'
     if (sector === 'electronics') return 'metal-plaque'
-    if (sector === 'cream' || sector === 'serum') return 'soft-oval'
+    if (sector === 'cream' || sector === 'serum' || sector === 'health' || sector === 'baby') return 'soft-oval'
     return 'centered-crest'
   }
   if (style === 'modern') return sector === 'electronics' ? 'tech-grid' : 'left-index'
   if (style === 'minimal') return 'air-rule'
   if (style === 'eco') return 'stamp-center'
   if (style === 'playful') return 'badge-capsule'
-  if (sector === 'food') return 'harvest-seal'
+  if (sector === 'food' || sector === 'beverage') return 'harvest-seal'
   if (sector === 'electronics') return 'metal-plaque'
-  if (sector === 'cream' || sector === 'serum') return 'soft-oval'
+  if (sector === 'cream' || sector === 'serum' || sector === 'health' || sector === 'baby') return 'soft-oval'
   return 'serif-cartouche'
 }
 
 export function pickDecor(style: StyleType, sector: SectorId, lockup: LockupId): DecorFamily {
-  if (lockup === 'label-wrap') return 'none'
+  if (lockup === 'label-wrap') {
+    if (sector === 'perfume') return style === 'classic' ? 'cartouche' : 'crest'
+    if (sector === 'food' || sector === 'beverage') return 'harvest'
+    if (sector === 'cream' || sector === 'health' || sector === 'baby') return 'oval'
+    if (sector === 'serum') return 'drop'
+    return 'none'
+  }
   if (lockup === 'label-stack') {
-    if (style === 'eco') return sector === 'food' ? 'harvest' : 'leaf'
+    if (sector === 'food' || sector === 'beverage') return 'harvest'
+    if (style === 'eco') return 'leaf'
     if (style === 'playful') return 'badge'
+    if (sector === 'perfume') return style === 'classic' ? 'cartouche' : 'crest'
+    if (sector === 'cream' || sector === 'health' || sector === 'baby') return 'oval'
+    if (sector === 'serum') return 'drop'
     return 'none'
   }
   if (lockup === 'centered-crest') return 'crest'
@@ -51,11 +64,11 @@ export function pickDecor(style: StyleType, sector: SectorId, lockup: LockupId):
   if (lockup === 'soft-oval') return sector === 'serum' ? 'drop' : 'oval'
   if (lockup === 'left-index') return 'stripe'
   if (lockup === 'air-rule') return 'none'
-  if (lockup === 'stamp-center') return sector === 'food' ? 'harvest' : 'leaf'
+  if (lockup === 'stamp-center') return sector === 'food' || sector === 'beverage' ? 'harvest' : 'leaf'
   if (lockup === 'badge-capsule') return 'badge'
   if (lockup === 'serif-cartouche') return 'cartouche'
   if (style === 'luxury' && sector === 'perfume') return 'crest'
-  if (sector === 'food') return 'olive'
+  if (sector === 'food' || sector === 'beverage') return 'olive'
   if (sector === 'electronics') return 'grid'
   return 'none'
 }
@@ -123,7 +136,7 @@ function sectorVoice(type: TypeScale, style: StyleType, sector?: SectorId): Type
       opticalCenter: 0.39,
     }
   }
-  if (sector === 'cream' || sector === 'serum') {
+  if (sector === 'cream' || sector === 'serum' || sector === 'health' || sector === 'baby') {
     return {
       ...type,
       displayMm: style === 'luxury' ? type.displayMm * 0.94 : type.displayMm,

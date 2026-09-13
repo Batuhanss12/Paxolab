@@ -58,7 +58,7 @@ assert(luxury.designPlan?.density.front === 'dense', `density ${luxury.designPla
 assert(luxFace.includes('data-hero="crest"'), 'luxury front missing crest tag')
 assert(heroes(luxFace) === 1, `luxury heroes ${heroes(luxFace)}`)
 assert(luxFace.includes('lockout-'), 'luxury lost lockout')
-assert(luxFace.includes('fill-opacity="0.9"'), 'luxury lost diamonds')
+assert(!luxFace.includes('fill-opacity="0.9"'), 'luxury still paints diamonds')
 assert(!luxury.critique?.needsRepair, 'default luxury should not auto-repair')
 assert(!luxury.critique?.repaired, 'default luxury ran repair')
 

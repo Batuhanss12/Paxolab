@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import type { Attachment, DesignSpec } from '../types'
 import { monogram } from '../engine/artwork/copy'
 
@@ -38,7 +38,16 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
   const logo = attachments.find((a) => a.kind === 'logo') ?? attachments[0]
   const mark = monogram(copy.brand)
   const isLabel = kind === 'label'
-  const depth = Math.max(16, Math.min(48, layout.depthMm || 28))
+  const scale = Math.min(280 / Math.max(layout.widthMm, 1), 320 / Math.max(layout.heightMm, 1))
+  const widthPx = Math.max(120, Math.round(layout.widthMm * scale))
+  const heightPx = Math.max(150, Math.round(layout.heightMm * scale))
+  const depthPx = isLabel ? 16 : Math.max(18, Math.min(96, Math.round((layout.depthMm || 28) * scale)))
+  const boxStyle = {
+    transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
+    '--box-w': `${widthPx}px`,
+    '--box-h': `${heightPx}px`,
+    '--box-d': `${depthPx}px`,
+  } as CSSProperties
 
   return (
     <div className="preview-stage">
@@ -49,7 +58,7 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
       <div className="scene" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null }}>
         <div
           className={`box3d ${isLabel ? 'box3d--card' : ''}`}
-          style={{ transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}
+          style={boxStyle}
         >
           <div className="face face--front" style={{ background: p.bg, color: p.fg, borderColor: p.accent }}>
             {logo ? (
@@ -67,7 +76,7 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
             <p>{copy.ingredients}</p>
             {copy.warnings && <p className="face__warn">{copy.warnings}</p>}
           </div>
-          <div className="face face--right" style={{ background: p.accent, ['--d' as string]: `${depth}px` }} />
+          <div className="face face--right" style={{ background: p.accent }} />
           <div className="face face--left" style={{ background: p.paper }} />
           <div className="face face--top" style={{ background: p.fg }} />
           <div className="face face--bottom" style={{ background: '#050505' }} />

@@ -3,13 +3,14 @@ import { applyPlanToSystem, createPlan, critiquePlan, repairPlan, scoreDesign } 
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { composeArtwork } from './artwork/composeArtwork'
-import { paletteFor } from './artwork/languages'
-import { resolveProductLine, sampleCopy } from './artwork/copy'
+import { paletteFor, varyPalette } from './artwork/languages'
+import { defaultIngredientClaims, resolveProductLine, sampleCopy } from './artwork/copy'
 import { resolveDesignSystem } from './designSystem'
 import { runPreflight } from './production/preflight'
 import { formaSampleEan, normalizeEan13 } from './barcode'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
+import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
 
 const DEFAULT_OVERRIDES: DesignOverrides = {
   logoScale: 1,
@@ -62,6 +63,10 @@ export class FormaLocalEngine implements EnginePort {
       brief.manufacturerAddress = 'Örnek Mah. No:1, 34000 İstanbul, TR'
       brief.addressDefaulted = true
     }
+    if (!brief.ingredientClaims?.trim()) {
+      const autoClaims = defaultIngredientClaims(brief)
+      if (autoClaims) brief.ingredientClaims = autoClaims
+    }
     const copy = {
       brand: input.copyPatch?.brand || brief.brandName || input.prev?.copy.brand || 'FORMA',
       product: resolveProductLine(
@@ -93,12 +98,16 @@ export class FormaLocalEngine implements EnginePort {
       prev: styleChanged ? undefined : input.prev?.designPlan,
       cue: overrides.directorCue,
       variationIndex,
+      forceHero: overrides.heroFamily,
     })
     if (designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
       overrides.titleScale = 1.1
     }
 
-    const palette = paletteFor(brief, brief.styleType || 'classic', overrides.premium)
+    const palette = varyPalette(
+      paletteFor(brief, brief.styleType || 'classic', overrides.premium),
+      variationIndex,
+    )
     const layout = {
       widthMm: dieline.dimensions.L,
       depthMm: dieline.dimensions.W,
@@ -131,21 +140,37 @@ export class FormaLocalEngine implements EnginePort {
       pack = paint(repairPlan(pack.plan, pack.critique))
       pack.critique = { ...pack.critique, repaired: true, needsRepair: false }
     }
+    if (overrides.heroFamily && pack.plan.heroGraphic.family !== overrides.heroFamily) {
+      pack = paint({
+        ...pack.plan,
+        heroGraphic: { ...pack.plan.heroGraphic, family: overrides.heroFamily },
+      })
+    }
+
+    const id = input.prev?.id ?? uid()
+    const generatedAt = Date.now()
+    const document = documentFromArtwork(id, `${copy.brand} · ${copy.product}`, dieline, pack.artwork, generatedAt)
+    const validation = validateDesignDocument(document)
+    if (!validation.valid) {
+      throw new Error(`Invalid design document: ${validation.issues.map((issue) => issue.code).join(', ')}`)
+    }
+    const artwork = artworkFromDocument(document)
 
     return {
-      id: input.prev?.id ?? uid(),
+      id,
       kind,
       brief,
       palette,
       layout,
       copy,
       overrides,
-      generatedAt: Date.now(),
+      generatedAt,
       revision: (input.prev?.revision ?? 0) + 1,
       templateId: template.id,
       structureId: template.structureId,
       dieline,
-      artwork: pack.artwork,
+      document,
+      artwork,
       preflight: pack.preflight,
       designPlan: pack.plan,
       critique: pack.critique,

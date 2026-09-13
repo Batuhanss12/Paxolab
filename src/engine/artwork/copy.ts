@@ -84,6 +84,33 @@ export function sampleCopy(brief: DesignBrief): {
       cta: 'Üretime al',
     }
   }
+  if (sector === 'beverage') {
+    return {
+      tagline: custom || 'Taze tat. Net içerik.',
+      volume: brief.volume || '330 ml',
+      ingredients: 'Su, doğal aroma, meyve özü. Besin değerleri ve içerik örnek / düzenlenebilir.',
+      warnings: `${markWarn} Serin yerde saklayın. Açıldıktan sonra soğuk tüketin.`,
+      cta: 'Üretime al',
+    }
+  }
+  if (sector === 'health') {
+    return {
+      tagline: custom || 'Günlük rutine net destek.',
+      volume: brief.volume || '30 kapsül',
+      ingredients: 'Aktif bileşenler ve günlük porsiyon değerleri brief ile doğrulanmalıdır.',
+      warnings: `${markWarn} Takviye edici gıdadır; ilaç değildir. Önerilen günlük porsiyonu aşmayın.`,
+      cta: 'Üretime al',
+    }
+  }
+  if (sector === 'baby') {
+    return {
+      tagline: custom || 'Hassas bakım. Yumuşak dokunuş.',
+      volume: brief.volume || '200 ml',
+      ingredients: 'Nazik bakım formülü. İçerik listesi üretici verisiyle doğrulanmalıdır.',
+      warnings: `${markWarn} Yalnız harici kullanım içindir. Çocukların erişemeyeceği yerde saklayın.`,
+      cta: 'Üretime al',
+    }
+  }
   if (sector === 'electronics') {
     const buds = /kulaklık|earbuds|audio/i.test(sub)
     return {
@@ -112,6 +139,19 @@ export function sampleCopy(brief: DesignBrief): {
     warnings: 'Üretici talimatlarına uyun.',
     cta: 'Üretime al',
   }
+}
+
+/** Auto-generate ingredient claim badges when the brief doesn't provide them. */
+export function defaultIngredientClaims(brief: DesignBrief): string {
+  if (brief.ingredientClaims?.trim()) return brief.ingredientClaims.trim()
+  const sector = resolveSector(brief)
+  const sub = `${brief.subProduct} ${brief.productName}`.toLocaleLowerCase('tr')
+  if (sector === 'serum') return 'NIACINAMIDE + HYALURONIC ACID'
+  if (sector === 'cream' || /krem|cream/.test(sub)) return 'CERAMIDE + NIACINAMIDE'
+  if (/şampuan|shampoo/i.test(sub)) return 'BIOTIN + COLLAGEN + KERATIN'
+  if (/saç yağ|hair oil/i.test(sub)) return 'ARGAN + KERATIN'
+  if (/maske|masque/i.test(sub)) return 'KERATIN + COLLAGEN'
+  return ''
 }
 
 /** Kutu sırtı: 01/02 altındaki boşluğu sektör + ürüne göre doldurur. */

@@ -1,6 +1,7 @@
 import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
 import { Chat } from './Chat'
+import { ComparePreview } from './ComparePreview'
 import { DielinePreview } from './DielinePreview'
 import { InputsPanel } from './InputsPanel'
 import { Preview2D } from './Preview2D'
@@ -8,10 +9,13 @@ import { Preview3D } from './Preview3D'
 import { ProductionInfo } from './ProductionInfo'
 import { StyleBar } from './StyleBar'
 import { TemplatePicker } from './TemplatePicker'
+import { AuthPanel } from './AuthPanel'
+import type { AuthUser } from '../api/client'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'konusma', label: 'Konuşma' },
   { id: 'vektor', label: '2D Vektör' },
+  { id: 'karsilastir', label: 'Karşılaştır' },
   { id: 'dieline', label: 'Dieline' },
   { id: 'onizleme3d', label: '3D' },
   { id: 'uretim', label: 'Üretim' },
@@ -32,6 +36,10 @@ type WorkspaceProps = {
   inputsOpen: boolean
   onToggleInputs: () => void
   design: DesignSpec | null
+  designHistory: DesignSpec[]
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
   showTemplates: boolean
   onPickTemplate: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
@@ -40,6 +48,9 @@ type WorkspaceProps = {
   tab: TabId
   onTab: (tab: TabId) => void
   onReset: () => void
+  onAuthChange?: (user: AuthUser | null) => void
+  syncNote?: string | null
+  creditsRefreshKey?: number
 }
 
 function ConversationBrief({
@@ -85,6 +96,10 @@ export function Workspace({
   inputsOpen,
   onToggleInputs,
   design,
+  designHistory,
+  canRedo,
+  onUndo,
+  onRedo,
   showTemplates,
   onPickTemplate,
   onDims,
@@ -93,6 +108,9 @@ export function Workspace({
   tab,
   onTab,
   onReset,
+  onAuthChange,
+  syncNote,
+  creditsRefreshKey = 0,
 }: WorkspaceProps) {
   const showPreview = !!design || generating || showTemplates
   const showTabs = !!design
@@ -118,9 +136,21 @@ export function Workspace({
             ))}
           </nav>
         )}
-        <button type="button" className="ghost-btn" onClick={onReset}>
-          Yeni
-        </button>
+        <div className="topbar__right">
+          {syncNote && <span className="topbar__sync" title={syncNote}>{syncNote}</span>}
+          <div className="history-actions">
+            <button type="button" className="ghost-btn" onClick={onUndo} disabled={!designHistory.length}>
+              Geri al
+            </button>
+            <button type="button" className="ghost-btn" onClick={onRedo} disabled={!canRedo}>
+              Yinele
+            </button>
+            <button type="button" className="ghost-btn" onClick={onReset}>
+              Yeni
+            </button>
+          </div>
+          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} />
+        </div>
       </header>
 
       <div className={`workspace__body ${showPreview ? 'has-preview' : ''}`}>
@@ -157,6 +187,9 @@ export function Workspace({
             )}
             {!generating && tab === 'vektor' && design && (
               <Preview2D design={design} attachments={allAttachments} />
+            )}
+            {!generating && tab === 'karsilastir' && design && (
+              <ComparePreview current={design} previous={designHistory.at(-1)} />
             )}
             {!generating && tab === 'dieline' && design && <DielinePreview design={design} />}
             {!generating && tab === 'onizleme3d' && design && (
