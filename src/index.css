@@ -1045,6 +1045,19 @@ h2 {
   cursor: default;
 }
 
+.tcard.is-advanced {
+  border-style: dashed;
+}
+
+.templates__advanced {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .templates__live {
   margin-top: 28px;
   display: grid;

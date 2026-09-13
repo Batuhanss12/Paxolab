@@ -1,4 +1,5 @@
-import type { DesignSpec, Palette, PreflightItem } from '../../types'
+import type { DesignSpec, DielineModel, Palette, PreflightItem } from '../../types'
+import { findHeroPanel, findLabelBackPanel, findLegalPanel, isSpinePanel } from '../dieline/panelKind'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { PERFUME_VIEWBOXES } from '../marks/perfumeAssets'
 import type { DesignSystem } from './types'
@@ -23,6 +24,7 @@ export function isKraftLike(palette: Palette): boolean {
 export function evaluateDesignGates(
   spec: Pick<DesignSpec, 'brief' | 'copy' | 'kind' | 'palette' | 'structureId'> & {
     artwork?: DesignSpec['artwork']
+    dieline?: DielineModel
   },
   system: DesignSystem,
 ): PreflightItem[] {
@@ -59,11 +61,23 @@ export function evaluateDesignGates(
     (spec.kind === 'label' || system.surfaceMode === 'label') &&
     (system.grammar === 'box' || /tuck-end/.test(spec.structureId))
   const layers = spec.artwork?.layers ?? []
+  const panels = spec.dieline?.panels ?? []
+  const heroId = findHeroPanel(panels)?.id
+  const legalId = findLegalPanel(panels)?.id
+  const labelBackId = findLabelBackPanel(panels)?.id
   const faceArt =
-    layers.find((l) => l.panelId === 'label' || l.panelId === 'front' || l.panelId === 'trayFront')?.markup ?? ''
-  const backArt = layers.find((l) => l.panelId === 'back' || l.panelId === 'trayBack')?.markup ?? ''
-  const sideArt = layers.filter((l) => /left|right/i.test(l.panelId)).map((l) => l.markup).join('\n')
-  const labelBackArt = layers.find((l) => l.panelId === 'labelBack' || l.panelId === 'warnLabel')?.markup ?? ''
+    layers.find((l) => l.panelId === heroId || l.panelId === 'label' || l.panelId === 'front' || l.panelId === 'trayFront')?.markup ?? ''
+  const backArt =
+    layers.find((l) => l.panelId === legalId || l.panelId === 'back' || l.panelId === 'trayBack')?.markup ?? ''
+  const sideArt = layers
+    .filter((l) => {
+      const panel = panels.find((p) => p.id === l.panelId)
+      return panel ? isSpinePanel(panel) : /left|right/i.test(l.panelId)
+    })
+    .map((l) => l.markup)
+    .join('\n')
+  const labelBackArt =
+    layers.find((l) => l.panelId === labelBackId || l.panelId === 'labelBack' || l.panelId === 'warnLabel')?.markup ?? ''
 
   const boxLegalOnFace = /COMPOSITION|FLAMMABLE · CAUTION|DIRECTIONS · CAUTION|CONTENTS \/ SPEC|YANICI · UYARI|İÇERİK \/ SPEC/.test(faceArt)
   const seriesOnLabel = spec.kind === 'label' && /Nº 0[12]/.test(faceArt)

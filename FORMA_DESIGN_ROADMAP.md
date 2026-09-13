@@ -271,17 +271,31 @@ src/components/
 
 ## 7. Recommended NEXT
 
-D6 is green. Planned phases H0–D6 are closed at **98%**. Do **not** invent D7, catalog growth, or PDF/X in the same turn.
+Owner opened **Phase D7 — MatBixx Dieline Bridge** (2026-09-14). H0–D6 stay closed; do not start PDF/X or LLM-as-painter.
 
-Owner: only ask for a new slice if something specific is still wrong in review.
+---
+
+### Phase D7 — MatBixx Dieline Bridge → **owner ask** · Effort **L** · **done**
+
+**Goal:** Vendor the Desktop `Paxolab-Kutu-Bicak-Izi` structure engines into FORMA without replacing native tuck/tray/label nets. Every new family paints through `Panel.kind`, not new id string lists.
+
+**Files:** `src/engine/dieline/matbixx/*`, `matbixxAdapter.ts`, `matbixxGenerate.ts`, `panelKind.ts`, `buildDieline.ts`, `composeArtwork.ts`, `gates.ts`, `preflight.ts`, `formaTemplateCatalog.json`, `TemplatePicker.tsx`.
+
+**Work:**
+- D7-A: bleed-free adapter (`registry.generateDieline`, no 3 mm shift). Native 4 structures keep `kind` via `withPanelKinds`.
+- D7-B: `panelArt` / gates / preflight prefer `kind`; unknown id → plain ground, no crash.
+- D7-C: `polygon-box` + `product-carrier-tray` renderers (`polygon-wall`, `product-window`).
+- D7-D: X-device overlay on host (`auxDevice` + `device-overlay` layers). Host hero/spine/back still paint.
+- D7-E: curated core catalog + `library: advanced` toggle. Roadmap PARK items removed for this slice.
+
+**Success:** `npm test` green; `npx --yes vite-node scripts/d7c-smoke.ts` and `d7d-smoke.ts` green; perfume brief still picks tuck-end, not hex.
 
 ---
 
 ## 8. Explicit PARK list
 
-- Catalog growth / F2 template farm
+- Catalog growth as a second 400-row picker (advanced library is opt-in only)
 - PDF/X, ICC, trap, bleed-as-a-product
-- MatBixx merge or port
 - Official legal certification / real GHS / real Green Dot license
 - Invented barcodes / GTIN
 - Raster AI finals or embedding TASARIM REF jpgs
@@ -293,4 +307,4 @@ Owner: only ask for a new slice if something specific is still wrong in review.
 
 ---
 
-*Owner: planned track is closed at 98%. Ask only if a review slice is still wrong.*
+*Owner: H0–D6 closed at 98%. D7 (MatBixx bridge) opened on owner ask.*

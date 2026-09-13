@@ -7,15 +7,15 @@ function norm(value: string): string {
   return value.trim().toLocaleLowerCase('tr')
 }
 
-export function activeTemplates(): FormaTemplate[] {
-  return FORMA_TEMPLATES.filter((t) => t.status === 'active')
+export function activeTemplates(includeAdvanced = false): FormaTemplate[] {
+  return FORMA_TEMPLATES.filter((t) => t.status === 'active' && (includeAdvanced || t.library !== 'advanced'))
 }
 
-export function filterTemplates(brief: DesignBrief): FormaTemplate[] {
+export function filterTemplates(brief: DesignBrief, opts?: { includeAdvanced?: boolean }): FormaTemplate[] {
   const sector = norm(brief.sector)
   const sub = norm(brief.subProduct || brief.productName)
   const mode = brief.packagingMode
-  const pool = activeTemplates().filter((t) => !mode || t.packagingMode === mode)
+  const pool = activeTemplates(opts?.includeAdvanced).filter((t) => !mode || t.packagingMode === mode)
 
   const scored = pool
     .map((t) => {

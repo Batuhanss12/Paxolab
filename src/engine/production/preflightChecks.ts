@@ -4,6 +4,7 @@
  */
 import type { DesignSpec, Palette } from '../../types'
 import { measureLockupCollision, measureFrontDecorCollision } from '../designSystem'
+import { findHeroPanel } from '../dieline/panelKind'
 import type { DesignSystem } from '../designSystem/types'
 import { measureHeroCollision } from '../artwork/heroes/heroPlacement'
 
@@ -27,7 +28,7 @@ export function luminance(hex: string): number {
 
 /** Check if any text in the front panel overflows its bounds. */
 export function checkTextOverflow(spec: { artwork?: { layers: { panelId: string; markup: string }[] }; dieline: DesignSpec['dieline'] }): boolean {
-  const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
+  const front = findHeroPanel(spec.dieline.panels)
   if (!front) return true
   const face = spec.artwork?.layers.find((l) => l.panelId === front.id)?.markup ?? ''
   // Simple heuristic: if any text element has x > panel width or y > panel height, it overflows.
@@ -47,7 +48,7 @@ export function detectCollisions(
   },
   system: DesignSystem,
 ) {
-  const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
+  const front = findHeroPanel(spec.dieline.panels)
   if (!front) return { hit: true, reasons: ['no-front'] }
   const labelFace = spec.kind === 'label' || system.grammar === 'label'
   const lockupReport = measureLockupCollision(front, system, spec.copy, spec.overrides, labelFace)

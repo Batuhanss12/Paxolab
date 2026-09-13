@@ -46,14 +46,17 @@ Kesim ve grafik: `buildDieline` + `composeArtwork`.
 
 ## Yapılar
 
-| structureId     | Not |
-|-----------------|-----|
-| tuck-end-box    | Ön/arka = L×H, yan = W×H, kapak = L×W, tutarlılık kontrolü |
-| simple-tray     | Taban + 4 duvar |
-| flat-label      | Tek panel |
-| wrap-label      | Yüz + glue overlap |
+| structureId            | Not |
+|------------------------|-----|
+| tuck-end-box           | Native FORMA net (ön/arka L×H). X-cihazlı şablonlarda MatBixx host + overlay |
+| simple-tray            | Native taban + 4 duvar |
+| flat-label / wrap-label| Native etiket |
+| mailer-box / sleeve    | MatBixx — kargo mailer, kılıf |
+| polygon-box            | MatBixx — 3–8 kenar (ECMA C/D) |
+| product-carrier-tray   | MatBixx — ürün gözlü tepsi (ECMA E) |
+| pillow / snap-lock / tray-box / rigid-gift / reverse-tuck | MatBixx specialty |
 
-Katalog: kozmetik tuck-end (parfüm / krem / serum), gıda (kutu, tepsi, etiket), elektronik (kutu + etiket). `soon` kartlar seçilemez.
+Katalog: çekirdek kartlar varsayılan. Gelişmiş / ECMA aileleri TemplatePicker’da ayrı toggle. `soon` kalmadı.
 
 ## Platform (Phase 6–10)
 

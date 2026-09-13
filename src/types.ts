@@ -11,7 +11,24 @@ export type PackagingMode = 'box' | 'label'
 export type StyleType = 'luxury' | 'modern' | 'minimal' | 'eco' | 'playful' | 'classic'
 /** Customer-facing copy language. Not ArtworkModel.language (that is a palette id). */
 export type CopyLocale = 'tr' | 'en'
-export type StructureId = 'tuck-end-box' | 'simple-tray' | 'flat-label' | 'wrap-label'
+export const STRUCTURE_IDS = [
+  'tuck-end-box',
+  'simple-tray',
+  'flat-label',
+  'wrap-label',
+  'mailer-box',
+  'sleeve',
+  'pillow-box',
+  'snap-lock-box',
+  'tray-box',
+  'rigid-gift-box',
+  'polygon-box',
+  'product-carrier-tray',
+  'reverse-tuck-end-box',
+] as const
+
+export type StructureId = (typeof STRUCTURE_IDS)[number]
+export type TemplateLibrary = 'core' | 'advanced'
 export type TemplateStatus = 'active' | 'soon'
 export type DesignKind = 'packaging' | 'label'
 
@@ -95,9 +112,21 @@ export type Point = { x: number; y: number }
 
 export type PanelRole = 'body' | 'flap' | 'glue' | 'tuck'
 
+export type PanelKind =
+  | 'hero-front'
+  | 'legal-back'
+  | 'side-spine'
+  | 'glue'
+  | 'tuck-flap'
+  | 'polygon-wall'
+  | 'product-window'
+  | 'device-overlay'
+  | 'plain'
+
 export type Panel = {
   id: string
   role: PanelRole
+  kind?: PanelKind
   x: number
   y: number
   w: number
@@ -220,4 +249,7 @@ export type FormaTemplate = {
   packagingMode: PackagingMode
   defaultsMm: DimensionsMm
   status: TemplateStatus
+  library?: TemplateLibrary
+  auxDevice?: string
+  engineParams?: Record<string, number>
 }

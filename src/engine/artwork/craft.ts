@@ -1,4 +1,5 @@
 import type { DesignBrief, DesignSpec, DielineModel } from '../../types'
+import { findHeroPanel, findLabelBackPanel, findLegalPanel } from '../dieline/panelKind'
 import type { DesignSystem } from '../designSystem/types'
 import { perfumeAssetsAllowed, resolveMarks } from '../marks/MarkMatrix'
 import type { ResolvedMarks } from '../marks/types'
@@ -59,11 +60,8 @@ export function buildCraftPlan(
   _copy: DesignSpec['copy'],
   system: DesignSystem,
 ): CraftPlan {
-  const face =
-    dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront') ??
-    dieline.panels[0]
-  const markFace =
-    dieline.panels.find((p) => p.id === 'back' || p.id === 'trayBack' || p.id === 'labelBack' || p.id === 'warnLabel') ?? face
+  const face = findHeroPanel(dieline.panels) ?? dieline.panels[0]
+  const markFace = findLegalPanel(dieline.panels) ?? findLabelBackPanel(dieline.panels) ?? face
   const marks = resolveMarks(system.sector, system.surfaceMode, markFace.w, markFace.h, brief)
   const lockupY = system.type.opticalCenter
   return {

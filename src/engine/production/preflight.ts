@@ -7,6 +7,7 @@ import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { detectCopyLocaleMix } from '../copyLocale'
 import { evaluateDesignGates, layoutFrontLockup, resolveDesignSystem } from '../designSystem'
+import { findHeroPanel, isGluePanel } from '../dieline/panelKind'
 import type { DesignSystem } from '../designSystem/types'
 import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
 
@@ -43,18 +44,22 @@ export function runPreflight(
       palette,
       structureId: spec.structureId,
       artwork: spec.artwork,
+      dieline: spec.dieline,
     },
     sys,
   )
   const gateFail = gates.some((g) => g.status === 'fail')
   const layers = spec.artwork?.layers ?? []
-  const glueLayers = layers.filter((l) => /glue|overlap/i.test(l.panelId))
+  const glueLayers = layers.filter((l) => {
+    const panel = spec.dieline.panels.find((p) => p.id === l.panelId)
+    return panel ? isGluePanel(panel) : /glue|overlap/i.test(l.panelId)
+  })
   const glueDirty = glueLayers.some((l) => /data-art="hero"/.test(l.markup))
-  const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
+  const front = findHeroPanel(spec.dieline.panels)
   const labelFace = spec.kind === 'label' || sys.grammar === 'label'
   const lockup = front ? layoutFrontLockup(front, sys, spec.copy, spec.overrides, labelFace) : null
   const typeOk = !!lockup && lockup.brandSize >= sys.type.minMm - 0.01
-  const faceArt = layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
+  const faceArt = layers.find((l) => l.panelId === front?.id || l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
   const localeMix = detectCopyLocaleMix(spec, sys, faceArt)
   const localeMixFail = !!spec.overrides.printReady && localeMix.mix
   const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin && !glueDirty && !localeMixFail

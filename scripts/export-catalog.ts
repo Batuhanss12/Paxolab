@@ -82,7 +82,7 @@ for (const job of JOBS) {
 }
 
 const unusedActive = activeTemplates().filter((t) => !JOBS.some((j) => j.templateId === t.id))
-const skippedSoon = ['fm-box-sleeve-soon']
+const skippedSoon: string[] = []
 
 const index = `<!doctype html>
 <html lang="tr">

@@ -1,10 +1,13 @@
 /**
  * buildDieline — facade re-exporting the decomposed dieline modules.
- * Geometry and structure definitions now live in their own modules.
- * This file preserves the public API.
+ * Native FORMA nets stay on the four original generators.
+ * MatBixx engines (and tuck/mailer + X-device) go through the bleed-free adapter.
  */
 import type { DesignBrief, DielineModel, DimensionsMm, StructureId } from '../../types'
+import { getTemplate } from '../catalog/catalog'
 import { flatLabel, simpleTray, tuckEnd, wrapLabel } from './dielineStructures'
+import { generateMatbixxModel, isMatbixxStructure } from './matbixxGenerate'
+import { findHeroPanel, withPanelKinds } from './panelKind'
 
 export { outlineUnion } from './dielineGeometry'
 
@@ -18,13 +21,20 @@ export function resolveDimensions(brief: DesignBrief): DimensionsMm {
 
 export function buildDieline(structureId: StructureId, brief: DesignBrief): DielineModel {
   const d = resolveDimensions(brief)
-  if (structureId === 'simple-tray') return simpleTray(d)
-  if (structureId === 'flat-label') return flatLabel(d)
-  if (structureId === 'wrap-label') return wrapLabel(d)
-  return tuckEnd(d)
+  const template = brief.templateId ? getTemplate(brief.templateId) : undefined
+  const auxDevice = template?.auxDevice
+  const engineParams = template?.engineParams
+  const routed = isMatbixxStructure(structureId) || !!auxDevice
+  if (routed) return generateMatbixxModel(structureId, d, engineParams, auxDevice)
+
+  if (structureId === 'simple-tray') return withPanelKinds(simpleTray(d))
+  if (structureId === 'flat-label') return withPanelKinds(flatLabel(d))
+  if (structureId === 'wrap-label') return withPanelKinds(wrapLabel(d))
+  return withPanelKinds(tuckEnd(d))
 }
 
-export function frontPanelId(structureId: StructureId): string {
+export function frontPanelId(structureId: StructureId, model?: DielineModel): string {
+  if (model) return findHeroPanel(model.panels)?.id ?? model.panels[0]?.id ?? 'front'
   if (structureId === 'simple-tray') return 'trayFront'
   if (structureId === 'flat-label' || structureId === 'wrap-label') return 'label'
   return 'front'

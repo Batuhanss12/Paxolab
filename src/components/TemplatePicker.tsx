@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { DesignBrief, DimensionsMm, FormaTemplate } from '../types'
 import { filterTemplates, getTemplate } from '../engine/catalog/catalog'
 import { buildDieline } from '../engine/dieline/buildDieline'
@@ -10,7 +11,8 @@ type TemplatePickerProps = {
 }
 
 export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
-  const cards = filterTemplates(brief)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const cards = filterTemplates(brief, { includeAdvanced: showAdvanced })
   const selected = brief.templateId ? getTemplate(brief.templateId) : undefined
   const dims = brief.dimensionsMm.L || brief.dimensionsMm.H
     ? brief.dimensionsMm
@@ -27,20 +29,24 @@ export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
     <div className="templates">
       <p className="eyebrow">Şablon</p>
       <h2>Yapı seçin — dieline canlı</h2>
+      <label className="templates__advanced">
+        <input type="checkbox" checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} />
+        Gelişmiş / ECMA aileleri
+      </label>
       <div className="templates__grid">
         {cards.map((t: FormaTemplate) => (
           <button
             key={t.id}
             type="button"
-            className={`tcard ${brief.templateId === t.id ? 'is-active' : ''} ${t.status === 'soon' ? 'is-soon' : ''}`}
-            disabled={t.status === 'soon'}
+            className={`tcard ${brief.templateId === t.id ? 'is-active' : ''} ${t.library === 'advanced' ? 'is-advanced' : ''}`}
             onClick={() => onPick(t.id, t.defaultsMm)}
           >
             <strong>{t.title}</strong>
             <span>
               {t.structureId} · {t.defaultsMm.L}×{t.defaultsMm.W || '—'}×{t.defaultsMm.H} mm
+              {t.sectors?.length ? ` · ${t.sectors.slice(0, 2).join(', ')}` : ''}
             </span>
-            {t.status === 'soon' && <em>Yakında</em>}
+            {t.library === 'advanced' && <em>Gelişmiş</em>}
           </button>
         ))}
       </div>

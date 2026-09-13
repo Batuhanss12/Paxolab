@@ -6,7 +6,8 @@ import type { CraftPlan } from './craft'
 import { buildCraftPlan } from './craft'
 import { languageId } from './languages'
 import { panelClip as clip } from './svgGeometry'
-import { flapGround, glueOnly, labelBackArt, renderBackPanel, renderFrontPanel, renderSidePanel, renderTopPanel } from './panelRenderers'
+import { findHeroPanel, nativeKindFor } from '../dieline/panelKind'
+import { deviceOverlayArt, flapGround, glueOnly, labelBackArt, polygonWallArt, productWindowArt, renderBackPanel, renderFrontPanel, renderSidePanel, renderTopPanel } from './panelRenderers'
 
 export { artworkMarkup, clipDefs, renderArtNetSvg, renderArtworkDoc, renderFrontSvg } from './renderArtwork'
 
@@ -23,32 +24,34 @@ function panelArt(
   designPlan?: DesignPlan,
 ): string {
   const id = panel.id
+  const kind = nativeKindFor(panel)
 
-  // Label back / warning label
   if (id === 'labelBack' || id === 'warnLabel') {
     return labelBackArt(panel, copy, p, system, brief)
   }
-  // Glue / overlap panels
-  if (panel.role === 'glue' || id === 'glue' || id === 'overlap') {
+  if (kind === 'glue' || panel.role === 'glue' || id === 'glue' || id === 'overlap') {
     return glueOnly(panel, p)
   }
-  // Tuck / dust flaps
-  if (panel.role === 'tuck' || id.includes('Dust')) {
+  if (kind === 'tuck-flap' || panel.role === 'tuck' || id.includes('Dust')) {
     return flapGround(panel, p, false, '')
   }
+  if (kind === 'device-overlay') return deviceOverlayArt(panel, p)
+  if (kind === 'product-window') return productWindowArt(panel, p)
+  if (kind === 'polygon-wall') return polygonWallArt(panel, copy, p)
+  if (kind === 'hero-front' || id === 'front' || id === 'label' || id === 'trayFront') {
+    return renderFrontPanel(panel, brief, copy, p, overrides, system, designPlan, logoHref)
+  }
+  if (kind === 'legal-back' || id === 'back' || id === 'trayBack') {
+    return renderBackPanel(panel, brief, copy, p, system, plan)
+  }
+  if (kind === 'side-spine' || id === 'left' || id === 'right' || id === 'trayLeft' || id === 'trayRight') {
+    return renderSidePanel(panel, copy, p, system, designPlan)
+  }
+  if (id === 'top' || id === 'bottom' || id === 'trayBottom') {
+    return renderTopPanel(panel, copy, p, system)
+  }
 
-  const isFront = id === 'front' || id === 'label' || id === 'trayFront'
-  const isBack = id === 'back' || id === 'trayBack'
-  const isSide = id === 'left' || id === 'right' || id === 'trayLeft' || id === 'trayRight'
-  const isTop = id === 'top' || id === 'bottom' || id === 'trayBottom'
-
-  if (isFront) return renderFrontPanel(panel, brief, copy, p, overrides, system, designPlan, logoHref)
-  if (isBack) return renderBackPanel(panel, brief, copy, p, system, plan)
-  if (isSide) return renderSidePanel(panel, copy, p, system, designPlan)
-  if (isTop) return renderTopPanel(panel, copy, p, system)
-
-  // Fallback: plain background
-  return `<g clip-path="${clip(panel)}"><rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="${p.bg}" /></g>`
+  return `<g clip-path="${clip(panel)}" data-art="plain"><rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="${p.bg}" /></g>`
 }
 
 export function composeArtwork(
@@ -66,9 +69,7 @@ export function composeArtwork(
     panelId: panel.id,
     markup: panelArt(panel, brief, copy, palette, overrides, system, plan, logoHref, designPlan),
   }))
-  const frontPanelId =
-    dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')?.id ??
-    dieline.panels[0].id
+  const frontPanelId = findHeroPanel(dieline.panels)?.id ?? dieline.panels[0].id
   return {
     layers,
     frontPanelId,

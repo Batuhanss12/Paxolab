@@ -2,6 +2,7 @@ import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
 import { applyPlanToSystem, createPlan, critiquePlan, repairPlan, scoreDesign } from './brain'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
+import { findHeroPanel } from './dieline/panelKind'
 import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor, varyPalette } from './artwork/languages'
 import { defaultIngredientClaims, resolveProductLine, sampleCopy } from './artwork/copy'
@@ -132,7 +133,10 @@ export class FormaLocalEngine implements EnginePort {
         designPlan: plan,
       }
       const preflight = runPreflight(draft, system)
-      const faceLayer = artwork.layers.find((l: { panelId: string }) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')
+      const heroId = findHeroPanel(dieline.panels)?.id
+      const faceLayer = artwork.layers.find(
+        (l: { panelId: string }) => l.panelId === heroId || l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront',
+      )
       const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup)
       return { artwork, preflight, critique, plan }
     }
