@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DesignSpec } from '../types'
-import { downloadDxf, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
+import { downloadDxf, downloadPng, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
@@ -16,13 +16,18 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
     const ok = downloadSvg(design)
     setExportNote(ok ? 'Combined SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
   }
+  function onPng() {
+    void downloadPng(design, 2).then((ok) => {
+      setExportNote(ok ? 'PNG indirildi (2x).' : 'PNG üretilemedi.')
+    })
+  }
   function onDxf() {
     const ok = downloadDxf(design)
     setExportNote(ok ? 'DXF dieline indirildi.' : 'DXF yok — kapı kırmızı.')
   }
   function onZip() {
     const ok = downloadZip(design)
-    setExportNote(ok ? 'ZIP: dieline + artwork + combined.' : 'ZIP yok — kapı kırmızı.')
+    setExportNote(ok ? 'ZIP: dieline + artwork + combined + manifest.' : 'ZIP yok — kapı kırmızı.')
   }
   function onPdf() {
     const ok = printPdf(design)
@@ -71,11 +76,14 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         <button type="button" className="ghost-btn" onClick={onSvg} disabled={!design.preflight.exportOk}>
           SVG indir
         </button>
+        <button type="button" className="ghost-btn" onClick={onPng} disabled={!design.preflight.exportOk}>
+          PNG indir
+        </button>
         <button type="button" className="ghost-btn" onClick={onDxf} disabled={!design.preflight.exportOk}>
           DXF dieline
         </button>
         <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
-          ZIP (SVG + DXF)
+          ZIP (SVG + DXF + manifest)
         </button>
         <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
           Yazdır / PDF

@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { Locale } from "@/content/types";
 import { getContent } from "@/content";
 import { PageHero } from "@/components/PageHero";
 import { StudioLink } from "@/components/StudioLink";
 
 export function ExamplesView({ locale }: { locale: Locale }) {
-  const { examples } = getContent(locale);
+  const { examples, ui } = getContent(locale);
   return (
     <>
       <PageHero title={examples.title} lead={examples.lead}>
@@ -24,6 +25,14 @@ export function ExamplesView({ locale }: { locale: Locale }) {
             </div>
             <h2 className="mt-3 font-display text-xl text-cream">{item.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-cream/60">{item.text}</p>
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="mt-4 inline-block text-sm text-copper transition hover:text-copper-bright"
+              >
+                {locale === "en" ? "Related page" : "İlgili sayfa"} →
+              </Link>
+            ) : null}
           </article>
         ))}
       </div>

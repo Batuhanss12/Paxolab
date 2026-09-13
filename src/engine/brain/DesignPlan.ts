@@ -91,7 +91,7 @@ export type DesignPlan = {
     negativeSpace: NegativeSpace
     opticalCenter: number
     focal: 'center' | 'left'
-    intent: 'symmetric' | 'asymmetric' | 'grid' | 'offset'
+    intent: 'symmetric' | 'asymmetric' | 'grid' | 'offset' | 'diagonal' | 'editorial' | 'floating' | 'full-bleed'
     heroZone: { y: number; h: number; x?: number }
     lockupBand: { y: number; h: number }
     legalZone: 'back' | 'label-back'

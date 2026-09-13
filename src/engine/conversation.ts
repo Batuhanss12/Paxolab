@@ -1,87 +1,15 @@
+/**
+ * conversation — facade re-exporting the decomposed conversation modules.
+ * ASK data + nextMissing live in conversationAsk.ts.
+ * This file preserves the public API: runConversation, runConversationAsync, openingReply, nextMissing.
+ */
 import type { Attachment, AwaitingKey, DesignBrief, EngineResult } from '../types'
 import { applyExtraction, sameName } from './extract'
-import {
-  acceptedAddressDefault,
-  acceptedBarcodeDefault,
-  acceptedDimsDefault,
-  acceptedManufacturerDefault,
-  acceptedProductSkip,
-  acceptedVolumeDefault,
-  briefSummary,
-  hasUserAddress,
-  hasUserBarcode,
-  hasUserDims,
-  hasUserManufacturer,
-  hasUserVolume,
-  isCoreReady,
-} from './fields'
+import { briefSummary, isCoreReady } from './fields'
 import { isIteration, parseIntent } from './iterate/parseIntent'
-import { parseIntentWithLlm } from './llm'
+import { askCopy, nextMissing } from './conversationAsk'
 
-const ASK: Partial<Record<AwaitingKey, string>> = {
-  packagingMode: 'Kutu mu tasarlıyoruz, yoksa etiket mi?',
-  sector: 'Sektör nedir — kozmetik, gıda, elektronik?',
-  brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
-  productName: 'Ürün hattı veya SKU adı nedir? Marka adı değil — örneğin Noir. Yoksa “örnek” yazın; lockup’ta yalnız marka kalır.',
-  volume: 'Hacim nedir — örneğin 50 ml? Bilmiyorsanız “örnek” yazın; Girdiler’de varsayılan diye işaretlerim.',
-  dimensionsMm:
-    'Ölçüler nedir (L×W×H mm)? Yazmazsanız şablon varsayılanını kullanırım — “şablon” yazmanız yeterli.',
-  barcode:
-    'Barkod / GTIN nedir? Yazmazsanız örnek bir barkod çizerim — Girdiler’de örnek diye işaretlenir, gerçek GS1 değildir.',
-  manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
-  manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
-  styleType: 'Soldaki stil çiplerinden seçin: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik.',
-  templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
-}
-
-const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
-  productName: 'Ön etiket hattı nedir (markadan farklı — örn. Noir)? Yoksa “örnek” yazın.',
-  volume: 'Ön yüzde hacim yazılsın mı — örneğin 50 ml? “örnek” veya “yok” yazabilirsiniz.',
-  dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazmanız yeterli.',
-}
-
-const ASK_BOX: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-  'barcode',
-  'manufacturerName',
-  'manufacturerAddress',
-]
-
-const ASK_LABEL_SEQ: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-]
-
-function askCopy(brief: DesignBrief, key: AwaitingKey): string {
-  if (brief.packagingMode === 'label' && ASK_LABEL[key]) return ASK_LABEL[key] as string
-  return ASK[key] ?? ''
-}
-
-export function nextMissing(brief: DesignBrief): AwaitingKey | null {
-  const sequence = brief.packagingMode === 'label' ? ASK_LABEL_SEQ : ASK_BOX
-  for (const key of sequence) {
-    if (key === 'packagingMode' && !brief.packagingMode) return key
-    if (key === 'sector' && !brief.sector.trim()) return key
-    if (key === 'brandName' && !brief.brandName.trim()) return key
-    if (key === 'productName' && !brief.productName.trim() && !acceptedProductSkip(brief)) return key
-    if (key === 'volume' && !hasUserVolume(brief) && !acceptedVolumeDefault(brief)) return key
-    if (key === 'dimensionsMm' && !hasUserDims(brief) && !acceptedDimsDefault(brief)) return key
-    if (key === 'barcode' && !hasUserBarcode(brief) && !acceptedBarcodeDefault(brief)) return key
-    if (key === 'manufacturerName' && !hasUserManufacturer(brief) && !acceptedManufacturerDefault(brief)) return key
-    if (key === 'manufacturerAddress' && !hasUserAddress(brief) && !acceptedAddressDefault(brief)) return key
-  }
-  if (!brief.templateId) return 'templateId'
-  return null
-}
+export { nextMissing } from './conversationAsk'
 
 export function runConversation(input: {
   text: string
@@ -172,7 +100,7 @@ export function runConversation(input: {
 
   if (ready && brief.templateId) {
     replies.push(
-      `${ack || 'Brief yeterli.'} FORMA tasarım motorunu çalıştırıyorum — dieline, vektör artwork ve üretim kapısı aynı anda çıkacak.`,
+      `${ack || 'Brief yeterli.'} Forxa tasarım motorunu çalıştırıyorum — dieline, vektör artwork ve üretim kapısı aynı anda çıkacak.`,
     )
     replies.push('Stil çiplerinden duruşu değiştirin veya yazın: “luxury yap”, “eco’ya geç”, “logoyu büyüt”, “daha premium”.')
     return {
@@ -216,6 +144,16 @@ export function runConversation(input: {
   }
 }
 
+export function runConversationAsync(input: {
+  text: string
+  attachments: Attachment[]
+  brief: DesignBrief
+  awaiting: AwaitingKey | null
+  hasDesign: boolean
+}): Promise<EngineResult> {
+  return Promise.resolve(runConversation(input))
+}
+
 export function openingReply(text: string): string {
   const t = text.toLowerCase()
   if (/etiket/.test(t)) return 'Etiket — en dar yüzey. Marka adı nedir?'
@@ -224,37 +162,4 @@ export function openingReply(text: string): string {
   if (/kozmetik|parfüm/.test(t)) return 'Kozmetik — ambalajın en net yüzeyi. Markanın adı nedir?'
   if (/kutu/.test(t)) return 'Kutu. Markanın adı nedir?'
   return ''
-}
-
-/**
- * Async conversation runner — tries LLM intent parsing first, falls back to local.
- * Only used for iteration commands (when hasDesign && isIteration).
- * Brief extraction flow stays synchronous via runConversation.
- */
-export async function runConversationAsync(input: {
-  text: string
-  attachments: Attachment[]
-  brief: DesignBrief
-  awaiting: AwaitingKey | null
-  hasDesign: boolean
-}): Promise<EngineResult> {
-  const text = input.text.trim()
-
-  if (input.hasDesign && isIteration(text)) {
-    const llmResult = await parseIntentWithLlm(text, input.brief.styleType, input.brief)
-    if (llmResult) {
-      return {
-        brief: { ...input.brief, ...llmResult.briefPatch },
-        awaiting: null,
-        replies: [llmResult.note],
-        shouldGenerate: true,
-        showTemplates: false,
-        overridePatch: llmResult.overridePatch,
-        copyPatch: llmResult.copyPatch,
-        note: llmResult.note,
-      }
-    }
-  }
-
-  return runConversation(input)
 }

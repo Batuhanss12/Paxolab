@@ -46,7 +46,7 @@ export function Landing({
   return (
     <div className="landing">
       <header className="topbar topbar--landing">
-        <span className="wordmark">FORMA</span>
+        <span className="wordmark">Forxa</span>
         <div className="topbar__right">
           <span className="topbar__meta">Tasarım motoru</span>
           <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} onLoadProject={onLoadProject} />
@@ -57,7 +57,7 @@ export function Landing({
         <p className="eyebrow">Talk → Engine → Edit → Print</p>
         <h1 className="landing__title">Ne tasarlamak istiyorsunuz?</h1>
         <p className="landing__sub">
-          AI ile konuş → FORMA tasarım motoru üretir. Nihai baskı vektördür, görsel üretim değil.
+          AI ile konuş → Forxa tasarım motoru üretir. Nihai baskı vektördür, görsel üretim değil.
         </p>
 
         <div className="composer composer--hero">

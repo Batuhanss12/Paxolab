@@ -8,6 +8,10 @@ export const STUDIO_URL =
   process.env.NEXT_PUBLIC_STUDIO_URL?.replace(/\/$/, "") ||
   "http://localhost:5173";
 
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+  "http://localhost:8787";
+
 export const STUDIO_BILLING_URL = `${STUDIO_URL}/#billing`;
 
 export const ROUTES_TR = [

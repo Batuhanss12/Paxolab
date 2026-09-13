@@ -189,8 +189,9 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
       },
     )
   } else if (style === 'minimal') {
+    // P2-C: bump brand mm +10% for large brand in air (FAILURE_CATALOG bar).
     type = ramp(
-      label ? 5.8 : 6.0,
+      label ? 6.4 : 6.6,
       2.9,
       label ? 2.8 : 2.1,
       label ? 2.8 : 2.0,

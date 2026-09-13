@@ -70,6 +70,9 @@ export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette)
   }
 
   if (style === 'minimal') {
+    // P2-B: foot rule stays as the single chrome element when no sector accent painted.
+    // When sector bg accent is present, omit foot rule (max one chrome element).
+    // Caller (composeArtwork) decides order; here we keep the rule but at quieter opacity.
     const ruleY = y + h * 0.88
     return `<line x1="${x + w * 0.2}" y1="${ruleY}" x2="${x + w * 0.8}" y2="${ruleY}" stroke="${p.accent}" stroke-opacity="0.2" stroke-width="0.18" />`
   }
@@ -101,14 +104,18 @@ export function paintSectorBackground(panel: Panel, sector: string, style: Style
   }
 
   // Food/beverage: warm horizon line at lower third.
-  if ((sector === 'food' || sector === 'beverage') && style !== 'minimal') {
+  // P2-B: minimal now allows this accent at quieter opacity (0.05 instead of 0.08).
+  if (sector === 'food' || sector === 'beverage') {
     const hy = y + h * 0.72
-    return `<g data-art="bg" data-bg="warm-horizon"><line x1="${x + 2}" y1="${hy}" x2="${x + w - 2}" y2="${hy}" stroke="${p.accent}" stroke-opacity="0.08" stroke-width="0.14" /></g>`
+    const op = style === 'minimal' ? 0.05 : 0.08
+    return `<g data-art="bg" data-bg="warm-horizon"><line x1="${x + 2}" y1="${hy}" x2="${x + w - 2}" y2="${hy}" stroke="${p.accent}" stroke-opacity="${op}" stroke-width="0.14" /></g>`
   }
 
   // Cleaning: fresh diagonal accent.
-  if (sector === 'cleaning' && style !== 'minimal') {
-    return `<g data-art="bg" data-bg="fresh-accent"><line x1="${x + w * 0.7}" y1="${y + 2}" x2="${x + w - 2}" y2="${y + h * 0.3}" stroke="${p.accent}" stroke-opacity="0.06" stroke-width="0.12" /></g>`
+  // P2-B: minimal now allows this accent at quieter opacity (0.04 instead of 0.06).
+  if (sector === 'cleaning') {
+    const op = style === 'minimal' ? 0.04 : 0.06
+    return `<g data-art="bg" data-bg="fresh-accent"><line x1="${x + w * 0.7}" y1="${y + 2}" x2="${x + w - 2}" y2="${y + h * 0.3}" stroke="${p.accent}" stroke-opacity="${op}" stroke-width="0.12" /></g>`
   }
 
   return ''

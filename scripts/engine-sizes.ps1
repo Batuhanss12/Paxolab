@@ -1,0 +1,1 @@
+Get-ChildItem -Path 'src/engine' -Recurse -Filter '*.ts' | Where-Object { $_.Name -notlike '*.test.ts' } | Sort-Object Length -Descending | Select-Object -First 25 | ForEach-Object { '{0,7} {1}' -f $_.Length, $_.FullName.Replace('C:\Users\Admin\Desktop\PAXOLAB\','') }

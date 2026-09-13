@@ -4,12 +4,18 @@ export type Locale = "tr" | "en";
 
 export type NavLink = { href: string; label: string };
 
+export type FaqItem = { q: string; a: string };
+
+export type HowToStep = { name: string; text: string };
+
 export type ServicePage = {
   slug: string;
   meta: { title: string; description: string };
   hero: { title: string; lead: string };
   sections: { title: string; body: string }[];
   related: { href: string; label: string }[];
+  faqs?: FaqItem[];
+  howto?: { name: string; description: string; steps: HowToStep[] };
   serviceName: string;
   serviceType: string;
 };
@@ -36,6 +42,8 @@ export type SiteContent = {
     faq: string;
     contact: string;
     openStudio: string;
+    logIn: string;
+    signUp: string;
     menu: string;
     links: NavLink[];
     primary: NavLink[];
@@ -57,6 +65,8 @@ export type SiteContent = {
       lead: string;
       primaryCta: string;
       secondaryCta: string;
+      askPlaceholder: string;
+      stageHint: string;
     };
     valueProps: { href: string; title: string; text: string }[];
     hubsTitle: string;
@@ -79,7 +89,7 @@ export type SiteContent = {
     title: string;
     lead: string;
     badge: string;
-    items: { title: string; category: string; text: string }[];
+    items: { title: string; category: string; text: string; href?: string }[];
   };
   pricing: {
     meta: { title: string; description: string };
@@ -126,5 +136,6 @@ export type SiteContent = {
     fromPrice: string;
     tryMonth: string;
     howSecondary: string;
+    faqTitle: string;
   };
 };

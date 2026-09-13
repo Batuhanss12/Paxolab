@@ -54,7 +54,7 @@ const STYLE_RULES: Record<StyleType, StyleRule> = {
     displayFace: 'sans',
     productFace: 'sans',
     lockup: 'center',
-    allowedDecor: ['none'],
+    allowedDecor: ['none', 'drop', 'stripe'],
   },
   eco: {
     positioning: 'natural',

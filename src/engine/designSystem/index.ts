@@ -12,4 +12,9 @@ export {
   glyphAdvance,
   lineBBox,
   measureLockupCollision,
+  measureFrontDecorCollision,
 } from './typeSystem'
+export { normalizeVolume, volumeDisplay } from './volumeFormat'
+export type { VolumeUnit, NormalizedVolume } from './volumeFormat'
+export type { ArtBox } from './artBox'
+export { boxesOverlap, boxGap } from './artBox'

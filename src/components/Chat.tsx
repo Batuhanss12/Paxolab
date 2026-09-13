@@ -48,7 +48,7 @@ export function Chat({
       <div className="chat__thread">
         {messages.map((m) => (
           <article key={m.id} className={`bubble bubble--${m.role}`}>
-            {m.role === 'assistant' && <span className="bubble__who">FORMA</span>}
+            {m.role === 'assistant' && <span className="bubble__who">Forxa</span>}
             <p>{m.content}</p>
             {m.attachments && m.attachments.length > 0 && (
               <div className="thumbs thumbs--msg">
@@ -63,7 +63,7 @@ export function Chat({
         ))}
         {typing && (
           <article className="bubble bubble--assistant">
-            <span className="bubble__who">FORMA</span>
+            <span className="bubble__who">Forxa</span>
             <p className="dots">
               <i /><i /><i />
             </p>

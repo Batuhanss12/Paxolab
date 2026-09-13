@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { ApiError, loadAuth, type AuthUser } from '../api/client'
+import { useCallback, useEffect, useState } from 'react'
+import { ApiError, loadAuth, saveAuth, type AuthState, type AuthUser } from '../api/client'
 import * as authApi from '../api/auth'
 import { getBalance } from '../api/credits'
 import { getHealth } from '../api/health'
@@ -7,7 +7,6 @@ import { BillingPanel } from './BillingPanel'
 import { UserDashboard } from './UserDashboard'
 import { AdminDashboard } from './AdminDashboard'
 
-type Mode = 'idle' | 'login' | 'register'
 type DashboardView = 'none' | 'user' | 'admin'
 
 type AuthPanelProps = {
@@ -17,6 +16,37 @@ type AuthPanelProps = {
   creditsRefreshKey?: number
   /** Load a cloud project into the studio. */
   onLoadProject?: (projectId: string) => void | Promise<void>
+  /** @deprecated Marketing deep-link; ignored — auth lives on the site. */
+  initialMode?: 'login' | 'register'
+}
+
+function stripQueryParam(key: string) {
+  if (typeof window === 'undefined') return
+  const params = new URLSearchParams(window.location.search)
+  if (!params.has(key)) return
+  params.delete(key)
+  const next = params.toString()
+  const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
+  window.history.replaceState({}, '', url)
+}
+
+function tryConsumeHandoff(): AuthUser | null {
+  if (typeof window === 'undefined') return null
+  const params = new URLSearchParams(window.location.search)
+  const handoff = params.get('handoff')
+  if (!handoff) return null
+  try {
+    const parsed = JSON.parse(atob(handoff)) as AuthState
+    if (parsed?.token && parsed?.user?.email) {
+      saveAuth(parsed)
+      stripQueryParam('handoff')
+      return parsed.user
+    }
+  } catch {
+    /* stay guest quietly */
+  }
+  stripQueryParam('handoff')
+  return null
 }
 
 export function AuthPanel({
@@ -25,17 +55,22 @@ export function AuthPanel({
   creditsRefreshKey = 0,
   onLoadProject,
 }: AuthPanelProps) {
-  const [user, setUser] = useState<AuthUser | null>(() => loadAuth()?.user ?? null)
-  const [mode, setMode] = useState<Mode>('idle')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const fromHandoff = tryConsumeHandoff()
+    if (fromHandoff) return fromHandoff
+    return loadAuth()?.user ?? null
+  })
   const [error, setError] = useState<string | null>(null)
   const [apiDown, setApiDown] = useState(false)
   const [busy, setBusy] = useState(false)
   const [balance, setBalance] = useState<number | null>(null)
   const [billingOpen, setBillingOpen] = useState(false)
   const [dashboardView, setDashboardView] = useState<DashboardView>('none')
+
+  useEffect(() => {
+    // Legacy marketing ?auth=login|register — strip without opening UI.
+    stripQueryParam('auth')
+  }, [])
 
   useEffect(() => {
     onAuthChange?.(user)
@@ -83,27 +118,6 @@ export function AuthPanel({
     refreshBalance()
   }, [user, creditsRefreshKey, refreshBalance])
 
-  async function submit(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setBusy(true)
-    try {
-      if (mode === 'register') {
-        const state = await authApi.register({ email, password, name: name || undefined })
-        setUser(state.user)
-      } else {
-        const state = await authApi.login({ email, password })
-        setUser(state.user)
-      }
-      setMode('idle')
-      setPassword('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'İşlem başarısız.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function onLogout() {
     setBusy(true)
     setError(null)
@@ -111,7 +125,6 @@ export function AuthPanel({
       await authApi.logout()
       setUser(null)
       setBalance(null)
-      setMode('idle')
       setDashboardView('none')
       setBillingOpen(false)
     } catch (err) {
@@ -205,81 +218,17 @@ export function AuthPanel({
     )
   }
 
-  if (mode === 'idle') {
-    return (
-      <div className={`auth-panel ${compact ? 'auth-panel--compact' : ''}`}>
-        <span className="auth-panel__guest" title="Giriş yapmadan yerel ve sınırsız">
-          Misafir · sınırsız yerel
-        </span>
-        {apiDown && (
-          <span className="auth-panel__error auth-panel__error--banner">
-            API kapalı — giriş ve kayıt çalışmaz. Yerel kullanım devam eder.
-          </span>
-        )}
-        <button type="button" className="ghost-btn" onClick={() => setMode('login')}>
-          Giriş
-        </button>
-        <button type="button" className="ghost-btn" onClick={() => setMode('register')}>
-          Kayıt
-        </button>
-      </div>
-    )
-  }
-
+  // Guest: quiet label only — no Giriş / Kayıt (auth lives on marketing site).
   return (
-    <form
-      className={`auth-panel auth-panel--form ${compact ? 'auth-panel--compact' : ''}`}
-      onSubmit={(e) => void submit(e)}
-    >
-      {mode === 'register' && (
-        <input
-          className="auth-panel__input"
-          type="text"
-          placeholder="Ad (opsiyonel)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoComplete="name"
-        />
-      )}
-      <input
-        className="auth-panel__input"
-        type="email"
-        placeholder="E-posta"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        autoComplete="email"
-      />
-      <input
-        className="auth-panel__input"
-        type="password"
-        placeholder="Şifre (min 8)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        minLength={8}
-        autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-      />
-      <button type="submit" className="ghost-btn" disabled={busy}>
-        {mode === 'register' ? 'Kayıt ol' : 'Giriş yap'}
-      </button>
-      <button
-        type="button"
-        className="ghost-btn"
-        onClick={() => {
-          setMode('idle')
-          setError(null)
-        }}
-        disabled={busy}
-      >
-        İptal
-      </button>
-      {error && <span className="auth-panel__error">{error}</span>}
-      {apiDown && !error && (
+    <div className={`auth-panel ${compact ? 'auth-panel--compact' : ''}`}>
+      <span className="auth-panel__guest" title="Giriş yapmadan yerel ve sınırsız">
+        Misafir · sınırsız yerel
+      </span>
+      {apiDown && (
         <span className="auth-panel__error auth-panel__error--banner">
-          API kapalı — giriş ve kayıt çalışmaz. Yerel kullanım devam eder.
+          API kapalı — bulut özellikleri durakladı. Yerel kullanım devam eder.
         </span>
       )}
-    </form>
+    </div>
   )
 }

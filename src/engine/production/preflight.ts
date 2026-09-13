@@ -1,7 +1,13 @@
+/**
+ * Preflight — facade re-exporting the decomposed preflight modules.
+ * Check logic lives in preflightChecks.ts.
+ * This file preserves the public runPreflight API.
+ */
 import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../types'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
-import { evaluateDesignGates, layoutFrontLockup, measureLockupCollision, resolveDesignSystem } from '../designSystem'
+import { evaluateDesignGates, layoutFrontLockup, resolveDesignSystem } from '../designSystem'
 import type { DesignSystem } from '../designSystem/types'
+import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
   return { id, label, detail, status }
@@ -112,19 +118,21 @@ export function runPreflight(
       spec.overrides.printReady && exportOk ? 'pass' : 'warn',
     ),
     item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '2 mm güvenli · 2 mm bleed guide (prova; press bleed yok)' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
+    item(
+      'contrast',
+      'Renk kontrastı',
+      checkContrast(palette) ? `WCAG AA — fg/bg kontrast yeterli` : 'Düşük kontrast — okunabilirlik riski',
+      checkContrast(palette) ? 'pass' : 'warn',
+    ),
+    item(
+      'text-overflow',
+      'Metin taşma',
+      checkTextOverflow(spec) ? 'Metinler panel içinde' : 'Metin panel sınırlarını aşıyor',
+      checkTextOverflow(spec) ? 'pass' : 'warn',
+    ),
     item('export', 'Dışa aktarma', exportOk ? 'SVG üretilebilir' : 'Engel var — dışa aktarma yeşil değil', exportOk ? 'pass' : 'fail'),
   ]
 
   const blocking = items.some((i) => i.status === 'fail')
   return { items, blocking, exportOk, collisions }
-}
-
-function detectCollisions(
-  spec: Pick<DesignSpec, 'copy' | 'dieline' | 'overrides' | 'kind'>,
-  system: DesignSystem,
-) {
-  const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
-  if (!front) return { hit: true, reasons: ['no-front'] }
-  const labelFace = spec.kind === 'label' || system.grammar === 'label'
-  return measureLockupCollision(front, system, spec.copy, spec.overrides, labelFace)
 }

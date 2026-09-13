@@ -158,8 +158,15 @@ export function corsOrigins(): string[] {
     'http://127.0.0.1:5173',
     'http://localhost:4173',
     'http://127.0.0.1:4173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
   ]
-  const extra = (process.env.FORMA_PUBLIC_URL ?? '').trim().replace(/\/$/, '')
-  if (extra && !base.includes(extra)) base.push(extra)
+  const extras = [
+    (process.env.FORMA_PUBLIC_URL ?? '').trim().replace(/\/$/, ''),
+    (process.env.FORMA_SITE_URL ?? '').trim().replace(/\/$/, ''),
+  ]
+  for (const extra of extras) {
+    if (extra && !base.includes(extra)) base.push(extra)
+  }
   return base
 }

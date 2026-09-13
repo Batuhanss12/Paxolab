@@ -77,6 +77,8 @@ export type LegalBlockDef = {
   source: 'ingredients' | 'warnings'
 }
 
+export type LineBox = { role: string; x: number; y: number; w: number; h: number }
+
 export type DesignSystem = {
   key: string
   surfaceMode: SurfaceMode

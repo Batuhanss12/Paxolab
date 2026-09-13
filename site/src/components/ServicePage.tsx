@@ -4,7 +4,13 @@ import { getContent } from "@/content";
 import { PageHero } from "@/components/PageHero";
 import { StudioLink } from "@/components/StudioLink";
 import { JsonLd } from "@/components/JsonLd";
-import { serviceJsonLd } from "@/lib/seo";
+import {
+  breadcrumbJsonLd,
+  faqJsonLd,
+  howToJsonLd,
+  serviceBreadcrumbItems,
+  serviceJsonLd,
+} from "@/lib/seo";
 
 export function ServicePageView({
   data,
@@ -17,6 +23,12 @@ export function ServicePageView({
 }) {
   const { ui } = getContent(locale);
   const servicePath = locale === "en" ? `/en/${data.slug}` : `/${data.slug}`;
+  const faqs = data.faqs ?? [];
+  const crumbs = serviceBreadcrumbItems({
+    locale,
+    slug: data.slug,
+    pageName: data.serviceName,
+  });
 
   return (
     <>
@@ -28,6 +40,37 @@ export function ServicePageView({
           locale,
         })}
       />
+      {faqs.length > 0 ? <JsonLd data={faqJsonLd(faqs)} /> : null}
+      {data.howto ? (
+        <JsonLd
+          data={howToJsonLd({
+            name: data.howto.name,
+            description: data.howto.description,
+            path: servicePath,
+            steps: data.howto.steps,
+            locale,
+          })}
+        />
+      ) : null}
+      <JsonLd data={breadcrumbJsonLd({ locale, items: crumbs })} />
+      <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+        <nav aria-label={locale === "en" ? "Breadcrumb" : "Sayfa yolu"} className="text-xs text-cream/45">
+          <ol className="flex flex-wrap items-center gap-2">
+            {crumbs.map((c, i) => (
+              <li key={c.path} className="flex items-center gap-2">
+                {i > 0 ? <span aria-hidden="true" className="text-cream/25">/</span> : null}
+                {i === crumbs.length - 1 ? (
+                  <span className="text-cream/70">{c.name}</span>
+                ) : (
+                  <Link href={c.path} className="transition hover:text-copper">
+                    {c.name}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
       <PageHero title={data.hero.title} lead={data.hero.lead}>
         <StudioLink />
         <Link
@@ -70,6 +113,27 @@ export function ServicePageView({
             </div>
           </aside>
         </div>
+        {faqs.length > 0 ? (
+          <section className="mx-auto mt-16 max-w-3xl space-y-4">
+            <h2 className="font-display text-2xl text-cream">{ui.faqTitle}</h2>
+            {faqs.map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-sm border border-cream/10 bg-ink-900/40 open:border-copper/30"
+              >
+                <summary className="cursor-pointer list-none px-5 py-4 font-medium text-cream marker:content-none [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-start justify-between gap-4">
+                    <span>{item.q}</span>
+                    <span className="text-copper transition group-open:rotate-45">+</span>
+                  </span>
+                </summary>
+                <p className="border-t border-cream/5 px-5 py-4 text-sm leading-relaxed text-cream/60">
+                  {item.a}
+                </p>
+              </details>
+            ))}
+          </section>
+        ) : null}
       </div>
     </>
   );

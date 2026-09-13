@@ -1,174 +1,26 @@
+/**
+ * MarkMatrix — facade re-exporting the decomposed mark modules.
+ * Recipe builders + warning arrays live in markRecipes.ts.
+ * This file preserves the public API: paoMonthsFromBrief, resolveMarkRecipe, resolveMarks, resolveStickerMarks.
+ */
 import type { DesignBrief } from '../../types'
 import type { SectorId, SurfaceMode } from '../designSystem/types'
 import type { MarkId, MarkRecipe, ResolvedMarks } from './types'
 import { STRIP_TINY_MM, opticalStrip } from './stripLayout'
-
-const SAMPLE = true as const
-
-function recipe(
-  key: string,
-  requiredMarks: MarkId[],
-  optionalMarks: MarkId[],
-  requiredTextWarnings: string[],
-  placement: MarkRecipe['placement'],
-  extra: Partial<Pick<MarkRecipe, 'paoMonths' | 'perfumeAssets'>> = {},
-): MarkRecipe {
-  return {
-    key,
-    requiredMarks,
-    optionalMarks,
-    requiredTextWarnings,
-    placement,
-    paoMonths: extra.paoMonths ?? '12M',
-    sampleLegal: SAMPLE,
-    perfumeAssets: extra.perfumeAssets ?? {},
-  }
-}
-
-const PERFUME_ASSETS: MarkRecipe['perfumeAssets'] = {
-  flammable: 'ic1',
-  keepaway: 'ic2',
-  pao: 'ic3',
-  leaflet: 'ic4',
-  pap21: 'ic4',
-}
-
-const PERFUME_WARN_BOX = [
-  'Harici kullanıma mahsustur.',
-  'Alevden ve ısı kaynaklarından uzak tutun.',
-  'Gözle temasından kaçının.',
-  'Tahrişte kullanımı bırakın.',
-  'Çocukların ulaşamayacağı yerde saklayın.',
-]
-
-const CREAM_WARN = [
-  'Temiz cilde uygulayın.',
-  'Gözle temasından kaçının.',
-  'Tahrişte kullanımı bırakın.',
-  'Çocuklardan uzak tutun.',
-]
-
-const FOOD_WARN = [
-  'Serin ve kuru yerde saklayın.',
-  'Alerjen bilgisi etikette belirtilmiştir.',
-  'Açıldıktan sonra önerilen sürede tüketin.',
-]
-
-const ELEC_WARN = [
-  'Elektronik atık olarak ayırın (WEEE).',
-  'Lityum pili evsel atığa atmayın.',
-  'Nemden koruyun. Yetkili servis dışında açmayın.',
-]
-
-const CLEAN_WARN = [
-  'Çocukların ulaşamayacağı yerde saklayın.',
-  'Gözle temasından kaçının.',
-  'Kullandıktan sonra ellerinizi yıkayın.',
-]
-
-function perfumeBox(): MarkRecipe {
-  return recipe(
-    'perfume:box',
-    ['flammable', 'keepaway', 'pao', 'leaflet'],
-    [],
-    PERFUME_WARN_BOX,
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 4 },
-    { paoMonths: '36M', perfumeAssets: PERFUME_ASSETS },
-  )
-}
-
-function perfumeLabel(): MarkRecipe {
-  return recipe(
-    'perfume:label',
-    [],
-    [],
-    PERFUME_WARN_BOX,
-    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 0 },
-    { paoMonths: '36M', perfumeAssets: {} },
-  )
-}
-
-function creamBox(): MarkRecipe {
-  return recipe(
-    'cream:box',
-    [],
-    [],
-    CREAM_WARN,
-    { panel: 'back', minMm: 7.0, gapMm: 2.3, maxIcons: 0 },
-    { paoMonths: '12M' },
-  )
-}
-
-function creamLabel(): MarkRecipe {
-  return recipe(
-    'cream:label',
-    [],
-    [],
-    CREAM_WARN,
-    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 0 },
-    { paoMonths: '12M' },
-  )
-}
-
-function foodBox(): MarkRecipe {
-  return recipe(
-    'food:box',
-    ['recycle', 'glassfork'],
-    ['keepdry'],
-    FOOD_WARN,
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 3 },
-  )
-}
-
-function foodLabel(): MarkRecipe {
-  return recipe(
-    'food:label',
-    [],
-    [],
-    FOOD_WARN,
-    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 0 },
-  )
-}
-
-function electronicsBox(): MarkRecipe {
-  return recipe(
-    'electronics:box',
-    ['weee', 'recycle'],
-    ['thiswayup', 'keepdry'],
-    ELEC_WARN,
-    { panel: 'back', minMm: 7.0, gapMm: 2.3, maxIcons: 4 },
-  )
-}
-
-function electronicsLabel(): MarkRecipe {
-  return recipe(
-    'electronics:label',
-    [],
-    [],
-    ELEC_WARN,
-    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 0 },
-  )
-}
-
-function cleaningBox(): MarkRecipe {
-  return recipe(
-    'cleaning:box',
-    ['keepaway', 'recycle'],
-    ['emark', 'leaflet'],
-    CLEAN_WARN,
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 4 },
-  )
-}
-
-function genericBox(): MarkRecipe {
-  return recipe(
-    'generic:box',
-    ['recycle', 'emark'],
-    ['leaflet'],
-    ['Üretici talimatlarına uyun.', 'Çocuklardan uzak tutun.'],
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 4 },
-  )
-}
+import {
+  creamBox,
+  creamLabel,
+  cleaningBox,
+  electronicsBox,
+  electronicsLabel,
+  foodBox,
+  foodLabel,
+  genericBox,
+  perfumeBox,
+  perfumeLabel,
+  recipe,
+  SAMPLE_LEGAL,
+} from './markRecipes'
 
 export function paoMonthsFromBrief(brief: DesignBrief | undefined, fallback: string): string {
   if (brief?.paoMonths?.trim()) return normalizePao(brief.paoMonths)
@@ -237,7 +89,7 @@ export function resolveMarks(
     strip,
     labelStrip,
     warnings: recipe.requiredTextWarnings.join(' '),
-    sampleLegal: SAMPLE,
+    sampleLegal: SAMPLE_LEGAL,
   }
 }
 
@@ -254,7 +106,7 @@ export function resolveStickerMarks(
 ): ResolvedMarks {
   if (sector !== 'perfume') {
     const recipe = resolveMarkRecipe(sector, 'label', brief)
-    return { recipe, strip: [], labelStrip: [], warnings: recipe.requiredTextWarnings.join(' '), sampleLegal: SAMPLE }
+    return { recipe, strip: [], labelStrip: [], warnings: recipe.requiredTextWarnings.join(' '), sampleLegal: SAMPLE_LEGAL }
   }
   const recipe = resolveMarkRecipe('perfume', 'box', brief)
   const strip = widthMm < STRIP_TINY_MM ? [] : recipe.requiredMarks.slice(0, recipe.placement.maxIcons)
@@ -263,6 +115,6 @@ export function resolveStickerMarks(
     strip,
     labelStrip: [],
     warnings: recipe.requiredTextWarnings.join(' '),
-    sampleLegal: SAMPLE,
+    sampleLegal: SAMPLE_LEGAL,
   }
 }

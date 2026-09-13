@@ -7,28 +7,28 @@ type Props = {
 
 export function PageHero({ eyebrow, title, lead, children }: Props) {
   return (
-    <section className="relative overflow-hidden border-b border-cream/10">
+    <section className="relative overflow-hidden border-b border-white/[0.06]">
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        className="pointer-events-none absolute inset-0"
         aria-hidden
         style={{
           backgroundImage:
-            "linear-gradient(135deg, transparent 40%, rgba(196,149,94,0.08) 100%), repeating-linear-gradient(-12deg, transparent, transparent 24px, rgba(245,240,230,0.02) 24px, rgba(245,240,230,0.02) 25px)",
+            "radial-gradient(ellipse 60% 50% at 20% 0%, rgba(196,149,94,0.08), transparent 55%)",
         }}
       />
-      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         {eyebrow && (
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.22em] text-copper">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.28em] text-copper">
             {eyebrow}
           </p>
         )}
-        <h1 className="max-w-3xl font-display text-4xl leading-[1.1] text-cream sm:text-5xl">
+        <h1 className="max-w-3xl text-[clamp(2rem,3.5vw+0.75rem,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-cream">
           {title}
         </h1>
-        <p className="mt-5 max-w-2xl text-base leading-relaxed text-cream/65 sm:text-lg">
+        <p className="mt-5 max-w-2xl text-base leading-relaxed text-cream/50 sm:text-lg">
           {lead}
         </p>
-        {children && <div className="mt-8 flex flex-wrap gap-3">{children}</div>}
+        {children && <div className="mt-9 flex flex-wrap gap-3">{children}</div>}
       </div>
     </section>
   );

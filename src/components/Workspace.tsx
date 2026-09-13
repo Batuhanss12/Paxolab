@@ -75,7 +75,7 @@ function ConversationBrief({
       {design && (
         <p className="brief-log__note">
           {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
-          FORMA motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
+          Forxa motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
         </p>
       )}
     </div>
@@ -122,7 +122,7 @@ export function Workspace({
     <div className="workspace">
       <header className="topbar">
         <button type="button" className="wordmark wordmark--btn" onClick={onReset}>
-          FORMA
+          Forxa
         </button>
         {showTabs && (
           <nav className="tabs" aria-label="Görünüm">
@@ -178,7 +178,7 @@ export function Workspace({
             {generating && (
               <div className="engine-wait">
                 <span className="engine-wait__bar" />
-                <p>FORMA motoru çalışıyor</p>
+                <p>Forxa motoru çalışıyor</p>
               </div>
             )}
             {!generating && !design && showTemplates && (
