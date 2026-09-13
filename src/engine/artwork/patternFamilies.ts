@@ -38,11 +38,13 @@ export function paintPatternFamily(
   if (family === 'grain') return leafStampField(panel, color)
   if (family === 'ornament') {
     const { x, y, w, h } = panel
+    const cx = x + w / 2
+    const inset = 4.6
     return `
+      <rect x="${x + inset}" y="${y + inset}" width="${w - inset * 2}" height="${h - inset * 2}" fill="none" stroke="${color}" stroke-opacity="${op}" stroke-width="0.28" />
       <line x1="${x + 4}" y1="${y + 3.2}" x2="${x + w - 4}" y2="${y + 3.2}" stroke="${color}" stroke-opacity="${op}" stroke-width="0.2" />
-      <line x1="${x + 4}" y1="${y + 3.7}" x2="${x + w - 4}" y2="${y + 3.7}" stroke="${color}" stroke-opacity="${op * 0.65}" stroke-width="0.12" />
-      <line x1="${x + 4}" y1="${y + h - 3.7}" x2="${x + w - 4}" y2="${y + h - 3.7}" stroke="${color}" stroke-opacity="${op * 0.65}" stroke-width="0.12" />
       <line x1="${x + 4}" y1="${y + h - 3.2}" x2="${x + w - 4}" y2="${y + h - 3.2}" stroke="${color}" stroke-opacity="${op}" stroke-width="0.2" />
+      <path d="M${cx} ${y + inset - 1.15} L${cx + 1.15} ${y + inset} L${cx} ${y + inset + 1.15} L${cx - 1.15} ${y + inset} Z" fill="${color}" fill-opacity="${Math.min(0.55, op + 0.25)}" />
     `
   }
   if (family === 'capsule') {

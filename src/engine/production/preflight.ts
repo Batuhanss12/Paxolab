@@ -1,6 +1,6 @@
 import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../types'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
-import { evaluateDesignGates, measureLockupCollision, resolveDesignSystem } from '../designSystem'
+import { evaluateDesignGates, layoutFrontLockup, measureLockupCollision, resolveDesignSystem } from '../designSystem'
 import type { DesignSystem } from '../designSystem/types'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
@@ -11,6 +11,7 @@ export function runPreflight(
   spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline' | 'layout' | 'overrides' | 'kind' | 'structureId'> & {
     palette?: Palette
     artwork?: DesignSpec['artwork']
+    designPlan?: DesignSpec['designPlan']
   },
   system?: DesignSystem,
 ): PreflightReport {
@@ -39,7 +40,23 @@ export function runPreflight(
     sys,
   )
   const gateFail = gates.some((g) => g.status === 'fail')
-  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin
+  const layers = spec.artwork?.layers ?? []
+  const glueLayers = layers.filter((l) => /glue|overlap/i.test(l.panelId))
+  const glueDirty = glueLayers.some((l) => /data-art="hero"/.test(l.markup))
+  const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
+  const labelFace = spec.kind === 'label' || sys.grammar === 'label'
+  const lockup = front ? layoutFrontLockup(front, sys, spec.copy, spec.overrides, labelFace) : null
+  const typeOk = !!lockup && lockup.brandSize >= sys.type.minMm - 0.01
+  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin && !glueDirty
+  const plan = spec.designPlan
+  const proofDetail = [
+    plan ? `set ${plan.variationIndex + 1}` : null,
+    plan?.heroGraphic.family && plan.heroGraphic.family !== 'none' ? plan.heroGraphic.family : null,
+    plan ? `crop ${plan.artDirection.crop}` : null,
+    spec.overrides.printReady ? '3 mm taşma · 2 mm güvenli' : '2 mm güvenli (structure)',
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   const items: PreflightItem[] = [
     item('brand', 'Marka kimliği', 'Ön yüz lockup', missingBrand ? 'fail' : 'pass'),
@@ -76,6 +93,24 @@ export function runPreflight(
       inventedGtin ? 'fail' : userBarcode ? 'pass' : spec.copy.barcode ? 'warn' : 'na',
     ),
     ...gates,
+    item(
+      'glue-art',
+      'Yapıştırma yüzü',
+      glueDirty ? 'Yapıştırmada hero var' : glueLayers.length ? 'GLUE — hero yok' : 'Yapıştırma paneli yok',
+      glueDirty ? 'fail' : glueLayers.length ? 'pass' : 'na',
+    ),
+    item(
+      'type-fit',
+      'Tipografi sığdı',
+      lockup ? `${lockup.brandSize.toFixed(2)} mm display · min ${sys.type.minMm}` : 'Ön yüz yok',
+      !lockup ? 'warn' : typeOk && !collisions ? 'pass' : collisions ? 'warn' : 'warn',
+    ),
+    item(
+      'proof',
+      'Stüdyo prova',
+      proofDetail || 'Kesim / kat + güvenli',
+      spec.overrides.printReady && exportOk ? 'pass' : 'warn',
+    ),
     item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '3 mm taşma + 5 mm güvenli' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
     item('export', 'Dışa aktarma', exportOk ? 'SVG üretilebilir' : 'Engel var — dışa aktarma yeşil değil', exportOk ? 'pass' : 'fail'),
   ]

@@ -1,6 +1,8 @@
 import type { DesignBrief, StyleType } from '../../types'
 import type { DecorFamily, Density, SectorId } from '../designSystem/types'
-import { lastFamilies } from './DesignMemory'
+import { lastFamilies, lastForStyle } from './DesignMemory'
+import { pickAllowed, studioRecipe } from './VariationRecipes'
+import type { VocabularyRow } from './SectorVisualVocabulary'
 import { visualConceptFor } from './VisualConcept'
 import type {
   ArtDirectionBlock,
@@ -27,9 +29,25 @@ export type ArtCtx = {
   density: Density
   restrainExtras: boolean
   prev?: DesignPlan
+  variationIndex?: number
+  vocab?: VocabularyRow
 }
 
 const OVERLOAD_PRIMS: PrimitiveId[] = ['leaf', 'grain', 'diamond', 'wave', 'arc', 'dot', 'tick']
+
+/** Set 0 stays empty. Variation / graphic-push get one quiet atom. Never leaf on eco (kit already stamps). */
+function pickPrimitives(ctx: ArtCtx): PrimitiveId[] {
+  if (ctx.cue === 'force-overload') return [...OVERLOAD_PRIMS]
+  if (ctx.restrainExtras) return []
+  const recipe = studioRecipe(ctx.variationIndex ?? 0)
+  if (recipe && !recipe.primitive) return []
+  const vary = (ctx.variationIndex ?? 0) > 0 || ctx.cue === 'graphic-push'
+  if (!vary) return []
+  if (ctx.style === 'luxury' || ctx.style === 'classic') return ['rule']
+  if (ctx.style === 'modern' || ctx.style === 'playful') return ['dot']
+  if (ctx.style === 'eco' || ctx.sector === 'food') return ['grain']
+  return []
+}
 
 export function seedFrom(brief: DesignBrief, style: StyleType, templateId?: string): number {
   const raw = `${brief.brandName}|${brief.productName}|${style}|${templateId ?? brief.templateId}|${brief.packagingMode}`
@@ -41,8 +59,12 @@ export function seedFrom(brief: DesignBrief, style: StyleType, templateId?: stri
   return h >>> 0
 }
 
-export function allowedHeroes(style: StyleType, sector: SectorId): HeroFamily[] {
+export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
   if (style === 'minimal') return ['none']
+  if (vocab) {
+    const safe = vocab.heroFamilies.filter((h) => !vocab.forbiddenHeroes.includes(h))
+    if (safe.length) return safe
+  }
   if (sector === 'perfume') {
     if (style === 'luxury') return ['crest', 'seal']
     if (style === 'classic') return ['seal', 'crest']
@@ -66,6 +88,19 @@ export function allowedHeroes(style: StyleType, sector: SectorId): HeroFamily[] 
   if (style === 'eco') return ['botanical']
   if (style === 'classic') return ['seal']
   if (style === 'luxury') return ['crest']
+  return ['none']
+}
+
+export function allowedPatterns(style: StyleType, vocab?: VocabularyRow): PatternFamily[] {
+  if (vocab) {
+    const safe = vocab.patternFamilies.filter((p) => !vocab.forbiddenPatterns.includes(p))
+    if (safe.length) return safe
+  }
+  if (style === 'luxury') return ['contour', 'ornament']
+  if (style === 'modern') return ['lattice', 'stripe']
+  if (style === 'eco') return ['grain', 'ornament']
+  if (style === 'playful') return ['capsule', 'none']
+  if (style === 'classic') return ['ornament', 'contour']
   return ['none']
 }
 
@@ -96,24 +131,49 @@ export function heroFromDecor(decor: DecorFamily): HeroFamily {
   return 'none'
 }
 
-function pickHero(style: StyleType, sector: SectorId, cue: DirectorCue, prev?: DesignPlan): HeroFamily {
-  const allowed = allowedHeroes(style, sector)
-  const keepCue =
-    cue === 'luxury-tighten' || cue === 'luxury-arrive' || cue === 'open-air' || cue === 'warm-natural'
-  if (keepCue && prev?.heroGraphic.family && allowed.includes(prev.heroGraphic.family)) {
-    return prev.heroGraphic.family
-  }
+function pickFromSet<T extends string>(allowed: T[], index: number, last?: T): T {
+  const preferred = allowed[0]
+  if (index <= 0) return preferred
+  const avoid = last && last !== preferred ? last : preferred
+  return allowed.find((item) => item !== avoid) ?? allowed[index % allowed.length] ?? preferred
+}
+
+function pickHero(ctx: ArtCtx): HeroFamily {
+  const allowed = allowedHeroes(ctx.style, ctx.sector, ctx.vocab)
   const preferred = allowed[0] ?? 'none'
-  if (cue === 'force-overload') return preferred
-  const forbid = lastFamilies()
-  if (prev && cue === 'none' && prev.heroGraphic.family !== 'none') {
-    const next = allowed.find((family) => family !== prev.heroGraphic.family)
-    return next ?? preferred
+  const index = ctx.variationIndex ?? 0
+  const indexChanged = index !== (ctx.prev?.variationIndex ?? 0)
+  const keepCue =
+    ctx.cue === 'luxury-tighten' ||
+    ctx.cue === 'luxury-arrive' ||
+    ctx.cue === 'open-air' ||
+    ctx.cue === 'warm-natural'
+  if (ctx.cue === 'force-overload') return preferred
+  if (keepCue && !indexChanged && ctx.prev?.heroGraphic.family && allowed.includes(ctx.prev.heroGraphic.family)) {
+    return ctx.prev.heroGraphic.family
   }
-  if (!prev && cue === 'none' && preferred !== 'none' && forbid.includes(preferred)) {
-    return allowed.find((family) => family !== preferred && !forbid.includes(family)) ?? preferred
-  }
-  return preferred
+  if (index <= 0) return preferred
+  const recipe = studioRecipe(index)
+  if (recipe) return pickAllowed(allowed, recipe.hero)
+  return pickFromSet(allowed, index, lastForStyle(ctx.style)?.hero ?? ctx.prev?.heroGraphic.family)
+}
+
+function pickPattern(ctx: ArtCtx): PatternFamily {
+  const allowed = allowedPatterns(ctx.style, ctx.vocab)
+  const preferred = defaultPattern(ctx.style)
+  const index = ctx.variationIndex ?? 0
+  const indexChanged = index !== (ctx.prev?.variationIndex ?? 0)
+  const keepCue =
+    ctx.cue === 'luxury-tighten' ||
+    ctx.cue === 'luxury-arrive' ||
+    ctx.cue === 'open-air' ||
+    ctx.cue === 'warm-natural'
+  if (ctx.cue === 'force-overload') return preferred
+  if (keepCue && !indexChanged && ctx.prev?.patternSystem.family) return ctx.prev.patternSystem.family
+  if (index <= 0) return preferred
+  const recipe = studioRecipe(index)
+  if (recipe) return pickAllowed(allowed, recipe.pattern)
+  return pickFromSet(allowed, index, lastForStyle(ctx.style)?.pattern ?? ctx.prev?.patternSystem.family)
 }
 
 function patternOpacity(style: StyleType, density: Density, restrain: boolean): number {
@@ -136,25 +196,27 @@ export function attachArtDirection(ctx: ArtCtx): {
   density: DensityMap
   crop: CropBlock
 } {
-  const seed = seedFrom(ctx.brief, ctx.style, ctx.templateId)
-  const family = pickHero(ctx.style, ctx.sector, ctx.cue, ctx.prev)
-  const pattern = ctx.prev && ctx.cue !== 'force-overload' ? ctx.prev.patternSystem.family : defaultPattern(ctx.style)
+  const seed = seedFrom(ctx.brief, ctx.style, ctx.templateId) + (ctx.variationIndex ?? 0) * 17
+  const family = pickHero(ctx)
+  const pattern = pickPattern(ctx)
   const sideIntentional = ctx.surface === 'box' && (ctx.style === 'luxury' || ctx.style === 'modern' || ctx.style === 'eco')
-  const primitives: PrimitiveId[] = ctx.cue === 'force-overload' ? [...OVERLOAD_PRIMS] : []
+  const primitives: PrimitiveId[] = pickPrimitives(ctx)
   const density: Density = ctx.cue === 'force-overload' ? 'dense' : ctx.density
-  const cropOpen = ctx.restrainExtras || density === 'sparse'
+  const recipe = !ctx.restrainExtras ? studioRecipe(ctx.variationIndex ?? 0) : null
+  const cropOpen = ctx.restrainExtras || density === 'sparse' || recipe?.crop === 'open'
 
   return {
     artDirection: {
       vocabulary: `${ctx.sector}/${ctx.style}`,
       crop: cropOpen ? 'open' : 'tight',
+      chrome: recipe?.chrome ?? 'full',
       antiRepetition: { seed, forbidLastFamilies: lastFamilies() },
     },
     visualConcept: visualConceptFor(ctx.style, ctx.sector, family),
     heroGraphic: {
       family,
       placement: family === 'none' ? 'none' : 'above-lockup',
-      scale: cropOpen ? 0.92 : 1,
+      scale: recipe?.scale ?? (cropOpen ? 0.92 : 1),
       clearance: true,
     },
     illustrationSystem: {
@@ -167,7 +229,7 @@ export function attachArtDirection(ctx: ArtCtx): {
       avoidLockup: true,
       sideIntentional,
     },
-    backgroundTreatment: defaultBackground(ctx.style),
+    backgroundTreatment: recipe?.background ?? (ctx.vocab ? (ctx.vocab.backgroundTreatments.includes(defaultBackground(ctx.style)) ? defaultBackground(ctx.style) : ctx.vocab.backgroundTreatments[0] ?? 'quiet-paper') : defaultBackground(ctx.style)),
     density: {
       overall: density,
       front: density,
@@ -175,7 +237,7 @@ export function attachArtDirection(ctx: ArtCtx): {
       back: 'sparse',
     },
     crop: {
-      heroCrop: cropOpen ? 0.9 : 1,
+      heroCrop: recipe ? (recipe.crop === 'open' ? 0.88 : 1) : cropOpen ? 0.9 : 1,
       safeInsets: cropOpen ? 3.1 : 2.2,
     },
   }

@@ -82,12 +82,17 @@ export class FormaLocalEngine implements EnginePort {
     const style = brief.styleType || 'luxury'
     const styleChanged = !!input.prev?.designPlan && input.prev.designPlan.style !== style
     if (styleChanged && input.overridePatch?.directorCue == null) overrides.directorCue = undefined
+    const variationIndex = Math.max(
+      0,
+      Math.floor(overrides.variationIndex ?? input.prev?.designPlan?.variationIndex ?? 0),
+    )
     const designPlan = createPlan({
       brief,
       template,
       style,
       prev: styleChanged ? undefined : input.prev?.designPlan,
       cue: overrides.directorCue,
+      variationIndex,
     })
     if (designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
       overrides.titleScale = 1.1
@@ -113,9 +118,11 @@ export class FormaLocalEngine implements EnginePort {
         structureId: template.structureId,
         palette,
         artwork,
+        designPlan: plan,
       }
       const preflight = runPreflight(draft, system)
-      const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan))
+      const faceLayer = artwork.layers.find((l: { panelId: string }) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')
+      const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup)
       return { artwork, preflight, critique, plan }
     }
 

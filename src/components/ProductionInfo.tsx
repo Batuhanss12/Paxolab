@@ -98,6 +98,24 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
             {design.brief.barcodeDefaulted ? ' · örnek (GS1 değil)' : ''}
           </dd>
         </div>
+        {design.designPlan ? (
+          <>
+            <div>
+              <dt>Set</dt>
+              <dd>{design.designPlan.variationIndex + 1}</dd>
+            </div>
+            <div>
+              <dt>Hero</dt>
+              <dd>{design.designPlan.heroGraphic.family}</dd>
+            </div>
+            <div>
+              <dt>Crop</dt>
+              <dd>
+                {design.designPlan.artDirection.crop} · {design.designPlan.crop.safeInsets.toFixed(1)} mm
+              </dd>
+            </div>
+          </>
+        ) : null}
       </dl>
 
       <RatingBar designId={design.id} />

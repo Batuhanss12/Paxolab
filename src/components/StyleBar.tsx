@@ -6,9 +6,10 @@ type StyleBarProps = {
   design: DesignSpec | null
   onStyle: (style: StyleType) => void
   onDims: (dims: DimensionsMm) => void
+  onVary?: () => void
 }
 
-export function StyleBar({ brief, design, onStyle, onDims }: StyleBarProps) {
+export function StyleBar({ brief, design, onStyle, onDims, onVary }: StyleBarProps) {
   const active = brief.styleType || design?.brief.styleType || 'luxury'
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
@@ -61,6 +62,14 @@ export function StyleBar({ brief, design, onStyle, onDims }: StyleBarProps) {
           </label>
           <span className="style-bar__dims-unit">mm</span>
         </div>
+      )}
+      {design && onVary && (
+        <button type="button" className="style-bar__vary" onClick={onVary}>
+          6 yeni tasarım
+          <span className="style-bar__vary-set">
+            Set {(design.designPlan?.variationIndex ?? 0) + 1}/6
+          </span>
+        </button>
       )}
     </section>
   )

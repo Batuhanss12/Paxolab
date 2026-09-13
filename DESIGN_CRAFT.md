@@ -39,4 +39,4 @@ Reference JPGs are never embedded in production SVG. Decor frames the lockup (`l
 
 ## Type ramps
 
-`typeScaleFor(style, grammar)` — Display / Product / Meta / Legal (mm), tracking per role, optical center, rule gap. Volume on luxury / classic is **drawn small-caps** (lining figures + smaller capitals) — never `font-variant`. `layoutFrontLockup` reserves the type rectangle, fits tracking so display does not collide with foil/air rules, and `composeArtwork` paints from that layout.
+`typeScaleFor(style, grammar, wrap, sector?)` — Display / Product / Meta / Legal (mm), tracking per role, optical center, rule gap. Perfume luxury ramp is unchanged; food / electronics / cream get a quiet sector voice. Volume on luxury / classic is **drawn small-caps** (lining figures + smaller capitals) — never `font-variant`. `layoutFrontLockup` reserves the type rectangle, fits tracking so display does not collide with foil/air rules, wraps 3+ word brands onto two lines, and `composeArtwork` paints from that layout.

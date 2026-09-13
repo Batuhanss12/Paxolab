@@ -16,6 +16,8 @@ export type LockupLayout = {
   ax: number
   anchor: 'middle' | 'start'
   brandY: number
+  brandLines: string[]
+  brandYs: number[]
   productY: number
   categoryY: number
   taglineY: number
@@ -35,8 +37,8 @@ export type LockupLayout = {
   ruleKind: 'foil' | 'double' | 'hair' | 'eco' | 'none'
 }
 
-const SERIF_EM = 0.62
-const SANS_EM = 0.56
+const SERIF_EM = 0.66
+const SANS_EM = 0.58
 
 function em(face: 'serif' | 'sans'): number {
   return face === 'serif' ? SERIF_EM : SANS_EM
@@ -49,10 +51,10 @@ export function glyphAdvance(ch: string, face: 'serif' | 'sans'): number {
   if (/[il1]/.test(ch)) return face === 'serif' ? 0.3 : 0.28
   if (ch === 'I' || ch === 'İ' || ch === 'ı') return face === 'serif' ? 0.34 : 0.32
   if (/[jfrt]/.test(ch)) return face === 'serif' ? 0.38 : 0.36
-  if (/[mwMW]/.test(ch)) return face === 'serif' ? 0.84 : 0.78
-  if (/[@%&]/.test(ch)) return 0.82
-  if (/[JL]/.test(ch)) return face === 'serif' ? 0.54 : 0.5
-  if (/[A-ZÇĞÖŞÜ]/.test(ch)) return face === 'serif' ? 0.64 : 0.58
+  if (/[mwMW]/.test(ch)) return face === 'serif' ? 0.92 : 0.84
+  if (/[@%&]/.test(ch)) return 0.86
+  if (/[JL]/.test(ch)) return face === 'serif' ? 0.58 : 0.52
+  if (/[A-ZÇĞÖŞÜ]/.test(ch)) return face === 'serif' ? 0.74 : 0.64
   if (/[0-9]/.test(ch)) return face === 'serif' ? 0.56 : 0.54
   return em(face)
 }
@@ -103,9 +105,11 @@ export function measureLockupCollision(
   if (rect.x + rect.w > panel.x + panel.w + slack) reasons.push('lockup-right')
   if (rect.y + rect.h > panel.y + panel.h + slack) reasons.push('lockup-bottom')
 
-  const boxes: LineBox[] = [
-    lineBBox(copy.brand.toUpperCase(), layout.brandSize, layout.brandTracking, faces.display, layout.ax, layout.brandY, layout.anchor, 'brand'),
-  ]
+  const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
+  const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
+  const boxes: LineBox[] = brandLines.map((line, i) =>
+    lineBBox(line, layout.brandSize, layout.brandTracking, faces.display, layout.ax, brandYs[i] ?? layout.brandY, layout.anchor, 'brand'),
+  )
   if (copy.product.trim()) {
     boxes.push(
       lineBBox(copy.product.toUpperCase(), layout.productSize, layout.productTracking, faces.product, layout.ax, layout.productY, layout.anchor, 'product'),
@@ -157,18 +161,26 @@ export function fitLine(
 ): { size: number; tracking: number; width: number } {
   let s = size
   let t = tracking
-  const floorT = Math.min(0.08, tracking * 0.25)
-  while (estimateLineWidth(text, s, t, face) > maxW && t > floorT) {
-    t = Math.max(floorT, t * 0.86)
+  const target = Math.max(8, maxW * 0.94)
+  const floorT = Math.min(0.04, tracking * 0.18)
+  while (estimateLineWidth(text, s, t, face) > target && t > floorT) {
+    t = Math.max(floorT, t * 0.84)
   }
-  while (estimateLineWidth(text, s, t, face) > maxW && s > minMm) {
-    s = Math.max(minMm, s * 0.93)
+  while (estimateLineWidth(text, s, t, face) > target && s > minMm) {
+    s = Math.max(minMm, s * 0.92)
   }
   return { size: s, tracking: t, width: estimateLineWidth(text, s, t, face) }
 }
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n))
+}
+
+function splitBrand(text: string): [string, string] | null {
+  const words = text.split(/\s+/).filter(Boolean)
+  if (words.length < 2) return null
+  if (words.length >= 3) return [words.slice(0, -1).join(' '), words[words.length - 1]]
+  return [words[0], words.slice(1).join(' ')]
 }
 
 function ruleKindOf(system: DesignSystem, labelFace: boolean): LockupLayout['ruleKind'] {
@@ -194,13 +206,14 @@ export function layoutFrontLockup(
   const left = system.align === 'left' || wrap
   const tScale = overrides.titleScale || 1
   const padX = type.lockupPadX + (left ? 1.4 : 0)
+  const frameReserve = system.style === 'luxury' || system.style === 'classic' ? 3.2 : 1.1
   const seamReserve = wrap ? Math.max(12, w * 0.16) : 0
   const ax = wrap ? x + Math.max(7.2, w * 0.1) : left ? x + (labelFace ? 6.4 : 8.2) : x + w / 2
   const maxTextW = wrap
     ? Math.max(28, x + w - seamReserve - padX - ax)
     : left
       ? x + w - padX - ax
-      : w - padX * 2
+      : Math.max(22, w - padX * 2 - frameReserve)
 
   const brandText = copy.brand.toUpperCase()
   const productText = copy.product.trim().toUpperCase()
@@ -208,7 +221,28 @@ export function layoutFrontLockup(
   const cat = system.category
 
   const brandCap = Math.min(type.displayMm, w * (system.style === 'minimal' ? 0.1 : 0.126), h * (labelFace ? 0.155 : 0.088))
-  const brandFit = fitLine(brandText, Math.max(type.minMm, brandCap * tScale), type.trackingDisplay, maxTextW, type.minMm, faces.display)
+  const brandCapSize = Math.max(type.minMm, brandCap * tScale)
+  const singleFit = fitLine(brandText, brandCapSize, type.trackingDisplay, maxTextW, type.minMm, faces.display)
+  const parts = splitBrand(brandText)
+  const squeezed = singleFit.size < brandCap * 0.78 || singleFit.tracking < type.trackingDisplay * 0.72
+  const wrapBrand = !!parts && (brandText.split(/\s+/).filter(Boolean).length >= 3 || squeezed)
+  let brandLines = [brandText]
+  let brandFit = singleFit
+  if (wrapBrand && parts) {
+    const a = fitLine(parts[0], brandCapSize, type.trackingDisplay, maxTextW, type.minMm, faces.display)
+    const b = fitLine(parts[1], brandCapSize, type.trackingDisplay, maxTextW, type.minMm, faces.display)
+    const size = Math.min(a.size, b.size)
+    const tracking = Math.min(a.tracking, b.tracking)
+    brandLines = parts
+    brandFit = {
+      size,
+      tracking,
+      width: Math.max(
+        estimateLineWidth(parts[0], size, tracking, faces.display),
+        estimateLineWidth(parts[1], size, tracking, faces.display),
+      ),
+    }
+  }
   const productFit = fitLine(
     productText,
     Math.max(type.minMm, Math.min(type.productMm, w * 0.048) * tScale),
@@ -223,7 +257,8 @@ export function layoutFrontLockup(
 
   const kind = ruleKindOf(system, labelFace)
   const hasRule = kind !== 'none'
-  const afterBrand = hasRule ? brandFit.size * 0.2 + type.ruleGapMm : brandFit.size * 0.42
+  const lineStep = brandLines.length > 1 ? brandFit.size * 1.14 : 0
+  const afterBrand = (hasRule ? brandFit.size * 0.2 + type.ruleGapMm : brandFit.size * 0.42) + lineStep
   const afterRule = hasProduct ? productFit.size * 0.82 + (hasRule ? type.ruleGapMm * 0.55 : 0) : 0
   const afterProduct = cat && system.style !== 'minimal' ? categorySize * 1.55 : 0
   const airToTag = labelFace ? Math.min(5.2, h * 0.08) : Math.min(7.2, h * 0.055)
@@ -246,6 +281,7 @@ export function layoutFrontLockup(
   if (brandTop + stackH > bottomLimit) brandTop = bottomLimit - stackH
 
   const brandY = brandTop + cap
+  const brandYs = brandLines.map((_, i) => brandY + i * lineStep * gapScale)
   const ruleY = hasRule ? brandY + afterBrand * gapScale : undefined
   const productY = brandY + (afterBrand + afterRule) * gapScale
   const categoryY = productY + afterProduct * gapScale
@@ -266,6 +302,8 @@ export function layoutFrontLockup(
     ax,
     anchor: left ? 'start' : 'middle',
     brandY,
+    brandLines,
+    brandYs,
     productY,
     categoryY,
     taglineY,

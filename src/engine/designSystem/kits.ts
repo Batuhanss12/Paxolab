@@ -103,11 +103,42 @@ function ramp(
   }
 }
 
-export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = false): TypeScale {
+function sectorVoice(type: TypeScale, style: StyleType, sector?: SectorId): TypeScale {
+  if (!sector || sector === 'perfume') return type
+  if (sector === 'food') {
+    const luxury = style === 'luxury' || style === 'classic'
+    return {
+      ...type,
+      displayMm: luxury ? type.displayMm * 0.92 : type.displayMm,
+      trackingDisplay: luxury ? type.trackingDisplay * 0.82 : type.trackingDisplay * 0.9,
+      productMm: type.productMm + 0.2,
+      opticalCenter: style === 'luxury' ? 0.42 : type.opticalCenter,
+    }
+  }
+  if (sector === 'electronics') {
+    return {
+      ...type,
+      displayMm: style === 'luxury' ? type.displayMm * 0.9 : type.displayMm,
+      trackingDisplay: Math.min(type.trackingDisplay, 0.28),
+      opticalCenter: 0.39,
+    }
+  }
+  if (sector === 'cream' || sector === 'serum') {
+    return {
+      ...type,
+      displayMm: style === 'luxury' ? type.displayMm * 0.94 : type.displayMm,
+      opticalCenter: style === 'luxury' ? 0.43 : type.opticalCenter,
+    }
+  }
+  return type
+}
+
+export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = false, sector?: SectorId): TypeScale {
   const label = grammar === 'label'
   const minMm = label ? 2.8 : 1.9
+  let type: TypeScale
   if (style === 'luxury') {
-    return ramp(
+    type = ramp(
       label ? (wrap ? 6.0 : 6.6) : 9.1,
       label ? 3.15 : 3.2,
       label ? 2.8 : 2.35,
@@ -126,9 +157,8 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
         taglineMm: label ? 2.85 : 3.05,
       },
     )
-  }
-  if (style === 'modern') {
-    return ramp(
+  } else if (style === 'modern') {
+    type = ramp(
       label ? 6.2 : 7.2,
       label ? 3.0 : 3.05,
       label ? 2.8 : 2.25,
@@ -145,9 +175,8 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
         taglineMm: label ? 2.8 : 2.95,
       },
     )
-  }
-  if (style === 'minimal') {
-    return ramp(
+  } else if (style === 'minimal') {
+    type = ramp(
       label ? 5.8 : 6.0,
       2.9,
       label ? 2.8 : 2.1,
@@ -164,9 +193,8 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
         taglineMm: label ? 2.8 : 2.9,
       },
     )
-  }
-  if (style === 'eco') {
-    return ramp(
+  } else if (style === 'eco') {
+    type = ramp(
       label ? 6.4 : 8.0,
       3.1,
       label ? 2.8 : 2.3,
@@ -183,9 +211,8 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
         taglineMm: label ? 2.85 : 3.0,
       },
     )
-  }
-  if (style === 'playful') {
-    return ramp(
+  } else if (style === 'playful') {
+    type = ramp(
       label ? 6.2 : 7.6,
       3.2,
       label ? 2.8 : 2.35,
@@ -202,26 +229,28 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
         taglineMm: label ? 2.85 : 3.05,
       },
     )
+  } else {
+    type = ramp(
+      label ? 6.4 : 8.2,
+      3.15,
+      label ? 2.8 : 2.3,
+      label ? 2.8 : 2.02,
+      2.55,
+      minMm,
+      { d: 0.68, p: 1.0, m: 1.2, l: 0.22 },
+      {
+        volumeCase: 'smallcaps',
+        opticalLift: 0.014,
+        opticalCenter: wrap ? 0.45 : label ? 0.35 : 0.41,
+        ruleGapMm: 1.2,
+        lockupPadX: wrap ? 7.0 : 5.0,
+        lockupPadY: 2.2,
+        smallCapsRatio: 0.72,
+        taglineMm: label ? 2.85 : 3.0,
+      },
+    )
   }
-  return ramp(
-    label ? 6.4 : 8.2,
-    3.15,
-    label ? 2.8 : 2.3,
-    label ? 2.8 : 2.02,
-    2.55,
-    minMm,
-    { d: 0.68, p: 1.0, m: 1.2, l: 0.22 },
-    {
-      volumeCase: 'smallcaps',
-      opticalLift: 0.014,
-      opticalCenter: wrap ? 0.45 : label ? 0.35 : 0.41,
-      ruleGapMm: 1.2,
-      lockupPadX: wrap ? 7.0 : 5.0,
-      lockupPadY: 2.2,
-      smallCapsRatio: 0.72,
-      taglineMm: label ? 2.85 : 3.0,
-    },
-  )
+  return sectorVoice(type, style, sector)
 }
 
 export const STYLE_KITS: Record<StyleType, LockupId[]> = {

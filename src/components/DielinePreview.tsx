@@ -11,6 +11,7 @@ export function DielinePreview({ design }: DielinePreviewProps) {
   const svg = renderDielineSvg(design.dieline, {
     showArtwork: true,
     artworkMarkup: `<defs>${clipDefs(design.dieline)}</defs>${artworkMarkup(design.artwork)}`,
+    safeInsetMm: design.overrides.printReady ? 2 : 0,
   })
   return (
     <div className="preview-stage">

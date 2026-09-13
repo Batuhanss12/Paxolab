@@ -14,6 +14,8 @@ H0–D5 hold. D6 (2026-09-13) closed the planned track: 6-style perfume QA matri
 
 No D7 is planned. Do not start catalog, PDF/X, or extra phases unless the owner asks.
 
+Studio craft S1–S5 (2026-09-13) is an **additive** layer on the closed 98% planned track: optical lockup wrap, plan crop/Y consumed on variation, restrained primitives on set 1+, sector type/jewelry split (perfume jewelry stays on perfume), and a print-proof preflight — not a new official phase. See `STUDIO.md`.
+
 ---
 
 ## 2. Architecture map

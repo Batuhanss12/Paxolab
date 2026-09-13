@@ -264,6 +264,21 @@ export default function App() {
     runGenerate(next)
   }, [runGenerate])
 
+  const onVary = useCallback(() => {
+    if (!designRef.current) return
+    const nextIndex = (designRef.current.designPlan?.variationIndex ?? 0) + 1
+    setMessages((m) => [
+      ...m,
+      {
+        id: uid(),
+        role: 'assistant',
+        content: `Varyasyon seti ${nextIndex + 1} — aynı brief, yeni kahraman / pattern.`,
+      },
+    ])
+    setTab('vektor')
+    runGenerate(briefRef.current, { overridePatch: { variationIndex: nextIndex } })
+  }, [runGenerate])
+
   return (
     <div className="app">
       {phase === 'landing' ? (
@@ -295,6 +310,7 @@ export default function App() {
           onPickTemplate={onPickTemplate}
           onDims={onDims}
           onStyle={onStyle}
+          onVary={onVary}
           tab={tab}
           onTab={setTab}
           onReset={reset}

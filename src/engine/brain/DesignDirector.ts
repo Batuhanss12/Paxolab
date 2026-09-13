@@ -1,5 +1,5 @@
 import type { DesignBrief, FormaTemplate, StyleType } from '../../types'
-import { resolveSector } from '../designSystem/sector'
+import { resolveSector, sectorBlob } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
 import { attachArtDirection } from './ArtDirection'
 import { composeGrammar } from './CompositionGrammar'
@@ -8,6 +8,8 @@ import { allowedDecorFor, sectorRisks, styleRule } from './DesignRules'
 import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
 import { planSummaryTr, type DesignPlan, type DirectorCue, type NegativeSpace } from './DesignPlan'
+import { studioRecipe } from './VariationRecipes'
+import { lookupVocabulary, resolveSubProduct, vocabSafeBackground, vocabSafeHero, vocabSafePattern } from './SectorVisualVocabulary'
 
 export type DirectorInput = {
   brief: DesignBrief
@@ -15,6 +17,7 @@ export type DirectorInput = {
   style: StyleType
   prev?: DesignPlan
   cue?: DirectorCue | string
+  variationIndex?: number
 }
 
 function asCue(raw?: string): DirectorCue {
@@ -42,6 +45,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
   const rule = styleRule(style)
   const prev = input.prev
   const base = prev && prev.style === style ? prev : null
+  const variationIndex = Math.max(0, Math.floor(input.variationIndex ?? prev?.variationIndex ?? 0))
 
   let density = base?.decor.density ?? rule.density
   let negativeSpace = base?.composition.negativeSpace ?? rule.negativeSpace
@@ -77,6 +81,10 @@ export function createPlan(input: DirectorInput): DesignPlan {
     negativeSpace = 'low'
   }
 
+  const blob = sectorBlob(input.brief)
+  const subProduct = resolveSubProduct(sector, blob)
+  const vocab = lookupVocabulary(sector, subProduct)
+
   const allowed = allowedDecorFor(style, sector)
   const recipe = resolveMarkRecipe(sector, surface, input.brief)
   const label = surface === 'label'
@@ -84,9 +92,11 @@ export function createPlan(input: DirectorInput): DesignPlan {
   const plan: DesignPlan = {
     sector,
     subProduct: input.brief.subProduct,
+    vocabularyId: vocab.id,
     surface,
     style,
     cue,
+    variationIndex,
     positioning: rule.positioning,
     visualIntent,
     hierarchy: {
@@ -118,6 +128,8 @@ export function createPlan(input: DirectorInput): DesignPlan {
       density,
       restrainExtras,
       prev: base ?? undefined,
+      variationIndex,
+      vocab,
     }),
     decor: {
       density,
@@ -145,8 +157,20 @@ export function createPlan(input: DirectorInput): DesignPlan {
     risks: sectorRisks(sector),
     summaryTr: '',
   }
+  const studio = !restrainExtras ? studioRecipe(variationIndex) : null
+  if (studio) {
+    plan.composition = {
+      ...plan.composition,
+      heroZone: { y: studio.heroY, h: studio.crop === 'open' ? 0.14 : 0.15 },
+      opticalCenter: studio.opticalCenter ?? plan.composition.opticalCenter,
+    }
+    plan.heroGraphic = {
+      ...plan.heroGraphic,
+      scale: studio.scale,
+    }
+  }
   plan.summaryTr = planSummaryTr(plan)
-  rememberArt({ hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })
+  rememberArt(style, { hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })
   void principlesFor(style, surface)
   return plan
 }

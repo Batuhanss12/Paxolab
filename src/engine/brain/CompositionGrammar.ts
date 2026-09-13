@@ -20,7 +20,7 @@ export function composeGrammar(input: GrammarInput): DesignPlan['composition'] {
     negativeSpace: input.negativeSpace,
     opticalCenter: input.wrap ? 0.46 : opticalCenter,
     focal: input.lockup,
-    heroZone: { y: air ? 0.1 : 0.08, h: air ? 0.14 : 0.18 },
+    heroZone: { y: air ? 0.12 : 0.148, h: air ? 0.14 : 0.16 },
     lockupBand: { y: opticalCenter - 0.08, h: 0.28 },
     legalZone: label ? 'label-back' : 'back',
     marksZone: label ? 'label-back' : 'back',

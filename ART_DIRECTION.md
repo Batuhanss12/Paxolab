@@ -76,3 +76,23 @@ Brain: `ArtDirection.ts`, `VisualConcept.ts`, `CompositionGrammar.ts`, `DesignMe
 Artwork libraries: `heroGraphics.ts`, `illustrationPrimitives.ts`, `patternFamilies.ts`, `backgroundTreatments.ts`.
 
 Thin wires: `composeArtwork.ts` reads the plan; `FormaLocalEngine.ts` runs at most one repair compose.
+
+## v3.6 Variation sets
+
+StyleBar **6 yeni tasarım** (after first generate) increments `variationIndex` and re-paints the **active** style. The six StyleBar languages stay the same. Set 0 is the kit default (no regression). Set 1+ picks the next allowed hero/pattern for that style.
+
+`daha lüks yap` still only changes density/air. It does not reset or bump the set.
+
+## Studio craft (S1–S5)
+
+Additive studio track after v3.6. **Not D7 / catalog / PDF/X.**
+
+| Slice | What the painter actually consumes |
+| --- | --- |
+| S1 | `heroZone.y` + `crop.heroCrop` on variation / library heroes. Set 0 kit Y stays (perfume crest `0.148`). Long brands wrap to two fitted lines. |
+| S2 | Variation sets (v3.6). |
+| S3 | Illustration primitives only when `variationIndex > 0`, `graphic-push`, or smoke `force-overload`. Luxury perfume set 0 stays `[]`. Eco never double-paints leaf. |
+| S4 | `typeScaleFor(..., sector)` — perfume luxury numbers unchanged. Food / electronics luxury skip perfume jewelry (`foilHairline` + corner diamonds). Harvest / plaque / NET / SPEC stay. |
+| S5 | Preflight `glue-art` / `type-fit` / `proof`. Structure already has 2 mm dashed safe. Combined export draws that rect when `printReady`. ProductionInfo reuses `prod__spec` for set / hero / crop. |
+
+Hard: first luxury perfume generate stays crest + contour + lockout + diamonds. Critique still does not auto-repair default luxury+dense.

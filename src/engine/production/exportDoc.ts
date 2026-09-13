@@ -28,11 +28,23 @@ export function buildCombinedSvg(spec: DesignSpec): string | null {
   const sampleNote = isFormaSampleEan(spec.copy.barcode)
     ? '\n  <!-- FORMA: sample barcode 200… is not a GS1 GTIN. Replace before production. -->'
     : ''
+  const proofNote = '\n  <!-- FORMA proof: 2 mm safe inset · not PDF/X. -->'
+  const safe =
+    spec.overrides.printReady
+      ? spec.dieline.panels
+          .filter((p) => !spec.dieline.glueIds.includes(p.id))
+          .map((p) => {
+            const inset = 2
+            return `<rect x="${p.x + pad + inset}" y="${p.y + pad + inset}" width="${Math.max(0, p.w - inset * 2)}" height="${Math.max(0, p.h - inset * 2)}" fill="none" stroke="rgba(90,180,120,0.32)" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
+          })
+          .join('')
+      : ''
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">${sampleNote}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">${sampleNote}${proofNote}
   <title>${escapeXml(spec.copy.brand)} — FORMA combined</title>
   <defs>${clipDefs(spec.dieline)}</defs>
   <g transform="translate(${pad} ${pad})">${artworkMarkup(spec.artwork)}</g>
+  ${safe ? `<g data-proof="safe-set">${safe}</g>` : ''}
   ${crease}
   ${cut}
 </svg>`

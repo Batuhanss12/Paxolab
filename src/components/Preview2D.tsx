@@ -12,6 +12,11 @@ export function Preview2D({ design }: Preview2DProps) {
     <div className="preview-stage">
       <div className="preview-stage__meta">
         <span>Rev {design.revision}</span>
+        {design.designPlan ? (
+          <span>
+            Set {design.designPlan.variationIndex + 1} · {design.designPlan.heroGraphic.family}
+          </span>
+        ) : null}
         <span>{design.artwork.language}</span>
         <span>
           {design.kind === 'label'

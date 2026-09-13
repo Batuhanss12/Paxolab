@@ -10,7 +10,7 @@ export type DielineRenderMode = 'structure' | 'combined'
 
 export function renderDielineSvg(
   model: DielineModel,
-  opts?: { showArtwork?: boolean; artworkMarkup?: string; mode?: DielineRenderMode; paper?: string },
+  opts?: { showArtwork?: boolean; artworkMarkup?: string; mode?: DielineRenderMode; paper?: string; safeInsetMm?: number },
 ): string {
   const pad = 8
   const w = model.width + pad * 2
@@ -31,6 +31,19 @@ export function renderDielineSvg(
     )
     .join('')
 
+  const safeInset = opts?.safeInsetMm ?? 0
+  const combinedSafe =
+    combined && safeInset > 0
+      ? model.panels
+          .filter((p) => !model.glueIds.includes(p.id))
+          .map((p) => {
+            const w = Math.max(0, p.w - safeInset * 2)
+            const h = Math.max(0, p.h - safeInset * 2)
+            return `<rect x="${p.x + pad + safeInset}" y="${p.y + pad + safeInset}" width="${w}" height="${h}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
+          })
+          .join('')
+      : ''
+
   const panels = model.panels
     .map((p) => {
       const isGlue = model.glueIds.includes(p.id)
@@ -50,6 +63,7 @@ export function renderDielineSvg(
     <rect width="${w}" height="${h}" fill="${paper}" />
     <g>${panels}</g>
     ${combined && opts?.artworkMarkup ? `<g transform="translate(${pad} ${pad})">${opts.artworkMarkup}</g>` : ''}
+    ${combinedSafe ? `<g data-proof="safe-set">${combinedSafe}</g>` : ''}
     <g>${crease}</g>
     <g>${cut}</g>
   </svg>`

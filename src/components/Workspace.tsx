@@ -36,6 +36,7 @@ type WorkspaceProps = {
   onPickTemplate: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
   onStyle: (style: StyleType) => void
+  onVary?: () => void
   tab: TabId
   onTab: (tab: TabId) => void
   onReset: () => void
@@ -88,6 +89,7 @@ export function Workspace({
   onPickTemplate,
   onDims,
   onStyle,
+  onVary,
   tab,
   onTab,
   onReset,
@@ -125,7 +127,7 @@ export function Workspace({
         <aside className="workspace__left">
           <InputsPanel brief={brief} design={design} open={inputsOpen} onToggle={onToggleInputs} />
           {showStyles && (
-            <StyleBar brief={brief} design={design} onStyle={onStyle} onDims={onDims} />
+            <StyleBar brief={brief} design={design} onStyle={onStyle} onDims={onDims} onVary={onVary} />
           )}
           <Chat
             messages={messages}

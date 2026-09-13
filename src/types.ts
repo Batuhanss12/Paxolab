@@ -71,6 +71,8 @@ export type DesignOverrides = {
   customTagline: string
   /** Director iteration cue — refine plan within StyleBar, do not invent a 7th style. */
   directorCue?: string
+  /** v3.6 variation set. 0 = kit default. Each click bumps and picks another allowed hero/pattern. */
+  variationIndex?: number
 }
 
 export type Palette = {

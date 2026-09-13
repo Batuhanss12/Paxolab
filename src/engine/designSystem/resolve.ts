@@ -69,7 +69,7 @@ export function resolveDesignSystem(brief: DesignBrief, structureId?: StructureI
     lockup,
     decor: pickDecor(style, sector, lockup),
     density: sw.density,
-    type: typeScaleFor(style, grammar, wrap),
+    type: typeScaleFor(style, grammar, wrap, sector),
     marks: markSet(sector),
     markRecipe: resolveMarkRecipe(sector, surfaceMode, brief),
     legal: legalPlan(sector),

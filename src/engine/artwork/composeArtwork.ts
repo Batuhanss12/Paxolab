@@ -3,9 +3,9 @@ import { barcodeSvg } from '../barcode'
 import type { DesignPlan } from '../brain/DesignPlan'
 import type { DesignSystem } from '../designSystem/types'
 import { paintBackgroundTreatment } from './backgroundTreatments'
-import { kitHeroFamily, paintHeroGraphic, wrapHero } from './heroGraphics'
+import { heroPaintScale, heroYFrac, kitHeroFamily, paintHeroGraphic, wrapHero } from './heroGraphics'
 import { paintPrimitives } from './illustrationPrimitives'
-import { wrapPattern, wrapSidePattern } from './patternFamilies'
+import { paintPatternFamily, wrapPattern, wrapSidePattern } from './patternFamilies'
 import { layoutFrontLockup, volumeMarkup } from '../designSystem/typeSystem'
 import { resolveDesignSystem } from '../designSystem/resolve'
 import { perfumeAssetsAllowed, resolveStickerMarks } from '../marks/MarkMatrix'
@@ -182,10 +182,10 @@ function foilHairline(panel: Panel, p: Palette): string {
   `
 }
 
-function perfumeCrest(panel: Panel, p: Palette, dense: boolean): string {
+function perfumeCrest(panel: Panel, p: Palette, dense: boolean, yFrac = 0.148, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.148
-  const r = Math.min(panel.w, panel.h) * (dense ? 0.082 : 0.062)
+  const cy = panel.y + panel.h * yFrac
+  const r = Math.min(panel.w, panel.h) * (dense ? 0.082 : 0.062) * scale
   const ticks = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5]
     .map((deg) => {
       const a = (deg * Math.PI) / 180
@@ -205,10 +205,10 @@ function perfumeCrest(panel: Panel, p: Palette, dense: boolean): string {
   `
 }
 
-function classicCartouche(panel: Panel, p: Palette): string {
+function classicCartouche(panel: Panel, p: Palette, yFrac = 0.16, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.16
-  const rx = Math.min(8.4, panel.w * 0.18)
+  const cy = panel.y + panel.h * yFrac
+  const rx = Math.min(8.4, panel.w * 0.18) * scale
   return `
     <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="4.6" fill="none" stroke="${p.accent}" stroke-width="0.32" />
     <ellipse cx="${cx}" cy="${cy}" rx="${rx - 1.15}" ry="3.45" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.16" />
@@ -216,36 +216,67 @@ function classicCartouche(panel: Panel, p: Palette): string {
   `
 }
 
-function ecoLeaf(panel: Panel, p: Palette): string {
+function ecoLeaf(panel: Panel, p: Palette, yFrac = 0.17, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.17
+  const cy = panel.y + panel.h * yFrac
   return `
-    <ellipse cx="${cx}" cy="${cy}" rx="${Math.min(9.2, panel.w * 0.2)}" ry="${Math.min(6.4, panel.h * 0.055)}" fill="none" stroke="${p.accent}" stroke-width="0.32" />
-    <path d="M${cx} ${cy - 5.2} C${cx + 3.6} ${cy - 1.4} ${cx + 3.8} ${cy + 3.2} ${cx} ${cy + 5.6} C${cx - 3.8} ${cy + 3.2} ${cx - 3.6} ${cy - 1.4} ${cx} ${cy - 5.2}" fill="none" stroke="${p.accent}" stroke-width="0.3" />
-    <line x1="${cx}" y1="${cy - 4.6}" x2="${cx}" y2="${cy + 4.8}" stroke="${p.accent}" stroke-width="0.18" />
+    <ellipse cx="${cx}" cy="${cy}" rx="${Math.min(9.2, panel.w * 0.2) * scale}" ry="${Math.min(6.4, panel.h * 0.055) * scale}" fill="none" stroke="${p.accent}" stroke-width="0.32" />
+    <path d="M${cx} ${cy - 5.2 * scale} C${cx + 3.6 * scale} ${cy - 1.4 * scale} ${cx + 3.8 * scale} ${cy + 3.2 * scale} ${cx} ${cy + 5.6 * scale} C${cx - 3.8 * scale} ${cy + 3.2 * scale} ${cx - 3.6 * scale} ${cy - 1.4 * scale} ${cx} ${cy - 5.2 * scale}" fill="none" stroke="${p.accent}" stroke-width="0.3" />
+    <line x1="${cx}" y1="${cy - 4.6 * scale}" x2="${cx}" y2="${cy + 4.8 * scale}" stroke="${p.accent}" stroke-width="0.18" />
   `
 }
 
-function playfulBadge(panel: Panel, p: Palette): string {
+function playfulBadge(panel: Panel, p: Palette, yFrac = 0.18, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.18
-  const r = Math.min(panel.w, panel.h) * 0.09
+  const cy = panel.y + panel.h * yFrac
+  const r = Math.min(panel.w, panel.h) * 0.09 * scale
   return `
     <circle cx="${cx}" cy="${cy}" r="${r + 1.6}" fill="${p.accent}" opacity="0.18" />
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="0.42" />
   `
 }
 
-function creamMotif(panel: Panel, p: Palette): string {
+function creamMotif(panel: Panel, p: Palette, yFrac = 0.18, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.18
-  return `<ellipse cx="${cx}" cy="${cy}" rx="${Math.min(7.2, panel.w * 0.16)}" ry="3.4" fill="none" stroke="${p.accent}" stroke-width="0.28" />`
+  const cy = panel.y + panel.h * yFrac
+  return `<ellipse cx="${cx}" cy="${cy}" rx="${Math.min(7.2, panel.w * 0.16) * scale}" ry="${3.4 * scale}" fill="none" stroke="${p.accent}" stroke-width="0.28" />`
 }
 
-function serumMotif(panel: Panel, p: Palette): string {
+function serumMotif(panel: Panel, p: Palette, yFrac = 0.14, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const y = panel.y + panel.h * 0.14
-  return `<path d="M${cx} ${y} C${cx + 2.4} ${y + 3.2} ${cx + 2.4} ${y + 7} ${cx} ${y + 9.2} C${cx - 2.4} ${y + 7} ${cx - 2.4} ${y + 3.2} ${cx} ${y}" fill="none" stroke="${p.accent}" stroke-width="0.3" />`
+  const y = panel.y + panel.h * yFrac
+  return `<path d="M${cx} ${y} C${cx + 2.4 * scale} ${y + 3.2 * scale} ${cx + 2.4 * scale} ${y + 7 * scale} ${cx} ${y + 9.2 * scale} C${cx - 2.4 * scale} ${y + 7 * scale} ${cx - 2.4 * scale} ${y + 3.2 * scale} ${cx} ${y}" fill="none" stroke="${p.accent}" stroke-width="0.3" />`
+}
+
+function foodOrnamentBorder(panel: Panel, p: Palette): string {
+  const { x, y, w, h } = panel
+  const inset = 3.8
+  const cx = x + w / 2
+  const cy = y + h / 2
+  const r = Math.min(w, h) * 0.018
+  return `
+    <rect x="${x + inset}" y="${y + inset}" width="${w - inset * 2}" height="${h - inset * 2}" rx="1.4" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="0.22" />
+    <path d="M${cx - r * 3} ${y + inset} L${cx} ${y + inset - r * 1.5} L${cx + r * 3} ${y + inset}" fill="none" stroke="${p.accent}" stroke-width="0.2" />
+    <path d="M${cx - r * 3} ${y + h - inset} L${cx} ${y + h - inset + r * 1.5} L${cx + r * 3} ${y + h - inset}" fill="none" stroke="${p.accent}" stroke-width="0.2" />
+    <circle cx="${x + inset + 1.6}" cy="${y + inset + 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
+    <circle cx="${x + w - inset - 1.6}" cy="${y + inset + 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
+    <circle cx="${x + inset + 1.6}" cy="${y + h - inset - 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
+    <circle cx="${x + w - inset - 1.6}" cy="${y + h - inset - 1.6}" r="0.55" fill="${p.accent}" fill-opacity="0.45" />
+  `
+}
+
+function foodClaimStrip(panel: Panel, p: Palette, y: number, ax: number, anchor: 'middle' | 'start', minMm: number): string {
+  const claims = ['DOĞAL', 'KATKISIZ', '%100']
+  const gap = Math.min(18, panel.w * 0.22)
+  const r = Math.min(3.8, panel.w * 0.048)
+  const sz = Math.max(minMm, 1.65)
+  let out = ''
+  claims.forEach((label, i) => {
+    const cx = anchor === 'middle' ? ax + (i - 1) * gap : ax + i * gap + 4
+    out += `<circle cx="${cx}" cy="${y}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="0.24" />`
+    out += `<text x="${cx}" y="${y + 0.55}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-size="${sz}" letter-spacing="0.3">${label}</text>`
+  })
+  return `<g data-art="claim-strip">${out}</g>`
 }
 
 function foodStamp(panel: Panel, p: Palette): string {
@@ -258,13 +289,13 @@ function foodStamp(panel: Panel, p: Palette): string {
   `
 }
 
-function oliveWreath(panel: Panel, p: Palette): string {
+function oliveWreath(panel: Panel, p: Palette, yFrac = 0.165, scale = 1): string {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.165
+  const cy = panel.y + panel.h * yFrac
   const leaves = [200, 220, 240, 260, 280, 300, 320, 340, 20, 40, 60, 80, 100, 120, 140, 160]
     .map((deg) => {
       const a = (deg * Math.PI) / 180
-      const r = Math.min(panel.w, panel.h) * 0.085
+      const r = Math.min(panel.w, panel.h) * 0.085 * scale
       const x = cx + Math.cos(a) * r
       const y = cy + Math.sin(a) * r * 0.72
       return `<ellipse cx="${x}" cy="${y}" rx="1.15" ry="0.55" transform="rotate(${deg} ${x} ${y})" fill="none" stroke="${p.accent}" stroke-width="0.22" />`
@@ -513,15 +544,16 @@ function labelDecor(panel: Panel, system: DesignSystem, p: Palette): string {
   return out
 }
 
-function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette): string {
+function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan): string {
   const { decor, style } = system
-  if (decor === 'crest') return perfumeCrest(panel, p, true)
-  if (decor === 'cartouche') return classicCartouche(panel, p)
-  if (decor === 'leaf') return ecoLeaf(panel, p)
-  if (decor === 'badge') return playfulBadge(panel, p)
-  if (decor === 'olive' || decor === 'harvest') return oliveWreath(panel, p)
-  if (decor === 'drop') return serumMotif(panel, p)
-  if (decor === 'oval') return creamMotif(panel, p)
+  const scale = heroPaintScale(plan)
+  if (decor === 'crest') return perfumeCrest(panel, p, true, heroYFrac(plan, 0.148), scale)
+  if (decor === 'cartouche') return classicCartouche(panel, p, heroYFrac(plan, 0.16), scale)
+  if (decor === 'leaf') return ecoLeaf(panel, p, heroYFrac(plan, 0.17), scale)
+  if (decor === 'badge') return playfulBadge(panel, p, heroYFrac(plan, 0.18), scale)
+  if (decor === 'olive' || decor === 'harvest') return oliveWreath(panel, p, heroYFrac(plan, 0.165), scale)
+  if (decor === 'drop') return serumMotif(panel, p, heroYFrac(plan, 0.14), scale)
+  if (decor === 'oval') return creamMotif(panel, p, heroYFrac(plan, 0.18), scale)
   if (decor === 'grid' && style === 'luxury') return metalPlaque(panel, p)
   if (decor === 'grid') return techSlab(panel, p, system.density !== 'sparse')
   return ''
@@ -535,33 +567,63 @@ function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeR
   let out = ''
   const restrain = !!system.director?.restrainDecor
   const patternFamily = plan?.patternSystem.family
+  const patternOp = plan?.patternSystem.opacity
   if (style === 'luxury') {
-    const ticks = sector === 'perfume' && !restrain ? sideTicks(panel, p, safe) : ''
-    const field = `${contourGoldField(panel, p.accent, sector === 'perfume' ? (restrain ? 0.12 : 0.2) : 0.12, safe)}${ticks}`
-    const tagged = wrapPattern(patternFamily ?? 'contour', field)
+    const chrome = plan?.artDirection.chrome ?? 'full'
+    const ticks = sector === 'perfume' && !restrain && chrome !== 'quiet' ? sideTicks(panel, p, safe) : ''
+    const fam = patternFamily ?? 'contour'
+    const fieldCore =
+      fam === 'contour'
+        ? contourGoldField(panel, p.accent, sector === 'perfume' ? (restrain ? 0.12 : 0.2) : 0.12, safe)
+        : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.14, safe)
+    const field = `${fieldCore}${ticks}`
+    const tagged = wrapPattern(fam, field)
     out += safe ? `<g clip-path="url(#lockout-${panel.id})">${tagged}</g>` : tagged
     if ((sector === 'electronics' || sector === 'food') && !restrain) out += diagonalFoil(panel, p.accent)
-    out += foilHairline(panel, p)
-    out += frames(panel, p, 3, false, true)
-    out += corners(panel, p)
-    out += lBrackets(panel, p.accent)
-    if (!restrain) out += cornerDiamonds(panel, p)
+    const perfumeJewelry = sector === 'perfume' && chrome !== 'quiet'
+    if (perfumeJewelry) out += foilHairline(panel, p)
+    if (sector === 'food' && !restrain) {
+      out += frames(panel, p, 2, false, true)
+      out += corners(panel, p)
+      out += foodOrnamentBorder(panel, p)
+    } else {
+      out += frames(panel, p, 3, false, true)
+      out += corners(panel, p)
+      out += lBrackets(panel, p.accent)
+    }
+    if (perfumeJewelry && !restrain) out += cornerDiamonds(panel, p)
   } else {
     out += frames(panel, p, style === 'classic' ? 2 : style === 'playful' || style === 'eco' ? 1 : 0, style === 'playful' || style === 'eco')
     if (style === 'modern') {
       out += modernStripe(panel, p)
-      out += wrapPattern(patternFamily ?? 'lattice', geoLattice(panel, p.fg, 0.08, safe))
+      const fam = patternFamily ?? 'lattice'
+      const field = fam === 'lattice' ? geoLattice(panel, p.fg, 0.08, safe) : paintPatternFamily(fam, panel, p.fg, patternOp ?? 0.08, safe)
+      out += wrapPattern(fam, field)
     }
-    if (style === 'classic') out += wrapPattern(patternFamily ?? 'ornament', ornamentalRail(panel, p.accent))
-    if (style === 'eco' && !restrain) out += wrapPattern(patternFamily ?? 'grain', leafStampField(panel, p.accent))
-    if (style === 'playful' && !restrain) out += wrapPattern(patternFamily ?? 'capsule', claimCapsules(panel, p))
+    if (style === 'classic') {
+      const fam = patternFamily ?? 'ornament'
+      const field = fam === 'ornament' ? ornamentalRail(panel, p.accent) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.14, safe)
+      out += wrapPattern(fam, field)
+    }
+    if (style === 'eco' && !restrain) {
+      const fam = patternFamily ?? 'grain'
+      const field = fam === 'grain' ? leafStampField(panel, p.accent) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.1, safe)
+      out += wrapPattern(fam, field)
+    }
+    if (style === 'playful' && !restrain) {
+      const fam = patternFamily ?? 'capsule'
+      const field = fam === 'capsule' ? claimCapsules(panel, p) : paintPatternFamily(fam, panel, p.accent, patternOp ?? 0.16, safe)
+      out += wrapPattern(fam, field)
+    }
   }
   const kitFamily = kitHeroFamily(decor)
   const family = plan?.heroGraphic.family ?? kitFamily
   if (family !== 'none' && family !== kitFamily) {
-    out += wrapHero(family, paintHeroGraphic(family, panel, p, plan?.heroGraphic.scale ?? 1))
+    const libScale = (plan?.heroGraphic.scale ?? 1) * (plan?.crop.heroCrop ?? 1)
+    const libY = plan?.composition.heroZone.y ?? 0.148
+    out += wrapHero(family, paintHeroGraphic(family, panel, p, libScale, libY))
   } else {
-    out += wrapHero(kitFamily === 'none' ? family : kitFamily, kitHeroMarkup(panel, system, p))
+    out += wrapHero(kitFamily === 'none' ? family : kitFamily, kitHeroMarkup(panel, system, p, plan))
   }
   if (plan?.cue === 'force-overload') {
     out += wrapHero('seal', `<g transform="translate(0 ${panel.h * 0.22})">${paintHeroGraphic('seal', panel, p, 0.7)}</g>`)
@@ -672,7 +734,11 @@ function panelArt(
       body += seriesMark(x + w - 5.4, y + 6.2, '01', p.accent, 'end')
     }
 
-    body += `<text x="${ax}" y="${layout.brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.brandFont}" font-size="${layout.brandSize}" letter-spacing="${layout.brandTracking}">${esc(copy.brand.toUpperCase())}</text>`
+    const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
+    const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
+    brandLines.forEach((line, i) => {
+      body += `<text x="${ax}" y="${brandYs[i] ?? layout.brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.brandFont}" font-size="${layout.brandSize}" letter-spacing="${layout.brandTracking}">${esc(line)}</text>`
+    })
     body += lockupRule(layout, panel, p)
     if (copy.product.trim()) {
       body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(copy.product.toUpperCase())}</text>`
@@ -683,6 +749,13 @@ function panelArt(
     body += `<text x="${ax}" y="${layout.taglineY}" text-anchor="${anchor}" fill="${p.muted}" font-family="${system.serif ? 'Georgia, serif' : layout.metaFont}" font-size="${layout.taglineSize}" font-style="${system.serif ? 'italic' : 'normal'}">${esc(copy.tagline)}</text>`
     if (!labelFace && system.sector === 'food') {
       body += `<text x="${ax}" y="${layout.taglineY + 4.2}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="1.1">NET</text>`
+      if (copy.volume) {
+        body += `<text x="${ax}" y="${layout.taglineY + 7.2}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.metaFont}" font-size="${mm(system.type.metaMm + 0.5, min)}" letter-spacing="0.8">${esc(copy.volume.toUpperCase())}</text>`
+      }
+      const claimY = layout.taglineY + (copy.volume ? 11.4 : 8.6)
+      if (claimY + 8 < y + h - 14) {
+        body += foodClaimStrip(panel, p, claimY, ax, anchor, system.type.minMm)
+      }
     }
     if (!labelFace && system.sector === 'electronics') {
       const spec = frontSpecLine(copy.ingredients)

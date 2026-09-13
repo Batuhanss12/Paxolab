@@ -1,6 +1,20 @@
 import type { Palette, Panel } from '../../types'
-import type { HeroFamily } from '../brain/DesignPlan'
+import type { DesignPlan, HeroFamily } from '../brain/DesignPlan'
 import type { DecorFamily } from '../designSystem/types'
+
+/** Set 0 keeps kit Y. Variation / library heroes consume the plan zone + crop. */
+export function heroYFrac(plan: DesignPlan | undefined, kitY: number): number {
+  if (!plan || (plan.variationIndex ?? 0) <= 0) return kitY
+  return plan.composition.heroZone.y ?? kitY
+}
+
+export function heroPaintScale(plan: DesignPlan | undefined, kitScale = 1): number {
+  if (!plan) return kitScale
+  const crop = plan.crop.heroCrop ?? 1
+  const graphic = plan.heroGraphic.scale ?? 1
+  if ((plan.variationIndex ?? 0) <= 0) return kitScale
+  return kitScale * graphic * crop
+}
 
 export function kitHeroFamily(decor: DecorFamily): HeroFamily {
   if (decor === 'crest') return 'crest'
@@ -13,16 +27,16 @@ export function kitHeroFamily(decor: DecorFamily): HeroFamily {
   return 'none'
 }
 
-function origin(panel: Panel, scale: number): { cx: number; cy: number; r: number } {
+function origin(panel: Panel, scale: number, yFrac = 0.148): { cx: number; cy: number; r: number } {
   const cx = panel.x + panel.w / 2
-  const cy = panel.y + panel.h * 0.148
-  const r = Math.min(panel.w, panel.h) * 0.072 * scale
+  const cy = panel.y + panel.h * yFrac
+  const r = Math.min(panel.w, panel.h) * 0.095 * scale
   return { cx, cy, r }
 }
 
 /** Library heroes only. Crest / oval / harvest kit paths stay in composeArtwork. */
-export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, scale = 1): string {
-  const { cx, cy, r } = origin(panel, scale)
+export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, scale = 1, yFrac = 0.148): string {
+  const { cx, cy, r } = origin(panel, scale, yFrac)
   if (family === 'seal') {
     return `
       <circle cx="${cx}" cy="${cy}" r="${r + 2.4}" fill="none" stroke="${p.accent}" stroke-width="0.2" />

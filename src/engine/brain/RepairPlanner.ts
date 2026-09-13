@@ -1,4 +1,5 @@
-import { allowedHeroes } from './ArtDirection'
+import { allowedHeroes, defaultBackground, defaultPattern } from './ArtDirection'
+import { lookupVocabulary, resolveSubProduct, vocabSafeBackground, vocabSafeHero, vocabSafePattern } from './SectorVisualVocabulary'
 import { densityCap } from './CompositionGrammar'
 import type { CritiqueReport } from './CritiqueEngine'
 import { planSummaryTr, type DesignPlan, type HeroFamily, type PrimitiveId } from './DesignPlan'
@@ -57,6 +58,19 @@ export function repairPlan(plan: DesignPlan, report: CritiqueReport): DesignPlan
     const current = next.heroGraphic.family
     const swap = allowed.find((family) => family !== current) as HeroFamily | undefined
     if (swap) next.heroGraphic.family = swap
+  }
+
+  if (topicFailed(report, 'crossSectorBleed')) {
+    const vocab = lookupVocabulary(next.sector, resolveSubProduct(next.sector, next.subProduct || next.sector))
+    if (vocab.forbiddenHeroes.includes(next.heroGraphic.family)) {
+      next.heroGraphic.family = vocabSafeHero(vocab, next.style)
+    }
+    if (vocab.forbiddenPatterns.includes(next.patternSystem.family)) {
+      next.patternSystem.family = vocabSafePattern(vocab, next.style)
+    }
+    if (!vocab.backgroundTreatments.includes(next.backgroundTreatment)) {
+      next.backgroundTreatment = vocabSafeBackground(vocab, next.style)
+    }
   }
 
   if (topicFailed(report, 'sideIntentionality')) {

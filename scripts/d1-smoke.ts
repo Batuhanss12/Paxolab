@@ -77,6 +77,27 @@ const long = fitLine('MAISON AURELIA COLLECTION', 9.1, 0.95, 58, 1.9, 'serif')
 assert(long.width <= 58.2, 'fitLine did not contain long display')
 assert(long.tracking < 0.95 || long.size < 9.1, 'fitLine did not reduce tracking or size')
 
+const luxurySys = resolveDesignSystem(brief('luxury'), 'tuck-end-box')
+const longLock = layoutFrontLockup(
+  panel(70, 140),
+  luxurySys,
+  { brand: 'Maison Aurelia Noir', product: 'Collection', tagline: 'Sessiz bir yoğunluk.', volume: '50 ml' },
+  overrides,
+  false,
+)
+const longLines = longLock.brandLines.length ? longLock.brandLines : ['MAISON AURELIA NOIR']
+for (const line of longLines) {
+  const lineW = estimateLineWidth(line, longLock.brandSize, longLock.brandTracking, 'serif')
+  assert(lineW <= 70 - 9, `long brand line overflows 70mm face (${line} ${lineW.toFixed(1)})`)
+  assert(lineW <= longLock.rect.w + 0.6, `long brand wider than lockup (${line} ${lineW.toFixed(1)} > ${longLock.rect.w.toFixed(1)})`)
+}
+if (longLines.length === 1) {
+  const longW = estimateLineWidth('MAISON AURELIA NOIR', longLock.brandSize, longLock.brandTracking, 'serif')
+  assert(longW <= 70 - 9, `long brand overflows 70mm face (${longW.toFixed(1)})`)
+} else {
+  assert(longLines.length === 2, `expected 2-line maison lockup, got ${longLines.join(' / ')}`)
+}
+
 const runs = smallCapsRuns('50 ml')
 assert(runs.some((r) => r.kind === 'full' && /50/.test(r.text)), 'small-caps lost lining figures')
 assert(runs.some((r) => r.kind === 'small' && r.text === 'ML'), `small-caps letters not drawn as caps: ${JSON.stringify(runs)}`)

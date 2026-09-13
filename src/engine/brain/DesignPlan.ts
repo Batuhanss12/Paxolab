@@ -23,6 +23,7 @@ export type PrimitiveId = 'leaf' | 'grain' | 'diamond' | 'rule' | 'wave' | 'arc'
 export type ArtDirectionBlock = {
   vocabulary: string
   crop: 'tight' | 'open'
+  chrome: 'full' | 'quiet'
   antiRepetition: { seed: number; forbidLastFamilies: string[] }
 }
 
@@ -65,9 +66,12 @@ export type CropBlock = {
 export type DesignPlan = {
   sector: SectorId
   subProduct: string
+  /** Visual vocabulary id from SectorVisualVocabulary — NEVER inferred from style alone. */
+  vocabularyId: string
   surface: PackagingMode
   style: StyleType
   cue: DirectorCue
+  variationIndex: number
   positioning: Positioning
   visualIntent: VisualIntent
   hierarchy: {
@@ -133,5 +137,7 @@ export function planSummaryTr(plan: DesignPlan): string {
   const space =
     plan.composition.negativeSpace === 'high' ? 'geniş negatif alan' : plan.composition.negativeSpace === 'low' ? 'sıkı doluluk' : 'orta boşluk'
   const hero = plan.heroGraphic?.family && plan.heroGraphic.family !== 'none' ? ` · ${plan.heroGraphic.family}` : ''
-  return `Strateji: ${plan.positioning} · marka baskın · ${space} · ${density}${hero}`
+  const set = plan.variationIndex > 0 ? ` · set ${plan.variationIndex + 1}` : ''
+  const vocab = plan.vocabularyId ? ` · ${plan.vocabularyId}` : ''
+  return `Strateji: ${plan.positioning} · marka baskın · ${space} · ${density}${hero}${set}${vocab}`
 }

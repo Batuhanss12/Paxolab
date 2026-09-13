@@ -1,6 +1,7 @@
 import { densityCap } from './CompositionGrammar'
 import type { DesignScorecard } from './DesignScore'
 import type { DesignPlan } from './DesignPlan'
+import { detectCrossSectorBleed, lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
 
 export type CritiqueHint = {
   action: 'KEEP' | 'MODIFY'
@@ -21,21 +22,39 @@ function failed(score: number | undefined, floor: number): boolean {
 }
 
 /** Scores decide KEEP / MODIFY. Luxury+dense remains a hint, not a repair. */
-export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard): CritiqueReport {
+export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard, faceMarkup?: string): CritiqueReport {
   const hints: CritiqueHint[] = [
-    { action: 'KEEP', topic: 'hierarchy', note: 'Marka lockup’ta birincil kalsın.' },
-    { action: 'KEEP', topic: 'lockup', note: 'Lockup clearance / knockout korunmalı.' },
+    { action: 'KEEP', topic: 'hierarchy', note: 'Marka lockup\u2019ta birincil kals\u0131n.' },
+    { action: 'KEEP', topic: 'lockup', note: 'Lockup clearance / knockout korunmal\u0131.' },
   ]
+
+  const vocab = lookupVocabulary(plan.sector, resolveSubProduct(plan.sector, plan.subProduct || plan.sector))
+  const bleedFaults = detectCrossSectorBleed(
+    vocab,
+    plan.heroGraphic.family,
+    plan.patternSystem.family,
+    plan.backgroundTreatment,
+    plan.sector,
+    faceMarkup,
+  )
+  const crossBleed = bleedFaults.some((f) => f.severity === 'error')
+  if (crossBleed) {
+    hints.push({
+      action: 'MODIFY',
+      topic: 'crossSectorBleed',
+      note: bleedFaults.map((f) => f.detail).join('; '),
+    })
+  }
 
   if (plan.style === 'luxury' && plan.decor.density === 'dense' && !plan.decor.restrainExtras) {
     hints.push({
       action: 'MODIFY',
       topic: 'density',
-      note: 'Lüks sıkılaştırmak için “daha lüks yap” — daha az motif, daha çok hava.',
+      note: 'Lüks sıkılaştırmak için "daha lüks yap" — daha az motif, daha çok hava.',
     })
   }
   if (plan.decor.restrainExtras) {
-    hints.push({ action: 'KEEP', topic: 'restraint', note: 'Ek köşe/tick baskısı düşürüldü; foil lockup’ı kesmesin.' })
+    hints.push({ action: 'KEEP', topic: 'restraint', note: 'Ek k\u00f6\u015fe/tick bask\u0131s\u0131 d\u00fc\u015f\u00fcr\u00fcld\u00fc; foil lockup\u2019\u0131 kesmesin.' })
   }
   if (scorecard.honesty < 80) {
     hints.push({ action: 'MODIFY', topic: 'honesty', note: scorecard.notes.join(' · ') || 'Örnek legal / barkod dürüstlüğü.' })
@@ -72,7 +91,7 @@ export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard): Crit
     hints.push({ action: 'MODIFY', topic: 'sideIntentionality', note: 'Yan panel artık / gürültü değil, bilinçli pattern olmalı.' })
   }
 
-  const needsRepair = densityFail || lockupFail || hierarchyFail || sectorFail || repetitionFail || sideFail
+  const needsRepair = densityFail || lockupFail || hierarchyFail || sectorFail || repetitionFail || sideFail || crossBleed
   return {
     verdict: needsRepair ? 'modify' : 'keep',
     hints,
