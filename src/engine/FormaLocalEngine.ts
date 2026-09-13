@@ -8,6 +8,7 @@ import { defaultIngredientClaims, resolveProductLine, sampleCopy } from './artwo
 import { resolveDesignSystem } from './designSystem'
 import { runPreflight } from './production/preflight'
 import { formaSampleEan, normalizeEan13 } from './barcode'
+import { resolveCopyLocale } from './copyLocale'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
@@ -39,6 +40,7 @@ export class FormaLocalEngine implements EnginePort {
           : { ...template.defaultsMm },
     }
     if (!brief.styleType) brief.styleType = 'luxury'
+    brief.copyLocale = resolveCopyLocale(brief)
 
     const overrides: DesignOverrides = {
       ...(input.prev?.overrides ?? defaultOverrides()),
@@ -174,6 +176,7 @@ export class FormaLocalEngine implements EnginePort {
       preflight: pack.preflight,
       designPlan: pack.plan,
       critique: pack.critique,
+      copyLocale: brief.copyLocale,
     }
   }
 }

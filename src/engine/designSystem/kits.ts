@@ -1,24 +1,34 @@
-import type { StyleType } from '../../types'
+import type { CopyLocale, StyleType } from '../../types'
 import type { DecorFamily, LockupId, SectorId, TypeScale } from './types'
 
-export function categoryFor(sector: SectorId, blob: string): string {
-  if (sector === 'perfume') return /kolonya/.test(blob) ? 'EAU DE COLOGNE' : 'EAU DE PARFUM'
-  if (sector === 'serum') return 'CONCENTRATE SERUM'
-  if (sector === 'cream') return 'FACE CREAM'
+export function categoryFor(sector: SectorId, blob: string, locale: CopyLocale = 'tr'): string {
+  const en = locale === 'en'
+  if (sector === 'perfume') {
+    if (/kolonya/.test(blob)) return en ? 'EAU DE COLOGNE' : 'KOLONYA'
+    return 'EAU DE PARFUM'
+  }
+  if (sector === 'serum') return en ? 'CONCENTRATE SERUM' : 'SERUM'
+  if (sector === 'cream') return en ? 'FACE CREAM' : 'YÜZ KREMİ'
   if (sector === 'food') {
-    if (/zeytin|yağ/.test(blob)) return 'EXTRA VIRGIN'
-    if (/atıştırmalık|çikolata|kurabiye/.test(blob)) return 'NET WEIGHT'
-    return 'ARTISAN FOOD'
+    if (/zeytin|yağ/.test(blob)) return en ? 'EXTRA VIRGIN' : 'SIZMA ZEYTİNYAĞI'
+    if (/çikolata/.test(blob)) return en ? 'CHOCOLATE' : 'ÇİKOLATA'
+    if (/kurabiye/.test(blob)) return en ? 'BISCUIT' : 'KURABİYE'
+    if (/reçel|jam/.test(blob)) return en ? 'PRESERVE' : 'REÇEL'
+    if (/çay|tea/.test(blob)) return en ? 'HERBAL TEA' : 'ÇAY'
+    return en ? 'ARTISAN FOOD' : 'GURME GIDA'
   }
-  if (sector === 'beverage') return /kombucha/.test(blob) ? 'FERMENTED TEA' : 'CRAFT BEVERAGE'
-  if (sector === 'health') return 'DAILY SUPPLEMENT'
-  if (sector === 'baby') return 'GENTLE BABY CARE'
+  if (sector === 'beverage') {
+    if (/kombucha/.test(blob)) return en ? 'FERMENTED TEA' : 'FERMENTE ÇAY'
+    return en ? 'CRAFT BEVERAGE' : 'İÇECEK'
+  }
+  if (sector === 'health') return en ? 'DAILY SUPPLEMENT' : 'GÜNLÜK TAKVİYE'
+  if (sector === 'baby') return en ? 'GENTLE BABY CARE' : 'HASSAS BEBEK BAKIMI'
   if (sector === 'electronics') {
-    if (/kulaklık|earbuds/.test(blob)) return 'WIRELESS AUDIO'
-    if (/kablo|şarj/.test(blob)) return 'POWER ACCESSORY'
-    return 'PRECISION SERIES'
+    if (/kulaklık|earbuds/.test(blob)) return en ? 'WIRELESS AUDIO' : 'KABLOSUZ SES'
+    if (/kablo|şarj/.test(blob)) return en ? 'POWER ACCESSORY' : 'ŞARJ AKSESUARI'
+    return en ? 'PRECISION SERIES' : 'HASSAS SERİ'
   }
-  if (sector === 'cleaning') return 'SURFACE CARE'
+  if (sector === 'cleaning') return en ? 'SURFACE CARE' : 'YÜZEY BAKIMI'
   return ''
 }
 
@@ -264,7 +274,11 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
       },
     )
   }
-  return sectorVoice(type, style, sector)
+  type = sectorVoice(type, style, sector)
+  if (style === 'luxury' && !label) {
+    type = { ...type, opticalCenter: 0.38 }
+  }
+  return type
 }
 
 export const STYLE_KITS: Record<StyleType, LockupId[]> = {

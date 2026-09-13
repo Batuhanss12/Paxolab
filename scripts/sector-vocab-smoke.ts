@@ -101,7 +101,7 @@ const hFace = face(honey)
 assert(!hFace.includes('EAU DE PARFUM'), 'honey has perfume EDP')
 assert(!hFace.includes('Alcohol Denat'), 'honey has perfume composition')
 assert(!/2004\.78|986\.01/.test(hFace), 'honey has perfume icon viewbox')
-assert(hFace.includes('NET') || hFace.includes('EXTRA VIRGIN') || hFace.includes('ARTISAN'), 'honey missing food copy')
+assert(hFace.includes('NET') || hFace.includes('EXTRA VIRGIN') || hFace.includes('ARTISAN') || hFace.includes('GURME') || hFace.includes('SIZMA'), 'honey missing food copy')
 assert(!honey.critique?.needsRepair, 'honey triggered repair')
 
 resetArtMemory()
@@ -120,7 +120,7 @@ assert(elec.designPlan?.heroGraphic.family === 'tech', `elec hero ${elec.designP
 const eFace = face(elec)
 assert(!eFace.includes('EAU DE PARFUM'), 'electronics has perfume')
 assert(!eFace.includes('honey') && !eFace.includes('bee'), 'electronics has food pastoral')
-assert(/WIRELESS|SPEC/.test(eFace), 'electronics missing spec')
+assert(/WIRELESS|KABLOSUZ|SPEC|BT |5V/.test(eFace), 'electronics missing spec')
 
 resetArtMemory()
 const luxuryHoney = engine.generate({

@@ -11,10 +11,10 @@ import { paintPrimitives } from '../illustrationPrimitives'
 import { lockupWindow, type SafeRect } from '../motifs'
 import { paintPatternFamily, wrapPattern } from '../patternFamilies'
 import { labelDecor, modernStripe, sectorFrame } from './shared'
-import { paintPlanHero } from './heroDispatch'
+import { paintPlanHero, type HeroPaintCtx } from './heroDispatch'
 import { bridgePicks, bridgePattern, bridgePrimitive, bridgeCtx } from '../../graphicLibrary/bridge'
 
-export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan): string {
+export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
   const { style, grammar } = system
   let out = ''
 
@@ -24,7 +24,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
 
   if (grammar === 'label') {
     out += labelDecor(panel, system, p)
-    out += paintPlanHero(panel, system, p, plan)
+    out += paintPlanHero(panel, system, p, plan, ctx)
   } else {
     const sector = system.sector
     if (style === 'luxury' || style === 'classic') {
@@ -35,16 +35,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
     } else if (style === 'eco' || style === 'playful') {
       out += sectorFrame(panel, p, sector, style)
     } else if (style === 'minimal') {
-      // P2-B: optional single top hairline only if no pattern will paint (max one chrome element).
-      // Sector bg accent (cleaning/food/electronics) already provides the signal;
-      // top hairline only for sectors without bg accent (perfume/cream/serum/generic).
-      const hasSectorBg = sector === 'cleaning' || sector === 'food' || sector === 'beverage' || sector === 'electronics'
-      const patternFamily = plan?.patternSystem?.family ?? 'none'
-      const patternWillPaint = patternFamily !== 'none'
-      if (!hasSectorBg && !patternWillPaint) {
-        const { x, y, w } = panel
-        out += `<line x1="${x + w * 0.15}" y1="${y + 2.2}" x2="${x + w * 0.85}" y2="${y + 2.2}" stroke="${p.accent}" stroke-opacity="0.1" stroke-width="0.18" />`
-      }
+      // P2-B: cosmetics use lockup hair; cleaning/food/electronics use sector bg. No extra top hairline.
     }
     if (plan?.composition.intent === 'grid' && style === 'modern') {
       const { x, y, w, h } = panel
@@ -54,7 +45,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
         out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.06" stroke-width="0.1" />`
       }
     }
-    out += paintPlanHero(panel, system, p, plan)
+    out += paintPlanHero(panel, system, p, plan, ctx)
   }
 
   // Pattern: library or motor

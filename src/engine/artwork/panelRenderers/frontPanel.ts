@@ -16,7 +16,7 @@ import { frontDecor } from './frontDecor'
 import { renderFrontLockup } from './frontLockup'
 
 /** Professional seam indicator: dashed registration line with tick marks. */
-function wrapSeam(panel: Panel, p: Palette): string {
+function wrapSeam(panel: Panel, p: Palette, printReady: boolean): string {
   const { x, y, w, h } = panel
   const sx = x + w - 1.6
   const top = y + 2.5
@@ -27,10 +27,15 @@ function wrapSeam(panel: Panel, p: Palette): string {
     const ty = top + ((bot - top) / ticks) * i
     tickMarks += `<line x1="${sx - 0.8}" y1="${ty}" x2="${sx + 0.4}" y2="${ty}" stroke="${p.accent}" stroke-opacity="0.35" stroke-width="0.1" />`
   }
+  const label = printReady
+    ? ''
+    : `<text x="${sx - 1.2}" y="${y + h * 0.5}" text-anchor="end" transform="rotate(-90 ${sx - 1.2} ${y + h * 0.5})" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.4" letter-spacing="0.6">SEAM</text>`
   return `
+    <g data-art="seam">
     <line x1="${sx}" y1="${top}" x2="${sx}" y2="${bot}" stroke="${p.accent}" stroke-opacity="0.3" stroke-width="0.12" stroke-dasharray="0.8 0.6" />
     ${tickMarks}
-    <text x="${sx - 1.2}" y="${y + h * 0.5}" text-anchor="end" transform="rotate(-90 ${sx - 1.2} ${y + h * 0.5})" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.4" letter-spacing="0.6">SEAM</text>
+    ${label}
+    </g>
   `
 }
 
@@ -58,9 +63,13 @@ export function renderFrontPanel(
   body += paintStyleBackground(panel, system.style, p)
   if (designPlan) body += paintSectorBackground(panel, system.sector, system.style, p)
 
-  body += frontDecor(panel, system, p, lockup, designPlan)
+  body += frontDecor(panel, system, p, lockup, designPlan, {
+    copy,
+    overrides,
+    ingredientClaims: brief.ingredientClaims ?? '',
+  })
   if (labelFace && system.wrapSeam) {
-    body += wrapSeam(panel, p)
+    body += wrapSeam(panel, p, overrides.printReady)
     body += wrapContinuity(panel, p.accent)
   }
 

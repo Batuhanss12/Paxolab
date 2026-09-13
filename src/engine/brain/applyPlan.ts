@@ -22,7 +22,10 @@ export function applyPlanToSystem(system: DesignSystem, plan: DesignPlan): Desig
       displayMm: system.type.displayMm * typeScale,
       lockupPadX: tighten || (vary && openCrop) ? system.type.lockupPadX * (tighten ? air : 1.12) : system.type.lockupPadX,
       lockupPadY: tighten || (vary && openCrop) ? system.type.lockupPadY * (tighten ? air : 1.1) : system.type.lockupPadY,
-      opticalCenter: tighten || vary ? plan.composition.opticalCenter : system.type.opticalCenter,
+      opticalCenter:
+        tighten || vary || (plan.style === 'luxury' && plan.surface !== 'label')
+          ? plan.composition.opticalCenter
+          : system.type.opticalCenter,
       trackingDisplay:
         (tighten && plan.typography.trackingIntent === 'wide'
           ? Math.max(system.type.trackingDisplay, 0.7)

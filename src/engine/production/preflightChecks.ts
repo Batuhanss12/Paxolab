@@ -5,6 +5,7 @@
 import type { DesignSpec, Palette } from '../../types'
 import { measureLockupCollision, measureFrontDecorCollision } from '../designSystem'
 import type { DesignSystem } from '../designSystem/types'
+import { measureHeroCollision } from '../artwork/heroes/heroPlacement'
 
 /** Check WCAG-like contrast between foreground and background. */
 export function checkContrast(palette: Palette): boolean {
@@ -41,7 +42,9 @@ export function checkTextOverflow(spec: { artwork?: { layers: { panelId: string;
 }
 
 export function detectCollisions(
-  spec: Pick<DesignSpec, 'copy' | 'dieline' | 'overrides' | 'kind' | 'brief'>,
+  spec: Pick<DesignSpec, 'copy' | 'dieline' | 'overrides' | 'kind' | 'brief'> & {
+    designPlan?: DesignSpec['designPlan']
+  },
   system: DesignSystem,
 ) {
   const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
@@ -51,6 +54,7 @@ export function detectCollisions(
   // P1-A: also check decor collision (claim/badge/volume/NET)
   const ingredientClaims = spec.brief?.ingredientClaims ?? ''
   const decorReport = measureFrontDecorCollision(front, system, spec.copy, spec.overrides, labelFace, ingredientClaims)
-  const reasons = [...lockupReport.reasons, ...decorReport.reasons]
+  const heroReport = measureHeroCollision(front, system, spec.copy, spec.overrides, labelFace, ingredientClaims, spec.designPlan)
+  const reasons = [...lockupReport.reasons, ...decorReport.reasons, ...heroReport.reasons]
   return { hit: reasons.length > 0, reasons }
 }

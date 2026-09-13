@@ -65,10 +65,10 @@ export function volumeMarkup(
   const label = volumeDisplay(raw, estimated)
   if (!label) return ''
   if (type.volumeCase === 'smallcaps') {
-    return smallCapsText(x, y, label, type.volumeMm, 1.15, fill, anchor, font, type.smallCapsRatio)
+    return smallCapsText(x, y, label, type.volumeMm, 0.28, fill, anchor, font, type.smallCapsRatio)
   }
   // P1-D: lining figures stay full size, no extra spaces between digits.
   // letter-spacing capped at 0.4 for volume role (forbidden > 0.4 on digit runs).
-  const tracking = Math.min(0.4, 1.35)
-  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" font-weight="600" font-size="${type.volumeMm}" letter-spacing="${tracking}">${esc(label.toUpperCase())}</text>`
+  const tracking = 0.28
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="${font}" font-weight="600" font-size="${type.volumeMm}" letter-spacing="${tracking}">${esc(label)}</text>`
 }

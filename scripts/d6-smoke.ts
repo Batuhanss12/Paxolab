@@ -95,7 +95,7 @@ const cream = engine.generate({
   }),
 })
 const creamFace = cream.artwork.layers.find((l) => l.panelId === 'front')?.markup ?? ''
-assert(creamFace.includes('FACE CREAM'), 'cream front missing care category')
+assert(creamFace.includes('YÜZ KREMİ') || creamFace.includes('FACE CREAM'), 'cream front missing care category')
 assert(!creamFace.includes('EAU DE PARFUM'), 'cream wearing perfume')
 
 const food = engine.generate({
@@ -132,7 +132,7 @@ const elec = engine.generate({
 const elecFace = elec.artwork.layers.find((l) => l.panelId === 'front')?.markup ?? ''
 assert(elec.preflight.exportOk || elec.preflight.items.find((i) => i.id === 'product')?.status !== 'fail', `elec hard-fail ${elec.preflight.items.filter((i) => i.status === 'fail').map((i) => i.id).join(',')}`)
 assert(!elecFace.includes('EAU DE PARFUM') && !elecFace.includes('12M') && !elecFace.includes('2004.78'), 'electronics leaked perfume')
-assert(/WIRELESS|SPEC|BT |5V/.test(elecFace), 'electronics front missing spec')
+assert(/WIRELESS|KABLOSUZ|SPEC|BT |5V/.test(elecFace), 'electronics front missing spec')
 
 const wrap = engine.generate({
   brief: brief({

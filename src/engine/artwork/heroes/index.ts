@@ -3,8 +3,7 @@
  * Each hero family lives in its own module. This file wires them together.
  */
 import type { Palette, Panel } from '../../../types'
-import type { DesignPlan, HeroFamily } from '../../brain/DesignPlan'
-import type { DecorFamily } from '../../designSystem/types'
+import type { HeroFamily } from '../../brain/DesignPlan'
 import { paintCrest } from './crestMark'
 import { paintSeal } from './sealMark'
 import { paintOval } from './ovalMark'
@@ -26,30 +25,7 @@ export { paintTech } from './techMark'
 export { paintMonstera } from './monsteraMark'
 export { paintPalm } from './palmMark'
 
-/** Set 0 keeps kit Y. Variation / library heroes consume the plan zone + crop. */
-export function heroYFrac(plan: DesignPlan | undefined, kitY: number): number {
-  if (!plan || (plan.variationIndex ?? 0) <= 0) return kitY
-  return plan.composition.heroZone.y ?? kitY
-}
-
-export function heroPaintScale(plan: DesignPlan | undefined, kitScale = 1): number {
-  if (!plan) return kitScale
-  const crop = plan.crop.heroCrop ?? 1
-  const graphic = plan.heroGraphic.scale ?? 1
-  if ((plan.variationIndex ?? 0) <= 0) return kitScale
-  return kitScale * graphic * crop
-}
-
-export function kitHeroFamily(decor: DecorFamily): HeroFamily {
-  if (decor === 'crest') return 'crest'
-  if (decor === 'cartouche') return 'seal'
-  if (decor === 'leaf' || decor === 'drop') return 'botanical'
-  if (decor === 'badge') return 'emblem'
-  if (decor === 'olive' || decor === 'harvest') return 'harvest'
-  if (decor === 'oval') return 'oval'
-  if (decor === 'grid' || decor === 'plaque') return 'tech'
-  return 'none'
-}
+export { heroPaintScale, heroYFrac, kitHeroFamily } from './heroScale'
 
 function origin(panel: Panel, scale: number, yFrac = 0.148, xFrac = 0.5): { cx: number; cy: number; r: number } {
   const cx = panel.x + panel.w * xFrac
@@ -75,7 +51,10 @@ export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, s
   return ''
 }
 
-export function wrapHero(family: HeroFamily, markup: string): string {
+export function wrapHero(family: HeroFamily, markup: string, place?: { xFrac: number; yFrac: number }): string {
   if (!markup) return ''
-  return `<g data-art="hero" data-hero="${family}">${markup}</g>`
+  const axis = place
+    ? ` data-hero-x="${place.xFrac.toFixed(3)}" data-hero-y="${place.yFrac.toFixed(3)}"`
+    : ''
+  return `<g data-art="hero" data-hero="${family}"${axis}>${markup}</g>`
 }

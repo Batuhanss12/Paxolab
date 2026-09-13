@@ -8,7 +8,10 @@ import type { SafeRect } from '../artwork/motifs'
 import type { DesignSystem, LineBox } from './types'
 import { estimateLineWidth, lineBBox } from './glyphMetrics'
 import { boxesOverlap, type ArtBox } from './artBox'
-import { volumeDisplay } from './volumeFormat'
+import { fitFoodClaims, fitIngredientBadges } from '../artwork/panelRenderers/foodElements'
+import { placeFrontExtras } from '../artwork/panelRenderers/frontExtras'
+import { volumeDisplay, volumeUsesEstimated } from './volumeFormat'
+import { faceUpper } from '../copyLocale'
 
 export type LockupCopy = {
   brand: string
@@ -78,6 +81,10 @@ function splitBrand(text: string): [string, string] | null {
   return [words[0], words.slice(1).join(' ')]
 }
 
+function showMinimalCategory(system: DesignSystem): boolean {
+  return system.style === 'minimal' && (system.sector === 'serum' || system.sector === 'cream' || system.sector === 'cleaning')
+}
+
 function ruleKindOf(system: DesignSystem, _labelFace: boolean): LockupLayout['ruleKind'] {
   if (system.style === 'luxury') return 'foil'
   if (system.style === 'classic') return 'double'
@@ -111,7 +118,7 @@ export function layoutFrontLockup(
       : Math.max(22, w - padX * 2 - frameReserve)
 
   const brandText = copy.brand.toUpperCase()
-  const productText = copy.product.trim().toUpperCase()
+  const productText = faceUpper(copy.product.trim())
   const hasProduct = productText.length > 0
   const cat = system.category
 
@@ -146,8 +153,8 @@ export function layoutFrontLockup(
     type.minMm,
     faces.product,
   )
-  // P2-C: minimal serum/cream shows category as quiet meta.
-  const minimalShowCat = system.style === 'minimal' && (system.sector === 'serum' || system.sector === 'cream')
+  // P2-C: minimal serum/cream/cleaning shows category as quiet meta.
+  const minimalShowCat = showMinimalCategory(system)
   const categoryFit = fitLine(
     cat && (system.style !== 'minimal' || minimalShowCat) ? cat : '',
     Math.max(type.minMm - (labelFace ? 0 : 0.15), Math.min(type.metaMm, type.categoryMm)),
@@ -250,6 +257,120 @@ export function layoutFrontLockup(
   }
 }
 
+/** Brand / product / category / tagline glyph boxes — the lockup column, not the wide reserved rect. */
+export function collectLockupGlyphBoxes(layout: LockupLayout, system: DesignSystem, copy: LockupCopy): ArtBox[] {
+  const faces = typeFaces(system.style)
+  const boxes: ArtBox[] = []
+  const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
+  const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
+  brandLines.forEach((line, i) => {
+    const box = lineBBox(line, layout.brandSize, layout.brandTracking, faces.display, layout.ax, brandYs[i] ?? layout.brandY, layout.anchor, 'brand')
+    if (box.w > 0) boxes.push({ id: `lockup-${box.role}-${i}`, x: box.x, y: box.y, w: box.w, h: box.h })
+  })
+  if (copy.product.trim()) {
+    const box = lineBBox(faceUpper(copy.product), layout.productSize, layout.productTracking, faces.product, layout.ax, layout.productY, layout.anchor, 'product')
+    if (box.w > 0) boxes.push({ id: 'lockup-product', x: box.x, y: box.y, w: box.w, h: box.h })
+  }
+  if (system.category && (system.style !== 'minimal' || showMinimalCategory(system))) {
+    const box = lineBBox(system.category, layout.categorySize, layout.categoryTracking, faces.meta, layout.ax, layout.categoryY, layout.anchor, 'category')
+    if (box.w > 0) boxes.push({ id: 'lockup-category', x: box.x, y: box.y, w: box.w, h: box.h })
+  }
+  if (copy.tagline.trim()) {
+    const box = lineBBox(copy.tagline, layout.taglineSize, 0, system.serif ? 'serif' : 'sans', layout.ax, layout.taglineY, layout.anchor, 'tagline')
+    if (box.w > 0) boxes.push({ id: 'lockup-tagline', x: box.x, y: box.y, w: box.w, h: box.h })
+  }
+  return boxes
+}
+
+/** Volume / NET / claim / badge boxes used by Phase 1 decor collision and Phase 3 hero clearance. */
+export function collectFrontDecorBoxes(
+  panel: Panel,
+  system: DesignSystem,
+  copy: LockupCopy,
+  overrides: Pick<DesignOverrides, 'titleScale'>,
+  labelFace: boolean,
+  ingredientClaims: string,
+): ArtBox[] {
+  const layout = layoutFrontLockup(panel, system, copy, overrides, labelFace)
+  const { x, y, w, h } = panel
+  const boxes: ArtBox[] = []
+
+  if (copy.volume.trim()) {
+    const volDisplay = volumeDisplay(copy.volume, volumeUsesEstimated(copy.volume))
+    const volW = estimateLineWidth(volDisplay, system.type.volumeMm, 0.28, 'sans')
+    const volX = layout.anchor === 'start' ? layout.ax : layout.ax - volW / 2
+    if (system.goldBar && !labelFace) {
+      const bh = 9.15
+      boxes.push({ id: 'volume-goldbar', x, y: y + h - bh, w, h: bh })
+    } else if (!labelFace && system.style === 'playful') {
+      const bw = Math.min(w * 0.62, 38)
+      const bh = 8.4
+      const bx = x + (w - bw) / 2
+      const by = y + h - bh - 4.2
+      boxes.push({ id: 'volume-capsule', x: bx, y: by, w: bw, h: bh })
+    } else if (!labelFace && system.style === 'eco') {
+      const sw = Math.min(18, w * 0.32)
+      const sh = 5.6
+      const cx = x + w / 2
+      const cy = y + h * 0.84
+      boxes.push({ id: 'volume-stamp', x: cx - sw / 2, y: cy - sh / 2, w: sw, h: sh })
+    } else if (!labelFace && system.style === 'modern') {
+      const bw = Math.min(28, w * 0.42)
+      const bh = 6.4
+      const left = system.align === 'left'
+      const bx = left ? layout.ax : x + w / 2 - bw / 2
+      const by = y + h * 0.8
+      boxes.push({ id: 'volume-outline', x: bx, y: by, w: bw, h: bh })
+    } else {
+      const extras = placeFrontExtras(panel, system, layout, ingredientClaims, labelFace)
+      const volY = extras.volumeY
+      boxes.push({ id: 'volume-plain', x: volX, y: volY - system.type.volumeMm * 0.72, w: volW, h: system.type.volumeMm * 0.78 })
+    }
+  }
+
+  if (system.sector === 'food' && copy.volume.trim()) {
+    const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
+    const netW = estimateLineWidth('NET', system.type.metaMm, 1.1, 'sans')
+    const netX = layout.anchor === 'start' ? layout.ax : layout.ax - netW / 2
+    boxes.push({ id: 'net', x: netX, y: netY - system.type.metaMm * 0.72, w: netW, h: system.type.metaMm * 0.78 })
+    const volBody = volumeDisplay(copy.volume, false)
+    const volNetW = estimateLineWidth(volBody, system.type.metaMm + (labelFace ? 0.2 : 0.5), 0.8, 'sans')
+    const netVolX = layout.anchor === 'start' ? layout.ax : layout.ax - volNetW / 2
+    boxes.push({ id: 'net-volume', x: netVolX, y: netY + (labelFace ? 2.6 : 3.0) - system.type.metaMm * 0.72, w: volNetW, h: system.type.metaMm * 0.78 })
+  }
+
+  if (system.sector === 'food') {
+    const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
+    const claimY = netY + (copy.volume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
+    if (claimY + (labelFace ? 6 : 8) < y + h - (labelFace ? 8 : 14)) {
+      const locale = /PRESERVE|ARTISAN FOOD|EXTRA VIRGIN|CHOCOLATE|BISCUIT|HERBAL TEA/.test(system.category)
+        ? 'en'
+        : 'tr'
+      const fitted = fitFoodClaims(panel, claimY, layout.ax, layout.anchor, system.type.minMm, locale)
+      fitted.forEach((claim, i) => {
+        const box = { id: `claim-${i}`, x: claim.cx - claim.r, y: claimY - claim.r, w: claim.r * 2, h: claim.r * 2 + 3 }
+        if (box.x < x - 0.55 || box.x + box.w > x + w + 0.55) return
+        boxes.push(box)
+      })
+    }
+  }
+
+  if (ingredientClaims.trim()) {
+    const extras = placeFrontExtras(panel, system, layout, ingredientClaims, labelFace)
+    const fitted = fitIngredientBadges(ingredientClaims, layout.ax, layout.anchor, system.type.minMm, panel)
+    if (extras.showBadges && fitted) {
+      let cursor = fitted.startX
+      fitted.claims.forEach((_, i) => {
+        const badgeW = fitted.widths[i] ?? 11
+        boxes.push({ id: `badge-${i}`, x: cursor, y: extras.badgeY, w: badgeW, h: fitted.badgeH })
+        cursor += badgeW + fitted.gap
+      })
+    }
+  }
+
+  return boxes
+}
+
 /** Fitted line boxes vs panel + reserved lockup. Decor is excluded by lockout clip, not guessed as strings. */
 export function measureLockupCollision(
   panel: Panel,
@@ -275,12 +396,11 @@ export function measureLockupCollision(
   )
   if (copy.product.trim()) {
     boxes.push(
-      lineBBox(copy.product.toUpperCase(), layout.productSize, layout.productTracking, faces.product, layout.ax, layout.productY, layout.anchor, 'product'),
+      lineBBox(faceUpper(copy.product), layout.productSize, layout.productTracking, faces.product, layout.ax, layout.productY, layout.anchor, 'product'),
     )
   }
   // P2-C: minimal serum/cream shows category as quiet meta.
-  const minimalShowCatCol = system.style === 'minimal' && (system.sector === 'serum' || system.sector === 'cream')
-  if (system.category && (system.style !== 'minimal' || minimalShowCatCol)) {
+  if (system.category && (system.style !== 'minimal' || showMinimalCategory(system))) {
     boxes.push(
       lineBBox(system.category, layout.categorySize, layout.categoryTracking, faces.meta, layout.ax, layout.categoryY, layout.anchor, 'category'),
     )
@@ -328,95 +448,10 @@ export function measureFrontDecorCollision(
   labelFace: boolean,
   ingredientClaims: string,
 ): CollisionReport {
-  const layout = layoutFrontLockup(panel, system, copy, overrides, labelFace)
   const reasons: string[] = []
   const { x, y, w, h } = panel
   const minGap = labelFace ? 1.2 : 1.6
-  const boxes: ArtBox[] = []
-
-  // P1-A: lockup rect is already checked by measureLockupCollision.
-  // Here we only check decor elements (volume, NET, claim, badges) against each other + panel.
-
-  // Volume band — goldBar / capsule / stamp / outline / plain
-  if (copy.volume.trim()) {
-    const volDisplay = volumeDisplay(copy.volume, system.sector === 'perfume' || system.sector === 'food')
-    const volW = estimateLineWidth(volDisplay.toUpperCase(), system.type.volumeMm, 0.4, 'sans')
-    if (system.goldBar && !labelFace) {
-      const bh = 9.15
-      boxes.push({ id: 'volume-goldbar', x, y: y + h - bh, w, h: bh })
-    } else if (!labelFace && system.style === 'playful') {
-      const bw = Math.min(w * 0.62, 38)
-      const bh = 8.4
-      const bx = x + (w - bw) / 2
-      const by = y + h - bh - 4.2
-      boxes.push({ id: 'volume-capsule', x: bx, y: by, w: bw, h: bh })
-    } else if (!labelFace && system.style === 'eco') {
-      const sw = Math.min(18, w * 0.32)
-      const sh = 5.6
-      const cx = x + w / 2
-      const cy = y + h * 0.84
-      boxes.push({ id: 'volume-stamp', x: cx - sw / 2, y: cy - sh / 2, w: sw, h: sh })
-    } else if (!labelFace && system.style === 'modern') {
-      const bw = Math.min(28, w * 0.42)
-      const bh = 6.4
-      const left = system.align === 'left'
-      const bx = left ? layout.ax : x + w / 2 - bw / 2
-      const by = y + h * 0.8
-      boxes.push({ id: 'volume-outline', x: bx, y: by, w: bw, h: bh })
-    } else {
-      const volY = y + h * (labelFace ? 0.78 : 0.82)
-      boxes.push({ id: 'volume-plain', x: layout.ax - volW / 2, y: volY - system.type.volumeMm * 0.72, w: volW, h: system.type.volumeMm * 0.78 })
-    }
-  }
-
-  // Food NET block
-  if (system.sector === 'food' && copy.volume.trim()) {
-    const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
-    const netW = estimateLineWidth('NET', system.type.metaMm, 1.1, 'sans')
-    boxes.push({ id: 'net', x: layout.ax - netW / 2, y: netY - system.type.metaMm * 0.72, w: netW, h: system.type.metaMm * 0.78 })
-    const volBody = volumeDisplay(copy.volume, false)
-    const volNetW = estimateLineWidth(volBody.toUpperCase(), system.type.metaMm + (labelFace ? 0.2 : 0.5), 0.8, 'sans')
-    boxes.push({ id: 'net-volume', x: layout.ax - volNetW / 2, y: netY + (labelFace ? 2.6 : 3.0) - system.type.metaMm * 0.72, w: volNetW, h: system.type.metaMm * 0.78 })
-  }
-
-  // Food claim strip
-  if (system.sector === 'food') {
-    const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
-    const claimY = netY + (copy.volume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
-    if (claimY + (labelFace ? 6 : 8) < y + h - (labelFace ? 8 : 14)) {
-      const r = Math.min(4.2, w * 0.054)
-      const gap = Math.min(18, w * 0.22)
-      // 3 claims at gap intervals
-      for (let i = 0; i < 3; i++) {
-        const cx = layout.anchor === 'middle' ? layout.ax + (i - 1) * gap * 2 : layout.ax + i * gap * 2 + 4
-        boxes.push({ id: `claim-${i}`, x: cx - r, y: claimY - r, w: r * 2, h: r * 2 + 3 })
-      }
-    }
-  }
-
-  // Ingredient badges — P1-C: ingredientBadges() already measures and fits to panel.
-  // Here we only check badge vs volume band collision, not panel bounds (already guaranteed by fit).
-  if (ingredientClaims.trim()) {
-    const claims = ingredientClaims.split(/[+,;·]/).map((s) => s.trim().toUpperCase()).filter(Boolean).slice(0, 4)
-    if (claims.length) {
-      const badgeH = 4.8
-      const gap = 2.2
-      const badgeW = Math.max(14, Math.min(22, 60 / claims.length))
-      const totalW = claims.length * badgeW + (claims.length - 1) * gap
-      const startX = layout.anchor === 'middle' ? layout.ax - totalW / 2 : layout.ax
-      const volumeBandTop = system.goldBar
-        ? y + h - 13.2
-        : y + h - 10.4
-      const badgeY = layout.taglineY + (labelFace ? 5.8 : 7.4)
-      if (badgeY + badgeH + 1.6 <= volumeBandTop) {
-        for (let i = 0; i < claims.length; i++) {
-          const bx = startX + i * (badgeW + gap)
-          // Only add badge boxes for pairwise volume collision check, not panel bounds
-          boxes.push({ id: `badge-${i}`, x: bx, y: badgeY, w: badgeW, h: badgeH })
-        }
-      }
-    }
-  }
+  const boxes = collectFrontDecorBoxes(panel, system, copy, overrides, labelFace, ingredientClaims)
 
   // Pairwise collision check — only between decor elements (not panel bounds for badges)
   for (let i = 0; i < boxes.length; i++) {

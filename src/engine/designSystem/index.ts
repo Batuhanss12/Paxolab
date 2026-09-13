@@ -13,8 +13,10 @@ export {
   lineBBox,
   measureLockupCollision,
   measureFrontDecorCollision,
+  collectFrontDecorBoxes,
+  collectLockupGlyphBoxes,
 } from './typeSystem'
-export { normalizeVolume, volumeDisplay } from './volumeFormat'
+export { normalizeVolume, volumeDisplay, volumeBandTop, volumeUsesEstimated } from './volumeFormat'
 export type { VolumeUnit, NormalizedVolume } from './volumeFormat'
 export type { ArtBox } from './artBox'
-export { boxesOverlap, boxGap } from './artBox'
+export { boxesOverlap, boxGap, axisGap } from './artBox'

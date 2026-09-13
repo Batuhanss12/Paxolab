@@ -3,6 +3,7 @@
  * Extracted from copy.ts sampleCopy().
  * Sub-product-specific copy uses a matcher function.
  */
+import type { CopyLocale } from '../../types'
 import type { SectorId } from '../designSystem/types'
 
 export type SectorCopyTemplate = {
@@ -37,6 +38,25 @@ export const SUB_PRODUCT_OVERRIDES: SubProductOverride[] = [
     match: (sub) => /kulaklık|earbuds|audio/i.test(sub),
     override: {
       tagline: 'Sessiz sahne. Gün boyu.',
+      ingredients: 'BT 5.3 · 18h + case 24h · IPX4 · 5V⎓1A · 42g. Driver 10mm.',
+    },
+  },
+]
+
+export const SUB_PRODUCT_OVERRIDES_EN: SubProductOverride[] = [
+  {
+    match: (sub) => /yağ|zeytin|olive|oil/.test(sub),
+    override: {
+      tagline: 'Cold pressed. Single grove.',
+      volume: '500 ml',
+      ingredients: '100% cold-pressed extra virgin olive oil. Origin: Aegean, TR. Acidity ≤ 0.8%. Lot / EXP on cap.',
+      extraWarnings: 'Protect from light. Store cool and dark.',
+    },
+  },
+  {
+    match: (sub) => /kulaklık|earbuds|audio/i.test(sub),
+    override: {
+      tagline: 'Quiet stage. All day.',
       ingredients: 'BT 5.3 · 18h + case 24h · IPX4 · 5V⎓1A · 42g. Driver 10mm.',
     },
   },
@@ -125,10 +145,95 @@ export const SECTOR_COPY: Record<SectorId, SectorCopyTemplate> = {
   },
 }
 
+export const SECTOR_COPY_EN: Record<SectorId, SectorCopyTemplate> = {
+  perfume: {
+    sector: 'perfume',
+    tagline: 'A quiet intensity.',
+    volume: '50 ml',
+    ingredients: 'Alcohol Denat., Parfum (Fragrance), Aqua (Water), Linalool, Limonene, Coumarin, Citronellol, Geraniol. Sample / editable.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+  serum: {
+    sector: 'serum',
+    tagline: 'One drop. Clear glow.',
+    volume: '30 ml',
+    ingredients: 'Aqua, Propanediol, Niacinamide, Sodium Hyaluronate, Panthenol, Tocopherol, Glycerin. pH 5.5.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+  cream: {
+    sector: 'cream',
+    tagline: 'Repairs overnight.',
+    volume: '50 ml',
+    ingredients: 'Aqua, Butyrospermum Parkii, Glycerin, Cetearyl Alcohol, Niacinamide, Ceramide NP, Tocopherol, Sodium Hyaluronate.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+  food: {
+    sector: 'food',
+    tagline: 'From the oven, as it is.',
+    volume: '180 g',
+    ingredients: 'Wheat flour, butter, cocoa mass, sea salt. Allergen: gluten, milk. Made in TR.',
+    extraWarnings: 'Allergen: gluten, milk. Store cool and dry.',
+    cta: 'Send to production',
+  },
+  beverage: {
+    sector: 'beverage',
+    tagline: 'Fresh taste. Clear contents.',
+    volume: '330 ml',
+    ingredients: 'Water, natural flavour, fruit extract. Nutrition and ingredients sample / editable.',
+    extraWarnings: 'Store cool. Refrigerate after opening.',
+    cta: 'Send to production',
+  },
+  health: {
+    sector: 'health',
+    tagline: 'Clear support for a daily routine.',
+    volume: '30 kapsül',
+    ingredients: 'Actives and daily serving must be confirmed from the brief.',
+    extraWarnings: 'Food supplement, not a medicine. Do not exceed the recommended daily serving.',
+    cta: 'Send to production',
+  },
+  baby: {
+    sector: 'baby',
+    tagline: 'Sensitive care. Soft touch.',
+    volume: '200 ml',
+    ingredients: 'Gentle care formula. Ingredient list must be confirmed by the manufacturer.',
+    extraWarnings: 'For external use only. Keep out of reach of children.',
+    cta: 'Send to production',
+  },
+  electronics: {
+    sector: 'electronics',
+    tagline: 'Precise. Quiet. Lasting.',
+    volume: '',
+    ingredients: 'Input 5V⎓1A · cable 1.2m · 480Mbps. Housing: recycled ABS.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+  cleaning: {
+    sector: 'cleaning',
+    tagline: 'Clean surface. Fresh air.',
+    volume: '750 ml',
+    ingredients: 'Surface cleaner. Sample formula — no invented GHS pictogram.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+  generic: {
+    sector: 'generic',
+    tagline: 'Character that holds the surface.',
+    volume: '100 g',
+    ingredients: 'Ingredient line will come from the brief.',
+    extraWarnings: '',
+    cta: 'Send to production',
+  },
+}
+
 /** Resolve copy template for a sector + sub-product blob. */
-export function resolveSectorCopy(sector: SectorId, sub: string): SectorCopyTemplate {
-  const base = SECTOR_COPY[sector] ?? SECTOR_COPY.generic
-  for (const ov of SUB_PRODUCT_OVERRIDES) {
+export function resolveSectorCopy(sector: SectorId, sub: string, locale: CopyLocale = 'tr'): SectorCopyTemplate {
+  const table = locale === 'en' ? SECTOR_COPY_EN : SECTOR_COPY
+  const overrides = locale === 'en' ? SUB_PRODUCT_OVERRIDES_EN : SUB_PRODUCT_OVERRIDES
+  const base = table[sector] ?? table.generic
+  for (const ov of overrides) {
     if (ov.match(sub)) {
       return { ...base, ...ov.override }
     }

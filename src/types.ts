@@ -9,6 +9,8 @@ export type Attachment = {
 
 export type PackagingMode = 'box' | 'label'
 export type StyleType = 'luxury' | 'modern' | 'minimal' | 'eco' | 'playful' | 'classic'
+/** Customer-facing copy language. Not ArtworkModel.language (that is a palette id). */
+export type CopyLocale = 'tr' | 'en'
 export type StructureId = 'tuck-end-box' | 'simple-tray' | 'flat-label' | 'wrap-label'
 export type TemplateStatus = 'active' | 'soon'
 export type DesignKind = 'packaging' | 'label'
@@ -48,6 +50,8 @@ export type DesignBrief = {
   copyOverrides: string
   /** Ingredient claim badges for label front, e.g. "BIOTIN + COLLAGEN" or "KERATIN, ARGAN, COLLAGEN" */
   ingredientClaims?: string
+  /** Primary copy locale. Missing → resolve as `tr`. Do not store on ArtworkModel.language. */
+  copyLocale?: CopyLocale
 }
 
 export type BriefFieldKey = keyof DesignBrief
@@ -176,6 +180,8 @@ export type DesignSpec = {
   preflight: PreflightReport
   designPlan?: import('./engine/brain/DesignPlan').DesignPlan
   critique?: import('./engine/brain/CritiqueEngine').CritiqueReport
+  /** Mirror of brief.copyLocale for export manifest. */
+  copyLocale?: CopyLocale
 }
 
 export type TabId = 'konusma' | 'vektor' | 'karsilastir' | 'dieline' | 'onizleme3d' | 'uretim'

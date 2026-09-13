@@ -15,7 +15,9 @@ export type GrammarInput = {
 export function composeGrammar(input: GrammarInput): DesignPlan['composition'] {
   const label = input.surface === 'label'
   const air = input.negativeSpace === 'high'
-  const opticalCenter = air ? 0.38 : input.negativeSpace === 'low' ? 0.42 : 0.4
+  const wrap = !!input.wrap
+  const luxuryBox = input.style === 'luxury' && input.surface !== 'label' && !wrap
+  const opticalCenter = luxuryBox ? 0.38 : air ? 0.38 : input.negativeSpace === 'low' ? 0.42 : 0.4
   const variation = input.variationIndex ?? 0
 
   // Composition intent: modern/tech lean asymmetric or grid; luxury/classic stay symmetric;
@@ -44,7 +46,9 @@ export function composeGrammar(input: GrammarInput): DesignPlan['composition'] {
   // Hero horizontal offset: asymmetric/grid push hero off-center; offset nudges for organic.
   // New intents: diagonal pushes hero right, editorial pushes hero top-right,
   // floating lifts hero up, full-bleed keeps hero centered.
+  // P3-E: intent owns X/Y. Wrap stays top-center except diagonal/editorial (visible X delta).
   const heroX =
+    wrap && intent !== 'diagonal' && intent !== 'editorial' ? 0.5 :
     intent === 'asymmetric' ? 0.62 :
     intent === 'grid' ? 0.5 :
     intent === 'offset' ? 0.32 + (variation % 2) * 0.36 :
@@ -52,22 +56,29 @@ export function composeGrammar(input: GrammarInput): DesignPlan['composition'] {
     intent === 'editorial' ? 0.68 :
     intent === 'floating' ? 0.5 :
     intent === 'full-bleed' ? 0.5 :
-    undefined
+    0.5
 
-  // Hero Y: floating lifts hero up, full-bleed keeps it standard
-  const heroY =
+  const kitY = air ? 0.12 : 0.148
+  let heroY =
     intent === 'floating' ? (air ? 0.08 : 0.1) :
-    intent === 'editorial' ? (air ? 0.1 : 0.12) :
-    air ? 0.12 : 0.148
+    intent === 'editorial' ? 0.1 :
+    intent === 'diagonal' ? 0.11 :
+    intent === 'full-bleed' ? 0.12 :
+    intent === 'offset' ? kitY + 0.01 :
+    luxuryBox ? 0.135 :
+    kitY
+  if (wrap) heroY = Math.min(heroY, 0.11)
+
+  const lockupOptical = (wrap ? 0.46 : opticalCenter) + opticalCenterShift
 
   return {
     lockup: input.lockup,
     negativeSpace: input.negativeSpace,
-    opticalCenter: (input.wrap ? 0.46 : opticalCenter) + opticalCenterShift,
+    opticalCenter: lockupOptical,
     focal: input.lockup,
     intent,
     heroZone: { y: heroY, h: air ? 0.14 : 0.16, x: heroX },
-    lockupBand: { y: opticalCenter - 0.08, h: 0.28 },
+    lockupBand: { y: lockupOptical - 0.08, h: 0.28 },
     legalZone: label ? 'label-back' : 'back',
     marksZone: label ? 'label-back' : 'back',
   }

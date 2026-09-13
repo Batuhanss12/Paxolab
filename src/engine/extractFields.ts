@@ -3,6 +3,7 @@
  * Extracted from extract.ts to isolate the extraction logic from conversational state.
  */
 import type { Attachment, DesignBrief } from '../types'
+import { inferCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
 import {
   MODE_RULES,
@@ -120,6 +121,9 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
 
   const style = parseStyle(raw)
   if (style) patch.styleType = style
+
+  const locale = inferCopyLocale(raw)
+  if (locale) patch.copyLocale = locale
 
   const dims = parseDimensions(raw)
   if (dims) patch.dimensionsMm = dims

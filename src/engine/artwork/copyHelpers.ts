@@ -2,16 +2,32 @@
  * Copy helpers — product line resolution, spec line, monogram, category.
  * Extracted from copy.ts to isolate utility helpers from copy generation.
  */
-import type { DesignBrief } from '../../types'
+import type { CopyLocale, DesignBrief } from '../../types'
+import { resolveCopyLocale } from '../copyLocale'
 import { categoryFor } from '../designSystem/kits'
 import { resolveSector, sectorBlob } from '../designSystem/sector'
 import { isGenericProductName, sameName } from '../extract'
+
+/** Catalog / sample SKUs — follow copyLocale. Unique user lines stay as typed. */
+const SAMPLE_PRODUCT: Record<string, { tr: string; en: string }> = {
+  'night cream': { tr: 'Gece Kremi', en: 'Night Cream' },
+  night: { tr: 'Gece', en: 'Night' },
+  surface: { tr: 'Yüzey', en: 'Surface' },
+  concentrate: { tr: 'Konsantre', en: 'Concentrate' },
+  biscuit: { tr: 'Kurabiye', en: 'Biscuit' },
+}
+
+export function localizeSampleProduct(raw: string, locale: CopyLocale): string {
+  const hit = SAMPLE_PRODUCT[raw.trim().toLocaleLowerCase('tr')]
+  if (!hit) return raw
+  return locale === 'en' ? hit.en : hit.tr
+}
 
 export function resolveProductLine(brief: DesignBrief, fallback = ''): string {
   const raw = (fallback || brief.productName).trim()
   if (!raw || isGenericProductName(raw) || /^untitled$/i.test(raw)) return ''
   if (sameName(raw, brief.brandName)) return ''
-  return raw
+  return localizeSampleProduct(raw, resolveCopyLocale(brief))
 }
 
 export function frontSpecLine(ingredients: string): string {
@@ -29,5 +45,5 @@ export function monogram(brand: string): string {
 }
 
 export function categoryLine(brief: DesignBrief): string {
-  return categoryFor(resolveSector(brief), sectorBlob(brief))
+  return categoryFor(resolveSector(brief), sectorBlob(brief), resolveCopyLocale(brief))
 }

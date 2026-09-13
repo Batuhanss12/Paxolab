@@ -65,9 +65,9 @@ export function evaluateDesignGates(
   const sideArt = layers.filter((l) => /left|right/i.test(l.panelId)).map((l) => l.markup).join('\n')
   const labelBackArt = layers.find((l) => l.panelId === 'labelBack' || l.panelId === 'warnLabel')?.markup ?? ''
 
-  const boxLegalOnFace = /COMPOSITION|FLAMMABLE · CAUTION|DIRECTIONS · CAUTION|CONTENTS \/ SPEC/.test(faceArt)
+  const boxLegalOnFace = /COMPOSITION|FLAMMABLE · CAUTION|DIRECTIONS · CAUTION|CONTENTS \/ SPEC|YANICI · UYARI|İÇERİK \/ SPEC/.test(faceArt)
   const seriesOnLabel = spec.kind === 'label' && /Nº 0[12]/.test(faceArt)
-  const wrapMissingSeam = system.wrapSeam && !/>SEAM</.test(faceArt) && !faceArt.includes('SEAM')
+  const wrapMissingSeam = system.wrapSeam && !/>SEAM</.test(faceArt) && !faceArt.includes('SEAM') && !faceArt.includes('data-art="seam"')
   const labelMissingBack = spec.kind === 'label' && !labelBackArt
   const faceBarcode = /data-mark="barcode"/.test(faceArt)
   const labelSpine = spec.kind === 'label' && /rotate\(-90\)/.test(faceArt)
@@ -76,7 +76,7 @@ export function evaluateDesignGates(
     spec.kind !== 'label' &&
     system.grammar === 'box' &&
     !!faceArt &&
-    !/COMPOSITION|INCI|INGREDIENTS|CONTENTS|SPECIFICATION|DIRECTIONS/.test(backArt)
+    !/COMPOSITION|INCI|INGREDIENTS|CONTENTS|SPECIFICATION|DIRECTIONS|İÇERİK|KULLANIM|SAKLAMA|YANICI|ÖZELLİKLER|AKTİF/.test(backArt)
   const boxMissingSpine =
     spec.kind !== 'label' &&
     system.grammar === 'box' &&

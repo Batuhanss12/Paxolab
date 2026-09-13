@@ -4,14 +4,16 @@
  */
 import type { DesignBrief, DesignOverrides, DesignSpec, Palette, Panel } from '../../../types'
 import type { DesignSystem } from '../../designSystem/types'
+import { faceUpper, resolveCopyLocale } from '../../copyLocale'
 import { layoutFrontLockup, volumeMarkup } from '../../designSystem/typeSystem'
-import { volumeDisplay } from '../../designSystem/volumeFormat'
+import { volumeDisplay, volumeUsesEstimated } from '../../designSystem/volumeFormat'
 import { fontStack } from '../languages'
 import { frontSpecLine } from '../copy'
 import { escapeSvg as esc, minMm as mm } from '../svgGeometry'
 import { lockupRule } from './shared'
 import { capsuleVolume, goldBar, outlineVolume, stampVolume } from './volume'
 import { foodClaimStrip, ingredientBadges } from './foodElements'
+import { placeFrontExtras } from './frontExtras'
 
 type FrontLayout = NonNullable<ReturnType<typeof layoutFrontLockup>>
 
@@ -29,7 +31,6 @@ export function renderFrontLockup(
   const { y, h } = panel
   const s = overrides.logoScale
   const cat = system.category
-  const perfume = system.sector === 'perfume'
   const min = system.type.minMm
   const labelFace = system.grammar === 'label'
 
@@ -46,6 +47,7 @@ export function renderFrontLockup(
     body += `<image href="${logoHref}" x="${ax - (left ? 0 : ls / 2)}" y="${logoY - ls / 2}" width="${ls}" height="${ls}" preserveAspectRatio="xMidYMid meet" />`
   }
 
+  const locale = resolveCopyLocale(brief)
   const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
   const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
   brandLines.forEach((line, i) => {
@@ -53,17 +55,17 @@ export function renderFrontLockup(
   })
   body += lockupRule(layout, panel, p)
   if (copy.product.trim()) {
-    body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-weight="${layout.productWeight}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(copy.product.toUpperCase())}</text>`
+    body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-weight="${layout.productWeight}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(faceUpper(copy.product, locale))}</text>`
   }
   // P2-C: re-enable category on minimal as quiet meta (not display).
-  if (cat && (style !== 'minimal' || system.sector === 'serum' || system.sector === 'cream')) {
+  if (cat && (style !== 'minimal' || system.sector === 'serum' || system.sector === 'cream' || system.sector === 'cleaning')) {
     body += `<text x="${ax}" y="${layout.categoryY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${layout.categorySize}" letter-spacing="${layout.categoryTracking}">${esc(cat)}</text>`
   }
   body += `<text x="${ax}" y="${layout.taglineY}" text-anchor="${anchor}" fill="${p.muted}" font-family="${system.serif ? 'Georgia, serif' : layout.metaFont}" font-weight="${system.style === 'minimal' ? 300 : 400}" font-size="${layout.taglineSize}" font-style="${system.serif ? 'italic' : 'normal'}">${esc(copy.tagline)}</text>`
 
   if (system.sector === 'food') {
     const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
-    body += `<text x="${ax}" y="${netY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="1.1">NET</text>`
+    body += `<text x="${ax}" y="${netY}" text-anchor="${anchor}" fill="${p.accent}" font-family="${layout.metaFont}" font-weight="${layout.metaWeight}" font-size="${mm(system.type.metaMm, min)}" letter-spacing="1.1">${locale === 'en' ? 'NET WT' : 'NET'}</text>`
     if (copy.volume) {
       // P1-D: food NET uses body only (no second ℮ — footer/goldBar carries ℮ if estimated)
       const volBody = volumeDisplay(copy.volume, false)
@@ -71,7 +73,7 @@ export function renderFrontLockup(
     }
     const claimY = netY + (copy.volume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
     if (claimY + (labelFace ? 6 : 8) < y + h - (labelFace ? 8 : 14)) {
-      body += foodClaimStrip(panel, p, claimY, ax, anchor, system.type.minMm)
+      body += foodClaimStrip(panel, p, claimY, ax, anchor, system.type.minMm, locale)
     }
   }
   if (!labelFace && system.sector === 'electronics') {
@@ -81,8 +83,10 @@ export function renderFrontLockup(
     }
   }
 
+  const extras = placeFrontExtras(panel, system, layout, brief.ingredientClaims ?? '', labelFace)
+
   if (system.goldBar && copy.volume && !labelFace) {
-    body += goldBar(panel, p, copy.volume, perfume || system.sector === 'cream' || system.sector === 'serum' || system.sector === 'food', system)
+    body += goldBar(panel, p, copy.volume, volumeUsesEstimated(copy.volume), system)
   } else if (!labelFace && style === 'playful' && copy.volume) {
     body += capsuleVolume(panel, p, copy.volume, system)
   } else if (!labelFace && style === 'eco' && copy.volume) {
@@ -92,32 +96,18 @@ export function renderFrontLockup(
   } else if (copy.volume) {
     body += volumeMarkup(
       ax,
-      y + h * (labelFace ? 0.78 : 0.82),
+      extras.volumeY,
       copy.volume,
       system.type,
       p.fg,
       anchor,
       fontStack('sans'),
-      perfume || system.sector === 'food',
+      volumeUsesEstimated(copy.volume),
     )
   }
 
-  if (brief.ingredientClaims?.trim()) {
-    // P1-C: compute volumeBandTop — badges only paint if badgeY + badgeH + 1.6 <= volumeBandTop
-    const volumeBandTop = system.goldBar
-      ? y + h - 13.2
-      : style === 'playful'
-        ? y + h - 12.6
-        : style === 'eco'
-          ? y + h - 10.2
-          : style === 'modern'
-            ? y + h - 7.6
-            : y + h - 10.4
-    const badgeY = layout.taglineY + (labelFace ? 5.8 : 7.4)
-    const badgeH = 4.8
-    if (badgeY + badgeH + 1.6 <= volumeBandTop) {
-      body += ingredientBadges(brief.ingredientClaims, ax, badgeY, anchor, p, system.type.minMm, panel.w)
-    }
+  if (extras.showBadges && brief.ingredientClaims?.trim()) {
+    body += ingredientBadges(brief.ingredientClaims, ax, extras.badgeY, anchor, p, system.type.minMm, panel)
   }
 
   return body

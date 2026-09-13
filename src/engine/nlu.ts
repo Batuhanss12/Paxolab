@@ -18,7 +18,7 @@ export async function extractBriefWithLlm(text: string): Promise<Partial<DesignB
         {
           role: 'system',
           content:
-            'Extract a FORMA DesignBrief JSON only. Keys: brandName, productName, sector, subProduct, packagingMode (box|label), styleType (luxury|modern|minimal|eco|playful|classic), colors, volume, barcode, manufacturerName, manufacturerAddress. Leave barcode empty if the user did not give digits. Do not set productName to generic sector words (Parfüm, Krem, Serum). Leave productName empty if the user only named the category or only gave a brand. Never copy brandName into productName. For labels, do not invent manufacturer or box L×W×H. No image generation.',
+            'Extract a FORMA DesignBrief JSON only. Keys: brandName, productName, sector, subProduct, packagingMode (box|label), styleType (luxury|modern|minimal|eco|playful|classic), colors, volume, barcode, manufacturerName, manufacturerAddress, copyLocale (tr|en). Leave barcode empty if the user did not give digits. Leave copyLocale empty unless the user asked for Turkish or English copy. Do not set productName to generic sector words (Parfüm, Krem, Serum). Leave productName empty if the user only named the category or only gave a brand. Never copy brandName into productName. For labels, do not invent manufacturer or box L×W×H. No image generation.',
         },
         { role: 'user', content: text },
       ],

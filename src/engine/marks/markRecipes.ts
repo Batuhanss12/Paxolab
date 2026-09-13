@@ -171,4 +171,50 @@ export function genericBox(): MarkRecipe {
   )
 }
 
+export const PERFUME_WARN_BOX_EN = [
+  'For external use only.',
+  'Keep away from flame and heat.',
+  'Avoid contact with eyes.',
+  'Discontinue if irritation occurs.',
+  'Keep out of reach of children.',
+]
+
+export const CREAM_WARN_EN = [
+  'Apply to clean skin.',
+  'Avoid contact with eyes.',
+  'Discontinue if irritation occurs.',
+  'Keep away from children.',
+]
+
+export const FOOD_WARN_EN = [
+  'Store in a cool, dry place.',
+  'Allergen information is stated on the label.',
+  'Consume within the recommended time after opening.',
+]
+
+export const ELEC_WARN_EN = [
+  'Separate as electronic waste (WEEE).',
+  'Do not dispose of lithium batteries in household waste.',
+  'Keep dry. Do not open except at an authorized service.',
+]
+
+export const CLEAN_WARN_EN = [
+  'Keep out of reach of children.',
+  'Avoid contact with eyes.',
+  'Wash hands after use.',
+]
+
+export function warningsForLocale(warnings: string[], locale: 'tr' | 'en'): string[] {
+  if (locale !== 'en') return warnings
+  if (warnings === PERFUME_WARN_BOX) return PERFUME_WARN_BOX_EN
+  if (warnings === CREAM_WARN) return CREAM_WARN_EN
+  if (warnings === FOOD_WARN) return FOOD_WARN_EN
+  if (warnings === ELEC_WARN) return ELEC_WARN_EN
+  if (warnings === CLEAN_WARN) return CLEAN_WARN_EN
+  return [
+    'Follow the manufacturer instructions.',
+    'Keep away from children.',
+  ]
+}
+
 export const SAMPLE_LEGAL = SAMPLE

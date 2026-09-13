@@ -3,8 +3,10 @@
  * Extracted from copy.ts to isolate copy generation from helpers and back-fill.
  */
 import type { DesignBrief } from '../../types'
+import { resolveCopyLocale } from '../copyLocale'
 import { resolveSector } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
+import { warningsForLocale } from '../marks/markRecipes'
 import { resolveSectorCopy } from './sectorCopyConfig'
 
 export function sampleCopy(brief: DesignBrief): {
@@ -15,11 +17,12 @@ export function sampleCopy(brief: DesignBrief): {
   cta: string
 } {
   const sector = resolveSector(brief)
+  const locale = resolveCopyLocale(brief)
   const sub = `${brief.subProduct} ${brief.productName}`.toLocaleLowerCase('tr')
   const custom = brief.copyOverrides.trim()
   const surface = brief.packagingMode === 'label' ? 'label' : 'box'
-  const markWarn = resolveMarkRecipe(sector, surface).requiredTextWarnings.join(' ')
-  const template = resolveSectorCopy(sector, sub)
+  const markWarn = warningsForLocale(resolveMarkRecipe(sector, surface, brief).requiredTextWarnings, locale).join(' ')
+  const template = resolveSectorCopy(sector, sub, locale)
 
   const warnings = template.extraWarnings ? `${markWarn} ${template.extraWarnings}` : markWarn
   return {

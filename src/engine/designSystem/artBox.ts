@@ -26,3 +26,15 @@ export function boxGap(a: ArtBox, b: ArtBox): number {
   const dy = Math.max(0, Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h))
   return Math.min(dx, dy)
 }
+
+/** Axis-aware clearance: Y gap if X overlaps, X gap if Y overlaps, hypot if diagonal, 0 if intersecting. */
+export function axisGap(a: ArtBox, b: ArtBox): number {
+  const xOverlap = a.x < b.x + b.w && b.x < a.x + a.w
+  const yOverlap = a.y < b.y + b.h && b.y < a.y + a.h
+  if (xOverlap && yOverlap) return 0
+  const dx = Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w)
+  const dy = Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h)
+  if (xOverlap) return dy
+  if (yOverlap) return dx
+  return Math.hypot(Math.max(0, dx), Math.max(0, dy))
+}

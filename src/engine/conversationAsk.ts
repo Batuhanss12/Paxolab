@@ -31,6 +31,7 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
   manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
   styleType: 'Soldaki stil çiplerinden seçin: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik.',
   templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
+  copyLocale: 'Metinler Türkçe mi, İngilizce mi?',
 }
 
 const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
@@ -79,5 +80,6 @@ export function nextMissing(brief: DesignBrief): AwaitingKey | null {
     if (key === 'manufacturerAddress' && !hasUserAddress(brief) && !acceptedAddressDefault(brief)) return key
   }
   if (!brief.templateId) return 'templateId'
+  if (!brief.copyLocale) return 'copyLocale'
   return null
 }

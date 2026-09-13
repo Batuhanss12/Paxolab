@@ -12,6 +12,7 @@ import type { Palette, Panel } from '../../types'
 import { resolveGrammar } from './grammar'
 import { paintGraphic } from './registry'
 import type { GrammarInput, GrammarPicks, PaintCtx, SafeRect } from './types'
+import { heroAxisX } from '../artwork/heroes/heroPlacement'
 
 /** Convert a motor DesignPlan + DesignSystem into a GraphicLibrary GrammarInput. */
 export function planToGrammarInput(plan: DesignPlan, system: DesignSystem): GrammarInput {
@@ -55,6 +56,7 @@ export function bridgeHeroCtx(
 ): PaintCtx {
   const label = system.grammar === 'label'
   const heroY = label ? Math.min(0.12, plan.composition.heroZone.y) : plan.composition.heroZone.y
+  const wrapY = system.wrapSeam ? Math.min(heroY, 0.11) : heroY
   const heroScale = (plan.heroGraphic.scale ?? 1) * (plan.crop.heroCrop ?? 1) * (label ? 0.82 : 1)
   return {
     panel,
@@ -62,8 +64,8 @@ export function bridgeHeroCtx(
     opacity: 1,
     safe,
     seed: plan.artDirection.antiRepetition.seed ?? 7,
-    heroYFrac: heroY,
-    heroXFrac: plan.composition.heroZone.x ?? 0.5,
+    heroYFrac: wrapY,
+    heroXFrac: heroAxisX(plan, system, panel),
     heroScale,
   }
 }

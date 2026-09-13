@@ -106,7 +106,7 @@ const food = engine.generate({
 const foodFace = face(food)
 assert(food.designPlan?.sector === 'food', 'food sector')
 assert(foodFace.includes('data-hero="harvest"'), 'food missing harvest')
-assert(/NET|EXTRA VIRGIN/.test(foodFace), 'food missing NET/harvest copy')
+assert(/NET|EXTRA VIRGIN|SIZMA|GURME/.test(foodFace), 'food missing NET/harvest copy')
 assert(!foodFace.includes('fill-opacity="0.9"'), 'food still has perfume diamonds')
 assert(!foodFace.includes('EAU DE PARFUM'), 'food wears perfume')
 assert(!/2004\.78|986\.01/.test(foodFace), 'food perfume asset leak')
@@ -125,7 +125,7 @@ const elec = engine.generate({
 })
 const elecFace = face(elec)
 assert(!elecFace.includes('EAU DE PARFUM'), 'elec perfume copy')
-assert(/WIRELESS|SPEC/.test(elecFace), 'elec missing spec')
+assert(/WIRELESS|KABLOSUZ|SPEC|BT |5V/.test(elecFace), 'elec missing spec')
 
 const ready = engine.generate({
   brief: brief(),

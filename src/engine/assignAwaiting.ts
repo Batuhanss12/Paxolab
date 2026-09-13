@@ -3,6 +3,7 @@
  * Extracted from extract.ts to isolate the Q&A state machine from free-text extraction.
  */
 import type { AwaitingKey, DesignBrief } from '../types'
+import { parseCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
 import { SKIP_UTTERANCE } from './extractRules'
 import { isGenericProductName } from './extractHelpers'
@@ -55,6 +56,9 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
   if (awaiting === 'styleType') {
     const style = parseStyle(cleaned)
     return style ? { styleType: style } : { styleType: 'luxury' }
+  }
+  if (awaiting === 'copyLocale') {
+    return { copyLocale: parseCopyLocale(cleaned) ?? (/en|eng|english|ingiliz/i.test(cleaned) ? 'en' : 'tr') }
   }
   return { [awaiting]: cleaned } as Partial<DesignBrief>
 }

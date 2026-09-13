@@ -102,5 +102,6 @@ export function patternOpacity(style: StyleType, density: Density, restrain: boo
   if (style === 'playful') return 0.16
   if (style === 'eco') return 0.1
   if (style === 'classic') return 0.14
+  if (style === 'minimal') return 0.06
   return 0
 }

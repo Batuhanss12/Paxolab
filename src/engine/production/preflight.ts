@@ -5,6 +5,7 @@
  */
 import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../types'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
+import { detectCopyLocaleMix } from '../copyLocale'
 import { evaluateDesignGates, layoutFrontLockup, resolveDesignSystem } from '../designSystem'
 import type { DesignSystem } from '../designSystem/types'
 import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
@@ -53,7 +54,10 @@ export function runPreflight(
   const labelFace = spec.kind === 'label' || sys.grammar === 'label'
   const lockup = front ? layoutFrontLockup(front, sys, spec.copy, spec.overrides, labelFace) : null
   const typeOk = !!lockup && lockup.brandSize >= sys.type.minMm - 0.01
-  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin && !glueDirty
+  const faceArt = layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
+  const localeMix = detectCopyLocaleMix(spec, sys, faceArt)
+  const localeMixFail = !!spec.overrides.printReady && localeMix.mix
+  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin && !glueDirty && !localeMixFail
   const plan = spec.designPlan
   const proofDetail = [
     plan ? `set ${plan.variationIndex + 1}` : null,
@@ -86,6 +90,12 @@ export function runPreflight(
       collisions ? 'fail' : 'pass',
     ),
     item('copy', 'Metin kilidi', spec.copy.tagline, spec.copy.tagline ? 'pass' : 'warn'),
+    item(
+      'copy-locale-mix',
+      'Metin dili',
+      localeMix.mix ? localeMix.detail : localeMix.detail,
+      localeMixFail ? 'fail' : localeMix.mix ? 'warn' : 'pass',
+    ),
     item(
       'barcode',
       'Barkod',

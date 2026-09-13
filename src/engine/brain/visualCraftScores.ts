@@ -3,6 +3,7 @@
  * Each function computes one dimension (hero, composition, hierarchy, etc.) from face/back markup + plan.
  */
 import type { DesignSpec } from '../../types'
+import { faceHasProduct } from '../copyLocale'
 import type { DesignPlan } from './DesignPlan'
 import {
   compositionBonus,
@@ -68,7 +69,12 @@ export function scoreHero(ctx: ScoreCtx, notes: string[]): number {
   const { plan, required, hasHero, leak } = ctx
   const face = ctx.face
   let hero = 48
-  if (plan.style === 'minimal') hero = hasHero ? 40 : 86
+  if (plan.style === 'minimal') {
+    const sectorAccent = /data-bg="(tech-grid|warm-horizon|fresh-accent)"/.test(face)
+    const classMeta = /SERUM|YÜZ KREMİ|YÜZEY BAKIMI|FACE CREAM|SURFACE CARE|CONCENTRATE/.test(face)
+    hero = 82
+    if (hasHero || sectorAccent || classMeta) hero += 10
+  }
   else if (required && hasHero) {
     hero = 78
     if (LIBRARY.test(face)) hero += 10
@@ -96,6 +102,9 @@ export function scoreComposition(ctx: ScoreCtx): number {
   else if (plan.composition.intent === 'offset' && (plan.style === 'eco' || plan.style === 'playful')) composition += 4
   if (plan.composition.heroZone.x != null && Math.abs(plan.composition.heroZone.x - 0.5) > 0.08) composition += 3
   if (/stroke-opacity="0\.0[4-8]".*stroke-width="0\.1"/.test(face)) composition += 3
+  if (plan.style === 'minimal' && (/data-bg="(tech-grid|warm-horizon|fresh-accent)"/.test(face) || plan.composition.negativeSpace === 'high')) {
+    composition += 8
+  }
   composition += geoComposition
   return composition
 }
@@ -105,7 +114,7 @@ export function scoreHierarchy(ctx: ScoreCtx, notes: string[]): number {
   const { geoHierarchy } = ctx
   let hierarchy = 55
   if (face.includes(copy.brand.toUpperCase())) hierarchy += 12
-  if (copy.product && face.includes(copy.product.toUpperCase())) hierarchy += 10
+  if (copy.product && faceHasProduct(face, copy.product)) hierarchy += 10
   if (plan.sector === 'food' && /data-art="claim-strip"|NET/.test(face)) hierarchy += 8
   else if (plan.sector === 'food') notes.push('Gıda claim/NET zayıf')
   hierarchy += geoHierarchy
@@ -155,6 +164,7 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
     notes.push('Serum contour sızıntısı')
   }
   if (plan.style === 'minimal' && !/data-pattern=/.test(face)) decoration += 12
+  if (plan.style === 'minimal' && /data-bg="(tech-grid|warm-horizon|fresh-accent)"/.test(face)) decoration += 6
   decoration += geoDensity
   return decoration
 }
@@ -164,8 +174,9 @@ export function scoreSectorFit(ctx: ScoreCtx): number {
   let sectorFit = 62
   if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"/.test(face)) sectorFit += 16
   if (plan.sector === 'food' && /harvest|NET|BESİN|DOĞAL/.test(`${face}\n${back}`)) sectorFit += 14
-  if (plan.sector === 'electronics' && /WIRELESS|PRECISION|data-hero="tech"|WEEE/.test(`${face}\n${back}`)) sectorFit += 14
+  if (plan.sector === 'electronics' && /WIRELESS|PRECISION|KABLOSUZ|HASSAS|data-hero="tech"|WEEE/.test(`${face}\n${back}`)) sectorFit += 14
   if (plan.sector === 'serum' && !leak) sectorFit += 10
+  if (plan.sector === 'cleaning' && /YÜZEY|SURFACE|fresh-accent/.test(face)) sectorFit += 12
   if (plan.sector === 'electronics' && /data-pattern="(hexagon|dotgrid|lattice)"/.test(face)) sectorFit += 6
   if ((plan.sector === 'food' || plan.sector === 'beverage') && /data-pattern="(weave|grain|ornament)"/.test(face)) sectorFit += 6
   if (plan.sector === 'cleaning' && /data-pattern="(wave|stripe)"/.test(face)) sectorFit += 6
@@ -176,9 +187,10 @@ export function scoreSectorFit(ctx: ScoreCtx): number {
 export function scoreProductFit(ctx: ScoreCtx): number {
   const { face, plan } = ctx
   let productFit = 64
-  if (plan.sector === 'cream' && /CERAMIDE|badge|FACE CREAM/.test(face)) productFit += 12
-  if (plan.sector === 'serum' && /NIACINAMIDE|CONCENTRATE/.test(face)) productFit += 12
-  if (plan.sector === 'food' && /VIRGIN|ARTISAN|NET/.test(face)) productFit += 10
+  if (plan.sector === 'cream' && /CERAMIDE|badge|FACE CREAM|YÜZ KREMİ/.test(face)) productFit += 12
+  if (plan.sector === 'serum' && /NIACINAMIDE|CONCENTRATE|SERUM/.test(face)) productFit += 12
+  if (plan.sector === 'cleaning' && /YÜZEY BAKIMI|SURFACE CARE/.test(face)) productFit += 12
+  if (plan.sector === 'food' && /VIRGIN|ARTISAN|SIZMA|GURME|ÇİKOLATA|REÇEL|NET/.test(face)) productFit += 10
   return productFit
 }
 
@@ -186,14 +198,17 @@ export function scoreInformationDesign(ctx: ScoreCtx, notes: string[]): number {
   const { face, back, plan } = ctx
   let informationDesign = 50
   if (plan.sector === 'food') {
-    if (/BESİN DEĞERLERİ/.test(back)) informationDesign += 22
+    if (/BESİN DEĞERLERİ|NUTRITION FACTS/.test(back)) informationDesign += 22
     else notes.push('Gıda nutrition yok')
     if (/data-art="claim-strip"|NET/.test(face)) informationDesign += 14
-    if (/DOĞAL/.test(face)) informationDesign += 6
+    if (/DOĞAL|NATURAL/.test(face)) informationDesign += 6
   } else if (plan.sector === 'perfume') {
     informationDesign += /INCI|COMPOSITION|12\s*M|2004/.test(back) ? 22 : 8
   } else {
     informationDesign += /KULLANIM|INCI|SPEC|UYARI/.test(back) ? 20 : 10
+  }
+  if (plan.style === 'minimal' && /SERUM|YÜZ KREMİ|YÜZEY BAKIMI|FACE CREAM|SURFACE CARE|CONCENTRATE/.test(face)) {
+    informationDesign += 8
   }
   return informationDesign
 }

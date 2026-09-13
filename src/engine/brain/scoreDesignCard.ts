@@ -3,6 +3,7 @@
  * Extracted from DesignScore.ts to isolate the post-render scorecard from visual craft scoring.
  */
 import type { DesignSpec } from '../../types'
+import { faceHasProduct } from '../copyLocale'
 import { densityCap } from './CompositionGrammar'
 import type { DesignPlan } from './DesignPlan'
 import { DESIGN_SCORE_BASE } from './scoreConfig'
@@ -39,7 +40,7 @@ export function scoreDesign(spec: Pick<DesignSpec, 'artwork' | 'preflight' | 'co
 
   if (face.includes(spec.copy.brand.toUpperCase())) hierarchy += 10
   else notes.push('Ön yüzde marka zayıf')
-  if (spec.copy.product && face.includes(spec.copy.product.toUpperCase())) hierarchy += 8
+  if (spec.copy.product && faceHasProduct(face, spec.copy.product)) hierarchy += 8
   if (plan.decor.lockupClearance && /lockout-/.test(face)) hierarchy += 6
 
   const extraTicks = (face.match(/sideTicks|cornerDiamonds|claimCapsules/g) || []).length

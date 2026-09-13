@@ -19,6 +19,7 @@ export function buildManifest(spec: DesignSpec): string {
       subProduct: spec.brief.subProduct,
       styleType: spec.brief.styleType,
       packagingMode: spec.brief.packagingMode,
+      copyLocale: spec.copyLocale ?? spec.brief.copyLocale ?? 'tr',
     },
     dimensions: {
       widthMm: spec.layout.widthMm,

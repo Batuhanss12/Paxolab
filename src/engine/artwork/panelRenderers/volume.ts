@@ -5,6 +5,7 @@
 import type { Palette, Panel } from '../../../types'
 import type { DesignSystem } from '../../designSystem/types'
 import { volumeMarkup } from '../../designSystem/typeSystem'
+import { volumeUsesEstimated } from '../../designSystem/volumeFormat'
 import { fontStack } from '../languages'
 
 /** Gold bar — luxury bottom strip with volume. */
@@ -27,7 +28,7 @@ export function capsuleVolume(panel: Panel, p: Palette, volume: string, system: 
   const y = panel.y + panel.h - bh - 4.2
   return `
     <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="${bh / 2}" fill="${p.accent}" />
-    ${volumeMarkup(x + bw / 2, y + bh * 0.66, volume, system.type, p.bg, 'middle', fontStack('sans'), false)}
+    ${volumeMarkup(x + bw / 2, y + bh * 0.66, volume, system.type, p.bg, 'middle', fontStack('sans'), volumeUsesEstimated(volume))}
   `
 }
 
@@ -52,7 +53,7 @@ export function outlineVolume(panel: Panel, p: Palette, volume: string, left: bo
   const y = panel.y + panel.h * 0.8
   return `
     <rect x="${x}" y="${y}" width="${bw}" height="6.4" fill="none" stroke="${p.fg}" stroke-width="0.28" />
-    ${volumeMarkup(x + bw / 2, y + 4.35, volume, system.type, p.fg, 'middle', fontStack('sans'), false)}
+    ${volumeMarkup(x + bw / 2, y + 4.35, volume, system.type, p.fg, 'middle', fontStack('sans'), volumeUsesEstimated(volume))}
   `
 }
 
@@ -66,6 +67,6 @@ export function plainVolume(ax: number, y: number, volume: string, system: Desig
     p.fg,
     anchor,
     fontStack('sans'),
-    perfume,
+    perfume || volumeUsesEstimated(volume),
   )
 }

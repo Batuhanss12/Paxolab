@@ -111,12 +111,12 @@ assert(!fFace.includes('EAU DE PARFUM') && !fFace.includes('Alcohol Denat'), 'fo
 assert(/ALERJEN|Alerjen|STORAGE/.test(fBack), 'food back missing allergen/storage')
 assert(food.artwork.systemKey.includes('harvest') || resolveDesignSystem(food.brief, food.structureId).decor === 'olive' || resolveDesignSystem(food.brief, food.structureId).lockup === 'harvest-seal', 'food not harvest lockup')
 
-assert(/WIRELESS|SPEC|BT |5V/.test(eFace), 'electronics front missing spec')
+assert(/WIRELESS|KABLOSUZ|SPEC|BT |5V/.test(eFace), 'electronics front missing spec')
 assert(!eFace.includes('EAU DE PARFUM') && !eFace.includes('12M'), 'electronics front has perfume/PAO')
 assert(/WEEE/.test(eBack), 'electronics back missing WEEE')
 assert(!eFace.includes('2004.78'), 'electronics leaked perfume icon')
 
-assert(cFace.includes('FACE CREAM'), 'cream front missing care category')
+assert(cFace.includes('YÜZ KREMİ') || cFace.includes('FACE CREAM'), 'cream front missing care category')
 assert(!cFace.includes('EAU DE PARFUM'), 'cream front is EDP')
 assert(cream.copy.tagline.includes('onarır') || cream.copy.tagline.includes('Gece'), 'cream voice')
 
@@ -131,4 +131,4 @@ if (fails) {
 }
 console.log('D5 sector-depth smoke passed')
 console.log('  extract skips generic Parfüm · Noir named')
-console.log('  blind front: EDP / EXTRA VIRGIN+NET / SPEC · cream FACE CREAM')
+console.log('  blind front: EDP / SIZMA|NET / SPEC · cream YÜZ KREMİ')

@@ -19,3 +19,4 @@ export {
   paintTech,
   wrapHero,
 } from './heroes'
+export { heroAxisX, resolveHeroPlacement, measureHeroCollision } from './heroes/heroPlacement'

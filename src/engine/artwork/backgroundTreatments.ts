@@ -70,11 +70,8 @@ export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette)
   }
 
   if (style === 'minimal') {
-    // P2-B: foot rule stays as the single chrome element when no sector accent painted.
-    // When sector bg accent is present, omit foot rule (max one chrome element).
-    // Caller (composeArtwork) decides order; here we keep the rule but at quieter opacity.
-    const ruleY = y + h * 0.88
-    return `<line x1="${x + w * 0.2}" y1="${ruleY}" x2="${x + w * 0.8}" y2="${ruleY}" stroke="${p.accent}" stroke-opacity="0.2" stroke-width="0.18" />`
+    // P2-B: lockup hair rule is the brand-adjacent signal. Do not add a second foot rule.
+    return ''
   }
 
   if (style === 'classic') {

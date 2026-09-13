@@ -5,6 +5,7 @@
 import type { DesignBrief, DesignSpec, Palette, Panel } from '../../../types'
 import type { DesignSystem } from '../../designSystem/types'
 import { barcodeSvg } from '../../barcode'
+import { resolveCopyLocale } from '../../copyLocale'
 import { backFill } from '../copy'
 import { fontStack } from '../languages'
 import { volumeMarkup } from '../../designSystem/typeSystem'
@@ -45,8 +46,9 @@ export function renderBackPanel(
   const inci = wrapLines(copy.ingredients, Math.max(16, Math.floor(w / 2.05)), shortBack && system.sector === 'food' ? 2 : perfume ? 6 : 5)
   const warns = wrapLines(copy.warnings, Math.max(16, Math.floor(w / 2.05)), shortBack ? 2 : 4)
 
+  const locale = resolveCopyLocale(brief)
   if (system.sector === 'food' && shortBack) {
-    body += foodNutritionTable(x + padX, cursor, blockW, p, system, true)
+    body += foodNutritionTable(x + padX, cursor, blockW, p, system, true, locale)
     cursor += 14
   }
 
@@ -87,7 +89,7 @@ export function renderBackPanel(
     const need = compact ? 16 : 28
     const floor = compact ? 18 : 32
     if (cursor + need < y + h - floor) {
-      body += foodNutritionTable(x + padX, cursor, blockW, p, system, compact)
+      body += foodNutritionTable(x + padX, cursor, blockW, p, system, compact, locale)
       cursor += need
     }
   }

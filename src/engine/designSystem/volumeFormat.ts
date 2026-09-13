@@ -73,9 +73,30 @@ export function normalizeVolume(raw: string): NormalizedVolume {
   return { amount, unit, display: body, body }
 }
 
+/** ml/g (and mass/volume SI) take ℮ on the face — including plain non-gold paths. */
+export function volumeUsesEstimated(raw: string): boolean {
+  const unit = normalizeVolume(raw).unit
+  return unit === 'ml' || unit === 'g' || unit === 'kg' || unit === 'L' || unit === 'mg'
+}
+
 /** Build the full display string with optional ℮ prefix. */
 export function volumeDisplay(raw: string, estimated: boolean): string {
   const v = normalizeVolume(raw)
   if (!v.body) return ''
-  return estimated ? `℮ ${v.body}` : v.body
+  return estimated ? `℮\u2009${v.body}` : v.body
+}
+
+/** Top of the volume band — badges/claims must sit above this with Phase 1 gap. */
+export function volumeBandTop(
+  panel: { y: number; h: number },
+  goldBar: boolean,
+  style: string,
+  labelFace: boolean,
+): number {
+  const { y, h } = panel
+  if (goldBar && !labelFace) return y + h - 13.2
+  if (!labelFace && style === 'playful') return y + h - 12.6
+  if (!labelFace && style === 'eco') return y + h * 0.84 - 2.8
+  if (!labelFace && style === 'modern') return y + h * 0.8
+  return y + h * (labelFace ? 0.78 : 0.82) - 1.6
 }

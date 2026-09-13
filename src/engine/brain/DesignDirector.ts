@@ -177,6 +177,9 @@ export function createPlan(input: DirectorInput): DesignPlan {
       scale: studio.scale,
     }
   }
+  if (plan.composition.intent === 'full-bleed') {
+    plan.heroGraphic.scale = Math.min(plan.heroGraphic.scale, 0.9)
+  }
   plan.summaryTr = planSummaryTr(plan)
   rememberArt(style, { hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })
   void principlesFor(style, surface)

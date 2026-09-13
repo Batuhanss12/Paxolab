@@ -44,13 +44,16 @@ export function applyExtraction(
     awaiting === 'barcode' ||
     awaiting === 'manufacturerName' ||
     awaiting === 'manufacturerAddress' ||
-    awaiting === 'templateId'
+    awaiting === 'templateId' ||
+    awaiting === 'copyLocale'
   ) {
     delete extracted.brandName
     delete extracted.productName
     delete extracted.subProduct
     delete extracted.sector
   }
+  if (awaiting === 'copyLocale') delete extracted.copyLocale
+  if (brief.copyLocale && awaiting !== 'copyLocale') delete extracted.copyLocale
   let next = mergeBrief(mergeBrief(brief, assigned), extracted)
   if (awaiting === 'dimensionsMm') {
     const dims = parseDimensions(text)
