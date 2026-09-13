@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { DesignBrief } from '../../types'
 import { emptyBrief } from '../fields'
 import { buildDieline } from './buildDieline'
-import { generateMatbixxModel } from './matbixxGenerate'
-import { registry } from './matbixx/registry'
-import { kindFromMatbixxPanel, toDielineModel } from './matbixxAdapter'
+import { generateForxaModel } from './forxaGenerate'
+import { registry } from './forxa/registry'
+import { kindFromForxaPanel, toDielineModel } from './forxaAdapter'
 import { nativeKindFor } from './panelKind'
 
 function boxBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
@@ -19,7 +19,7 @@ function boxBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
   }
 }
 
-describe('MatBixx adapter (D7-A)', () => {
+describe('Forxa adapter (D7-A)', () => {
   it('converts a raw tuck-end without baked 3 mm bleed', () => {
     const engine = registry.get('tuck-end-box')
     expect(engine).toBeTruthy()
@@ -44,20 +44,37 @@ describe('MatBixx adapter (D7-A)', () => {
     expect(nativeKindFor(native.panels[0]!)).toBeTruthy()
   })
 
-  it('routes polygon-box through MatBixx', () => {
-    const model = generateMatbixxModel('polygon-box', { L: 60, W: 60, H: 120 }, { sides: 6, closureType: 0 })
+  it('routes polygon-box through Forxa', () => {
+    const model = generateForxaModel('polygon-box', { L: 60, W: 60, H: 120 }, { sides: 6, closureType: 0 })
     expect(model.consistent).toBe(true)
     expect(model.panels.some((p) => p.kind === 'hero-front')).toBe(true)
     expect(model.panels.some((p) => p.id === 'base')).toBe(true)
     expect(model.cut.length).toBeGreaterThan(0)
   })
+
+  it('keeps hex and triangle C-family CUT free of self-intersection', () => {
+    for (const sides of [3, 6]) {
+      const model = generateForxaModel('polygon-box', { L: 60, W: 60, H: 120 }, { sides, closureType: 0 })
+      const fatal = (model.structural?.findings ?? []).filter((f) => f.code === 'CUT_SELF_INTERSECTION')
+      expect(fatal).toEqual([])
+      expect(model.panels.every((p) => p.w > 0 && p.h > 0)).toBe(true)
+    }
+  })
+
+  it('does not create zero-area zipper overlay panels', () => {
+    const model = generateForxaModel('tuck-end-box', { L: 80, W: 40, H: 80 }, undefined, '12')
+    expect(model.consistent).toBe(true)
+    expect(model.panels.every((p) => p.w > 0 && p.h > 0)).toBe(true)
+    expect(model.panels.some((p) => p.id.startsWith('aux-'))).toBe(true)
+    expect(model.cut.length).toBeGreaterThan(1)
+  })
 })
 
-describe('kindFromMatbixxPanel', () => {
+describe('kindFromForxaPanel', () => {
   it('maps cell / glue / wall faces', () => {
-    expect(kindFromMatbixxPanel({ id: 'cell-0', name: 'göz', polygon: [], face: 'cell' })).toBe('product-window')
-    expect(kindFromMatbixxPanel({ id: 'glue-tab', name: 'y', polygon: [], face: 'glue' })).toBe('glue')
-    expect(kindFromMatbixxPanel({ id: 'wall-2', name: 'd', polygon: [], face: 'side' })).toBe('polygon-wall')
-    expect(kindFromMatbixxPanel({ id: 'front', name: 'ö', polygon: [], face: 'front' })).toBe('hero-front')
+    expect(kindFromForxaPanel({ id: 'cell-0', name: 'göz', polygon: [], face: 'cell' })).toBe('product-window')
+    expect(kindFromForxaPanel({ id: 'glue-tab', name: 'y', polygon: [], face: 'glue' })).toBe('glue')
+    expect(kindFromForxaPanel({ id: 'wall-2', name: 'd', polygon: [], face: 'side' })).toBe('polygon-wall')
+    expect(kindFromForxaPanel({ id: 'front', name: 'ö', polygon: [], face: 'front' })).toBe('hero-front')
   })
 })

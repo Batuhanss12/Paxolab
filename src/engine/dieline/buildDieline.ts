@@ -1,13 +1,14 @@
 /**
  * buildDieline — facade re-exporting the decomposed dieline modules.
  * Native FORMA nets stay on the four original generators.
- * MatBixx engines (and tuck/mailer + X-device) go through the bleed-free adapter.
+ * Forxa engines (and tuck/mailer + X-device) go through the bleed-free adapter.
  */
 import type { DesignBrief, DielineModel, DimensionsMm, StructureId } from '../../types'
 import { getTemplate } from '../catalog/catalog'
 import { flatLabel, simpleTray, tuckEnd, wrapLabel } from './dielineStructures'
-import { generateMatbixxModel, isMatbixxStructure } from './matbixxGenerate'
+import { generateForxaModel, isForxaStructure } from './forxaGenerate'
 import { findHeroPanel, withPanelKinds } from './panelKind'
+import { attachStructuralSolution } from './structure/solve'
 
 export { outlineUnion } from './dielineGeometry'
 
@@ -24,13 +25,18 @@ export function buildDieline(structureId: StructureId, brief: DesignBrief): Diel
   const template = brief.templateId ? getTemplate(brief.templateId) : undefined
   const auxDevice = template?.auxDevice
   const engineParams = template?.engineParams
-  const routed = isMatbixxStructure(structureId) || !!auxDevice
-  if (routed) return generateMatbixxModel(structureId, d, engineParams, auxDevice)
+  const routed = isForxaStructure(structureId) || !!auxDevice
+  if (routed) return generateForxaModel(structureId, d, engineParams, auxDevice, brief)
 
-  if (structureId === 'simple-tray') return withPanelKinds(simpleTray(d))
-  if (structureId === 'flat-label') return withPanelKinds(flatLabel(d))
-  if (structureId === 'wrap-label') return withPanelKinds(wrapLabel(d))
-  return withPanelKinds(tuckEnd(d))
+  const native =
+    structureId === 'simple-tray'
+      ? withPanelKinds(simpleTray(d))
+      : structureId === 'flat-label'
+        ? withPanelKinds(flatLabel(d))
+        : structureId === 'wrap-label'
+          ? withPanelKinds(wrapLabel(d))
+          : withPanelKinds(tuckEnd(d))
+  return attachStructuralSolution(native, brief)
 }
 
 export function frontPanelId(structureId: StructureId, model?: DielineModel): string {

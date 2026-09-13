@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Core Type Definitions
+ * Forxa StructureEngine — Core Type Definitions
  *
  * Bu dosya tüm structure modülleri tarafından paylaşılır.
  * Mevcut knifeLineEngine ve dieline-generator tipleriyle uyumlu.

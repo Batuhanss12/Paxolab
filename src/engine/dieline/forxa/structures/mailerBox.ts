@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Mailer Box (Self-Erecting)
+ * Forxa StructureEngine — Mailer Box (Self-Erecting)
  *
  * Mailer box (öne katlanan kapaklı kutu) — tek parça, kendinden katlanır.
  * Üst kapak öne doğru açılır, tuck ile kapanır.

@@ -271,15 +271,15 @@ src/components/
 
 ## 7. Recommended NEXT
 
-Owner opened **Phase D7 — MatBixx Dieline Bridge** (2026-09-14). H0–D6 stay closed; do not start PDF/X or LLM-as-painter.
+Owner opened **Phase D7 — Forxa Dieline Bridge** (2026-09-14). H0–D6 stay closed; do not start PDF/X or LLM-as-painter.
 
 ---
 
-### Phase D7 — MatBixx Dieline Bridge → **owner ask** · Effort **L** · **done**
+### Phase D7 — Forxa Dieline Bridge → **owner ask** · Effort **L** · **done**
 
 **Goal:** Vendor the Desktop `Paxolab-Kutu-Bicak-Izi` structure engines into FORMA without replacing native tuck/tray/label nets. Every new family paints through `Panel.kind`, not new id string lists.
 
-**Files:** `src/engine/dieline/matbixx/*`, `matbixxAdapter.ts`, `matbixxGenerate.ts`, `panelKind.ts`, `buildDieline.ts`, `composeArtwork.ts`, `gates.ts`, `preflight.ts`, `formaTemplateCatalog.json`, `TemplatePicker.tsx`.
+**Files:** `src/engine/dieline/forxa/*`, `forxaAdapter.ts`, `forxaGenerate.ts`, `panelKind.ts`, `buildDieline.ts`, `composeArtwork.ts`, `gates.ts`, `preflight.ts`, `formaTemplateCatalog.json`, `TemplatePicker.tsx`.
 
 **Work:**
 - D7-A: bleed-free adapter (`registry.generateDieline`, no 3 mm shift). Native 4 structures keep `kind` via `withPanelKinds`.
@@ -289,6 +289,20 @@ Owner opened **Phase D7 — MatBixx Dieline Bridge** (2026-09-14). H0–D6 stay 
 - D7-E: curated core catalog + `library: advanced` toggle. Roadmap PARK items removed for this slice.
 
 **Success:** `npm test` green; `npx --yes vite-node scripts/d7c-smoke.ts` and `d7d-smoke.ts` green; perfume brief still picks tuck-end, not hex.
+
+---
+
+### Phase D8 — Forxa production structure pipeline → **owner ask** · Effort **L**
+
+**Goal:** Geometry is solved before SVG. Adapter layer only — no Packify / runPaxolabWorkflow (those do not exist in this repo). Rename remaining box-engine `matbixx` identifiers to Forxa.
+
+**Work:**
+- Structural grammar + dimension solver + panel graph + flap solver + production validator + artwork zones.
+- ECMA A60.20.00.03 tuck-top auto-bottom from `becf-11101.pdf` (100 × 50 × 150, 300 g / 0.389 mm).
+- RSC carton. Layered SVG `data-type` / `data-id`. Vector dieline PDF (not PDF/X).
+- Native tuck/tray/label nets unchanged.
+
+**Success:** A60 fixture matches reference ratios; existing H0–D7 tests stay green.
 
 ---
 
@@ -307,4 +321,4 @@ Owner opened **Phase D7 — MatBixx Dieline Bridge** (2026-09-14). H0–D6 stay 
 
 ---
 
-*Owner: H0–D6 closed at 98%. D7 (MatBixx bridge) opened on owner ask.*
+*Owner: H0–D6 closed at 98%. D7 (Forxa bridge) opened on owner ask.*

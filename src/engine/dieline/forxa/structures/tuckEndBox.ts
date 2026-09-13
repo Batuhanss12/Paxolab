@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Tuck End Box
+ * Forxa StructureEngine — Tuck End Box
  *
  * Klasik tuck-end kutu (aynı yönde iki tuck flap).
  *

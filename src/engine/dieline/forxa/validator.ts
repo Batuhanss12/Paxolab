@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Parameter Validator
+ * Forxa StructureEngine — Parameter Validator
  *
  * Tüm structure modülleri tarafından kullanılan ortak validation.
  * Parametre aralıklarını, required alanları ve geometrik kısıtları kontrol eder.

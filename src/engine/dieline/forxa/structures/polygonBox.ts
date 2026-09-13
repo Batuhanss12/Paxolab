@@ -1,12 +1,14 @@
 /**
- * MatBixx StructureEngine — Polygon Box (ECMA C / D ailesi)
+ * Forxa StructureEngine — Polygon Box (ECMA C / D ailesi)
  *
  * Düzgün n-kenarlı gövde (üçgen … sekizgen) — taban + n duvar,
  * "yıldız" (star) açılım. Her duvar tabana crease (katlama) ile
  * bağlıdır — gerçek, tek parça, üretilebilir bir net.
  *
  * closureType = 0 → C ailesi (dikdörtgen olmayan, BOYUNA YAPIŞTIRMALI):
- *   her duvarın başlangıç radyal kenarına yapıştırma kulağı eklenir.
+ *   tek boyuna yapıştırma kulağı, duvar 0 ile önceki duvar arasındaki
+ *   boş dilime konur. Her radyale kulak eklemek altıgende komşu duvarı
+ *   keser — tek parça CUT kendini keser.
  * closureType = 1 → D ailesi (dikdörtgen olmayan, YAPIŞTIRMASIZ):
  *   her duvarın üst (dış) kenarına yapıştırmasız katlanır kenar payı
  *   (rim) eklenir — glue kullanılmaz.
@@ -41,6 +43,13 @@ function outwardNormal(from: Point, to: Point): Point {
 
 function translatePts(pts: Point[], dx: number, dy: number): Point[] {
   return pts.map(p => ({ x: p.x + dx, y: p.y + dy }));
+}
+
+/** Perpendicular to `normal`, pointing toward `toward` (the empty wedge). */
+function wedgeSide(normal: Point, toward: Point): Point {
+  const left = { x: -normal.y, y: normal.x };
+  if (left.x * toward.x + left.y * toward.y < 0) return { x: -left.x, y: -left.y };
+  return left;
 }
 
 export class PolygonBox implements PackagingStructure {
@@ -121,17 +130,21 @@ export class PolygonBox implements PackagingStructure {
       creasePaths.push([P0, P1]); // taban ↔ duvar kırışı
 
       if (closureType === 0) {
-        // ─── C ailesi: yapıştırma kulağı (başlangıç radyal kenarında) ──
-        const prevIdx = (i - 1 + n) % n;
-        const edgeDirPrev = normalize({ x: P0.x - verts[prevIdx].x, y: P0.y - verts[prevIdx].y });
-        const tabH = Math.min(tabWidth * 1.4, h * 0.6);
-        const pTabInner = { x: P0.x + normal.x * tabH, y: P0.y + normal.y * tabH };
-        const pTabOuterNear = { x: pTabInner.x - edgeDirPrev.x * tabWidth, y: pTabInner.y - edgeDirPrev.y * tabWidth };
-        const pTabOuterFar = { x: P0.x - edgeDirPrev.x * tabWidth, y: P0.y - edgeDirPrev.y * tabWidth };
-
-        outline.push(pTabOuterFar, pTabOuterNear, pTabInner, far0, far1, P1);
-        creasePaths.push([P0, pTabInner]);
-        gluePaths.push([P0, pTabInner, pTabOuterNear, pTabOuterFar, P0]);
+        // ─── C ailesi: tek boyuna kulak (yıldız nette bir dilim) ──
+        if (i === 0) {
+          const prevNormal = outwardNormal(verts[n - 1], P0);
+          const alpha = (2 * Math.PI) / n;
+          const tabH = Math.min(tabWidth * 1.4, h * 0.55);
+          const tw = Math.min(tabWidth, Math.max(2.5, tabH * Math.sin(alpha) * 0.62));
+          const side = wedgeSide(normal, prevNormal);
+          const pTabInner = { x: P0.x + normal.x * tabH, y: P0.y + normal.y * tabH };
+          const pTabOuter = { x: pTabInner.x + side.x * tw, y: pTabInner.y + side.y * tw };
+          outline.push(pTabOuter, pTabInner, far0, far1, P1);
+          creasePaths.push([P0, pTabInner]);
+          gluePaths.push([P0, pTabInner, pTabOuter, P0]);
+        } else {
+          outline.push(far0, far1, P1);
+        }
       } else {
         // ─── D ailesi: yapıştırmasız katlanır kenar payı (üst kenarda) ──
         const rim = tabWidth;

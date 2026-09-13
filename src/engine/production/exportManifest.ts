@@ -54,6 +54,7 @@ export function buildManifest(spec: DesignSpec): string {
       { name: `${slug}-artwork.svg`, type: 'artwork' },
       { name: `${slug}-combined.svg`, type: 'combined' },
       { name: `${slug}-dieline.dxf`, type: 'dxf' },
+      { name: `${slug}-dieline.pdf`, type: 'dieline-pdf' },
     ],
   }
   return JSON.stringify(manifest, null, 2)

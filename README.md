@@ -48,13 +48,15 @@ Kesim ve grafik: `buildDieline` + `composeArtwork`.
 
 | structureId            | Not |
 |------------------------|-----|
-| tuck-end-box           | Native FORMA net (ön/arka L×H). X-cihazlı şablonlarda MatBixx host + overlay |
+| tuck-end-box           | Native FORMA net (ön/arka L×H). X-cihazlı şablonlarda Forxa host + overlay |
 | simple-tray            | Native taban + 4 duvar |
 | flat-label / wrap-label| Native etiket |
-| mailer-box / sleeve    | MatBixx — kargo mailer, kılıf |
-| polygon-box            | MatBixx — 3–8 kenar (ECMA C/D) |
-| product-carrier-tray   | MatBixx — ürün gözlü tepsi (ECMA E) |
-| pillow / snap-lock / tray-box / rigid-gift / reverse-tuck | MatBixx specialty |
+| mailer-box / sleeve    | Forxa — kargo mailer, kılıf |
+| polygon-box            | Forxa — 3–8 kenar (ECMA C/D) |
+| product-carrier-tray   | Forxa — ürün gözlü tepsi (ECMA E) |
+| pillow / snap-lock / tray-box / rigid-gift / reverse-tuck | Forxa specialty |
+| tuck-top-auto-bottom   | Forxa — ECMA A60.20.00.03 (becf-11101 referans) |
+| rsc-carton             | Forxa — RSC / FEFCO 0201 tarzı |
 
 Katalog: çekirdek kartlar varsayılan. Gelişmiş / ECMA aileleri TemplatePicker’da ayrı toggle. `soon` kalmadı.
 

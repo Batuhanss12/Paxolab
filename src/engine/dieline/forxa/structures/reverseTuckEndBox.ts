@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Reverse Tuck End Box
+ * Forxa StructureEngine — Reverse Tuck End Box
  *
  * Tuck-end kutunun varyasyonu — üst ve alt tuck flap'leri ters yönde.
  * Üst tuck önden, alt tuck arkadan kapanır (veya tam tersi).

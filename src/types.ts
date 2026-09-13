@@ -25,6 +25,8 @@ export const STRUCTURE_IDS = [
   'polygon-box',
   'product-carrier-tray',
   'reverse-tuck-end-box',
+  'tuck-top-auto-bottom',
+  'rsc-carton',
 ] as const
 
 export type StructureId = (typeof STRUCTURE_IDS)[number]
@@ -146,6 +148,7 @@ export type DielineModel = {
   glueIds: string[]
   consistent: boolean
   issues: string[]
+  structural?: import('./engine/dieline/structure/types').StructuralSolution
 }
 
 export type ArtworkLayer = {

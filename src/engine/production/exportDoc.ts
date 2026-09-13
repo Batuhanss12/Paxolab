@@ -7,6 +7,7 @@ import type { DesignSpec } from '../../types'
 import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { renderStructureDoc } from '../dieline/renderDielineSvg'
+import { buildDielinePdf } from '../dieline/structure/pdfDieline'
 import { buildDielineDxf } from './dxf'
 import { artworkFromDocument } from '../document'
 import { buildManifest } from './exportManifest'
@@ -24,15 +25,15 @@ export function buildCombinedSvg(spec: DesignSpec): string | null {
   const w = spec.dieline.width + pad * 2
   const h = spec.dieline.height + pad * 2
   const cut = spec.dieline.cut
-    .map((ring) => {
+    .map((ring, index) => {
       const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" />`
+      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" data-type="cut" data-id="cut-${index}" />`
     })
     .join('')
   const crease = spec.dieline.crease
     .map(
-      ([a, b]) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" />`,
+      ([a, b], index) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" data-type="crease" data-id="crease-${index}" />`,
     )
     .join('')
   const sampleNote = isFormaSampleEan(spec.copy.barcode)
@@ -73,7 +74,7 @@ export function buildExportSvg(spec: DesignSpec): string | null {
 
 export function buildExportBundle(
   spec: DesignSpec,
-): { dieline: string; artwork: string; combined: string; dxf: string; manifest: string } | null {
+): { dieline: string; artwork: string; combined: string; dxf: string; pdf: string; manifest: string } | null {
   const combined = buildCombinedSvg(spec)
   if (!combined) return null
   const slug = spec.copy.brand || 'forma'
@@ -83,6 +84,7 @@ export function buildExportBundle(
     artwork: renderArtworkDoc(spec.dieline, artworkFromDocument(spec.document), slug),
     combined,
     dxf: buildDielineDxf(spec.dieline),
+    pdf: buildDielinePdf(spec.dieline, `${spec.copy.brand} FORXA`),
     manifest,
   }
 }
@@ -154,9 +156,20 @@ export function downloadZip(spec: DesignSpec): boolean {
     { name: `${slug}-artwork.svg`, data: bundle.artwork },
     { name: `${slug}-combined.svg`, data: bundle.combined },
     { name: `${slug}-dieline.dxf`, data: bundle.dxf },
+    { name: `${slug}-dieline.pdf`, data: bundle.pdf },
     { name: `${slug}-manifest.json`, data: bundle.manifest },
   ])
   triggerDownload(blob, `${slug}-forma.zip`)
+  return true
+}
+
+export function downloadDielinePdf(spec: DesignSpec): boolean {
+  if (!spec.preflight.exportOk || !spec.dieline.consistent) return false
+  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  triggerDownload(
+    new Blob([buildDielinePdf(spec.dieline, `${spec.copy.brand} FORXA`)], { type: 'application/pdf' }),
+    `${slug}-dieline.pdf`,
+  )
   return true
 }
 

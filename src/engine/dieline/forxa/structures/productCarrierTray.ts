@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Product Carrier Tray (ECMA E ailesi)
+ * Forxa StructureEngine — Product Carrier Tray (ECMA E ailesi)
  *
  * Ürüne entegre taşıyıcı — taban + 4 duvar (tray-box mimarisi) +
  * rows×cols düzeninde dairesel ürün gözleri (die-cut delik).

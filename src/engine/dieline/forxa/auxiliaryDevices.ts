@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Auxiliary Devices (ECMA X ailesi)
+ * Forxa StructureEngine — Auxiliary Devices (ECMA X ailesi)
  *
  * X grubu tek başına bir kutu değildir; ECMA tanımına göre A/B/C/D/F
  * gövdelerine EKLENEN kapama/askı/dökme/kulp özellikleridir. Bu modül

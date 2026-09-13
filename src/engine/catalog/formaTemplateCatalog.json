@@ -318,5 +318,29 @@
     "status": "active",
     "library": "advanced",
     "auxDevice": "12"
+  },
+  {
+    "id": "fm-box-ecma-a60",
+    "title": "ECMA A60 tuck-top auto-bottom",
+    "templateGroup": "ecma-a60",
+    "sectors": ["kozmetik", "ilaç", "gıda"],
+    "subProducts": ["a60", "auto-bottom", "dip kilit", "tuck top"],
+    "structureId": "tuck-top-auto-bottom",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 100, "W": 50, "H": 150 },
+    "status": "active",
+    "library": "advanced"
+  },
+  {
+    "id": "fm-box-rsc-ship",
+    "title": "RSC kargo kutusu",
+    "templateGroup": "rsc",
+    "sectors": ["e-ticaret", "kargo"],
+    "subProducts": ["rsc", "oluklu", "kargo", "slotted"],
+    "structureId": "rsc-carton",
+    "packagingMode": "box",
+    "defaultsMm": { "L": 200, "W": 150, "H": 150 },
+    "status": "active",
+    "library": "advanced"
   }
 ]

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DesignSpec } from '../types'
-import { downloadDxf, downloadPng, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
+import { downloadDielinePdf, downloadDxf, downloadPng, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
@@ -28,6 +28,10 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
   function onZip() {
     const ok = downloadZip(design)
     setExportNote(ok ? 'ZIP: dieline + artwork + combined + manifest.' : 'ZIP yok — kapı kırmızı.')
+  }
+  function onDielinePdf() {
+    const ok = downloadDielinePdf(design)
+    setExportNote(ok ? 'Vektör dieline PDF indirildi (PDF/X değil).' : 'Dieline PDF yok — kapı kırmızı.')
   }
   function onPdf() {
     const ok = printPdf(design)
@@ -83,7 +87,10 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
           DXF dieline
         </button>
         <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
-          ZIP (SVG + DXF + manifest)
+          ZIP (SVG + DXF + PDF + manifest)
+        </button>
+        <button type="button" className="ghost-btn" onClick={onDielinePdf} disabled={!design.preflight.exportOk}>
+          Dieline PDF
         </button>
         <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
           Yazdır / PDF

@@ -1,5 +1,5 @@
 import type { DielineModel, DimensionsMm, Panel, PanelKind, PanelRole, Point, StructureId } from '../../types'
-import type { DielineResult, Panel as MxPanel, Path } from './matbixx/types'
+import type { DielineResult, Panel as MxPanel, Path } from './forxa/types'
 
 export function polygonAabb(polygon: Point[]): { x: number; y: number; w: number; h: number } {
   if (polygon.length === 0) return { x: 0, y: 0, w: 0, h: 0 }
@@ -15,13 +15,22 @@ export function polygonAabb(polygon: Point[]): { x: number; y: number; w: number
   }
 }
 
-export function kindFromMatbixxPanel(panel: MxPanel): PanelKind {
+export function kindFromForxaPanel(panel: MxPanel): PanelKind {
   const id = panel.id.toLowerCase()
   const face = (panel.face || '').toLowerCase()
   if (face === 'cell' || id.startsWith('cell-')) return 'product-window'
   if (id.startsWith('aux-') || face === 'device') return 'device-overlay'
   if (face === 'glue' || id.includes('glue')) return 'glue'
-  if (id.includes('tuck') || id.includes('dust') || face === 'lid-tuck') return 'tuck-flap'
+  if (
+    id.includes('tuck') ||
+    id.includes('dust') ||
+    id.includes('auto-bottom') ||
+    id.includes('major-') ||
+    id.includes('minor-') ||
+    face === 'lid-tuck'
+  ) {
+    return 'tuck-flap'
+  }
   if (face === 'front' || id === 'front' || id === 'base-front') return 'hero-front'
   if (face === 'back' || id === 'back' || id === 'base-back') return 'legal-back'
   if (face === 'left' || face === 'right' || /(^|-)side/.test(id)) return 'side-spine'
@@ -48,17 +57,52 @@ export function creaseSegments(paths: Path[]): [Point, Point][] {
   return out
 }
 
-function overlayPanel(id: string, polygon: Point[]): Panel {
+const MIN_OVERLAY = 0.2
+
+function thickenSegment(a: Point, b: Point, width: number): Point[] {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len = Math.hypot(dx, dy) || 1
+  const nx = (-dy / len) * (width / 2)
+  const ny = (dx / len) * (width / 2)
+  return [
+    { x: a.x + nx, y: a.y + ny },
+    { x: b.x + nx, y: b.y + ny },
+    { x: b.x - nx, y: b.y - ny },
+    { x: a.x - nx, y: a.y - ny },
+  ]
+}
+
+function overlayPanel(id: string, polygon: Point[]): Panel | null {
   const box = polygonAabb(polygon)
+  if (box.w >= MIN_OVERLAY && box.h >= MIN_OVERLAY) {
+    return {
+      id,
+      role: 'body',
+      kind: 'device-overlay',
+      x: box.x,
+      y: box.y,
+      w: box.w,
+      h: box.h,
+      polygon: polygon.map((p) => ({ x: p.x, y: p.y })),
+    }
+  }
+  if (polygon.length < 2) return null
+  const a = polygon[0]!
+  const b = polygon[polygon.length - 1]!
+  if (Math.hypot(b.x - a.x, b.y - a.y) < MIN_OVERLAY) return null
+  const thick = thickenSegment(a, b, 1.2)
+  const tbox = polygonAabb(thick)
+  if (tbox.w < MIN_OVERLAY || tbox.h < MIN_OVERLAY) return null
   return {
     id,
     role: 'body',
     kind: 'device-overlay',
-    x: box.x,
-    y: box.y,
-    w: box.w,
-    h: box.h,
-    polygon: polygon.map((p) => ({ x: p.x, y: p.y })),
+    x: tbox.x,
+    y: tbox.y,
+    w: tbox.w,
+    h: tbox.h,
+    polygon: thick,
   }
 }
 
@@ -70,7 +114,7 @@ export function toDielineModel(
 ): DielineModel {
   const panels: Panel[] = result.panels.map((panel) => {
     const box = polygonAabb(panel.polygon)
-    const kind = kindFromMatbixxPanel(panel)
+    const kind = kindFromForxaPanel(panel)
     return {
       id: panel.id,
       role: roleOf(kind, panel.face),
@@ -83,15 +127,26 @@ export function toDielineModel(
     }
   })
 
-  extraOverlay.cut?.forEach((poly, i) => panels.push(overlayPanel(`aux-cut-${i}`, poly)))
-  extraOverlay.perf?.forEach((poly, i) => panels.push(overlayPanel(`aux-perf-${i}`, poly)))
+  extraOverlay.cut?.forEach((poly, i) => {
+    const panel = overlayPanel(`aux-cut-${i}`, poly)
+    if (panel) panels.push(panel)
+  })
+  extraOverlay.perf?.forEach((poly, i) => {
+    const panel = overlayPanel(`aux-perf-${i}`, poly)
+    if (panel) panels.push(panel)
+  })
 
   const glueIds = panels.filter((panel) => panel.kind === 'glue').map((panel) => panel.id)
   const issues = [...result.errors]
-  if (!result.success && issues.length === 0) issues.push('MatBixx üretim başarısız')
+  if (!result.success && issues.length === 0) issues.push('Forxa üretim başarısız')
 
   const width = result.bounds.width || Math.max(0, ...panels.map((p) => p.x + p.w))
   const height = result.bounds.height || Math.max(0, ...panels.map((p) => p.y + p.h))
+
+  const cut = result.paths.cut.map((path) => path.map((p) => ({ x: p.x, y: p.y })))
+  for (const path of result.paths.perf) {
+    if (path.length >= 2) cut.push(path.map((p) => ({ x: p.x, y: p.y })))
+  }
 
   return {
     structureId,
@@ -100,7 +155,7 @@ export function toDielineModel(
     height,
     dimensions,
     panels,
-    cut: result.paths.cut.map((path) => path.map((p) => ({ x: p.x, y: p.y }))),
+    cut,
     crease: creaseSegments(result.paths.crease),
     glueIds,
     consistent: result.success && issues.length === 0 && panels.length > 0 && width > 0 && height > 0,

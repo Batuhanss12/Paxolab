@@ -20,15 +20,15 @@ export function renderDielineSvg(
   const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#0b0b0b')
 
   const cut = model.cut
-    .map((ring) => {
+    .map((ring, index) => {
       const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="${CUT}" stroke-width="0.55" stroke-linejoin="miter" />`
+      return `<path d="${d}" fill="none" stroke="${CUT}" stroke-width="0.55" stroke-linejoin="miter" data-type="cut" data-id="cut-${index}" />`
     })
     .join('')
   const crease = model.crease
     .map(
-      ([a, b]) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" />`,
+      ([a, b], index) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" data-type="crease" data-id="crease-${index}" />`,
     )
     .join('')
 
@@ -80,15 +80,15 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
   const w = model.width + pad * 2
   const h = model.height + pad * 2
   const cut = model.cut
-    .map((ring) => {
+    .map((ring, index) => {
       const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" />`
+      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" data-type="cut" data-id="cut-${index}" />`
     })
     .join('')
   const crease = model.crease
     .map(
-      ([a, b]) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" />`,
+      ([a, b], index) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" data-type="crease" data-id="crease-${index}" />`,
     )
     .join('')
   const labels = model.panels

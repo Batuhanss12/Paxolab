@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Sleeve (Kılıf)
+ * Forxa StructureEngine — Sleeve (Kılıf)
  *
  * PAXOLAB parametrik sleeve şablonundan uyarlandı.
  * Kılıf — 4 panel + glue tab, üst/alt açık, katlama çizgileri ile.

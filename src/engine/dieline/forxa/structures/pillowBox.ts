@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — Pillow Box (Yastık Kutu)
+ * Forxa StructureEngine — Pillow Box (Yastık Kutu)
  *
  * PAXOLAB parametrik pillow şablonundan uyarlandı.
  * Yastık kutu — kavisli üst/alt kapanma, glue tab, tek parça net.

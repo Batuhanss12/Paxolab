@@ -1,5 +1,5 @@
 /**
- * MatBixx StructureEngine — SVG Builder
+ * Forxa StructureEngine — SVG Builder
  *
  * Tüm structure modülleri tarafından kullanılan ortak SVG builder.
  * Layer'lı SVG üretir (<g id="...">) — dieline-generator standardı.

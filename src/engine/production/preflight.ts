@@ -8,6 +8,7 @@ import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { detectCopyLocaleMix } from '../copyLocale'
 import { evaluateDesignGates, layoutFrontLockup, resolveDesignSystem } from '../designSystem'
 import { findHeroPanel, isGluePanel } from '../dieline/panelKind'
+import { isProductionGrammar } from '../dieline/structure/solver'
 import type { DesignSystem } from '../designSystem/types'
 import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
 
@@ -62,7 +63,26 @@ export function runPreflight(
   const faceArt = layers.find((l) => l.panelId === front?.id || l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
   const localeMix = detectCopyLocaleMix(spec, sys, faceArt)
   const localeMixFail = !!spec.overrides.printReady && localeMix.mix
-  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin && !glueDirty && !localeMixFail
+  const structFindings = spec.dieline.structural?.findings ?? []
+  const fatalStruct = structFindings.filter((f) => f.severity === 'FATAL')
+  const blockStruct = fatalStruct.some(
+    (f) =>
+      f.code === 'CUT_MISSING' ||
+      (isProductionGrammar(spec.structureId) &&
+        (f.code === 'CUT_SELF_INTERSECTION' ||
+          f.code === 'CUT_OPEN' ||
+          f.code === 'STRUCTURAL_COLLISION')),
+  )
+  const exportOk =
+    !collisions &&
+    !badDie &&
+    !noCut &&
+    !missingBrand &&
+    !gateFail &&
+    !inventedGtin &&
+    !glueDirty &&
+    !localeMixFail &&
+    !blockStruct
   const plan = spec.designPlan
   const proofDetail = [
     plan ? `set ${plan.variationIndex + 1}` : null,
@@ -146,6 +166,16 @@ export function runPreflight(
       checkTextOverflow(spec) ? 'pass' : 'warn',
     ),
     item('export', 'Dışa aktarma', exportOk ? 'SVG üretilebilir' : 'Engel var — dışa aktarma yeşil değil', exportOk ? 'pass' : 'fail'),
+    item(
+      'structural',
+      'Yapısal kapı',
+      spec.dieline.structural
+        ? `${spec.dieline.structural.grammar}${spec.dieline.structural.ecmaCode ? ` · ${spec.dieline.structural.ecmaCode}` : ''} · ${
+            spec.dieline.structural.releaseReady ? 'CUT/CREASE doğrulandı' : fatalStruct.map((f) => f.code).join(' · ') || 'uyarı'
+          }`
+        : 'Çözüm yok',
+      !spec.dieline.structural ? 'na' : blockStruct ? 'fail' : spec.dieline.structural.releaseReady ? 'pass' : 'warn',
+    ),
   ]
 
   const blocking = items.some((i) => i.status === 'fail')
