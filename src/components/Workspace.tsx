@@ -51,6 +51,7 @@ type WorkspaceProps = {
   onAuthChange?: (user: AuthUser | null) => void
   syncNote?: string | null
   creditsRefreshKey?: number
+  onLoadProject?: (projectId: string) => void | Promise<void>
 }
 
 function ConversationBrief({
@@ -111,6 +112,7 @@ export function Workspace({
   onAuthChange,
   syncNote,
   creditsRefreshKey = 0,
+  onLoadProject,
 }: WorkspaceProps) {
   const showPreview = !!design || generating || showTemplates
   const showTabs = !!design
@@ -149,7 +151,7 @@ export function Workspace({
               Yeni
             </button>
           </div>
-          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} />
+          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} onLoadProject={onLoadProject} />
         </div>
       </header>
 

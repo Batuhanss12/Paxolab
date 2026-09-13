@@ -1,5 +1,21 @@
 export { artworkFromDocument, documentFromArtwork } from './adapter'
-export { addTextNode, moveNode, patchNode, removeNode, updateNode } from './commands'
+export {
+  addTextNode,
+  bringToFront,
+  duplicateNode,
+  moveNode,
+  patchNode,
+  removeNode,
+  sendToBack,
+  toggleLock,
+  toggleVisibility,
+  updateNode,
+  updateShapeStyle,
+  updateText,
+  updateTextStyle,
+} from './commands'
+export { elementBounds, elementRole, elementToNode, parseSvgElements } from './svgParser'
+export type { ParsedElement } from './svgParser'
 export { identityTransform } from './types'
 export type {
   DesignDocument,

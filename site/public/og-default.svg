@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#12100e"/>
+  <rect x="48" y="48" width="1104" height="534" fill="none" stroke="#c4955e" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="100" y="280" fill="#f5f0e6" font-family="Georgia, serif" font-size="96">Paxolab</text>
+  <text x="100" y="350" fill="#c4955e" font-family="system-ui, sans-serif" font-size="28" letter-spacing="4">AMBALAJ &amp; ETİKET STÜDYOSU</text>
+  <text x="100" y="520" fill="#f5f0e6" fill-opacity="0.4" font-family="system-ui, sans-serif" font-size="20">FORMA motoru</text>
+</svg>

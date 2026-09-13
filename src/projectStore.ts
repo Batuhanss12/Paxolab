@@ -161,3 +161,21 @@ export async function hydrateFromCloudAfterLogin(
     return { kind: 'none', note }
   }
 }
+
+/** Load a specific cloud project into session state. */
+export async function loadCloudProjectById(id: string): Promise<CloudHydrateResult> {
+  if (!getToken()) return { kind: 'none', note: 'Giriş gerekli.' }
+  try {
+    const full = await getProject(id)
+    setCloudProjectId(full.id)
+    const payload = full.payload as { version?: number; state?: PersistedSession } | null
+    if (payload?.version === 1 && payload.state) {
+      const note = `Proje yüklendi: ${full.title}`
+      return { kind: 'loaded', state: sessionFromPersisted(payload.state), note }
+    }
+    return { kind: 'none', note: 'Proje yüklenemedi (geçersiz içerik).' }
+  } catch (err) {
+    const note = err instanceof Error ? err.message : 'Proje yüklenemedi.'
+    return { kind: 'none', note }
+  }
+}

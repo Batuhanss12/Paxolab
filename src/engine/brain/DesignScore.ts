@@ -2,6 +2,7 @@ import type { DesignSpec } from '../../types'
 import { densityCap } from './CompositionGrammar'
 import type { DesignPlan } from './DesignPlan'
 import { DESIGN_SCORE_BASE, weightedCraftScore } from './scoreConfig'
+import { compositionBonus, computeGeometryMetrics, densityPenalty, hierarchyBonus } from './geometryMetrics'
 
 export type DesignScorecard = {
   hierarchy: number
@@ -142,6 +143,14 @@ export function scoreVisualCraft(
   const hasHero = /data-art="hero"/.test(face)
   const leak = plan.sector === 'serum' && /data-pattern="contour"|data-pattern="ornament"/.test(face)
 
+  // Geometry-aware metrics — real spatial analysis from SVG element bounds.
+  // Find the front panel bounds from dieline via plan, or use a default 70×90.
+  const panelBounds = { x: 0, y: 0, w: 70, h: 90 }
+  const geo = computeGeometryMetrics(face, panelBounds)
+  const geoComposition = compositionBonus(geo)
+  const geoHierarchy = hierarchyBonus(geo)
+  const geoDensity = densityPenalty(geo)
+
   let hero = 48
   if (plan.style === 'minimal') hero = hasHero ? 40 : 86
   else if (required && hasHero) {
@@ -169,12 +178,16 @@ export function scoreVisualCraft(
   if (plan.composition.heroZone.x != null && Math.abs(plan.composition.heroZone.x - 0.5) > 0.08) composition += 3
   // Grid guides show deliberate structural composition.
   if (/stroke-opacity="0\.0[4-8]".*stroke-width="0\.1"/.test(face)) composition += 3
+  // Geometry-aware composition bonus.
+  composition += geoComposition
 
   let hierarchy = 55
   if (face.includes(spec.copy.brand.toUpperCase())) hierarchy += 12
   if (spec.copy.product && face.includes(spec.copy.product.toUpperCase())) hierarchy += 10
   if (plan.sector === 'food' && /data-art="claim-strip"|NET/.test(face)) hierarchy += 8
   else if (plan.sector === 'food') notes.push('Gıda claim/NET zayıf')
+  // Geometry-aware hierarchy bonus from font contrast.
+  hierarchy += geoHierarchy
 
   let typography = 54
   const displayFonts = /Palatino|Segoe UI|Trebuchet|Cambria|Garamond|Constantia|Corbel/.test(face)
@@ -220,6 +233,8 @@ export function scoreVisualCraft(
     notes.push('Serum contour sızıntısı')
   }
   if (plan.style === 'minimal' && !/data-pattern=/.test(face)) decoration += 12
+  // Geometry-aware density penalty — too many elements = clutter.
+  decoration += geoDensity
 
   let sectorFit = 62
   if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"/.test(face)) sectorFit += 16

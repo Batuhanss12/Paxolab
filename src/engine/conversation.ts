@@ -16,6 +16,7 @@ import {
   isCoreReady,
 } from './fields'
 import { isIteration, parseIntent } from './iterate/parseIntent'
+import { parseIntentWithLlm } from './llm'
 
 const ASK: Partial<Record<AwaitingKey, string>> = {
   packagingMode: 'Kutu mu tasarlıyoruz, yoksa etiket mi?',
@@ -223,4 +224,37 @@ export function openingReply(text: string): string {
   if (/kozmetik|parfüm/.test(t)) return 'Kozmetik — ambalajın en net yüzeyi. Markanın adı nedir?'
   if (/kutu/.test(t)) return 'Kutu. Markanın adı nedir?'
   return ''
+}
+
+/**
+ * Async conversation runner — tries LLM intent parsing first, falls back to local.
+ * Only used for iteration commands (when hasDesign && isIteration).
+ * Brief extraction flow stays synchronous via runConversation.
+ */
+export async function runConversationAsync(input: {
+  text: string
+  attachments: Attachment[]
+  brief: DesignBrief
+  awaiting: AwaitingKey | null
+  hasDesign: boolean
+}): Promise<EngineResult> {
+  const text = input.text.trim()
+
+  if (input.hasDesign && isIteration(text)) {
+    const llmResult = await parseIntentWithLlm(text, input.brief.styleType, input.brief)
+    if (llmResult) {
+      return {
+        brief: { ...input.brief, ...llmResult.briefPatch },
+        awaiting: null,
+        replies: [llmResult.note],
+        shouldGenerate: true,
+        showTemplates: false,
+        overridePatch: llmResult.overridePatch,
+        copyPatch: llmResult.copyPatch,
+        note: llmResult.note,
+      }
+    }
+  }
+
+  return runConversation(input)
 }

@@ -422,3 +422,82 @@ export function adjustCredits(
     throw err
   }
 }
+
+export type GrantPurchaseResult = {
+  balance: number
+  granted: boolean
+}
+
+/**
+ * Grant credits for a completed purchase. Idempotent on orderId (ref_id).
+ * Safe to call alone or via fulfillPaidOrder (use unlocked helper inside outer TX).
+ */
+export function grantPurchaseCredits(
+  db: FormaDb,
+  userId: string,
+  credits: number,
+  orderId: string,
+): GrantPurchaseResult {
+  if (!Number.isInteger(credits) || credits <= 0) {
+    throw new CreditsError(400, 'credits pozitif tam sayı olmalı.')
+  }
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const result = grantPurchaseCreditsUnlocked(db, userId, credits, orderId)
+    db.exec('COMMIT')
+    return result
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* ignore */
+    }
+    throw err
+  }
+}
+
+/** Must be called inside an open IMMEDIATE transaction. */
+export function grantPurchaseCreditsUnlocked(
+  db: FormaDb,
+  userId: string,
+  credits: number,
+  orderId: string,
+): GrantPurchaseResult {
+  const existing = db
+    .prepare(
+      `SELECT id FROM credit_transactions
+       WHERE user_id = ? AND ref_id = ? AND kind = 'grant'`,
+    )
+    .get(userId, orderId) as { id: string } | undefined
+  if (existing) {
+    return { balance: getBalanceUnlocked(db, userId), granted: false }
+  }
+
+  const wallet = db
+    .prepare(`SELECT balance FROM wallets WHERE user_id = ?`)
+    .get(userId) as { balance: number } | undefined
+  if (!wallet) {
+    throw new CreditsError(404, 'Cüzdan bulunamadı.')
+  }
+
+  const now = nowIso()
+  const newBalance = wallet.balance + credits
+  db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
+    newBalance,
+    now,
+    userId,
+  )
+  db.prepare(
+    `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
+     VALUES (?, ?, 'grant', ?, ?, ?, ?, ?)`,
+  ).run(
+    newId(),
+    userId,
+    credits,
+    newBalance,
+    orderId,
+    JSON.stringify({ reason: 'purchase', orderId }),
+    now,
+  )
+  return { balance: newBalance, granted: true }
+}

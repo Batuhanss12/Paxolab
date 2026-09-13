@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --ink-975: #0c0b0a;
+  --ink-950: #12100e;
+  --ink-900: #1a1714;
+  --cream: #f5f0e6;
+  --copper: #c4955e;
+  --copper-bright: #d4ab78;
+}
+
+@theme inline {
+  --color-ink-975: var(--ink-975);
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-cream: var(--cream);
+  --color-copper: var(--copper);
+  --color-copper-bright: var(--copper-bright);
+  --font-sans: var(--font-outfit);
+  --font-display: var(--font-fraunces);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ink-950);
+  color: var(--cream);
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: rgba(196, 149, 94, 0.35);
+  color: var(--cream);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}

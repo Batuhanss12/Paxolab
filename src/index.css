@@ -1254,6 +1254,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 2px 8px;
+  cursor: pointer;
 }
 
 .auth-panel__guest {
@@ -1294,10 +1295,344 @@ h2 {
   width: 100%;
 }
 
+.auth-panel__error--banner {
+  max-width: 280px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .auth-panel--form {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 8px;
   max-width: min(520px, 92vw);
+}
+
+/* Phase 8 billing */
+.billing-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(360px, 92vw);
+  background: var(--surface-2, #141414);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-panel {
+  position: relative;
+}
+
+.billing-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.billing-panel__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.billing-panel__packs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.billing-panel__pack {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface, #0f0f0f);
+}
+
+.billing-panel__pack-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.billing-panel__pack-price {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.billing-panel__buy {
+  white-space: nowrap;
+}
+
+.billing-panel__plans {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.billing-panel__plans-title {
+  font-weight: 600;
+  color: var(--text, #e8e8e8);
+  margin-bottom: 6px;
+}
+
+.billing-panel__plans ul {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.billing-panel__plan-desc {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.billing-panel__note {
+  margin: 0;
+  font-size: 12px;
+  color: #8fdfb0;
+}
+
+.billing-panel__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.mock-pay {
+  max-width: 420px;
+  margin: 12vh auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2, #141414);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mock-pay h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* Phase 9 dashboards */
+.dash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  overflow: auto;
+}
+
+.dash-panel {
+  width: min(640px, 96vw);
+  background: var(--surface-2, #141414);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+.dash-panel--admin {
+  width: min(860px, 96vw);
+}
+
+.dash-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-section__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dash-section__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-profile {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 16px;
+}
+
+.dash-profile dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dash-profile dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+.dash-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.dash-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface, #0f0f0f);
+}
+
+.dash-list--projects > li {
+  justify-content: space-between;
+}
+
+.dash-project__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-project__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dash-muted {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dash-mono {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.dash-pos {
+  color: #8fdfb0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-neg {
+  color: #f0a0a0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dash-stat {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface, #0f0f0f);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-stat__n {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-stat__l {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dash-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.dash-table-wrap {
+  overflow: auto;
+  max-height: 280px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dash-table th,
+.dash-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.dash-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2, #141414);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dash-table tbody tr:last-child td {
+  border-bottom: none;
 }

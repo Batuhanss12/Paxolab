@@ -2,6 +2,7 @@ import type { ArtworkModel, DielineModel } from '../../types'
 import { escapeSvg } from '../artwork/svgGeometry'
 import type { DesignDocument, DesignNode, DocumentNodeBase, NodeTransform } from './types'
 import { identityTransform } from './types'
+import { elementToNode, parseSvgElements } from './svgParser'
 
 function isIdentity(transform: NodeTransform): boolean {
   return (
@@ -62,6 +63,47 @@ export function documentFromArtwork(
   artwork: ArtworkModel,
   timestamp: number,
 ): DesignDocument {
+  const nodes: DesignNode[] = []
+  let zIndex = 0
+
+  for (const layer of artwork.layers) {
+    const panel = dieline.panels.find((candidate) => candidate.id === layer.panelId)
+    const panelBounds = panel
+      ? { x: panel.x, y: panel.y, w: panel.w, h: panel.h }
+      : { x: 0, y: 0, w: 0, h: 0 }
+
+    // Legacy monolithic node — kept for backward compat (renders full panel).
+    nodes.push({
+      id: `legacy:${layer.panelId}`,
+      kind: 'svg-fragment',
+      panelId: layer.panelId,
+      name: `${layer.panelId} artwork`,
+      role: 'legacy',
+      bounds: panelBounds,
+      transform: identityTransform(),
+      visible: true,
+      locked: true,
+      zIndex: zIndex++,
+      markup: layer.markup,
+    })
+
+    // Element-level nodes — parsed from the same markup, hidden by default.
+    // These enable future element-level editing without breaking legacy rendering.
+    const elements = parseSvgElements(layer.markup)
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i]
+      const node = elementToNode(el, `el:${layer.panelId}:${i}`, layer.panelId, zIndex)
+      if (node) {
+        // Element-level nodes start hidden — legacy node renders the panel.
+        // When element-level editing is enabled, the legacy node can be hidden
+        // and these nodes made visible individually.
+        node.visible = false
+        nodes.push(node)
+        zIndex++
+      }
+    }
+  }
+
   return {
     schemaVersion: 1,
     id,
@@ -77,24 +119,7 @@ export function documentFromArtwork(
       polygon: panel.polygon.map((point) => ({ ...point })),
       locked: true,
     })),
-    nodes: artwork.layers.map((layer, index) => {
-      const panel = dieline.panels.find((candidate) => candidate.id === layer.panelId)
-      return {
-        id: `legacy:${layer.panelId}`,
-        kind: 'svg-fragment',
-        panelId: layer.panelId,
-        name: `${layer.panelId} artwork`,
-        role: 'legacy',
-        bounds: panel
-          ? { x: panel.x, y: panel.y, w: panel.w, h: panel.h }
-          : { x: 0, y: 0, w: 0, h: 0 },
-        transform: identityTransform(),
-        visible: true,
-        locked: true,
-        zIndex: index,
-        markup: layer.markup,
-      }
-    }),
+    nodes,
     createdAt: timestamp,
     updatedAt: timestamp,
   }

@@ -15,6 +15,7 @@ type LandingProps = {
   onSend: (text?: string) => void
   onAuthChange?: (user: AuthUser | null) => void
   creditsRefreshKey?: number
+  onLoadProject?: (projectId: string) => void | Promise<void>
 }
 
 export function Landing({
@@ -26,6 +27,7 @@ export function Landing({
   onSend,
   onAuthChange,
   creditsRefreshKey = 0,
+  onLoadProject,
 }: LandingProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -47,7 +49,7 @@ export function Landing({
         <span className="wordmark">FORMA</span>
         <div className="topbar__right">
           <span className="topbar__meta">Tasarım motoru</span>
-          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} />
+          <AuthPanel onAuthChange={onAuthChange} creditsRefreshKey={creditsRefreshKey} onLoadProject={onLoadProject} />
         </div>
       </header>
 

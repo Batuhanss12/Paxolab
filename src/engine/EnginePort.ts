@@ -1,12 +1,15 @@
 import type { DesignBrief, DesignOverrides, DesignSpec } from '../types'
 import { FormaLocalEngine } from './FormaLocalEngine'
 import { FormaMockEngine } from './FormaMockEngine'
+import type { LlmCopy } from './llm/copyLlm'
 
 export type GenerateInput = {
   brief: DesignBrief
   prev?: DesignSpec | null
   overridePatch?: Partial<DesignOverrides>
   copyPatch?: Partial<DesignSpec['copy']>
+  /** LLM-generated copy — used when copyPatch doesn't override a field. */
+  llmCopy?: LlmCopy | null
   logoHref?: string
 }
 

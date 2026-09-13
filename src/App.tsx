@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { appReducer, createInitialAppState } from './appState'
 import { Landing } from './components/Landing'
+import { MockPayPage } from './components/BillingPanel'
 import { Workspace } from './components/Workspace'
-import { openingReply, runConversation } from './engine/conversation'
+import { openingReply, runConversation, runConversationAsync } from './engine/conversation'
 import { getEngine } from './engine/EnginePort'
 import { emptyBrief, mergeBrief, uid } from './engine/fields'
 import { styleLabel } from './engine/styles'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
-import { analyzeReferenceImage } from './engine/referenceAnalysis'
+import { generateCopyWithLlm } from './engine/llm'
+import { analyzeReferenceImageRich, analysisToBriefPatch } from './engine/referenceAnalysis'
 import { ApiError, loadAuth, type AuthUser } from './api/client'
 import {
   commitReservation,
@@ -17,11 +19,14 @@ import {
 } from './api/credits'
 import {
   hydrateFromCloudAfterLogin,
+  loadCloudProjectById,
   loadSession,
   saveSession,
   setCloudProjectId,
   syncSessionToCloud,
 } from './projectStore'
+import { getActiveProjectId, loadProject, saveProject } from './storage'
+import { initDesignMemory } from './engine/brain/DesignMemory'
 import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
@@ -92,8 +97,23 @@ export default function App() {
     stateRef.current = state
   }, [state])
 
+  // Initialize persistent design memory + load active project from IndexedDB.
   useEffect(() => {
-    const timer = window.setTimeout(() => saveSession(state), 250)
+    initDesignMemory()
+    const activeId = getActiveProjectId()
+    if (!activeId) return
+    void loadProject(activeId)
+      .then((loaded) => {
+        if (loaded) dispatch({ type: 'hydrate', state: loaded })
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      saveSession(state)
+      void saveProject(state).catch(() => {})
+    }, 250)
     return () => window.clearTimeout(timer)
   }, [state])
 
@@ -110,6 +130,24 @@ export default function App() {
     window.clearTimeout(syncNoteTimer.current)
     syncNoteTimer.current = window.setTimeout(() => setSyncNote(null), 5000)
   }, [])
+
+  // Phase 8: refresh balance after iyzico / mock redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const billing = params.get('billing')
+    if (billing === 'success' || billing === 'fail') {
+      setCreditsRefreshKey((k) => k + 1)
+      if (billing === 'success') {
+        flashNote('Ödeme başarılı — kredi bakiyesi güncellendi.')
+      } else {
+        flashNote('Ödeme tamamlanamadı.')
+      }
+      params.delete('billing')
+      const next = params.toString()
+      const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
+      window.history.replaceState({}, '', url)
+    }
+  }, [flashNote])
 
   const authUserIdRef = useRef<string | null>(loadAuth()?.user?.id ?? null)
 
@@ -138,6 +176,21 @@ export default function App() {
     [flashNote],
   )
 
+  const onLoadCloudProject = useCallback(
+    async (projectId: string) => {
+      const result = await loadCloudProjectById(projectId)
+      if (result.kind === 'loaded') {
+        dispatch({ type: 'hydrate', state: result.state })
+        if (result.state.design) designRef.current = result.state.design
+        if (result.state.brief) briefRef.current = result.state.brief
+        if (result.state.awaiting !== undefined) awaitingRef.current = result.state.awaiting ?? null
+        if (result.state.messages && result.state.messages.length > 0) startedRef.current = true
+      }
+      flashNote(result.note)
+    },
+    [flashNote],
+  )
+
   const reset = useCallback(() => {
     dispatch({ type: 'reset' })
     attachRef.current = []
@@ -157,12 +210,15 @@ export default function App() {
     )
     attachRef.current = [...attachRef.current, ...tagged]
     dispatch({ type: 'attachments.add', attachments: tagged })
-    if (!briefRef.current.colors) {
-      const palette = await analyzeReferenceImage(tagged[0].dataUrl)
-      if (palette.length) {
-        const nextBrief = { ...briefRef.current, colors: palette.join(' · ') }
-        briefRef.current = nextBrief
-        dispatch({ type: 'brief', brief: nextBrief })
+    if (!briefRef.current.colors || !briefRef.current.styleType) {
+      const analysis = await analyzeReferenceImageRich(tagged[0].dataUrl)
+      if (analysis) {
+        const patch = analysisToBriefPatch(analysis, briefRef.current)
+        if (Object.keys(patch).length) {
+          const nextBrief = { ...briefRef.current, ...patch }
+          briefRef.current = nextBrief
+          dispatch({ type: 'brief', brief: nextBrief })
+        }
       }
     }
   }, [])
@@ -216,11 +272,14 @@ export default function App() {
         await new Promise((r) => window.setTimeout(r, 720))
 
         const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
+        // Pre-fetch LLM copy in parallel with the artificial delay.
+        const llmCopy = await generateCopyWithLlm(nextBrief).catch(() => null)
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
           overridePatch: result?.overridePatch,
           copyPatch: result?.copyPatch,
+          llmCopy,
           logoHref: logo?.dataUrl,
         })
         designRef.current = next
@@ -266,47 +325,49 @@ export default function App() {
     dispatch({ type: 'typing', typing: true })
 
     const finish = (mergedBrief: DesignBrief) => {
-      const result = runConversation({
-        text: user.content,
-        attachments: files,
-        brief: mergedBrief,
-        awaiting: awaitingRef.current,
-        hasDesign: !!designRef.current,
-      })
-
-      briefRef.current = result.brief
-      awaitingRef.current = result.awaiting
-      dispatch({
-        type: 'conversation',
-        brief: result.brief,
-        awaiting: result.awaiting,
-        showTemplates: result.showTemplates,
-      })
-
-      const replies = [...result.replies]
-      if (first && !result.brief.brandName) {
-        const open = openingReply(user.content)
-        if (open && !result.shouldGenerate) replies[0] = open
-      }
-
-      const publish = () => {
-        dispatch({
-          type: 'messages.add',
-          messages: replies.map((content) => ({
-            id: uid(),
-            role: 'assistant' as const,
-            content,
-          })),
+      void (async () => {
+        const result = await runConversationAsync({
+          text: user.content,
+          attachments: files,
+          brief: mergedBrief,
+          awaiting: awaitingRef.current,
+          hasDesign: !!designRef.current,
         })
-        dispatch({ type: 'typing', typing: false })
-      }
 
-      if (result.shouldGenerate) {
+        briefRef.current = result.brief
+        awaitingRef.current = result.awaiting
+        dispatch({
+          type: 'conversation',
+          brief: result.brief,
+          awaiting: result.awaiting,
+          showTemplates: result.showTemplates,
+        })
+
+        const replies = [...result.replies]
+        if (first && !result.brief.brandName) {
+          const open = openingReply(user.content)
+          if (open && !result.shouldGenerate) replies[0] = open
+        }
+
+        const publish = () => {
+          dispatch({
+            type: 'messages.add',
+            messages: replies.map((content) => ({
+              id: uid(),
+              role: 'assistant' as const,
+              content,
+            })),
+          })
+          dispatch({ type: 'typing', typing: false })
+        }
+
+        if (result.shouldGenerate) {
+          publish()
+          runGenerate(result.brief, result)
+          return
+        }
         publish()
-        runGenerate(result.brief, result)
-        return
-      }
-      publish()
+      })()
     }
 
     window.setTimeout(() => {
@@ -419,6 +480,22 @@ export default function App() {
     dispatch({ type: 'history.redo' })
   }, [designFuture])
 
+  // Phase 8 mock payment page (no keys / tests)
+  const mockPayMatch =
+    typeof window !== 'undefined' &&
+    window.location.pathname.replace(/\/$/, '') === '/billing/mock-pay'
+  if (mockPayMatch) {
+    const orderId = new URLSearchParams(window.location.search).get('orderId') ?? ''
+    return (
+      <div className="app">
+        <MockPayPage
+          orderId={orderId}
+          onDone={() => setCreditsRefreshKey((k) => k + 1)}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       {phase === 'landing' ? (
@@ -431,6 +508,7 @@ export default function App() {
           onSend={send}
           onAuthChange={onAuthChange}
           creditsRefreshKey={creditsRefreshKey}
+          onLoadProject={onLoadCloudProject}
         />
       ) : (
         <Workspace
@@ -463,6 +541,7 @@ export default function App() {
           onAuthChange={onAuthChange}
           syncNote={syncNote}
           creditsRefreshKey={creditsRefreshKey}
+          onLoadProject={onLoadCloudProject}
         />
       )}
     </div>

@@ -55,9 +55,9 @@ Kesim ve grafik: `buildDieline` + `composeArtwork`.
 
 Katalog: kozmetik tuck-end (parfüm / krem / serum), gıda (kutu, tepsi, etiket), elektronik (kutu + etiket). `soon` kartlar seçilemez.
 
-## Platform (Phase 6–7)
+## Platform (Phase 6–10)
 
-Yerel API temeli: Auth + SQLite proje senkronu + **kredi cüzdanı** (Phase 7). Stripe / iyzico ödemesi **henüz yok** (Phase 8).
+Yerel API temeli: Auth + SQLite proje senkronu + **kredi cüzdanı** (Phase 7) + **iyzico sandbox / mock top-up** (Phase 8) + **kullanıcı / admin panelleri** (Phase 9) + **launch hardening** (Phase 10).
 
 ```bash
 # API (port 8787)
@@ -73,12 +73,18 @@ npm run dev:all
 - Misafir: yalnızca `localStorage` (`forma.project.v1`) — **ücretsiz / sınırsız yerel**, kredi ölçümü yok.
 - Giriş sonrası: sunucuda proje varsa en yenisi oturuma yüklenir; yoksa yerel oturum buluta yazılır.
 - Kredi: kayıtta **50** başlangıç kredisi; `generate` = 3, `revise` = 2. Üretim öncesi `reserve` → başarıda `commit` / hatada `refund`.
+- Top-up (Phase 8): paketler `pack_50` / `pack_150` / `pack_400` (TRY). Anahtar yoksa **mock**; sandbox için `IYZI_*` + `FORMA_*_URL` (`.env.example`). Gerçek ücret yok.
+- Dashboard (Phase 9): giriş sonrası **Hesabım** (profil, kredi, projeler, siparişler); `role=admin` ise **Admin**. İlk admin: `FORMA_ADMIN_EMAIL` ile kayıt.
 - Token: `localStorage` anahtarı `forma.auth.v1` (Bearer).
 - DB: `server/data/forma.sqlite` via Node built-in `node:sqlite` (Node ≥ 22.5; no native build tools)
+- Phase 10: güvenlik başlıkları, gövde limiti (2 MiB), `GET /api/health` (`ok`, `service`, `db`, `time`). Auth 20/dk ve checkout 30/dk **bellek içi / tek süreç** (çoklu instance prod için değil). Testlerde `FORMA_RATE_LIMIT_DISABLED=1`.
+- Launch: `LAUNCH_CHECKLIST.md`
 
 ```bash
 npm test           # motor / SPA testleri
 npm run test:server
+npm run test:all   # ikisi sırayla
+npm run smoke:api  # çalışan API'ye GET /api/health (auth yok)
 ```
 
 ## Ortam
@@ -88,3 +94,17 @@ npm run test:server
 ## Yığın
 
 Vite · React 19 · TypeScript. Ek UI kütüphanesi yok.
+
+## TR SEO sitesi (Phase 11)
+
+Pazarlama sitesi ayrı Next uygulaması: `site/`
+
+```bash
+cd site
+npm install
+npm run dev
+```
+
+- Site: http://localhost:3000
+- Stüdyo: http://localhost:5173 (`npm run dev:all` kökte)
+- Harita: Desktop `PAXOLAB_SEO_TR.md`

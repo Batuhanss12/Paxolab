@@ -36,6 +36,9 @@ describe('FORMA API', () => {
     expect(res.status).toBe(200)
     const body = await json(res)
     expect(body.ok).toBe(true)
+    expect(body.service).toBe('forma-api')
+    expect(body.db).toBe('ok')
+    expect(typeof body.time).toBe('string')
   })
 
   it('register → login → create project → get → me', async () => {

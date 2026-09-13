@@ -67,6 +67,7 @@ describe('DesignDocument compatibility', () => {
 
   it('adds, moves, locks and removes editable text nodes immutably', () => {
     const original = documentFromArtwork('design-1', 'FORMA', dieline, artwork, 100)
+    const legacyCount = original.nodes.length
     const added = addTextNode(original, {
       id: 'text:tagline',
       panelId: 'label',
@@ -80,7 +81,7 @@ describe('DesignDocument compatibility', () => {
     const unlocked = patchNode(locked, 'text:tagline', { locked: false }, 105)
     const removed = removeNode(unlocked, 'text:tagline', 106)
 
-    expect(original.nodes).toHaveLength(1)
+    expect(original.nodes).toHaveLength(legacyCount)
     expect(moved.nodes.find((node) => node.id === 'text:tagline')?.transform).toMatchObject({ x: 4, y: -2 })
     expect(unchanged).toBe(locked)
     expect(removed.nodes.some((node) => node.id === 'text:tagline')).toBe(false)

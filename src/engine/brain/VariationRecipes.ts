@@ -27,9 +27,60 @@ const RECIPES: StudioRecipe[] = [
   { hero: 'alt', pattern: 'preferred', crop: 'tight', chrome: 'full', heroY: 0.14, scale: 1.1, lockup: 'left', typeScale: 1.04, trackingScale: 0.95, primitive: true },
 ]
 
+// --- Generative recipe engine ---
+// For indices beyond the hardcoded set, generate recipes algorithmically
+// by combining parameter axes. This allows unlimited variation without
+// manually authoring each combination.
+
+const HERO_SLOTS: RecipeSlot[] = ['preferred', 'alt']
+const PATTERN_SLOTS: RecipeSlot[] = ['preferred', 'alt']
+const CROPS: ('tight' | 'open')[] = ['tight', 'open']
+const CHROMES: ('full' | 'quiet')[] = ['full', 'quiet']
+const BACKGROUNDS: (BackgroundTreatment | undefined)[] = [undefined, 'vignette', 'quiet-paper']
+const LOCKUPS: ('center' | 'left')[] = ['center', 'left']
+
+/** Deterministic pseudo-random based on index — stable across runs. */
+function hash(n: number): number {
+  const x = Math.sin(n * 12.9898) * 43758.5453
+  return x - Math.floor(x)
+}
+
+/** Generate a recipe from the parameter space using a deterministic seed. */
+export function generateRecipe(index: number): StudioRecipe {
+  const seed = index * 7 + 13
+  const hero = HERO_SLOTS[Math.floor(hash(seed) * HERO_SLOTS.length)]
+  const pattern = PATTERN_SLOTS[Math.floor(hash(seed + 1) * PATTERN_SLOTS.length)]
+  const crop = CROPS[Math.floor(hash(seed + 2) * CROPS.length)]
+  const chrome = CHROMES[Math.floor(hash(seed + 3) * CHROMES.length)]
+  const background = BACKGROUNDS[Math.floor(hash(seed + 4) * BACKGROUNDS.length)]
+  const lockup = LOCKUPS[Math.floor(hash(seed + 5) * LOCKUPS.length)]
+  const heroY = 0.1 + hash(seed + 6) * 0.08
+  const scale = 0.78 + hash(seed + 7) * 0.35
+  const opticalCenter = 0.36 + hash(seed + 8) * 0.1
+  const typeScale = 0.9 + hash(seed + 9) * 0.22
+  const trackingScale = 0.86 + hash(seed + 10) * 0.34
+  const primitive = hash(seed + 11) > 0.25
+  return {
+    hero,
+    pattern,
+    crop,
+    chrome,
+    background,
+    heroY,
+    scale,
+    opticalCenter,
+    lockup,
+    typeScale,
+    trackingScale,
+    primitive,
+  }
+}
+
 export function studioRecipe(index: number): StudioRecipe | null {
   if (index <= 0) return null
-  return RECIPES[(index - 1) % RECIPES.length]
+  if (index <= RECIPES.length) return RECIPES[index - 1]
+  // Beyond hardcoded set: generate algorithmically
+  return generateRecipe(index)
 }
 
 export function pickAllowed<T>(allowed: T[], which: RecipeSlot, index = 0): T {

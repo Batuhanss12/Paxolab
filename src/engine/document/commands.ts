@@ -103,3 +103,111 @@ export function moveNode(
     timestamp,
   )
 }
+
+/** Bring a node to the front (highest zIndex in its panel). */
+export function bringToFront(document: DesignDocument, nodeId: string, timestamp: number): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.locked) return document
+  const maxZ = document.nodes.reduce((max, n) => Math.max(max, n.zIndex), 0)
+  return patchNode(document, nodeId, { zIndex: maxZ + 1 }, timestamp)
+}
+
+/** Send a node to the back (lowest zIndex in its panel). */
+export function sendToBack(document: DesignDocument, nodeId: string, timestamp: number): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.locked) return document
+  const minZ = document.nodes.reduce((min, n) => Math.min(min, n.zIndex), 0)
+  return patchNode(document, nodeId, { zIndex: minZ - 1 }, timestamp)
+}
+
+/** Toggle visibility of a node. */
+export function toggleVisibility(document: DesignDocument, nodeId: string, timestamp: number): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.locked) return document
+  return patchNode(document, nodeId, { visible: !node.visible }, timestamp)
+}
+
+/** Toggle lock state of a node. */
+export function toggleLock(document: DesignDocument, nodeId: string, timestamp: number): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node) return document
+  return patchNode(document, nodeId, { locked: !node.locked }, timestamp)
+}
+
+/** Update text content of a TextNode. */
+export function updateText(
+  document: DesignDocument,
+  nodeId: string,
+  text: string,
+  timestamp: number,
+): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.kind !== 'text') return document
+  return updateNode(
+    document,
+    nodeId,
+    (current) => (current.kind === 'text' ? { ...current, text } : current),
+    timestamp,
+  )
+}
+
+/** Update text style of a TextNode. */
+export function updateTextStyle(
+  document: DesignDocument,
+  nodeId: string,
+  stylePatch: Partial<TextNode['style']>,
+  timestamp: number,
+): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.kind !== 'text') return document
+  return updateNode(
+    document,
+    nodeId,
+    (current) =>
+      current.kind === 'text'
+        ? { ...current, style: { ...current.style, ...stylePatch } }
+        : current,
+    timestamp,
+  )
+}
+
+/** Update shape style of a ShapeNode. */
+export function updateShapeStyle(
+  document: DesignDocument,
+  nodeId: string,
+  stylePatch: Partial<{ fill: string; stroke: string; strokeWidthMm: number; opacity: number }>,
+  timestamp: number,
+): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.kind !== 'shape') return document
+  return updateNode(
+    document,
+    nodeId,
+    (current) =>
+      current.kind === 'shape'
+        ? { ...current, style: { ...current.style, ...stylePatch } }
+        : current,
+    timestamp,
+  )
+}
+
+/** Duplicate a node with a new id and offset position. */
+export function duplicateNode(
+  document: DesignDocument,
+  nodeId: string,
+  newId: string,
+  timestamp: number,
+): DesignDocument {
+  const node = document.nodes.find((n) => n.id === nodeId)
+  if (!node || node.locked) return document
+  const maxZ = document.nodes.reduce((max, n) => Math.max(max, n.zIndex), 0)
+  const copy: DesignNode = {
+    ...node,
+    id: newId,
+    bounds: { ...node.bounds, x: node.bounds.x + 4, y: node.bounds.y + 4 },
+    transform: { ...node.transform },
+    zIndex: maxZ + 1,
+    locked: false,
+  }
+  return { ...document, nodes: [...document.nodes, copy], updatedAt: timestamp }
+}

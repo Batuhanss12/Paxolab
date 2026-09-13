@@ -6,6 +6,7 @@
  */
 import type { StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
+import { keywordRegex, SECTORS } from '../designSystem/sectorConfig'
 import type { BackgroundTreatment, HeroFamily, PatternFamily, PrimitiveId } from './DesignPlan'
 
 // ── Sub-product resolution ──────────────────────────────────────────
@@ -18,27 +19,12 @@ export type SubProductId =
   | 'gift' | 'cleaning' | 'generic'
 
 export function resolveSubProduct(sector: SectorId, blob: string): SubProductId {
-  if (sector === 'perfume') return /kolonya|cologne/.test(blob) ? 'cologne' : 'parfum'
-  if (sector === 'serum') return 'serum'
-  if (sector === 'cream') return 'cream'
-  if (sector === 'food') {
-    if (/bal|honey/.test(blob)) return 'honey'
-    if (/yağ|zeytin|oil|sızma/.test(blob)) return 'oil'
-    if (/atıştırmalık|çikolata|snack/.test(blob)) return 'snack'
-    if (/kurabiye|ekmek|bak/.test(blob)) return 'bakery'
-    if (/çay|içecek|meyve suyu|beverage/.test(blob)) return 'beverage'
-    return 'food-generic'
+  const def = SECTORS.find((s) => s.id === sector)
+  if (!def) return 'generic' as SubProductId
+  for (const sub of def.subProducts) {
+    if (keywordRegex(sub.keywords).test(blob)) return sub.id as SubProductId
   }
-  if (sector === 'electronics') {
-    if (/kulaklık|earbuds|audio/.test(blob)) return 'audio'
-    if (/kablo|şarj|cable/.test(blob)) return 'cable'
-    return 'elec-generic'
-  }
-  if (sector === 'beverage') return 'beverage'
-  if (sector === 'health') return 'health'
-  if (sector === 'baby') return 'baby'
-  if (sector === 'cleaning') return 'cleaning'
-  return 'generic'
+  return def.defaultSubProduct as SubProductId
 }
 
 // ── Vocabulary row ──────────────────────────────────────────────────

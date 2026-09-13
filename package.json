@@ -12,11 +12,14 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:server": "vitest run --config vitest.server.config.ts"
+    "test:server": "vitest run --config vitest.server.config.ts",
+    "test:all": "vitest run && vitest run --config vitest.server.config.ts",
+    "smoke:api": "node scripts/smoke-api.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",
     "hono": "^4.9.0",
+    "iyzipay": "^2.0.69",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

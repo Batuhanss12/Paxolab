@@ -147,5 +147,31 @@ export function migrate(db: DatabaseSync): void {
 
     CREATE INDEX IF NOT EXISTS idx_credit_reservations_user
       ON credit_reservations(user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS payment_orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      pack_id TEXT NOT NULL,
+      credits INTEGER NOT NULL,
+      amount_try REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'TRY',
+      status TEXT NOT NULL,
+      iyzico_token TEXT,
+      iyzico_payment_id TEXT,
+      conversation_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      paid_at TEXT
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_orders_conversation
+      ON payment_orders(conversation_id);
+
+    CREATE INDEX IF NOT EXISTS idx_payment_orders_user
+      ON payment_orders(user_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_payment_orders_token
+      ON payment_orders(iyzico_token)
+      WHERE iyzico_token IS NOT NULL;
   `)
 }
