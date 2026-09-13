@@ -20,6 +20,8 @@ export function buildDesignGraph(plan: DesignPlan): DesignGraph {
       { id: 'product', role: plan.hierarchy.secondary, note: 'Line under brand — never a brand clone' },
       { id: 'descriptor', role: plan.hierarchy.tertiary, note: 'Category or volume' },
       { id: 'typography', role: plan.typography.displayFace, note: `${plan.typography.authority} / ${plan.typography.trackingIntent}` },
+      { id: 'artDirection', role: plan.artDirection?.vocabulary ?? plan.style, note: plan.visualConcept?.id ?? '—' },
+      { id: 'hero', role: plan.heroGraphic?.family ?? 'none', note: `${plan.patternSystem?.family ?? 'none'} · ${plan.backgroundTreatment ?? 'quiet-paper'}` },
       { id: 'decor', role: plan.decor.density, note: plan.decor.allowed.join(', ') || 'none' },
       { id: 'marks', role: plan.marks.recipeKey, note: 'Back or label-back only' },
       {

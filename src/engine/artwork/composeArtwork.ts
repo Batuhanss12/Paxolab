@@ -1,6 +1,11 @@
 import type { ArtworkModel, DesignBrief, DesignOverrides, DesignSpec, DielineModel, Palette, Panel } from '../../types'
 import { barcodeSvg } from '../barcode'
+import type { DesignPlan } from '../brain/DesignPlan'
 import type { DesignSystem } from '../designSystem/types'
+import { paintBackgroundTreatment } from './backgroundTreatments'
+import { kitHeroFamily, paintHeroGraphic, wrapHero } from './heroGraphics'
+import { paintPrimitives } from './illustrationPrimitives'
+import { wrapPattern, wrapSidePattern } from './patternFamilies'
 import { layoutFrontLockup, volumeMarkup } from '../designSystem/typeSystem'
 import { resolveDesignSystem } from '../designSystem/resolve'
 import { perfumeAssetsAllowed, resolveStickerMarks } from '../marks/MarkMatrix'
@@ -508,17 +513,33 @@ function labelDecor(panel: Panel, system: DesignSystem, p: Palette): string {
   return out
 }
 
-function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect): string {
+function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette): string {
+  const { decor, style } = system
+  if (decor === 'crest') return perfumeCrest(panel, p, true)
+  if (decor === 'cartouche') return classicCartouche(panel, p)
+  if (decor === 'leaf') return ecoLeaf(panel, p)
+  if (decor === 'badge') return playfulBadge(panel, p)
+  if (decor === 'olive' || decor === 'harvest') return oliveWreath(panel, p)
+  if (decor === 'drop') return serumMotif(panel, p)
+  if (decor === 'oval') return creamMotif(panel, p)
+  if (decor === 'grid' && style === 'luxury') return metalPlaque(panel, p)
+  if (decor === 'grid') return techSlab(panel, p, system.density !== 'sparse')
+  return ''
+}
+
+function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan): string {
   const { style, decor, grammar, sector } = system
   if (grammar === 'label') {
     return labelDecor(panel, system, p)
   }
   let out = ''
   const restrain = !!system.director?.restrainDecor
+  const patternFamily = plan?.patternSystem.family
   if (style === 'luxury') {
     const ticks = sector === 'perfume' && !restrain ? sideTicks(panel, p, safe) : ''
     const field = `${contourGoldField(panel, p.accent, sector === 'perfume' ? (restrain ? 0.12 : 0.2) : 0.12, safe)}${ticks}`
-    out += safe ? `<g clip-path="url(#lockout-${panel.id})">${field}</g>` : field
+    const tagged = wrapPattern(patternFamily ?? 'contour', field)
+    out += safe ? `<g clip-path="url(#lockout-${panel.id})">${tagged}</g>` : tagged
     if ((sector === 'electronics' || sector === 'food') && !restrain) out += diagonalFoil(panel, p.accent)
     out += foilHairline(panel, p)
     out += frames(panel, p, 3, false, true)
@@ -529,21 +550,28 @@ function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeR
     out += frames(panel, p, style === 'classic' ? 2 : style === 'playful' || style === 'eco' ? 1 : 0, style === 'playful' || style === 'eco')
     if (style === 'modern') {
       out += modernStripe(panel, p)
-      out += geoLattice(panel, p.fg, 0.08, safe)
+      out += wrapPattern(patternFamily ?? 'lattice', geoLattice(panel, p.fg, 0.08, safe))
     }
-    if (style === 'classic') out += ornamentalRail(panel, p.accent)
-    if (style === 'eco' && !restrain) out += leafStampField(panel, p.accent)
-    if (style === 'playful' && !restrain) out += claimCapsules(panel, p)
+    if (style === 'classic') out += wrapPattern(patternFamily ?? 'ornament', ornamentalRail(panel, p.accent))
+    if (style === 'eco' && !restrain) out += wrapPattern(patternFamily ?? 'grain', leafStampField(panel, p.accent))
+    if (style === 'playful' && !restrain) out += wrapPattern(patternFamily ?? 'capsule', claimCapsules(panel, p))
   }
-  if (decor === 'crest') out += perfumeCrest(panel, p, true)
-  else if (decor === 'cartouche') out += classicCartouche(panel, p)
-  else if (decor === 'leaf') out += ecoLeaf(panel, p)
-  else if (decor === 'badge') out += playfulBadge(panel, p)
-  else if (decor === 'olive' || decor === 'harvest') out += oliveWreath(panel, p)
-  else if (decor === 'drop') out += serumMotif(panel, p)
-  else if (decor === 'oval') out += creamMotif(panel, p)
-  else   if (decor === 'grid' && style === 'luxury') out += metalPlaque(panel, p)
-  else if (decor === 'grid') out += techSlab(panel, p, system.density !== 'sparse')
+  const kitFamily = kitHeroFamily(decor)
+  const family = plan?.heroGraphic.family ?? kitFamily
+  if (family !== 'none' && family !== kitFamily) {
+    out += wrapHero(family, paintHeroGraphic(family, panel, p, plan?.heroGraphic.scale ?? 1))
+  } else {
+    out += wrapHero(kitFamily === 'none' ? family : kitFamily, kitHeroMarkup(panel, system, p))
+  }
+  if (plan?.cue === 'force-overload') {
+    out += wrapHero('seal', `<g transform="translate(0 ${panel.h * 0.22})">${paintHeroGraphic('seal', panel, p, 0.7)}</g>`)
+    out += wrapHero('emblem', `<g transform="translate(0 ${panel.h * 0.4})">${paintHeroGraphic('emblem', panel, p, 0.7)}</g>`)
+  }
+  if (plan?.illustrationSystem.primitives.length) {
+    const sw = style === 'luxury' ? 0.22 : style === 'modern' ? 0.16 : 0.24
+    const prims = paintPrimitives(panel, p, plan.illustrationSystem.primitives, sw, safe)
+    out += safe ? `<g clip-path="url(#lockout-${panel.id})">${prims}</g>` : prims
+  }
   if (safe && (style === 'luxury' || style === 'classic')) out += lockupWindow(safe, p.accent)
   return out
 }
@@ -557,6 +585,7 @@ function panelArt(
   system: DesignSystem,
   plan: CraftPlan,
   logoHref?: string,
+  designPlan?: DesignPlan,
 ): string {
   const style = system.style
   const font = system.serif ? "Georgia, 'Times New Roman', serif" : 'Inter, Arial, sans-serif'
@@ -595,9 +624,10 @@ function panelArt(
   let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}" />`
   if (lockup) body += lockoutClip(id, panel, lockup)
   if (style === 'eco') body += ecoGrain(panel, p)
+  if (isFront) body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
 
   if (isFront) {
-    body += frontDecor(panel, system, p, lockup)
+    body += frontDecor(panel, system, p, lockup, designPlan)
     if (labelFace && system.wrapSeam) {
       body += wrapContinuity(panel, p.accent)
       body += wrapSeam(panel, p)
@@ -607,13 +637,16 @@ function panelArt(
   } else if (isSide) {
     if (style === 'modern') {
       body += `<rect x="${x}" y="${y}" width="${w}" height="2.2" fill="${p.accent}" />`
-      body += geoLattice(panel, p.fg, 0.07, spineSafe)
+      body += wrapSidePattern(designPlan?.patternSystem.family ?? 'lattice', geoLattice(panel, p.fg, 0.07, spineSafe))
       body += seriesMark(cx, y + 7.2, id === 'right' || id === 'trayRight' ? '02' : '01', p.muted, 'middle')
     }
     if (style === 'luxury') {
-      body += spineLuxuryField(panel, p.accent, spineSafe, id === 'right' || id === 'trayRight' ? '02' : '01')
+      body += wrapSidePattern(
+        designPlan?.patternSystem.family ?? 'ornament',
+        spineLuxuryField(panel, p.accent, spineSafe, id === 'right' || id === 'trayRight' ? '02' : '01'),
+      )
     }
-    if (style === 'eco') body += leafStampField(panel, p.accent)
+    if (style === 'eco') body += wrapSidePattern(designPlan?.patternSystem.family ?? 'grain', leafStampField(panel, p.accent))
     if (style === 'classic') body += `<line x1="${x + 1.4}" y1="${y + 4}" x2="${x + w - 1.4}" y2="${y + 4}" stroke="${p.accent}" stroke-width="0.2" />`
   }
 
@@ -813,11 +846,12 @@ export function composeArtwork(
   overrides: DesignOverrides,
   logoHref?: string,
   system = resolveDesignSystem(brief, dieline.structureId),
+  designPlan?: DesignPlan,
 ): ArtworkModel {
   const plan = buildCraftPlan(brief, dieline, copy, system)
   const layers = dieline.panels.map((panel) => ({
     panelId: panel.id,
-    markup: panelArt(panel, brief, copy, palette, overrides, system, plan, logoHref),
+    markup: panelArt(panel, brief, copy, palette, overrides, system, plan, logoHref, designPlan),
   }))
   const frontPanelId =
     dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')?.id ??

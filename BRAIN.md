@@ -6,13 +6,17 @@ Additive layer. The **Director decides**; the **engine draws**. Painters were no
 USER BRIEF
     → extract / ask (unchanged)
     → DesignDirector.createPlan(brief, template, style, prev, cue)
+         ↳ ArtDirection + VisualConcept + CompositionGrammar
     → DesignGraph (metadata tree)
     → applyPlanToSystem(resolveDesignSystem(…))   // pads, density, restrain flag
-    → buildDieline + composeArtwork + MarkMatrix  // same hands
+    → buildDieline + composeArtwork(plan) + MarkMatrix
     → preflight
-    → scoreDesign + critiquePlan (report-only)
+    → scoreDesign + critiquePlan
+    → RepairPlanner (plan deltas) → one re-compose
     → SVG as today
 ```
+
+See `ART_DIRECTION.md` for vocabulary tables and critique scores.
 
 ## Who decides what
 
@@ -51,16 +55,21 @@ First luxury generate keeps the current dense kit so craft does not drop.
 - `src/engine/brain/CritiqueEngine.ts`
 - `src/engine/brain/applyPlan.ts`
 - `src/engine/brain/index.ts`
+- `src/engine/brain/ArtDirection.ts` (v3.5)
+- `src/engine/brain/VisualConcept.ts`
+- `src/engine/brain/CompositionGrammar.ts`
+- `src/engine/brain/DesignMemory.ts`
+- `src/engine/brain/RepairPlanner.ts`
 
 ## Thin wires (not a rewrite)
 
-- `FormaLocalEngine.ts` — createPlan → applyPlanToSystem → existing compose
-- `composeArtwork.ts` — `frontDecor` reads `system.director.restrainDecor` only
+- `FormaLocalEngine.ts` — createPlan → applyPlan → compose → critique → one repair compose
+- `composeArtwork.ts` — restrainDecor + plan hero/pattern/primitives (`data-art` tags)
 - `parseIntent.ts` — luxury tighten cue when already luxury
 - `ProductionInfo` / `ConversationBrief` — existing chrome, plan `summaryTr`
 
 ## Out of scope (v4+)
 
 - LLM as painter
-- Auto-repair / SVG rewrite from critique
+- Infinite critique loops or SVG rewrite
 - Catalog, PDF/X, 3D milestone

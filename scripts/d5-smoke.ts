@@ -40,6 +40,15 @@ assert(bare.productName !== 'Parfüm' && !bare.productName, `bare product ${bare
 const named = extractFields('Aurelia için Noir parfüm kutusu, 50 ml', [])
 assert(named.productName === 'Noir', `named product ${named.productName}`)
 
+const paletteLeak = extractFields('Aurelia Noir için siyah-altın parfüm kutusu, 50 ml, 70×35×140 mm', [])
+assert(paletteLeak.productName !== 'siyah-altın', `palette leaked into product (${paletteLeak.productName})`)
+assert(!/örnek/i.test(paletteLeak.brandName ?? ''), `skip word as brand ${paletteLeak.brandName}`)
+assert(paletteLeak.brandName === 'Aurelia', `palette brief brand ${paletteLeak.brandName}`)
+assert(paletteLeak.productName === 'Noir', `palette brief product ${paletteLeak.productName}`)
+
+const skipOnly = extractFields('örnek', [])
+assert(!skipOnly.brandName, `örnek became brand ${skipOnly.brandName}`)
+
 const oil = extractFields('Terra Grove için zeytinyağı kutusu, 500 ml', [])
 assert(oil.sector === 'gıda' || /yağ|gıda/.test(oil.subProduct ?? oil.sector ?? ''), `oil sector ${oil.sector}`)
 assert(oil.productName !== 'Parfüm', 'oil product became Parfüm')

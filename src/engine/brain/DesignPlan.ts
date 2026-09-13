@@ -6,7 +6,61 @@ export type VisualIntent = 'elegant' | 'restrained' | 'high-contrast' | 'air' | 
 export type NegativeSpace = 'high' | 'med' | 'low'
 export type TypeAuthority = 'display' | 'balanced' | 'quiet'
 export type MetallicRole = 'foil' | 'restrained' | 'off'
-export type DirectorCue = 'none' | 'luxury-arrive' | 'luxury-tighten' | 'open-air' | 'warm-natural' | 'graphic-push'
+export type DirectorCue =
+  | 'none'
+  | 'luxury-arrive'
+  | 'luxury-tighten'
+  | 'open-air'
+  | 'warm-natural'
+  | 'graphic-push'
+  | 'force-overload'
+
+export type HeroFamily = 'crest' | 'seal' | 'botanical' | 'emblem' | 'harvest' | 'tech' | 'oval' | 'none'
+export type PatternFamily = 'contour' | 'lattice' | 'stripe' | 'grain' | 'ornament' | 'capsule' | 'none'
+export type BackgroundTreatment = 'dark-field' | 'quiet-paper' | 'vignette' | 'dual-tone' | 'kraft'
+export type PrimitiveId = 'leaf' | 'grain' | 'diamond' | 'rule' | 'wave' | 'arc' | 'dot' | 'tick'
+
+export type ArtDirectionBlock = {
+  vocabulary: string
+  crop: 'tight' | 'open'
+  antiRepetition: { seed: number; forbidLastFamilies: string[] }
+}
+
+export type VisualConceptBlock = {
+  id: string
+  tags: string[]
+}
+
+export type HeroGraphicBlock = {
+  family: HeroFamily
+  placement: 'above-lockup' | 'behind-lockup' | 'none'
+  scale: number
+  clearance: true
+}
+
+export type IllustrationBlock = {
+  primitives: PrimitiveId[]
+  density: Density
+}
+
+export type PatternBlock = {
+  family: PatternFamily
+  opacity: number
+  avoidLockup: true
+  sideIntentional: boolean
+}
+
+export type DensityMap = {
+  overall: Density
+  front: Density
+  side: Density
+  back: Density
+}
+
+export type CropBlock = {
+  heroCrop: number
+  safeInsets: number
+}
 
 export type DesignPlan = {
   sector: SectorId
@@ -32,7 +86,20 @@ export type DesignPlan = {
     lockup: 'center' | 'left'
     negativeSpace: NegativeSpace
     opticalCenter: number
+    focal: 'center' | 'left'
+    heroZone: { y: number; h: number }
+    lockupBand: { y: number; h: number }
+    legalZone: 'back' | 'label-back'
+    marksZone: 'back' | 'label-back'
   }
+  artDirection: ArtDirectionBlock
+  visualConcept: VisualConceptBlock
+  heroGraphic: HeroGraphicBlock
+  illustrationSystem: IllustrationBlock
+  patternSystem: PatternBlock
+  backgroundTreatment: BackgroundTreatment
+  density: DensityMap
+  crop: CropBlock
   decor: {
     density: Density
     allowed: DecorFamily[]
@@ -65,5 +132,6 @@ export function planSummaryTr(plan: DesignPlan): string {
     plan.decor.density === 'sparse' ? 'düşük dekor yoğunluğu' : plan.decor.density === 'dense' ? 'yüksek dekor' : 'dengeli dekor'
   const space =
     plan.composition.negativeSpace === 'high' ? 'geniş negatif alan' : plan.composition.negativeSpace === 'low' ? 'sıkı doluluk' : 'orta boşluk'
-  return `Strateji: ${plan.positioning} · marka baskın · ${space} · ${density}`
+  const hero = plan.heroGraphic?.family && plan.heroGraphic.family !== 'none' ? ` · ${plan.heroGraphic.family}` : ''
+  return `Strateji: ${plan.positioning} · marka baskın · ${space} · ${density}${hero}`
 }

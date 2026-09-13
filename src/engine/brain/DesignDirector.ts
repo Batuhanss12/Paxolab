@@ -1,6 +1,9 @@
 import type { DesignBrief, FormaTemplate, StyleType } from '../../types'
 import { resolveSector } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
+import { attachArtDirection } from './ArtDirection'
+import { composeGrammar } from './CompositionGrammar'
+import { rememberArt } from './DesignMemory'
 import { allowedDecorFor, sectorRisks, styleRule } from './DesignRules'
 import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
@@ -21,6 +24,7 @@ function asCue(raw?: string): DirectorCue {
   if (raw === 'open-air' || /daha\s*(sade|minimal)/i.test(raw)) return 'open-air'
   if (raw === 'warm-natural' || /daha\s*eco/i.test(raw)) return 'warm-natural'
   if (raw === 'graphic-push' || /daha\s*(modern|eğlenc)/i.test(raw)) return 'graphic-push'
+  if (raw === 'force-overload') return 'force-overload'
   return raw === 'none' ? 'none' : 'none'
 }
 
@@ -67,6 +71,10 @@ export function createPlan(input: DirectorInput): DesignPlan {
   } else if (cue === 'graphic-push') {
     density = density === 'sparse' ? 'balanced' : 'dense'
     visualIntent = style === 'playful' ? 'graphic' : 'high-contrast'
+  } else if (cue === 'force-overload') {
+    density = 'dense'
+    restrainExtras = false
+    negativeSpace = 'low'
   }
 
   const allowed = allowedDecorFor(style, sector)
@@ -93,11 +101,24 @@ export function createPlan(input: DirectorInput): DesignPlan {
       authority: rule.authority,
       trackingIntent: rule.trackingIntent,
     },
-    composition: {
+    composition: composeGrammar({
+      style,
+      surface,
       lockup: label && /wrap/i.test(input.template?.structureId ?? input.brief.templateId) ? 'left' : rule.lockup,
       negativeSpace,
-      opticalCenter: negativeSpace === 'high' ? 0.38 : 0.4,
-    },
+      wrap: /wrap/i.test(input.template?.structureId ?? input.brief.templateId),
+    }),
+    ...attachArtDirection({
+      brief: input.brief,
+      style,
+      sector,
+      surface,
+      templateId: input.template?.id ?? input.brief.templateId,
+      cue,
+      density,
+      restrainExtras,
+      prev: base ?? undefined,
+    }),
     decor: {
       density,
       allowed,
@@ -125,6 +146,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
     summaryTr: '',
   }
   plan.summaryTr = planSummaryTr(plan)
+  rememberArt({ hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })
   void principlesFor(style, surface)
   return plan
 }

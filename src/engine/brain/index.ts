@@ -1,4 +1,12 @@
-export type { DesignPlan, DirectorCue, Positioning, VisualIntent } from './DesignPlan'
+export type {
+  DesignPlan,
+  DirectorCue,
+  Positioning,
+  VisualIntent,
+  HeroFamily,
+  PatternFamily,
+  BackgroundTreatment,
+} from './DesignPlan'
 export { planSummaryTr } from './DesignPlan'
 export { createPlan, planGraph, advisePlan } from './DesignDirector'
 export { buildDesignGraph } from './DesignGraph'
@@ -10,3 +18,8 @@ export type { DesignScorecard } from './DesignScore'
 export { critiquePlan } from './CritiqueEngine'
 export type { CritiqueReport } from './CritiqueEngine'
 export { applyPlanToSystem } from './applyPlan'
+export { attachArtDirection, allowedHeroes, defaultPattern } from './ArtDirection'
+export { visualConceptFor } from './VisualConcept'
+export { composeGrammar } from './CompositionGrammar'
+export { repairPlan } from './RepairPlanner'
+export { resetArtMemory, lastFamilies, rememberArt } from './DesignMemory'

@@ -41,6 +41,14 @@ function looksLikeName(value: string): boolean {
   return !!value && value.length < 48 && !/[?]/.test(value) && /[A-Za-zÇĞİÖŞÜçğıöşü]/.test(value)
 }
 
+const SKIP_UTTERANCE = /^(şablon|varsayılan|örnek|geç|fark\s*etmez|farketmez|olsun|bilmiyorum|tamam|ok)$/i
+const PALETTE_TOKEN =
+  /^(siyah|black|beyaz|white|altın|gold|gümüş|silver|krem|kraft|navy|lacivert)(?:[-\s·]+(siyah|black|beyaz|white|altın|gold|gümüş|silver|krem|kraft))?$/i
+
+export function isPaletteName(value: string): boolean {
+  return PALETTE_TOKEN.test(value.trim())
+}
+
 export function sameName(a: string, b: string): boolean {
   return a.trim().toLocaleLowerCase('tr') === b.trim().toLocaleLowerCase('tr') && a.trim().length > 0
 }
@@ -61,6 +69,16 @@ export function isGenericProductName(value: string): boolean {
 export function extractFields(text: string, attachments: Attachment[]): Partial<DesignBrief> {
   const patch: Partial<DesignBrief> = {}
   const raw = text.trim()
+  if (!raw || SKIP_UTTERANCE.test(raw)) {
+    if (attachments.length) {
+      const logos = attachments.filter((a) => a.kind === 'logo')
+      const refs = attachments.filter((a) => a.kind === 'referans')
+      if (logos.length) patch.logo = logos.map((a) => a.name).join(', ')
+      if (refs.length) patch.references = refs.map((a) => a.name).join(', ')
+      if (!patch.logo && attachments[0]) patch.logo = attachments[0].name
+    }
+    return patch
+  }
 
   for (const rule of MODE_RULES) {
     if (rule.re.test(raw)) {
@@ -102,28 +120,50 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   const named = raw.match(
     /\biçin\s+([A-Za-zÇĞİÖŞÜçğıöşü][\wÇĞİÖŞÜçğıöşü'’-]{1,28})\s+(?:parfüm|perfume|krem|cream|serum|kutusu|kutu|etiket)\b/i,
   )
-  if (named && !isGenericProductName(named[1]) && !patch.productName) patch.productName = named[1]
+  if (named && !isGenericProductName(named[1]) && !isPaletteName(named[1]) && !patch.productName) {
+    patch.productName = named[1]
+  }
 
   if (!patch.brandName || !patch.productName) {
     const cut = raw.split(/[,.;]/)[0] ?? raw
-    const words = cut.split(/\s+/).filter(
-      (w) =>
-        !/^(için|bir|ve|ile|adı|adın|adını|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|siyah|altın|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum)$/i.test(
-          w.replace(/[:\-–]+$/g, ''),
-        ),
-    )
-    if (!patch.brandName && words[0] && looksLikeName(words[0])) patch.brandName = words[0]
+    const words = cut.split(/\s+/).filter((w) => {
+      const token = w.replace(/[:\-–]+$/g, '')
+      return (
+        !isPaletteName(token) &&
+        !/^(için|bir|ve|ile|adı|adın|adını|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum)$/i.test(
+          token,
+        )
+      )
+    })
+    if (!patch.brandName && words[0] && looksLikeName(words[0]) && !SKIP_UTTERANCE.test(words[0])) {
+      patch.brandName = words[0]
+    }
     if (!patch.productName && !brand && words.length > 1) {
       const rest = words.slice(1).find(
-        (w) => looksLikeName(w) && !isGenericProductName(w) && !sameName(w, patch.brandName ?? ''),
+        (w) =>
+          looksLikeName(w) &&
+          !isGenericProductName(w) &&
+          !isPaletteName(w) &&
+          !sameName(w, patch.brandName ?? ''),
       )
       if (rest) patch.productName = rest
     }
   }
 
-  if (patch.productName && isGenericProductName(patch.productName)) delete patch.productName
+  if (patch.productName && (isGenericProductName(patch.productName) || isPaletteName(patch.productName))) {
+    delete patch.productName
+  }
   if (patch.productName && patch.brandName && sameName(patch.productName, patch.brandName)) {
     delete patch.productName
+  }
+  if (patch.brandName && patch.productName) {
+    const parts = patch.brandName.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2 && sameName(parts[parts.length - 1] ?? '', patch.productName)) {
+      patch.brandName = parts.slice(0, -1).join(' ')
+    }
+  }
+  if (patch.brandName && (SKIP_UTTERANCE.test(patch.brandName) || isPaletteName(patch.brandName))) {
+    delete patch.brandName
   }
 
   const style = parseStyle(raw)
@@ -176,7 +216,7 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   return patch
 }
 
-const DEFAULT_SKIP = /^(şablon|varsayılan|örnek|geç|fark\s*etmez|farketmez|olsun|bilmiyorum|tamam|ok)$/i
+const DEFAULT_SKIP = SKIP_UTTERANCE
 
 export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Partial<DesignBrief> {
   if (!awaiting || awaiting === 'templateId') return {}
@@ -260,7 +300,8 @@ export function applyExtraction(
     awaiting === 'dimensionsMm' ||
     awaiting === 'barcode' ||
     awaiting === 'manufacturerName' ||
-    awaiting === 'manufacturerAddress'
+    awaiting === 'manufacturerAddress' ||
+    awaiting === 'templateId'
   ) {
     delete extracted.brandName
     delete extracted.productName

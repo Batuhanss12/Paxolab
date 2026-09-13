@@ -1,3 +1,4 @@
+import { densityCap } from './CompositionGrammar'
 import type { DesignScorecard } from './DesignScore'
 import type { DesignPlan } from './DesignPlan'
 
@@ -11,16 +12,22 @@ export type CritiqueReport = {
   verdict: 'keep' | 'modify'
   hints: CritiqueHint[]
   scorecard: DesignScorecard
+  needsRepair?: boolean
+  repaired?: boolean
 }
 
-/** v3 report-only. Do not auto-rewrite SVG (v4). */
+function failed(score: number | undefined, floor: number): boolean {
+  return (score ?? 100) < floor
+}
+
+/** Scores decide KEEP / MODIFY. Luxury+dense remains a hint, not a repair. */
 export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard): CritiqueReport {
   const hints: CritiqueHint[] = [
     { action: 'KEEP', topic: 'hierarchy', note: 'Marka lockup’ta birincil kalsın.' },
     { action: 'KEEP', topic: 'lockup', note: 'Lockup clearance / knockout korunmalı.' },
   ]
 
-  if (plan.style === 'luxury' && plan.decor.density === 'dense') {
+  if (plan.style === 'luxury' && plan.decor.density === 'dense' && !plan.decor.restrainExtras) {
     hints.push({
       action: 'MODIFY',
       topic: 'density',
@@ -34,6 +41,42 @@ export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard): Crit
     hints.push({ action: 'MODIFY', topic: 'honesty', note: scorecard.notes.join(' · ') || 'Örnek legal / barkod dürüstlüğü.' })
   }
 
-  const verdict = hints.some((h) => h.action === 'MODIFY' && h.topic === 'honesty') ? 'modify' : 'keep'
-  return { verdict, hints, scorecard }
+  const densityFail = failed(scorecard.densityFront, 50)
+  const lockupFail = failed(scorecard.lockupClearance, 45)
+  const hierarchyFail = failed(scorecard.hierarchyStrength ?? scorecard.hierarchy, 50)
+  const sectorFail = failed(scorecard.sectorBlind, 40)
+  const sideFail = failed(scorecard.sideIntentionality, 35)
+  const repetitionFail = (scorecard.repetitionPenalty ?? 0) > 55
+  const cap = densityCap(plan.style, plan.decor.density)
+
+  if (densityFail) {
+    hints.push({
+      action: 'MODIFY',
+      topic: 'densityFront',
+      note: `Dekor aşırı — tek kahraman, primitive tavan ${cap}.`,
+    })
+  }
+  if (lockupFail) {
+    hints.push({ action: 'MODIFY', topic: 'lockupClearance', note: 'Lockup penceresi / knockout eksik.' })
+  }
+  if (hierarchyFail) {
+    hints.push({ action: 'MODIFY', topic: 'hierarchyStrength', note: 'Marka > ürün > hacim zayıf.' })
+  }
+  if (sectorFail) {
+    hints.push({ action: 'MODIFY', topic: 'sectorBlind', note: 'Ön yüz sektörü yanlış okunuyor.' })
+  }
+  if (repetitionFail) {
+    hints.push({ action: 'MODIFY', topic: 'repetitionPenalty', note: 'Aynı hero ailesi tekrar ediyor.' })
+  }
+  if (sideFail) {
+    hints.push({ action: 'MODIFY', topic: 'sideIntentionality', note: 'Yan panel artık / gürültü değil, bilinçli pattern olmalı.' })
+  }
+
+  const needsRepair = densityFail || lockupFail || hierarchyFail || sectorFail || repetitionFail || sideFail
+  return {
+    verdict: needsRepair ? 'modify' : 'keep',
+    hints,
+    scorecard,
+    needsRepair,
+  }
 }

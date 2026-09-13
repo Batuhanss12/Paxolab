@@ -1,5 +1,5 @@
 import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
-import { applyPlanToSystem, createPlan, critiquePlan, scoreDesign } from './brain'
+import { applyPlanToSystem, createPlan, critiquePlan, repairPlan, scoreDesign } from './brain'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { composeArtwork } from './artwork/composeArtwork'
@@ -93,28 +93,37 @@ export class FormaLocalEngine implements EnginePort {
       overrides.titleScale = 1.1
     }
 
-    const system = applyPlanToSystem(resolveDesignSystem(brief, template.structureId), designPlan)
     const palette = paletteFor(brief, brief.styleType || 'classic', overrides.premium)
-    const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system)
     const layout = {
       widthMm: dieline.dimensions.L,
       depthMm: dieline.dimensions.W,
       heightMm: dieline.dimensions.H,
     }
 
-    const draft = {
-      brief,
-      copy,
-      dieline,
-      layout,
-      overrides,
-      kind,
-      structureId: template.structureId,
-      palette,
-      artwork,
+    const paint = (plan: typeof designPlan) => {
+      const system = applyPlanToSystem(resolveDesignSystem(brief, template.structureId), plan)
+      const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
+      const draft = {
+        brief,
+        copy,
+        dieline,
+        layout,
+        overrides,
+        kind,
+        structureId: template.structureId,
+        palette,
+        artwork,
+      }
+      const preflight = runPreflight(draft, system)
+      const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan))
+      return { artwork, preflight, critique, plan }
     }
-    const preflight = runPreflight(draft, system)
-    const critique = critiquePlan(designPlan, scoreDesign({ artwork, preflight, copy, kind }, designPlan))
+
+    let pack = paint(designPlan)
+    if (pack.critique.needsRepair) {
+      pack = paint(repairPlan(pack.plan, pack.critique))
+      pack.critique = { ...pack.critique, repaired: true, needsRepair: false }
+    }
 
     return {
       id: input.prev?.id ?? uid(),
@@ -129,10 +138,10 @@ export class FormaLocalEngine implements EnginePort {
       templateId: template.id,
       structureId: template.structureId,
       dieline,
-      artwork,
-      preflight,
-      designPlan,
-      critique,
+      artwork: pack.artwork,
+      preflight: pack.preflight,
+      designPlan: pack.plan,
+      critique: pack.critique,
     }
   }
 }
