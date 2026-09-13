@@ -34,6 +34,11 @@ const content: SiteContent = {
       { href: "/bicki-cizimi", label: "Bıçak çizimi" },
       { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
       { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
+      { href: "/gida-ambalaj-tasarimi", label: "Gıda ambalaj" },
+      { href: "/serum-krem-kutusu-tasarimi", label: "Serum / krem kutusu" },
+      { href: "/etiket-mi-kutu-mu", label: "Etiket mi kutu mu" },
+      { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
+      { href: "/ai-ambalaj-tasarimi", label: "AI ambalaj tasarımı" },
       { href: "/nasil-calisir", label: "Nasıl çalışır" },
       { href: "/ornekler", label: "Örnekler" },
       { href: "/fiyatlandirma", label: "Fiyatlandırma" },
@@ -97,10 +102,15 @@ const content: SiteContent = {
     hubs: [
       { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
       { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
+      { href: "/gida-ambalaj-tasarimi", label: "Gıda ambalaj" },
       { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
-      { href: "/fiyatlandirma", label: "Fiyatlandırma" },
     ],
     extraHubs: [
+      { href: "/serum-krem-kutusu-tasarimi", label: "Serum / krem kutusu" },
+      { href: "/etiket-mi-kutu-mu", label: "Etiket mi kutu mu" },
+      { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
+      { href: "/ai-ambalaj-tasarimi", label: "AI ambalaj tasarımı" },
+      { href: "/fiyatlandirma", label: "Fiyatlandırma" },
       { href: "/ornekler", label: "Örnekler" },
       { href: "/iletisim", label: "İletişim" },
     ],
@@ -138,8 +148,8 @@ const content: SiteContent = {
       related: [
         { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
         { href: "/etiket-tasarimi", label: "Etiket tasarımı" },
-        { href: "/bicki-cizimi", label: "Bıçak çizimi" },
-        { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
+        { href: "/gida-ambalaj-tasarimi", label: "Gıda ambalaj" },
+        { href: "/etiket-mi-kutu-mu", label: "Etiket mi kutu mu" },
       ],
       serviceName: "Ambalaj tasarımı",
       serviceType: "PackagingDesign",
@@ -171,9 +181,9 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
-        { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
+        { href: "/etiket-mi-kutu-mu", label: "Etiket mi kutu mu" },
         { href: "/bicki-cizimi", label: "Bıçak çizimi" },
-        { href: "/ornekler", label: "Örnekler" },
+        { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
       ],
       serviceName: "Kutu tasarımı",
       serviceType: "BoxDesign",
@@ -201,9 +211,9 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
-        { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
+        { href: "/etiket-mi-kutu-mu", label: "Etiket mi kutu mu" },
         { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
-        { href: "/nasil-calisir", label: "Nasıl çalışır" },
+        { href: "/gida-ambalaj-tasarimi", label: "Gıda ambalaj" },
       ],
       serviceName: "Etiket tasarımı",
       serviceType: "LabelDesign",
@@ -231,8 +241,8 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
+        { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
         { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
-        { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
         { href: "/sss", label: "SSS" },
       ],
       serviceName: "Bıçak çizimi",
@@ -260,10 +270,10 @@ const content: SiteContent = {
         },
       ],
       related: [
+        { href: "/serum-krem-kutusu-tasarimi", label: "Serum / krem kutusu" },
         { href: "/etiket-tasarimi", label: "Etiket tasarımı" },
         { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
         { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
-        { href: "/ornekler", label: "Örnekler" },
       ],
       serviceName: "Kozmetik ambalaj tasarımı",
       serviceType: "CosmeticPackaging",
@@ -297,6 +307,188 @@ const content: SiteContent = {
       ],
       serviceName: "Parfüm kutusu tasarımı",
       serviceType: "PerfumeBoxDesign",
+    },
+    "gida-ambalaj-tasarimi": {
+      slug: "gida-ambalaj-tasarimi",
+      meta: {
+        title: "Gıda ambalaj tasarımı",
+        description:
+          "Gıda kutusu ve etiketini Paxolab stüdyosunda brief’ten vektöre taşıyın. FORMA dieline mantığıyla baskıya uygun yüzey üretir.",
+      },
+      hero: {
+        title: "Gıda ambalaj tasarımı",
+        lead: "Gıda markaları için kutu ve etiket brief’ini stüdyoda netleştirin; FORMA panelli vektör yüzey üretir.",
+      },
+      sections: [
+        {
+          title: "Ne sunuyoruz?",
+          body: "Gıda kutusu ve etiketini aynı stüdyo akışında ele alın. Brief’i yazın veya konuşarak netleştirin; FORMA dieline mantığıyla panelli vektör yüzey üretir. Rastgele görsel üretimi değil — yapı ve grafik birlikte.",
+        },
+        {
+          title: "Gıda için dikkat",
+          body: "Alerjen, içerik ve zorunlu bilgiler için panelde yer bırakın. Barkod yalnızca siz verirseniz yerleşir; motor numara uydurmaz. Net ölçü ve form, baskıya geçişi kolaylaştırır. Matbaa spesifikasyonu projenize göre sizde doğrulanır.",
+        },
+        {
+          title: "Kimler için?",
+          body: "Atıştırmalık, sos, yağ, içecek ve benzeri gıda markaları; ajanslar ve iç ekipler. Prototip öncesi net kutu veya etiket yüzeyi istediğinizde kullanışlıdır.",
+        },
+        {
+          title: "Sonraki adım",
+          body: "Stüdyoda bir proje açın, ürün tipini ve ölçüleri paylaşın. Kredi paketleri fiyatlandırma sayfasında özetlenir; satın alma stüdyo içinde tamamlanır.",
+        },
+      ],
+      related: [
+        { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
+        { href: "/etiket-tasarimi", label: "Etiket tasarımı" },
+        { href: "/bicki-cizimi", label: "Bıçak çizimi" },
+        { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
+      ],
+      serviceName: "Gıda ambalaj tasarımı",
+      serviceType: "FoodPackaging",
+    },
+    "serum-krem-kutusu-tasarimi": {
+      slug: "serum-krem-kutusu-tasarimi",
+      meta: {
+        title: "Serum ve krem kutusu tasarımı",
+        description:
+          "Serum ve krem kutusu brief’ini Paxolab stüdyosunda panelli vektöre taşıyın. Kozmetik dil, hiyerarşi ve dieline birlikte.",
+      },
+      hero: {
+        title: "Serum ve krem kutusu tasarımı",
+        lead: "Tek ürün kozmetik kutularında sade hiyerarşi ve okunaklı paneller. Paxolab ile serum veya krem brief’inizi stüdyoda üretin.",
+      },
+      sections: [
+        {
+          title: "Serum kutusu",
+          body: "Dar veya dikey formlarda ürün adı, hacim ve varyant için net ön panel. Serum dilinde sade tipografi ve malzeme hissine yer bırakan düzen.",
+        },
+        {
+          title: "Krem kutusu",
+          body: "Kavanoz veya tüp kutularında kapak, ön ve yan paneller aynı sistemde durur. İçerik ve uyarı metinleri için yer planlanır; grafik katlara göre yerleşir.",
+        },
+        {
+          title: "Kozmetik dil",
+          body: "İçerik listesi, uyarılar ve marka vaadi küçük yüzeylere sığmalı. Aşırı efekt yerine finish ve baskı kalitesine yer bırakan sade bir dil genelde daha işe yarar.",
+        },
+        {
+          title: "İlgili sayfalar",
+          body: "Genel kozmetik ambalaj, parfüm kutusu, etiket ve kutu sayfalarımız aynı marka sistemini tamamlar. Stüdyoda ürün tipini seçip üretin.",
+        },
+      ],
+      related: [
+        { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
+        { href: "/parfum-kutusu-tasarimi", label: "Parfüm kutusu" },
+        { href: "/etiket-tasarimi", label: "Etiket tasarımı" },
+        { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
+      ],
+      serviceName: "Serum ve krem kutusu tasarımı",
+      serviceType: "SerumCreamBox",
+    },
+    "ai-ambalaj-tasarimi": {
+      slug: "ai-ambalaj-tasarimi",
+      meta: {
+        title: "AI ambalaj tasarımı nedir?",
+        description:
+          "AI brief’i netleştirir ve iterasyonu hızlandırır; nihai baskı yüzeyi FORMA vektör motorudur. Görsel üretim modeli kullanılmaz.",
+      },
+      hero: {
+        title: "AI ambalaj tasarımı nedir?",
+        lead: "AI konuşur ve brief çıkarır; nihai baskı yüzeyi FORMA’nın vektör motorudur. Rastgele görsel üretimi değil — dieline mantığıyla panelli yüzey.",
+      },
+      sections: [
+        {
+          title: "AI ne işe yarar?",
+          body: "Sohbet ve brief çıkarımı: ürün tipi, ölçü, marka notları ve eksik alanlar netleşir. İterasyon niyeti de buradan gelir. AI rastgele bir ambalaj görseli üretmez.",
+        },
+        {
+          title: "Nihai yüzey FORMA’dır",
+          body: "Kesim, kat ve grafik panelli vektör motorda birleşir. Çıktı yapıya bağlıdır; görsel üretim modeli kullanılmaz. Bu ayrım, matbaaya giden dosyanın üretim dili taşıması içindir.",
+        },
+        {
+          title: "Nasıl ilerlersiniz?",
+          body: "Nasıl çalışır sayfasındaki akış: brief → FORMA üretimi → revizyon. Stüdyoda deneyin; kredi kullanımı hesaplı oturumda geçerlidir.",
+        },
+      ],
+      related: [
+        { href: "/nasil-calisir", label: "Nasıl çalışır" },
+        { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
+        { href: "/bicki-cizimi", label: "Bıçak çizimi" },
+        { href: "/sss", label: "SSS" },
+      ],
+      serviceName: "AI ambalaj tasarımı",
+      serviceType: "AiPackagingExplainer",
+    },
+    "baskiya-hazir-dieline": {
+      slug: "baskiya-hazir-dieline",
+      meta: {
+        title: "Baskıya hazır dieline",
+        description:
+          "Dieline preflight ve SVG/vektör dışa aktarım. Paxolab stüdyosu üretim kontrolü sunar; nihai matbaa onayı sizde ve matbaada kalır.",
+      },
+      hero: {
+        title: "Baskıya hazır dieline",
+        lead: "Bıçak çizimi yapıyı kurar; bu sayfa preflight ve vektör dışa aktarımın kullanılabilirliğine odaklanır. Nihai onay matbaanızdadır.",
+      },
+      sections: [
+        {
+          title: "Bıçak çiziminden farkı",
+          body: "Bıçak çizimi sayfası kesim, kat ve yapışkan hatlarını açıklar. Burada odak, stüdyo preflight’ı ve SVG/vektör çıktının matbaa veya prototip aşamasında kullanılabilir olmasıdır.",
+        },
+        {
+          title: "Preflight ve dışa aktarım",
+          body: "Stüdyo marka, ölçü, kesim/kat tutarlılığı ve çarpışma gibi kontroller çalıştırır; birleşik SVG ve yazdır-PDF üretebilir. 2 mm güvenli alan ve bleed kılavuzu gösterim katmanıdır. PDF/X veya belirli bir matbaa profili iddiası yoktur.",
+        },
+        {
+          title: "Dürüst sınır",
+          body: "Nihai yazıcı onayı sizde ve matbaanızda kalır. CMYK profili, gerçek bleed, özel finish ve kalıp onayı projenize göre doğrulanmalıdır. Stüdyo üretim kapısı, uydurma barkod veya tutarsız dieline ile dışa aktarımı durdurur.",
+        },
+      ],
+      related: [
+        { href: "/bicki-cizimi", label: "Bıçak çizimi" },
+        { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
+        { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
+        { href: "/sss", label: "SSS" },
+      ],
+      serviceName: "Baskıya hazır dieline",
+      serviceType: "PrintReadyDieline",
+    },
+    "etiket-mi-kutu-mu": {
+      slug: "etiket-mi-kutu-mu",
+      meta: {
+        title: "Etiket mi, kutu mu?",
+        description:
+          "Etiket, kutu veya ikisi birden: Paxolab stüdyosunda packagingMode box veya label ile ilerleyin. Kısa karar rehberi.",
+      },
+      hero: {
+        title: "Etiket mi, kutu mu?",
+        lead: "Şişe yüzeyi mi, katlanır kutu mu, yoksa ikisi birden mi? Brief’te packagingMode’u box veya label seçin; FORMA o yapıya göre üretir.",
+      },
+      sections: [
+        {
+          title: "Ne zaman etiket?",
+          body: "Şişe, kavanoz veya mevcut bir kabın üzerine yapışan yüzey. Ölçü genelde genişlik × yükseklik; derinlik (W) yok. Yasal metin ve barkod küçük alanda dengelenir.",
+        },
+        {
+          title: "Ne zaman kutu?",
+          body: "Katlanır karton, ikincil ambalaj veya hediye formu. L × W × H ve dieline panelleri gerekir. Serum, krem ve parfüm kutuları bu tarafa düşer.",
+        },
+        {
+          title: "İkisi birden",
+          body: "Kozmetik ve gıdada sık: şişe etiketi + dış kutu aynı marka sistemi. Stüdyoda iki proje açın veya önce bir yüzeyi bitirip diğerine geçin. packagingMode her üretimde box veya label’dır.",
+        },
+        {
+          title: "Kısa kontrol listesi",
+          body: "Kabın üzerine mi yapışıyor, yoksa kendi formu mu var? Ölçülerde derinlik var mı? Raf ve hediye anı kutu mu istiyor? Emin değilseniz etiket ve kutu sayfalarını yan yana okuyun, sonra stüdyoda tipi seçin.",
+        },
+      ],
+      related: [
+        { href: "/etiket-tasarimi", label: "Etiket tasarımı" },
+        { href: "/kutu-tasarimi", label: "Kutu tasarımı" },
+        { href: "/kozmetik-ambalaj-tasarimi", label: "Kozmetik ambalaj" },
+        { href: "/gida-ambalaj-tasarimi", label: "Gıda ambalaj" },
+      ],
+      serviceName: "Etiket mi kutu mu",
+      serviceType: "LabelVsBox",
     },
   },
 
