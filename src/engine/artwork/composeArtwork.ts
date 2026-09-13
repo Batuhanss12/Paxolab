@@ -514,15 +514,17 @@ function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeR
     return labelDecor(panel, system, p)
   }
   let out = ''
+  const restrain = !!system.director?.restrainDecor
   if (style === 'luxury') {
-    const field = `${contourGoldField(panel, p.accent, sector === 'perfume' ? 0.2 : 0.12, safe)}${sector === 'perfume' ? sideTicks(panel, p, safe) : ''}`
+    const ticks = sector === 'perfume' && !restrain ? sideTicks(panel, p, safe) : ''
+    const field = `${contourGoldField(panel, p.accent, sector === 'perfume' ? (restrain ? 0.12 : 0.2) : 0.12, safe)}${ticks}`
     out += safe ? `<g clip-path="url(#lockout-${panel.id})">${field}</g>` : field
-    if (sector === 'electronics' || sector === 'food') out += diagonalFoil(panel, p.accent)
+    if ((sector === 'electronics' || sector === 'food') && !restrain) out += diagonalFoil(panel, p.accent)
     out += foilHairline(panel, p)
     out += frames(panel, p, 3, false, true)
     out += corners(panel, p)
     out += lBrackets(panel, p.accent)
-    out += cornerDiamonds(panel, p)
+    if (!restrain) out += cornerDiamonds(panel, p)
   } else {
     out += frames(panel, p, style === 'classic' ? 2 : style === 'playful' || style === 'eco' ? 1 : 0, style === 'playful' || style === 'eco')
     if (style === 'modern') {
@@ -530,8 +532,8 @@ function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeR
       out += geoLattice(panel, p.fg, 0.08, safe)
     }
     if (style === 'classic') out += ornamentalRail(panel, p.accent)
-    if (style === 'eco') out += leafStampField(panel, p.accent)
-    if (style === 'playful') out += claimCapsules(panel, p)
+    if (style === 'eco' && !restrain) out += leafStampField(panel, p.accent)
+    if (style === 'playful' && !restrain) out += claimCapsules(panel, p)
   }
   if (decor === 'crest') out += perfumeCrest(panel, p, true)
   else if (decor === 'cartouche') out += classicCartouche(panel, p)

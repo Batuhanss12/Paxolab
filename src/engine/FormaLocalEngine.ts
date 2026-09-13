@@ -1,4 +1,5 @@
 import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
+import { applyPlanToSystem, createPlan, critiquePlan, scoreDesign } from './brain'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { composeArtwork } from './artwork/composeArtwork'
@@ -78,7 +79,21 @@ export class FormaLocalEngine implements EnginePort {
     }
     overrides.barcodeVisible = true
 
-    const system = resolveDesignSystem(brief, template.structureId)
+    const style = brief.styleType || 'luxury'
+    const styleChanged = !!input.prev?.designPlan && input.prev.designPlan.style !== style
+    if (styleChanged && input.overridePatch?.directorCue == null) overrides.directorCue = undefined
+    const designPlan = createPlan({
+      brief,
+      template,
+      style,
+      prev: styleChanged ? undefined : input.prev?.designPlan,
+      cue: overrides.directorCue,
+    })
+    if (designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
+      overrides.titleScale = 1.1
+    }
+
+    const system = applyPlanToSystem(resolveDesignSystem(brief, template.structureId), designPlan)
     const palette = paletteFor(brief, brief.styleType || 'classic', overrides.premium)
     const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system)
     const layout = {
@@ -99,6 +114,7 @@ export class FormaLocalEngine implements EnginePort {
       artwork,
     }
     const preflight = runPreflight(draft, system)
+    const critique = critiquePlan(designPlan, scoreDesign({ artwork, preflight, copy, kind }, designPlan))
 
     return {
       id: input.prev?.id ?? uid(),
@@ -115,6 +131,8 @@ export class FormaLocalEngine implements EnginePort {
       dieline,
       artwork,
       preflight,
+      designPlan,
+      critique,
     }
   }
 }

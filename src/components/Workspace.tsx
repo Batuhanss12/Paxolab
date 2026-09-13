@@ -61,6 +61,7 @@ function ConversationBrief({
       </ol>
       {design && (
         <p className="brief-log__note">
+          {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
           FORMA motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
         </p>
       )}

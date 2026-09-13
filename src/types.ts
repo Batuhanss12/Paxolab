@@ -69,6 +69,8 @@ export type DesignOverrides = {
   paletteShift: PaletteShift
   barcodeVisible: boolean
   customTagline: string
+  /** Director iteration cue — refine plan within StyleBar, do not invent a 7th style. */
+  directorCue?: string
 }
 
 export type Palette = {
@@ -165,6 +167,8 @@ export type DesignSpec = {
   dieline: DielineModel
   artwork: ArtworkModel
   preflight: PreflightReport
+  designPlan?: import('./engine/brain/DesignPlan').DesignPlan
+  critique?: import('./engine/brain/CritiqueEngine').CritiqueReport
 }
 
 export type TabId = 'konusma' | 'vektor' | 'dieline' | 'onizleme3d' | 'uretim'
@@ -182,6 +186,8 @@ export type EngineResult = {
   overridePatch: Partial<DesignOverrides>
   copyPatch: Partial<DesignSpec['copy']>
   note: string
+  designPlan?: import('./engine/brain/DesignPlan').DesignPlan
+  critiqueNotes?: string[]
 }
 
 export type DesignRating = {

@@ -41,6 +41,7 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       </header>
 
       <p className="prod__lead">
+        {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
           : design.overrides.printReady

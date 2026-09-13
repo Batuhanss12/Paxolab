@@ -16,7 +16,7 @@ const STYLES: [RegExp, StyleType][] = [
   [/klasik\s*(yap|stil)|classic\s*(yap|stil)|daha\s*klasik|\bclassic\b|\bklasik\b/i, 'classic'],
 ]
 
-export function parseIntent(text: string): IterateIntent {
+export function parseIntent(text: string, currentStyle: StyleType | '' = ''): IterateIntent {
   const overridePatch: Partial<DesignOverrides> = {}
   const copyPatch: Partial<DesignSpec['copy']> = {}
   const briefPatch: Partial<DesignBrief> = {}
@@ -43,12 +43,21 @@ export function parseIntent(text: string): IterateIntent {
       briefPatch.styleType = style
       if (style === 'luxury') {
         overridePatch.premium = true
-        overridePatch.paletteShift = 'gold'
+        if (currentStyle === 'luxury' && /daha\s*(lüks|premium)/i.test(text)) {
+          overridePatch.directorCue = 'luxury-tighten'
+          notes.push('Yönetmen: daha fazla hava, daha az motif — altın yağmuru değil.')
+        } else if (currentStyle !== 'luxury') {
+          overridePatch.directorCue = 'luxury-arrive'
+          overridePatch.paletteShift = 'gold'
+        }
       }
       if (style === 'minimal') {
         overridePatch.premium = false
         overridePatch.paletteShift = 'minimal'
+        overridePatch.directorCue = currentStyle === 'minimal' ? 'open-air' : 'none'
       }
+      if (style === 'eco' && currentStyle === 'eco') overridePatch.directorCue = 'warm-natural'
+      if ((style === 'modern' || style === 'playful') && currentStyle === style) overridePatch.directorCue = 'graphic-push'
       notes.push(`Stil ${style} yönüne çekildi — yüzey yeniden kuruldu.`)
       break
     }

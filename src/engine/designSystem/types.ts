@@ -91,4 +91,10 @@ export type DesignSystem = {
   brandOnTucks: boolean
   brandOnTop: boolean
   fullDecorOnFrontOnly: boolean
+  /** Optional Director refinements — painter stays the same, extras may quiet down. */
+  director?: {
+    restrainDecor: boolean
+    lockupClearance: boolean
+    cue: string
+  }
 }

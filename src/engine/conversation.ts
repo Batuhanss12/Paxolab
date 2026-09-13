@@ -92,7 +92,7 @@ export function runConversation(input: {
   const text = input.text.trim()
 
   if (input.hasDesign && isIteration(text)) {
-    const parsed = parseIntent(text)
+    const parsed = parseIntent(text, input.brief.styleType)
     return {
       brief: { ...input.brief, ...parsed.briefPatch },
       awaiting: null,
