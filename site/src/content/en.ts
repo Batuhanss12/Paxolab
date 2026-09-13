@@ -34,6 +34,11 @@ const content: SiteContent = {
       { href: "/en/dieline", label: "Dieline" },
       { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
       { href: "/en/perfume-box-design", label: "Perfume box" },
+      { href: "/en/food-packaging-design", label: "Food packaging" },
+      { href: "/en/serum-cream-box-design", label: "Serum / cream box" },
+      { href: "/en/label-vs-box", label: "Label vs box" },
+      { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
+      { href: "/en/what-is-ai-packaging-design", label: "AI packaging design" },
       { href: "/en/how-it-works", label: "How it works" },
       { href: "/en/examples", label: "Examples" },
       { href: "/en/pricing", label: "Pricing" },
@@ -96,10 +101,15 @@ const content: SiteContent = {
     hubs: [
       { href: "/en/packaging-design", label: "Packaging design" },
       { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
+      { href: "/en/food-packaging-design", label: "Food packaging" },
       { href: "/en/perfume-box-design", label: "Perfume box" },
-      { href: "/en/pricing", label: "Pricing" },
     ],
     extraHubs: [
+      { href: "/en/serum-cream-box-design", label: "Serum / cream box" },
+      { href: "/en/label-vs-box", label: "Label vs box" },
+      { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
+      { href: "/en/what-is-ai-packaging-design", label: "AI packaging design" },
+      { href: "/en/pricing", label: "Pricing" },
       { href: "/en/examples", label: "Examples" },
       { href: "/en/contact", label: "Contact" },
     ],
@@ -137,8 +147,8 @@ const content: SiteContent = {
       related: [
         { href: "/en/box-design", label: "Box design" },
         { href: "/en/label-design", label: "Label design" },
-        { href: "/en/dieline", label: "Dieline" },
-        { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
+        { href: "/en/food-packaging-design", label: "Food packaging" },
+        { href: "/en/label-vs-box", label: "Label vs box" },
       ],
       serviceName: "Packaging design",
       serviceType: "PackagingDesign",
@@ -170,9 +180,9 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/en/packaging-design", label: "Packaging design" },
-        { href: "/en/perfume-box-design", label: "Perfume box" },
+        { href: "/en/label-vs-box", label: "Label vs box" },
         { href: "/en/dieline", label: "Dieline" },
-        { href: "/en/examples", label: "Examples" },
+        { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
       ],
       serviceName: "Box design",
       serviceType: "BoxDesign",
@@ -200,9 +210,9 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/en/packaging-design", label: "Packaging design" },
-        { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
+        { href: "/en/label-vs-box", label: "Label vs box" },
         { href: "/en/box-design", label: "Box design" },
-        { href: "/en/how-it-works", label: "How it works" },
+        { href: "/en/food-packaging-design", label: "Food packaging" },
       ],
       serviceName: "Label design",
       serviceType: "LabelDesign",
@@ -230,8 +240,8 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/en/box-design", label: "Box design" },
+        { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
         { href: "/en/packaging-design", label: "Packaging design" },
-        { href: "/en/perfume-box-design", label: "Perfume box" },
         { href: "/en/faq", label: "FAQ" },
       ],
       serviceName: "Dieline",
@@ -259,10 +269,10 @@ const content: SiteContent = {
         },
       ],
       related: [
+        { href: "/en/serum-cream-box-design", label: "Serum / cream box" },
         { href: "/en/label-design", label: "Label design" },
         { href: "/en/box-design", label: "Box design" },
         { href: "/en/perfume-box-design", label: "Perfume box" },
-        { href: "/en/examples", label: "Examples" },
       ],
       serviceName: "Cosmetic packaging design",
       serviceType: "CosmeticPackaging",
@@ -296,6 +306,188 @@ const content: SiteContent = {
       ],
       serviceName: "Perfume box design",
       serviceType: "PerfumeBoxDesign",
+    },
+    "food-packaging-design": {
+      slug: "food-packaging-design",
+      meta: {
+        title: "Food packaging design",
+        description:
+          "Move your food carton and label from brief to vector in the Paxolab studio. FORMA produces a print-ready surface with dieline logic.",
+      },
+      hero: {
+        title: "Food packaging design",
+        lead: "Clarify the carton and label brief for food brands in the studio; FORMA produces a paneled vector surface.",
+      },
+      sections: [
+        {
+          title: "What we offer",
+          body: "Handle food cartons and labels in one studio flow. Write or talk through the brief; FORMA produces a paneled vector surface with dieline logic. Not random image generation — structure and graphics together.",
+        },
+        {
+          title: "Food-specific care",
+          body: "Leave panel space for allergens, ingredients, and mandatory copy. A barcode is placed only if you provide the digits; the engine does not invent numbers. Clear dimensions and form make the print handoff easier. Printer specs still need your project-specific check.",
+        },
+        {
+          title: "Who it’s for",
+          body: "Snack, sauce, oil, beverage, and similar food brands; agencies and in-house teams. Useful when you want a clear carton or label surface before prototyping.",
+        },
+        {
+          title: "Next step",
+          body: "Open a project in the studio and share product type and dimensions. Credit packs are summarized on pricing; purchase completes inside the studio.",
+        },
+      ],
+      related: [
+        { href: "/en/box-design", label: "Box design" },
+        { href: "/en/label-design", label: "Label design" },
+        { href: "/en/dieline", label: "Dieline" },
+        { href: "/en/packaging-design", label: "Packaging design" },
+      ],
+      serviceName: "Food packaging design",
+      serviceType: "FoodPackaging",
+    },
+    "serum-cream-box-design": {
+      slug: "serum-cream-box-design",
+      meta: {
+        title: "Serum and cream box design",
+        description:
+          "Take a serum or cream carton brief to a paneled vector in the Paxolab studio. Cosmetic language, hierarchy, and dieline together.",
+      },
+      hero: {
+        title: "Serum and cream box design",
+        lead: "Clean hierarchy and readable panels on single-SKU cosmetic cartons. Produce your serum or cream brief in the Paxolab studio.",
+      },
+      sections: [
+        {
+          title: "Serum carton",
+          body: "A clear front panel for product name, volume, and variant on tall or narrow forms. Restrained typography that leaves room for material feel.",
+        },
+        {
+          title: "Cream carton",
+          body: "Lid, front, and side panels stay in one system for jar or tube cartons. Space is planned for ingredients and warnings; graphics sit by fold.",
+        },
+        {
+          title: "Cosmetic language",
+          body: "Ingredient lists, warnings, and brand promise must fit small surfaces. A restrained voice that leaves room for finish and print quality usually works better than heavy effects.",
+        },
+        {
+          title: "Related pages",
+          body: "General cosmetic packaging, perfume box, label, and box pages complete the same brand system. Pick a product type in the studio and generate.",
+        },
+      ],
+      related: [
+        { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
+        { href: "/en/perfume-box-design", label: "Perfume box" },
+        { href: "/en/label-design", label: "Label design" },
+        { href: "/en/box-design", label: "Box design" },
+      ],
+      serviceName: "Serum and cream box design",
+      serviceType: "SerumCreamBox",
+    },
+    "what-is-ai-packaging-design": {
+      slug: "what-is-ai-packaging-design",
+      meta: {
+        title: "What is AI packaging design?",
+        description:
+          "AI clarifies the brief and speeds iteration; the final print surface is the FORMA vector engine. No image-generation model.",
+      },
+      hero: {
+        title: "What is AI packaging design?",
+        lead: "AI talks and extracts a brief; the final print surface is FORMA’s vector engine. Not random image generation — a paneled surface with dieline logic.",
+      },
+      sections: [
+        {
+          title: "What AI is for",
+          body: "Conversation and brief extraction: product type, dimensions, brand notes, and missing fields become clear. Iteration intent comes from here too. AI does not generate a random packaging picture.",
+        },
+        {
+          title: "The final surface is FORMA",
+          body: "Cut, fold, and graphics meet in a paneled vector engine. Output is structure-bound; no image-generation model is used. That split exists so the file that goes to print still speaks production language.",
+        },
+        {
+          title: "How you proceed",
+          body: "The how-it-works flow: brief → FORMA generation → revision. Try it in the studio; credit metering applies to signed-in sessions.",
+        },
+      ],
+      related: [
+        { href: "/en/how-it-works", label: "How it works" },
+        { href: "/en/packaging-design", label: "Packaging design" },
+        { href: "/en/dieline", label: "Dieline" },
+        { href: "/en/faq", label: "FAQ" },
+      ],
+      serviceName: "AI packaging design",
+      serviceType: "AiPackagingExplainer",
+    },
+    "print-ready-dieline": {
+      slug: "print-ready-dieline",
+      meta: {
+        title: "Print-ready dieline",
+        description:
+          "Dieline preflight and SVG/vector export. The Paxolab studio offers production checks; final printer approval stays with you and your printer.",
+      },
+      hero: {
+        title: "Print-ready dieline",
+        lead: "The dieline page covers structure; this one focuses on preflight and whether the vector export is usable. Final approval is with your printer.",
+      },
+      sections: [
+        {
+          title: "How it differs from the dieline page",
+          body: "The dieline page explains cut, fold, and glue lines. Here the focus is studio preflight and whether the SVG/vector output is usable at print or prototype.",
+        },
+        {
+          title: "Preflight and export",
+          body: "The studio runs checks such as brand, dimensions, cut/fold consistency, and collisions; it can export a combined SVG and a print-PDF. The 2 mm safe area and bleed guide are overlay layers. There is no PDF/X claim or a specific press profile.",
+        },
+        {
+          title: "Honest limit",
+          body: "Final printer approval stays with you and your printer. CMYK profile, real bleed, specialty finishes, and die approval still need project-specific validation. The studio production gate blocks export when a barcode is invented or the dieline is inconsistent.",
+        },
+      ],
+      related: [
+        { href: "/en/dieline", label: "Dieline" },
+        { href: "/en/box-design", label: "Box design" },
+        { href: "/en/packaging-design", label: "Packaging design" },
+        { href: "/en/faq", label: "FAQ" },
+      ],
+      serviceName: "Print-ready dieline",
+      serviceType: "PrintReadyDieline",
+    },
+    "label-vs-box": {
+      slug: "label-vs-box",
+      meta: {
+        title: "Label vs box",
+        description:
+          "Label, box, or both: proceed in the Paxolab studio with packagingMode box or label. A short decision guide.",
+      },
+      hero: {
+        title: "Label vs box",
+        lead: "Bottle wrap, folding carton, or both? Set packagingMode to box or label in the brief; FORMA generates for that structure.",
+      },
+      sections: [
+        {
+          title: "When a label",
+          body: "A surface that sticks onto a bottle, jar, or existing container. Dimensions are usually width × height; there is no depth (W). Legal copy and barcode share a small area.",
+        },
+        {
+          title: "When a box",
+          body: "Folding carton, secondary packaging, or a gift form. You need L × W × H and dieline panels. Serum, cream, and perfume cartons sit on this side.",
+        },
+        {
+          title: "When both",
+          body: "Common in cosmetics and food: bottle label + outer carton in one brand system. Open two studio projects, or finish one surface then the other. packagingMode is box or label on each generation.",
+        },
+        {
+          title: "Short checklist",
+          body: "Does it stick onto a container, or does it have its own form? Is there a depth in the dimensions? Do shelf and gift moments want a carton? If unsure, read the label and box pages side by side, then pick the type in the studio.",
+        },
+      ],
+      related: [
+        { href: "/en/label-design", label: "Label design" },
+        { href: "/en/box-design", label: "Box design" },
+        { href: "/en/cosmetic-packaging-design", label: "Cosmetic packaging" },
+        { href: "/en/food-packaging-design", label: "Food packaging" },
+      ],
+      serviceName: "Label vs box",
+      serviceType: "LabelVsBox",
     },
   },
 
