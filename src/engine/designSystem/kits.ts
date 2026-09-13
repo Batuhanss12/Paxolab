@@ -32,10 +32,19 @@ export function pickLockup(style: StyleType, sector: SectorId, grammar: 'box' | 
   if (style === 'minimal') return 'air-rule'
   if (style === 'eco') return 'stamp-center'
   if (style === 'playful') return 'badge-capsule'
+  if (sector === 'food') return 'harvest-seal'
+  if (sector === 'electronics') return 'metal-plaque'
+  if (sector === 'cream' || sector === 'serum') return 'soft-oval'
   return 'serif-cartouche'
 }
 
 export function pickDecor(style: StyleType, sector: SectorId, lockup: LockupId): DecorFamily {
+  if (lockup === 'label-wrap') return 'none'
+  if (lockup === 'label-stack') {
+    if (style === 'eco') return sector === 'food' ? 'harvest' : 'leaf'
+    if (style === 'playful') return 'badge'
+    return 'none'
+  }
   if (lockup === 'centered-crest') return 'crest'
   if (lockup === 'harvest-seal') return 'olive'
   if (lockup === 'metal-plaque' || lockup === 'tech-grid') return 'grid'
@@ -59,8 +68,16 @@ function ramp(
   volume: number,
   minMm: number,
   tracking: { d: number; p: number; m: number; l: number },
-  volumeCase: TypeScale['volumeCase'] = 'upper',
-  opticalLift = 0.018,
+  extras: {
+    volumeCase?: TypeScale['volumeCase']
+    opticalLift?: number
+    opticalCenter?: number
+    ruleGapMm?: number
+    lockupPadX?: number
+    lockupPadY?: number
+    smallCapsRatio?: number
+    taglineMm?: number
+  } = {},
 ): TypeScale {
   return {
     displayMm: display,
@@ -69,64 +86,149 @@ function ramp(
     legalMm: legal,
     brandMm: display,
     categoryMm: meta,
-    taglineMm: Math.max(meta + 0.55, 2.9),
+    taglineMm: extras.taglineMm ?? Math.max(meta + 0.45, minMm + 0.15),
     volumeMm: volume,
     minMm,
     trackingDisplay: tracking.d,
     trackingProduct: tracking.p,
     trackingMeta: tracking.m,
     trackingLegal: tracking.l,
-    volumeCase,
-    opticalLift,
+    volumeCase: extras.volumeCase ?? 'upper',
+    opticalCenter: extras.opticalCenter ?? 0.4,
+    opticalLift: extras.opticalLift ?? 0.018,
+    ruleGapMm: extras.ruleGapMm ?? 1.25,
+    lockupPadX: extras.lockupPadX ?? 4.8,
+    lockupPadY: extras.lockupPadY ?? 2.2,
+    smallCapsRatio: extras.smallCapsRatio ?? 0.72,
   }
 }
 
-export function typeScaleFor(style: StyleType, grammar: 'box' | 'label'): TypeScale {
+export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = false): TypeScale {
   const label = grammar === 'label'
   const minMm = label ? 2.8 : 1.9
   if (style === 'luxury') {
     return ramp(
-      label ? 7.4 : 9.4,
-      label ? 3.6 : 3.4,
-      2.45,
-      label ? 2.25 : 2.02,
-      3.1,
+      label ? (wrap ? 6.0 : 6.6) : 9.1,
+      label ? 3.15 : 3.2,
+      label ? 2.8 : 2.35,
+      label ? 2.8 : 2.02,
+      label ? 2.9 : 2.85,
       minMm,
-      { d: 0.95, p: 1.15, m: 1.75, l: 0.35 },
-      'smallcaps',
-      0.022,
+      { d: 0.62, p: 0.95, m: 1.45, l: 0.28 },
+      {
+        volumeCase: 'smallcaps',
+        opticalLift: 0.02,
+        opticalCenter: wrap ? 0.46 : label ? 0.34 : 0.405,
+        ruleGapMm: 1.35,
+        lockupPadX: wrap ? 7.2 : label ? 4.2 : 5.0,
+        lockupPadY: wrap ? 1.8 : 2.4,
+        smallCapsRatio: 0.7,
+        taglineMm: label ? 2.85 : 3.05,
+      },
     )
   }
   if (style === 'modern') {
     return ramp(
-      label ? 6.8 : 7.4,
-      3.3,
-      2.3,
-      2.05,
-      2.4,
+      label ? 6.2 : 7.2,
+      label ? 3.0 : 3.05,
+      label ? 2.8 : 2.25,
+      label ? 2.8 : 2.0,
+      2.45,
       minMm,
-      { d: 0.36, p: 2.2, m: 1.8, l: 0.2 },
-      'upper',
-      0.012,
+      { d: 0.22, p: 1.65, m: 1.4, l: 0.18 },
+      {
+        opticalLift: 0.01,
+        opticalCenter: wrap ? 0.45 : label ? 0.33 : 0.39,
+        ruleGapMm: 1.05,
+        lockupPadX: wrap ? 7.0 : label ? 5.2 : 6.2,
+        lockupPadY: 2.0,
+        taglineMm: label ? 2.8 : 2.95,
+      },
     )
   }
   if (style === 'minimal') {
-    return ramp(label ? 6.2 : 6.1, 2.95, 2.1, 2.0, 2.5, minMm, { d: 1.1, p: 1.4, m: 1.6, l: 0.15 }, 'upper', 0)
+    return ramp(
+      label ? 5.8 : 6.0,
+      2.9,
+      label ? 2.8 : 2.1,
+      label ? 2.8 : 2.0,
+      2.5,
+      minMm,
+      { d: 0.85, p: 1.15, m: 1.35, l: 0.12 },
+      {
+        opticalLift: 0,
+        opticalCenter: wrap ? 0.46 : label ? 0.38 : 0.46,
+        ruleGapMm: 1.7,
+        lockupPadX: wrap ? 7.0 : 5.4,
+        lockupPadY: 2.8,
+        taglineMm: label ? 2.8 : 2.9,
+      },
+    )
   }
   if (style === 'eco') {
-    return ramp(label ? 6.8 : 8.2, 3.2, 2.35, 2.05, 2.7, minMm, { d: 0.7, p: 1.1, m: 1.2, l: 0.2 }, 'upper', 0.014)
+    return ramp(
+      label ? 6.4 : 8.0,
+      3.1,
+      label ? 2.8 : 2.3,
+      label ? 2.8 : 2.02,
+      2.65,
+      minMm,
+      { d: 0.55, p: 0.9, m: 1.05, l: 0.18 },
+      {
+        opticalLift: 0.012,
+        opticalCenter: wrap ? 0.45 : label ? 0.35 : 0.42,
+        ruleGapMm: 1.2,
+        lockupPadX: wrap ? 7.0 : 5.0,
+        lockupPadY: 2.3,
+        taglineMm: label ? 2.85 : 3.0,
+      },
+    )
   }
   if (style === 'playful') {
-    return ramp(label ? 6.6 : 8.0, 3.3, 2.4, 2.05, 2.85, minMm, { d: 0.25, p: 0.8, m: 0.9, l: 0.15 }, 'upper', 0.01)
+    return ramp(
+      label ? 6.2 : 7.6,
+      3.2,
+      label ? 2.8 : 2.35,
+      label ? 2.8 : 2.02,
+      2.75,
+      minMm,
+      { d: 0.18, p: 0.55, m: 0.7, l: 0.12 },
+      {
+        opticalLift: 0.008,
+        opticalCenter: wrap ? 0.45 : label ? 0.34 : 0.4,
+        ruleGapMm: 1.1,
+        lockupPadX: wrap ? 6.8 : 4.6,
+        lockupPadY: 2.0,
+        taglineMm: label ? 2.85 : 3.05,
+      },
+    )
   }
-  return ramp(label ? 6.8 : 8.4, 3.25, 2.35, 2.02, 2.6, minMm, { d: 0.85, p: 1.2, m: 1.4, l: 0.25 }, 'smallcaps', 0.016)
+  return ramp(
+    label ? 6.4 : 8.2,
+    3.15,
+    label ? 2.8 : 2.3,
+    label ? 2.8 : 2.02,
+    2.55,
+    minMm,
+    { d: 0.68, p: 1.0, m: 1.2, l: 0.22 },
+    {
+      volumeCase: 'smallcaps',
+      opticalLift: 0.014,
+      opticalCenter: wrap ? 0.45 : label ? 0.35 : 0.41,
+      ruleGapMm: 1.2,
+      lockupPadX: wrap ? 7.0 : 5.0,
+      lockupPadY: 2.2,
+      smallCapsRatio: 0.72,
+      taglineMm: label ? 2.85 : 3.0,
+    },
+  )
 }
 
 export const STYLE_KITS: Record<StyleType, LockupId[]> = {
-  luxury: ['centered-crest', 'harvest-seal', 'metal-plaque'],
-  modern: ['left-index', 'tech-grid'],
-  minimal: ['air-rule'],
-  eco: ['stamp-center'],
-  playful: ['badge-capsule'],
-  classic: ['serif-cartouche'],
+  luxury: ['centered-crest', 'harvest-seal', 'metal-plaque', 'label-wrap', 'label-stack'],
+  modern: ['left-index', 'tech-grid', 'label-wrap', 'label-stack'],
+  minimal: ['air-rule', 'label-wrap', 'label-stack'],
+  eco: ['stamp-center', 'label-wrap', 'label-stack'],
+  playful: ['badge-capsule', 'label-wrap', 'label-stack'],
+  classic: ['serif-cartouche', 'label-wrap', 'label-stack'],
 }

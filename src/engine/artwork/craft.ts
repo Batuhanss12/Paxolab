@@ -44,8 +44,12 @@ function focalFor(system: DesignSystem): string {
 }
 
 function hierarchyFor(system: DesignSystem): string {
-  if (system.grammar === 'label') return 'display → product → meta · legal condensed'
-  return 'front lockup · side spine · back legal stack'
+  if (system.grammar === 'label') {
+    return system.wrapSeam
+      ? 'ön lockup → SEAM · arka kullanım / barkod'
+      : 'ön tasarım · arka kullanım / barkod'
+  }
+  return 'front hero · side spine · back legal stack'
 }
 
 /** Staged designer workflow — composeArtwork consults this before drawing. */
@@ -58,8 +62,10 @@ export function buildCraftPlan(
   const face =
     dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront') ??
     dieline.panels[0]
-  const marks = resolveMarks(system.sector, system.surfaceMode, face.w, face.h)
-  const lockupY = system.grammar === 'label' ? 0.36 : system.style === 'minimal' ? 0.46 : 0.385
+  const markFace =
+    dieline.panels.find((p) => p.id === 'back' || p.id === 'trayBack' || p.id === 'labelBack' || p.id === 'warnLabel') ?? face
+  const marks = resolveMarks(system.sector, system.surfaceMode, markFace.w, markFace.h, brief)
+  const lockupY = system.type.opticalCenter
   return {
     stages: ['brief', 'strategy', 'structure', 'type', 'decor', 'verbal', 'marks', 'proof'],
     sector: system.sector,

@@ -92,7 +92,10 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         </div>
         <div>
           <dt>Barkod</dt>
-          <dd>{design.copy.barcode || 'yok (uydurulmadı)'}</dd>
+          <dd>
+            {design.copy.barcode || 'yok'}
+            {design.brief.barcodeDefaulted ? ' · örnek (GS1 değil)' : ''}
+          </dd>
         </div>
       </dl>
 

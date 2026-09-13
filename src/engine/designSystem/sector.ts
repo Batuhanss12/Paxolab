@@ -6,9 +6,9 @@ export function resolveSector(brief: DesignBrief): SectorId {
   if (/parfüm|parfum|perfume|eau de|edp|kolonya/.test(blob)) return 'perfume'
   if (/serum|ampul/.test(blob)) return 'serum'
   if (/krem|cream/.test(blob)) return 'cream'
-  if (/elektronik|teknoloji|kulaklık|kablo|cihaz|earbuds/.test(blob)) return 'electronics'
-  if (/gıda|yağ|çay|atıştırmalık|reçel|bal|çikolata|zeytin/.test(blob)) return 'food'
-  if (/temizlik|cleaning|deterjan|yüzey/.test(blob)) return 'cleaning'
+  if (/elektronik|teknoloji|kulaklık|kablo|cihaz|earbuds|şarj/.test(blob)) return 'electronics'
+  if (/gıda|yağ|çay|atıştırmalık|reçel|bal|çikolata|zeytin|sızma/.test(blob)) return 'food'
+  if (/temizlik|cleaning|deterjan|yüzey bakım|dezenfektan/.test(blob)) return 'cleaning'
   if (/kozmetik|cilt/.test(blob)) return 'cream'
   return 'generic'
 }

@@ -1,5 +1,6 @@
 import type { DesignSpec } from '../../types'
 import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
+import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { renderStructureDoc } from '../dieline/renderDielineSvg'
 
 function escapeXml(value: string): string {
@@ -8,6 +9,7 @@ function escapeXml(value: string): string {
 
 export function buildCombinedSvg(spec: DesignSpec): string | null {
   if (spec.preflight.collisions || !spec.dieline.consistent) return null
+  if (isInventedRegisteredGtin(spec.copy.barcode, spec.brief.barcodeDefaulted)) return null
   const pad = 8
   const w = spec.dieline.width + pad * 2
   const h = spec.dieline.height + pad * 2
@@ -23,8 +25,11 @@ export function buildCombinedSvg(spec: DesignSpec): string | null {
         `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" />`,
     )
     .join('')
+  const sampleNote = isFormaSampleEan(spec.copy.barcode)
+    ? '\n  <!-- FORMA: sample barcode 200… is not a GS1 GTIN. Replace before production. -->'
+    : ''
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">${sampleNote}
   <title>${escapeXml(spec.copy.brand)} — FORMA combined</title>
   <defs>${clipDefs(spec.dieline)}</defs>
   <g transform="translate(${pad} ${pad})">${artworkMarkup(spec.artwork)}</g>

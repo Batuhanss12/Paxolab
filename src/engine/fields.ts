@@ -12,7 +12,10 @@ export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
   styleType: 'Stil',
   colors: 'Renkler',
   volume: 'Hacim',
+  paoMonths: 'PAO',
   barcode: 'Barkod',
+  manufacturerName: 'Üretici',
+  manufacturerAddress: 'Adres',
   logo: 'Logo',
   references: 'Referans',
   copyOverrides: 'Metin',
@@ -31,6 +34,8 @@ export function emptyBrief(): DesignBrief {
     colors: '',
     volume: '',
     barcode: '',
+    manufacturerName: '',
+    manufacturerAddress: '',
     logo: '',
     references: '',
     copyOverrides: '',
@@ -62,41 +67,117 @@ export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): Desi
       next.dimensionsMm = { ...next.dimensionsMm, ...(value as DimensionsMm) }
       continue
     }
+    if (typeof value === 'boolean') {
+      ;(next as Record<string, unknown>)[key] = value
+      continue
+    }
     if (typeof value === 'string' && value.trim()) {
       ;(next as Record<string, unknown>)[key] = value.trim()
     }
+  }
+  const brandKey = next.brandName.trim().toLocaleLowerCase('tr')
+  if (brandKey) {
+    if (next.productName.trim().toLocaleLowerCase('tr') === brandKey) next.productName = ''
+    if (next.sector.trim().toLocaleLowerCase('tr') === brandKey) next.sector = ''
+    if (next.subProduct.trim().toLocaleLowerCase('tr') === brandKey) next.subProduct = ''
   }
   return next
 }
 
 export function isCoreReady(brief: DesignBrief): boolean {
   const brand = brief.brandName.trim().length > 0
-  const product = brief.productName.trim().length > 0
   const surface = brief.packagingMode !== '' || brief.sector.trim().length > 0
-  return brand && product && surface
+  return brand && surface
+}
+
+export function acceptedProductSkip(brief: DesignBrief): boolean {
+  return !!brief.productSkipped
+}
+
+export function hasUserVolume(brief: DesignBrief): boolean {
+  return brief.volume.trim().length > 0
+}
+
+export function hasUserDims(brief: DesignBrief): boolean {
+  return brief.dimensionsMm.L > 0 && brief.dimensionsMm.H > 0
+}
+
+export function acceptedVolumeDefault(brief: DesignBrief): boolean {
+  return !!brief.volumeDefaulted
+}
+
+export function acceptedDimsDefault(brief: DesignBrief): boolean {
+  return !!brief.dimsDefaulted
+}
+
+export function hasUserBarcode(brief: DesignBrief): boolean {
+  return brief.barcode.trim().length > 0
+}
+
+export function acceptedBarcodeDefault(brief: DesignBrief): boolean {
+  return !!brief.barcodeDefaulted
+}
+
+export function hasUserManufacturer(brief: DesignBrief): boolean {
+  return brief.manufacturerName.trim().length > 0
+}
+
+export function acceptedManufacturerDefault(brief: DesignBrief): boolean {
+  return !!brief.manufacturerDefaulted
+}
+
+export function hasUserAddress(brief: DesignBrief): boolean {
+  return brief.manufacturerAddress.trim().length > 0
+}
+
+export function acceptedAddressDefault(brief: DesignBrief): boolean {
+  return !!brief.addressDefaulted
 }
 
 export function briefSummary(brief: DesignBrief): string {
-  return [brief.brandName, brief.productName, brief.sector || brief.packagingMode].filter(Boolean).join(' · ')
+  const product =
+    brief.productName.trim() &&
+    brief.productName.trim().toLocaleLowerCase('tr') !== brief.brandName.trim().toLocaleLowerCase('tr')
+      ? brief.productName
+      : ''
+  return [brief.brandName, product, brief.sector || brief.packagingMode].filter(Boolean).join(' · ')
 }
 
-export function filledEntries(brief: DesignBrief): { key: string; label: string; value: string }[] {
-  const rows: { key: string; label: string; value: string }[] = []
-  const push = (key: AwaitingKey, value: string) => {
+export type FilledEntry = {
+  key: string
+  label: string
+  value: string
+  sample?: boolean
+}
+
+export function filledEntries(
+  brief: DesignBrief,
+  extras?: { sampleVolume?: string; sampleDims?: string },
+): FilledEntry[] {
+  const rows: FilledEntry[] = []
+  const push = (key: AwaitingKey, value: string, sample = false) => {
     if (!value.trim()) return
-    rows.push({ key, label: FIELD_LABELS[key] || key, value })
+    rows.push({ key, label: FIELD_LABELS[key] || key, value, sample })
   }
   push('brandName', brief.brandName)
-  push('productName', brief.productName)
+  if (brief.productName.trim() && brief.productName.trim().toLocaleLowerCase('tr') !== brief.brandName.trim().toLocaleLowerCase('tr')) {
+    push('productName', brief.productName)
+  }
   push('sector', brief.sector)
   push('subProduct', brief.subProduct)
   push('packagingMode', brief.packagingMode)
   push('templateId', brief.templateId)
   push('styleType', styleLabel(brief.styleType) || brief.styleType)
-  push('dimensionsMm', formatDimensions(brief.dimensionsMm))
+  const userDims = formatDimensions(brief.dimensionsMm)
+  if (userDims) push('dimensionsMm', userDims)
+  else if (extras?.sampleDims) push('dimensionsMm', extras.sampleDims, true)
   push('colors', brief.colors)
-  push('volume', brief.volume)
-  push('barcode', brief.barcode)
+  if (hasUserVolume(brief)) push('volume', brief.volume)
+  else if (extras?.sampleVolume) push('volume', extras.sampleVolume, true)
+  if (brief.paoMonths) push('paoMonths', brief.paoMonths)
+  push('barcode', brief.barcode, !!brief.barcodeDefaulted)
+  push('manufacturerName', brief.manufacturerName, !!brief.manufacturerDefaulted)
+  push('manufacturerAddress', brief.manufacturerAddress, !!brief.addressDefaulted)
   push('logo', brief.logo)
   push('references', brief.references)
   push('copyOverrides', brief.copyOverrides)

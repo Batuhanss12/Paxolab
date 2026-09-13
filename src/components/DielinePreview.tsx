@@ -7,6 +7,7 @@ type DielinePreviewProps = {
 }
 
 export function DielinePreview({ design }: DielinePreviewProps) {
+  const labelSet = design.kind === 'label'
   const svg = renderDielineSvg(design.dieline, {
     showArtwork: true,
     artworkMarkup: `<defs>${clipDefs(design.dieline)}</defs>${artworkMarkup(design.artwork)}`,
@@ -14,8 +15,8 @@ export function DielinePreview({ design }: DielinePreviewProps) {
   return (
     <div className="preview-stage">
       <div className="preview-stage__meta">
-        <span>{design.structureId}</span>
-        <span>CUT + CREASE</span>
+        <span>{labelSet ? 'Etiket seti' : design.structureId}</span>
+        <span>{labelSet ? 'Ön + Arka' : 'CUT + CREASE'}</span>
         <span>
           {design.layout.widthMm} × {design.layout.depthMm || '—'} × {design.layout.heightMm} mm
         </span>

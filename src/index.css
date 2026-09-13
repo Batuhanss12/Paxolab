@@ -439,6 +439,19 @@ h2 {
   font-weight: 600;
 }
 
+.girdiler__row.is-sample dd {
+  color: var(--muted);
+}
+
+.girdiler__hint {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
 /* ——— Style chips ——— */
 .style-bar {
   flex-shrink: 0;

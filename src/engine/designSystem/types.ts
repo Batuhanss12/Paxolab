@@ -33,6 +33,8 @@ export type LockupId =
 export type MarkSet = 'cosmetics' | 'food' | 'electronics' | 'generic'
 export type Density = 'sparse' | 'balanced' | 'dense'
 
+export type TypeRole = 'display' | 'product' | 'meta' | 'legal'
+
 export type TypeScale = {
   displayMm: number
   productMm: number
@@ -48,7 +50,15 @@ export type TypeScale = {
   trackingMeta: number
   trackingLegal: number
   volumeCase: 'upper' | 'smallcaps'
+  /** Visual center of the lockup as a fraction of panel height (not geometric mid). */
+  opticalCenter: number
   opticalLift: number
+  /** Clearance from brand baseline to foil/air rule, and rule to product. */
+  ruleGapMm: number
+  lockupPadX: number
+  lockupPadY: number
+  /** Drawn small-cap height ÷ lining cap height. Never use CSS font-variant. */
+  smallCapsRatio: number
 }
 
 export type LegalBlockDef = {

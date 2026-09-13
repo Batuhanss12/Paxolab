@@ -146,18 +146,24 @@ function simpleTray(d: DimensionsMm): DielineModel {
   }
 }
 
+function labelBack(x: number, y: number, w: number, h: number): Panel {
+  return rect('labelBack', 'body', x, y, w, h)
+}
+
 function flatLabel(d: DimensionsMm): DielineModel {
   const w = d.L || 70
   const h = d.H || 90
+  const gap = 8
   const panel = rect('label', 'body', 0, 0, w, h)
+  const back = labelBack(w + gap, 0, w, h)
   return {
     structureId: 'flat-label',
     unit: 'mm',
-    width: w,
+    width: back.x + back.w,
     height: h,
     dimensions: { L: w, W: 0, H: h },
-    panels: [panel],
-    cut: [panel.polygon],
+    panels: [panel, back],
+    cut: [panel.polygon, back.polygon],
     crease: [],
     glueIds: [],
     consistent: true,
@@ -169,17 +175,19 @@ function wrapLabel(d: DimensionsMm): DielineModel {
   const w = d.L || 90
   const h = d.H || 70
   const overlap = Math.min(12, w * 0.12)
+  const gap = 8
   const face = rect('label', 'body', 0, 0, w, h)
   const glue = rect('overlap', 'glue', w, 0, overlap, h)
   const crease = creaseBetween(face, glue)
+  const back = labelBack(w + overlap + gap, 0, w, h)
   return {
     structureId: 'wrap-label',
     unit: 'mm',
-    width: w + overlap,
+    width: back.x + back.w,
     height: h,
     dimensions: { L: w, W: 0, H: h },
-    panels: [face, glue],
-    cut: [outline([face, glue])],
+    panels: [face, glue, back],
+    cut: [outline([face, glue]), back.polygon],
     crease: crease ? [crease] : [],
     glueIds: ['overlap'],
     consistent: true,

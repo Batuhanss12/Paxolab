@@ -1,5 +1,6 @@
 import type { DesignSpec, Palette, PreflightItem, PreflightReport } from '../../types'
-import { evaluateDesignGates, resolveDesignSystem } from '../designSystem'
+import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
+import { evaluateDesignGates, measureLockupCollision, resolveDesignSystem } from '../designSystem'
 import type { DesignSystem } from '../designSystem/types'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
@@ -9,17 +10,21 @@ function item(id: string, label: string, detail: string, status: PreflightItem['
 export function runPreflight(
   spec: Pick<DesignSpec, 'brief' | 'copy' | 'dieline' | 'layout' | 'overrides' | 'kind' | 'structureId'> & {
     palette?: Palette
+    artwork?: DesignSpec['artwork']
   },
   system?: DesignSystem,
 ): PreflightReport {
   const sys = system ?? resolveDesignSystem(spec.brief, spec.structureId)
-  const collisions = detectCollisions(spec)
+  const collision = detectCollisions(spec, sys)
+  const collisions = collision.hit
   const missingBrand = !spec.copy.brand.trim()
   const missingProduct = !spec.copy.product.trim()
+  const productOk = !missingProduct || !!sys.category
   const badDie = !spec.dieline.consistent || spec.dieline.issues.length > 0
   const noCut = spec.dieline.cut.length === 0
   const noCrease = spec.kind === 'packaging' && spec.dieline.crease.length === 0
-  const userBarcode = !!spec.brief.barcode.trim()
+  const userBarcode = !!spec.brief.barcode.trim() && !spec.brief.barcodeDefaulted && !isFormaSampleEan(spec.brief.barcode)
+  const inventedGtin = isInventedRegisteredGtin(spec.copy.barcode, spec.brief.barcodeDefaulted)
   const palette = spec.palette ?? { bg: '#111', fg: '#eee', accent: '#aaa', muted: '#888', paper: '#000' }
 
   const gates = evaluateDesignGates(
@@ -29,15 +34,21 @@ export function runPreflight(
       kind: spec.kind,
       palette,
       structureId: spec.structureId,
+      artwork: spec.artwork,
     },
     sys,
   )
   const gateFail = gates.some((g) => g.status === 'fail')
-  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail
+  const exportOk = !collisions && !badDie && !noCut && !missingBrand && !gateFail && !inventedGtin
 
   const items: PreflightItem[] = [
     item('brand', 'Marka kimliği', 'Ön yüz lockup', missingBrand ? 'fail' : 'pass'),
-    item('product', 'Ürün adı', 'Hiyerarşi', missingProduct ? 'fail' : 'pass'),
+    item(
+      'product',
+      'Ürün adı',
+      missingProduct ? (sys.category ? `Lockup kategori · ${sys.category}` : 'Hiyerarşi boş') : 'Hiyerarşi',
+      missingProduct ? (productOk ? 'warn' : 'fail') : 'pass',
+    ),
     item('size', 'Net ölçü', `${spec.layout.widthMm} × ${spec.layout.depthMm || '—'} × ${spec.layout.heightMm} mm`, spec.layout.widthMm > 0 ? 'pass' : 'fail'),
     item(
       'dieline',
@@ -45,13 +56,24 @@ export function runPreflight(
       noCut || noCrease || badDie ? spec.dieline.issues.join(' · ') || 'CUT/CREASE eksik' : 'CUT + CREASE tutarlı',
       noCut || badDie ? 'fail' : noCrease ? 'fail' : 'pass',
     ),
-    item('collision', 'Çarpışma', collisions ? 'Metin panel sınırını aşıyor' : 'Panel içi güvenli', collisions ? 'fail' : 'pass'),
+    item(
+      'collision',
+      'Çarpışma',
+      collisions ? `Lockup bbox: ${collision.reasons.join(', ')}` : 'Glyph bbox panel / lockup içinde',
+      collisions ? 'fail' : 'pass',
+    ),
     item('copy', 'Metin kilidi', spec.copy.tagline, spec.copy.tagline ? 'pass' : 'warn'),
     item(
       'barcode',
       'Barkod',
-      userBarcode ? spec.brief.barcode : 'Kullanıcı vermedi — uydurulmadı',
-      userBarcode ? 'pass' : 'na',
+      inventedGtin
+        ? 'Motor tescilli görünen GTIN uydurdu — dışa aktarma kapalı'
+        : userBarcode
+          ? spec.brief.barcode
+          : spec.copy.barcode
+            ? `Örnek ${spec.copy.barcode} — GS1 değil`
+            : 'Yok',
+      inventedGtin ? 'fail' : userBarcode ? 'pass' : spec.copy.barcode ? 'warn' : 'na',
     ),
     ...gates,
     item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '3 mm taşma + 5 mm güvenli' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
@@ -62,9 +84,12 @@ export function runPreflight(
   return { items, blocking, exportOk, collisions }
 }
 
-function detectCollisions(spec: Pick<DesignSpec, 'copy' | 'dieline'>): boolean {
+function detectCollisions(
+  spec: Pick<DesignSpec, 'copy' | 'dieline' | 'overrides' | 'kind'>,
+  system: DesignSystem,
+) {
   const front = spec.dieline.panels.find((p) => p.id === 'front' || p.id === 'label' || p.id === 'trayFront')
-  if (!front) return true
-  const brand = spec.copy.brand.length * 0.55
-  return brand > front.w * 0.92
+  if (!front) return { hit: true, reasons: ['no-front'] }
+  const labelFace = spec.kind === 'label' || system.grammar === 'label'
+  return measureLockupCollision(front, system, spec.copy, spec.overrides, labelFace)
 }

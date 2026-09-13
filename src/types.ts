@@ -30,7 +30,19 @@ export type DesignBrief = {
   styleType: StyleType | ''
   colors: string
   volume: string
+  /** PAO window from the user (e.g. 12M). Empty = sector default. */
+  paoMonths?: string
+  /** User accepted a sample/template value instead of providing one */
+  volumeDefaulted?: boolean
+  dimsDefaulted?: boolean
+  /** User skipped a line name — lockup keeps brand only */
+  productSkipped?: boolean
   barcode: string
+  barcodeDefaulted?: boolean
+  manufacturerName: string
+  manufacturerAddress: string
+  manufacturerDefaulted?: boolean
+  addressDefaulted?: boolean
   logo: string
   references: string
   copyOverrides: string
@@ -141,6 +153,8 @@ export type DesignSpec = {
     ingredients: string
     warnings: string
     barcode: string
+    manufacturer: string
+    address: string
     cta: string
   }
   overrides: DesignOverrides

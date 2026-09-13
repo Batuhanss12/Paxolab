@@ -130,3 +130,25 @@ export function styleWeight(style: StyleType): { ornament: number; tracking: num
   const p = styleProfile(style)
   return { ornament: p.ornament, tracking: p.tracking, frame: p.frame, serif: p.serif }
 }
+
+export type TypeFaceRole = {
+  display: 'serif' | 'sans'
+  product: 'serif' | 'sans'
+  meta: 'sans'
+  legal: 'sans'
+}
+
+/** Per-style type families for Display / Product / Meta / Legal. */
+export function typeFaces(style: StyleType): TypeFaceRole {
+  if (style === 'luxury' || style === 'classic') {
+    return { display: 'serif', product: 'sans', meta: 'sans', legal: 'sans' }
+  }
+  if (style === 'eco') {
+    return { display: 'serif', product: 'serif', meta: 'sans', legal: 'sans' }
+  }
+  return { display: 'sans', product: 'sans', meta: 'sans', legal: 'sans' }
+}
+
+export function fontStack(face: 'serif' | 'sans'): string {
+  return face === 'serif' ? "Georgia, 'Times New Roman', serif" : 'Inter, Arial, sans-serif'
+}

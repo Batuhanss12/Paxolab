@@ -15,6 +15,8 @@ function brief(partial: Partial<DesignBrief>): DesignBrief {
     colors: '',
     volume: '50 ml',
     barcode: '',
+    manufacturerName: '',
+    manufacturerAddress: '',
     logo: '',
     references: '',
     copyOverrides: '',
@@ -45,7 +47,11 @@ for (const b of cases) {
   const foodBad = sys.sector === 'food' && marks.strip.some((id) => id === 'flammable' || id === 'pao')
   const elecBad = sys.sector === 'electronics' && marks.strip.some((id) => id === 'flammable' || id === 'pao')
   const labelOk = sys.grammar === 'label' && sys.lockup.startsWith('label')
-  const ok = !foodBad && !elecBad && (sys.sector !== 'perfume' || perfumeIcons) && (sys.grammar !== 'label' || labelOk)
+  const ok =
+    !foodBad &&
+    !elecBad &&
+    (sys.sector !== 'perfume' || sys.grammar === 'label' || perfumeIcons) &&
+    (sys.grammar !== 'label' || (labelOk && marks.strip.length === 0))
   if (!ok) fail += 1
   console.log(
     [ok ? 'OK' : 'FAIL', sys.key, marks.recipe.key, marks.strip.join(','), sys.lockup].join(' | '),

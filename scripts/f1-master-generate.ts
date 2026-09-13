@@ -16,6 +16,8 @@ function brief(partial: Partial<DesignBrief>): DesignBrief {
     colors: 'siyah altın',
     volume: '50 ml',
     barcode: '',
+    manufacturerName: '',
+    manufacturerAddress: '',
     logo: '',
     references: '',
     copyOverrides: '',

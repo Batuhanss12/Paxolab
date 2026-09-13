@@ -3,9 +3,10 @@ import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor } from './artwork/languages'
-import { sampleCopy } from './artwork/copy'
+import { resolveProductLine, sampleCopy } from './artwork/copy'
 import { resolveDesignSystem } from './designSystem'
 import { runPreflight } from './production/preflight'
+import { formaSampleEan, normalizeEan13 } from './barcode'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 
@@ -46,17 +47,36 @@ export class FormaLocalEngine implements EnginePort {
     const dieline = buildDieline(template.structureId, brief)
     const kind: DesignKind = template.packagingMode === 'label' ? 'label' : 'packaging'
     const sample = sampleCopy(brief)
+    if (brief.barcode.trim()) {
+      brief.barcode = normalizeEan13(brief.barcode)
+    } else {
+      brief.barcode = formaSampleEan(`${brief.brandName}|${brief.productName}|${brief.volume}`)
+      brief.barcodeDefaulted = true
+    }
+    if (!brief.manufacturerName.trim()) {
+      brief.manufacturerName = `${brief.brandName || 'FORMA'} Üretim A.Ş.`
+      brief.manufacturerDefaulted = true
+    }
+    if (!brief.manufacturerAddress.trim()) {
+      brief.manufacturerAddress = 'Örnek Mah. No:1, 34000 İstanbul, TR'
+      brief.addressDefaulted = true
+    }
     const copy = {
       brand: input.copyPatch?.brand || brief.brandName || input.prev?.copy.brand || 'FORMA',
-      product: input.copyPatch?.product || brief.productName || input.prev?.copy.product || 'Untitled',
+      product: resolveProductLine(
+        brief,
+        input.copyPatch?.product || brief.productName || input.prev?.copy.product || '',
+      ),
       tagline: overrides.customTagline || input.copyPatch?.tagline || sample.tagline,
       volume: input.copyPatch?.volume || brief.volume || sample.volume,
       ingredients: input.copyPatch?.ingredients || sample.ingredients,
       warnings: input.copyPatch?.warnings || sample.warnings,
-      barcode: brief.barcode.trim(),
+      barcode: brief.barcode,
+      manufacturer: brief.manufacturerName,
+      address: brief.manufacturerAddress,
       cta: input.copyPatch?.cta || sample.cta,
     }
-    overrides.barcodeVisible = overrides.barcodeVisible && !!copy.barcode
+    overrides.barcodeVisible = true
 
     const system = resolveDesignSystem(brief, template.structureId)
     const palette = paletteFor(brief, brief.styleType || 'classic', overrides.premium)
@@ -76,6 +96,7 @@ export class FormaLocalEngine implements EnginePort {
       kind,
       structureId: template.structureId,
       palette,
+      artwork,
     }
     const preflight = runPreflight(draft, system)
 

@@ -1,5 +1,7 @@
+import type { DesignBrief } from '../../types'
 import type { SectorId, SurfaceMode } from '../designSystem/types'
 import type { MarkId, MarkRecipe, ResolvedMarks } from './types'
+import { STRIP_TINY_MM, opticalStrip } from './stripLayout'
 
 const SAMPLE = true as const
 
@@ -67,10 +69,10 @@ const CLEAN_WARN = [
 function perfumeBox(): MarkRecipe {
   return recipe(
     'perfume:box',
-    ['pao', 'leaflet', 'flammable', 'keepaway', 'recycle', 'emark'],
-    ['pap21', 'greendot'],
+    ['flammable', 'keepaway', 'pao', 'leaflet'],
+    [],
     PERFUME_WARN_BOX,
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 6 },
+    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 4 },
     { paoMonths: '36M', perfumeAssets: PERFUME_ASSETS },
   )
 }
@@ -78,25 +80,21 @@ function perfumeBox(): MarkRecipe {
 function perfumeLabel(): MarkRecipe {
   return recipe(
     'perfume:label',
-    ['emark', 'flammable'],
-    ['pao'],
-    [
-      'Harici kullanım.',
-      'Alevden uzak tutun.',
-      'Gözle temasından kaçının.',
-    ],
-    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 3 },
-    { paoMonths: '36M', perfumeAssets: { flammable: 'ic1', pao: 'ic3' } },
+    [],
+    [],
+    PERFUME_WARN_BOX,
+    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 0 },
+    { paoMonths: '36M', perfumeAssets: {} },
   )
 }
 
 function creamBox(): MarkRecipe {
   return recipe(
     'cream:box',
-    ['pao', 'leaflet', 'recycle', 'emark'],
-    ['pap21', 'greendot', 'keepaway'],
+    [],
+    [],
     CREAM_WARN,
-    { panel: 'back', minMm: 7.0, gapMm: 2.3, maxIcons: 5 },
+    { panel: 'back', minMm: 7.0, gapMm: 2.3, maxIcons: 0 },
     { paoMonths: '12M' },
   )
 }
@@ -104,10 +102,10 @@ function creamBox(): MarkRecipe {
 function creamLabel(): MarkRecipe {
   return recipe(
     'cream:label',
-    ['emark', 'pao'],
-    ['recycle'],
-    ['Gözle temasından kaçının.', 'Çocuklardan uzak tutun.'],
-    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 3 },
+    [],
+    [],
+    CREAM_WARN,
+    { panel: 'label', minMm: 5.4, gapMm: 1.8, maxIcons: 0 },
     { paoMonths: '12M' },
   )
 }
@@ -115,20 +113,20 @@ function creamLabel(): MarkRecipe {
 function foodBox(): MarkRecipe {
   return recipe(
     'food:box',
-    ['emark', 'recycle', 'glassfork'],
-    ['pap21', 'keepdry'],
+    ['recycle', 'glassfork'],
+    ['keepdry'],
     FOOD_WARN,
-    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 5 },
+    { panel: 'back', minMm: 6.8, gapMm: 2.2, maxIcons: 3 },
   )
 }
 
 function foodLabel(): MarkRecipe {
   return recipe(
     'food:label',
-    ['emark', 'recycle'],
-    ['glassfork'],
-    ['Serin ve kuru yerde saklayın.', 'Alerjen: ürün etiketine bakın.'],
-    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 3 },
+    [],
+    [],
+    FOOD_WARN,
+    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 0 },
   )
 }
 
@@ -145,10 +143,10 @@ function electronicsBox(): MarkRecipe {
 function electronicsLabel(): MarkRecipe {
   return recipe(
     'electronics:label',
-    ['weee', 'recycle'],
-    ['keepdry'],
-    ['Elektronik atık olarak ayırın.', 'Nemden koruyun.'],
-    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 3 },
+    [],
+    [],
+    ELEC_WARN,
+    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 0 },
   )
 }
 
@@ -172,30 +170,52 @@ function genericBox(): MarkRecipe {
   )
 }
 
-export function resolveMarkRecipe(sector: SectorId, surface: SurfaceMode): MarkRecipe {
-  if (sector === 'perfume') return surface === 'label' ? perfumeLabel() : perfumeBox()
-  if (sector === 'cream' || sector === 'serum') return surface === 'label' ? creamLabel() : creamBox()
-  if (sector === 'food') return surface === 'label' ? foodLabel() : foodBox()
-  if (sector === 'electronics') return surface === 'label' ? electronicsLabel() : electronicsBox()
-  if (sector === 'cleaning') return surface === 'label' ? cleaningBox() : cleaningBox()
-  return surface === 'label'
-    ? recipe(
-        'generic:label',
-        ['emark'],
-        ['recycle'],
-        ['Üretici talimatlarına uyun.'],
-        { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 2 },
-      )
-    : genericBox()
+export function paoMonthsFromBrief(brief: DesignBrief | undefined, fallback: string): string {
+  if (brief?.paoMonths?.trim()) return normalizePao(brief.paoMonths)
+  const blob = `${brief?.copyOverrides ?? ''} ${brief?.productName ?? ''} ${brief?.subProduct ?? ''} ${brief?.volume ?? ''}`
+  const hit =
+    blob.match(/\bpao\s*[:\-]?\s*(\d{1,2})\b/i) ||
+    blob.match(/\b(\d{1,2})\s*ay\b/i) ||
+    blob.match(/\b(\d{1,2})M\b/)
+  return hit ? normalizePao(hit[1]) : fallback
 }
 
-function fitStrip(ids: MarkId[], max: number, faceMm: number, minMm: number, gapMm: number): MarkId[] {
-  const unique: MarkId[] = []
-  for (const id of ids) {
-    if (!unique.includes(id)) unique.push(id)
-  }
-  const budget = Math.max(1, Math.floor((faceMm + gapMm) / (minMm + gapMm)))
-  return unique.slice(0, Math.min(max, budget))
+function normalizePao(raw: string): string {
+  const n = raw.replace(/[^\d]/g, '')
+  if (!n) return '12M'
+  return `${Math.min(36, Math.max(3, Number(n)))}M`
+}
+
+export function resolveMarkRecipe(sector: SectorId, surface: SurfaceMode, brief?: DesignBrief): MarkRecipe {
+  const base =
+    sector === 'perfume'
+      ? surface === 'label'
+        ? perfumeLabel()
+        : perfumeBox()
+      : sector === 'cream' || sector === 'serum'
+        ? surface === 'label'
+          ? creamLabel()
+          : creamBox()
+        : sector === 'food'
+          ? surface === 'label'
+            ? foodLabel()
+            : foodBox()
+          : sector === 'electronics'
+            ? surface === 'label'
+              ? electronicsLabel()
+              : electronicsBox()
+            : sector === 'cleaning'
+              ? cleaningBox()
+              : surface === 'label'
+                ? recipe(
+                    'generic:label',
+                    [],
+                    [],
+                    ['Üretici talimatlarına uyun.', 'Çocuklardan uzak tutun.'],
+                    { panel: 'label', minMm: 5.2, gapMm: 1.7, maxIcons: 0 },
+                  )
+                : genericBox()
+  return { ...base, paoMonths: paoMonthsFromBrief(brief, base.paoMonths) }
 }
 
 export function resolveMarks(
@@ -203,26 +223,15 @@ export function resolveMarks(
   surface: SurfaceMode,
   faceWidthMm: number,
   faceHeightMm: number,
+  brief?: DesignBrief,
 ): ResolvedMarks {
-  const recipe = resolveMarkRecipe(sector, surface)
-  const shortFace = Math.min(faceWidthMm, faceHeightMm)
-  const tinyLabel = surface === 'label' && (faceWidthMm < 42 || faceHeightMm < 48)
-  const required = tinyLabel ? recipe.requiredMarks.slice(0, 2) : recipe.requiredMarks
-  const optional = tinyLabel ? [] : recipe.optionalMarks
-  const strip = fitStrip(
-    [...required, ...optional],
-    recipe.placement.maxIcons,
-    Math.max(28, faceWidthMm - 10),
-    recipe.placement.minMm,
-    recipe.placement.gapMm,
-  )
-  const labelStrip = fitStrip(
-    surface === 'label' ? strip : required.slice(0, 3),
-    surface === 'label' ? recipe.placement.maxIcons : 3,
-    Math.max(22, shortFace),
-    recipe.placement.minMm,
-    recipe.placement.gapMm,
-  )
+  const recipe = resolveMarkRecipe(sector, surface, brief)
+  const tinyFace = surface === 'label' || faceWidthMm < STRIP_TINY_MM || faceHeightMm < 28
+  const required = tinyFace ? [] : recipe.requiredMarks
+  const optional = tinyFace ? [] : recipe.optionalMarks
+  const band = Math.max(0, faceWidthMm - 10)
+  const strip = opticalStrip([...required, ...optional], band, recipe).ids
+  const labelStrip: MarkId[] = []
   return {
     recipe,
     strip,
@@ -234,4 +243,26 @@ export function resolveMarks(
 
 export function perfumeAssetsAllowed(sector: SectorId): boolean {
   return sector === 'perfume'
+}
+
+/** Extra transparent warning sticker — perfume box icons only, never on the main label face. */
+export function resolveStickerMarks(
+  sector: SectorId,
+  widthMm: number,
+  heightMm: number,
+  brief?: DesignBrief,
+): ResolvedMarks {
+  if (sector !== 'perfume') {
+    const recipe = resolveMarkRecipe(sector, 'label', brief)
+    return { recipe, strip: [], labelStrip: [], warnings: recipe.requiredTextWarnings.join(' '), sampleLegal: SAMPLE }
+  }
+  const recipe = resolveMarkRecipe('perfume', 'box', brief)
+  const strip = widthMm < STRIP_TINY_MM ? [] : recipe.requiredMarks.slice(0, recipe.placement.maxIcons)
+  return {
+    recipe,
+    strip,
+    labelStrip: [],
+    warnings: recipe.requiredTextWarnings.join(' '),
+    sampleLegal: SAMPLE,
+  }
 }

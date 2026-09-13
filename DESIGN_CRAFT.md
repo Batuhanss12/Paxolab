@@ -29,11 +29,14 @@
 | CF / Yagutshine lattices | `geoLattice` (modern) |
 | Woo botanical silhouettes | `leafStampField` (eco) |
 | Todbie claim pills | `claimCapsules` (playful) |
-| Glisso legal rhythm | stacked back blocks + consistent pad (unchanged grammar) |
-| Classic double-line | `ornamentalRail` + cartouche |
+| CF / Yagutshine edition index | `seriesMark` (`Nº 01` / `02`) + spine pair |
+| Glisso legal rhythm | `legalColumnChrome` — numbered plate + baseline ticks on back stacks |
+| Dynoclean / wrap register | `waveRibbon` wired through `wrapContinuity` (top pair + foot wave to SEAM) |
+| Classic double-line | `ornamentalRail` + cartouche + `lockupWindow` |
+| Elite Brew / luxury spine | `spineLuxuryField` — foil rail + head/foot contour only (not leftover front field) |
 
-Reference JPGs are never embedded in production SVG.
+Reference JPGs are never embedded in production SVG. Decor frames the lockup (`lockupWindow`) and stays out of the type band.
 
 ## Type ramps
 
-`typeScaleFor(style, grammar)` — Display / Product / Meta / Legal (mm), tracking per role, small-caps volume on luxury / classic. Lockup sits on an optical lift, not a naive geometric center.
+`typeScaleFor(style, grammar)` — Display / Product / Meta / Legal (mm), tracking per role, optical center, rule gap. Volume on luxury / classic is **drawn small-caps** (lining figures + smaller capitals) — never `font-variant`. `layoutFrontLockup` reserves the type rectangle, fits tracking so display does not collide with foil/air rules, and `composeArtwork` paints from that layout.

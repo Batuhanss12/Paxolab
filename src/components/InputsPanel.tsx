@@ -1,15 +1,25 @@
-import type { DesignBrief } from '../types'
-import { filledEntries } from '../engine/fields'
+import type { DesignBrief, DesignSpec } from '../types'
+import { filledEntries, formatDimensions } from '../engine/fields'
 import { IconChevron } from './Icons'
 
 type InputsPanelProps = {
   brief: DesignBrief
+  design: DesignSpec | null
   open: boolean
   onToggle: () => void
 }
 
-export function InputsPanel({ brief, open, onToggle }: InputsPanelProps) {
-  const keys = filledEntries(brief)
+export function InputsPanel({ brief, design, open, onToggle }: InputsPanelProps) {
+  const sampleVolume = !brief.volume.trim() && design?.copy.volume ? design.copy.volume : ''
+  const sampleDims =
+    !(brief.dimensionsMm.L && brief.dimensionsMm.H) && design
+      ? formatDimensions({
+          L: design.layout.widthMm,
+          W: design.layout.depthMm,
+          H: design.layout.heightMm,
+        })
+      : ''
+  const keys = filledEntries(brief, { sampleVolume, sampleDims })
   return (
     <section className={`girdiler ${open ? 'is-open' : ''}`}>
       <button type="button" className="girdiler__head" onClick={onToggle}>
@@ -24,9 +34,15 @@ export function InputsPanel({ brief, open, onToggle }: InputsPanelProps) {
           ) : (
             <dl>
               {keys.map((row) => (
-                <div key={row.key} className={`girdiler__row ${row.key === 'styleType' ? 'is-style' : ''}`}>
+                <div
+                  key={row.key}
+                  className={`girdiler__row ${row.key === 'styleType' ? 'is-style' : ''} ${row.sample ? 'is-sample' : ''}`}
+                >
                   <dt>{row.label}</dt>
-                  <dd>{row.value}</dd>
+                  <dd>
+                    {row.value}
+                    {row.sample && <span className="girdiler__hint">örnek / varsayılan</span>}
+                  </dd>
                 </div>
               ))}
             </dl>

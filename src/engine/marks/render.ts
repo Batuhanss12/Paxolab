@@ -13,6 +13,7 @@ import {
   iconWeee,
 } from '../artwork/icons'
 import { perfumeAssetMark } from './perfumeAssets'
+import { opticalStrip } from './stripLayout'
 import type { MarkId, MarkRecipe, PerfumeAssetId } from './types'
 
 function synth(id: MarkId, x: number, y: number, s: number, color: string, paoMonths: string): string {
@@ -31,6 +32,8 @@ function synth(id: MarkId, x: number, y: number, s: number, color: string, paoMo
   return ''
 }
 
+const RETIRED_SYNTH: MarkId[] = ['flammable', 'keepaway', 'pao', 'leaflet', 'pap21', 'greendot', 'emark']
+
 export function renderMark(
   id: MarkId,
   x: number,
@@ -41,22 +44,25 @@ export function renderMark(
   allowPerfumeAssets: boolean,
 ): string {
   const asset = allowPerfumeAssets ? recipe.perfumeAssets[id] : undefined
-  if (asset) return perfumeAssetMark(asset as PerfumeAssetId, x, y, s, color)
+  if (asset) return perfumeAssetMark(asset as PerfumeAssetId, x, y, s, color, recipe.paoMonths)
+  if (RETIRED_SYNTH.includes(id)) return ''
   return synth(id, x, y, s, color, recipe.paoMonths)
 }
 
 export function renderMarkStrip(
-  x: number,
+  bandX: number,
   y: number,
+  bandW: number,
   color: string,
   ids: MarkId[],
   recipe: MarkRecipe,
   allowPerfumeAssets: boolean,
-  gap = 8.4,
-  size?: number,
+  sizeHint?: number,
 ): string {
-  const s = size ?? recipe.placement.minMm
-  return ids
-    .map((id, i) => renderMark(id, x + i * gap, y, s, color, recipe, allowPerfumeAssets))
+  const layout = opticalStrip(ids, bandW, recipe, sizeHint)
+  return layout.ids
+    .map((id, i) =>
+      renderMark(id, bandX + layout.xs[i], y, layout.size, color, recipe, allowPerfumeAssets),
+    )
     .join('')
 }

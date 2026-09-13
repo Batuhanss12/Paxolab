@@ -110,7 +110,7 @@ export function Workspace({
                 className={`tabs__btn ${tab === t.id ? 'is-active' : ''}`}
                 onClick={() => onTab(t.id)}
               >
-                {t.label}
+                {t.id === 'dieline' && design?.kind === 'label' ? 'Etiket seti' : t.label}
               </button>
             ))}
           </nav>
@@ -122,7 +122,7 @@ export function Workspace({
 
       <div className={`workspace__body ${showPreview ? 'has-preview' : ''}`}>
         <aside className="workspace__left">
-          <InputsPanel brief={brief} open={inputsOpen} onToggle={onToggleInputs} />
+          <InputsPanel brief={brief} design={design} open={inputsOpen} onToggle={onToggleInputs} />
           {showStyles && (
             <StyleBar brief={brief} design={design} onStyle={onStyle} onDims={onDims} />
           )}

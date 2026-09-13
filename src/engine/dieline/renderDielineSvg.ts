@@ -40,7 +40,7 @@ export function renderDielineSvg(
       }
       return `<g>
         <rect x="${p.x + pad}" y="${p.y + pad}" width="${p.w}" height="${p.h}" fill="${isGlue ? GLUE : PANEL}" stroke="rgba(255,255,255,0.1)" stroke-width="0.2" />
-        <text x="${p.x + pad + p.w / 2}" y="${p.y + pad + p.h / 2}" text-anchor="middle" fill="#8a8a8a" font-size="3.1" font-family="Inter, sans-serif">${p.id}</text>
+        <text x="${p.x + pad + p.w / 2}" y="${p.y + pad + p.h / 2}" text-anchor="middle" fill="#8a8a8a" font-size="3.1" font-family="Inter, sans-serif">${p.id === 'label' ? 'ÖN' : p.id === 'labelBack' || p.id === 'warnLabel' ? 'ARKA' : p.id}</text>
         <rect x="${p.x + pad + 2}" y="${p.y + pad + 2}" width="${Math.max(0, p.w - 4)}" height="${Math.max(0, p.h - 4)}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" />
       </g>`
     })

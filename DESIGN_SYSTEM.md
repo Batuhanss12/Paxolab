@@ -41,6 +41,10 @@ Key: `surfaceMode × sector × styleType → lockup, decor, density, type (mm), 
 
 Style grammars stay distinct. Eco is kraft; luxury never borrows eco grain.
 
+## Type (D1)
+
+Four roles: **Display** (brand), **Product**, **Meta** (category / index), **Legal**. Families: luxury/classic serif display + sans product; eco serif display+product; modern/minimal/playful sans throughout. Lockup lives in `layoutFrontLockup` (optical center, not mid-panel). Label min type 2.8 mm.
+
 ## Soft gates (`evaluateDesignGates`)
 
 - Fail: no front brand; perfume carrying cream/serum copy; label using tuck-end grammar
