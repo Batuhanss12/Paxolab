@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:all": "vitest run && vitest run --config vitest.server.config.ts",
-    "smoke:api": "node scripts/smoke-api.mjs"
+    "smoke:api": "node scripts/smoke-api.mjs",
+    "cert:box": "npx --yes vite-node scripts/forma-box-cert.ts",
+    "cert:press": "npx --yes vite-node scripts/forma-press-proof.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",

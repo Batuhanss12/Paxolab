@@ -10,7 +10,8 @@ import { backFill } from '../copy'
 import { fontStack } from '../languages'
 import { volumeMarkup } from '../../designSystem/typeSystem'
 import { escapeSvg as esc, minMm as mm, panelClip as clip, wrapSvgLines as wrapLines } from '../svgGeometry'
-import { foodNutritionTable } from './foodElements'
+import { foodFamilyFromBlob } from '../foodFamily'
+import { foodNutritionBlockHeight, foodNutritionTable } from './foodElements'
 import { frames } from './shared'
 import { legalHead, legalBlock, marksBar } from './legalBlocks'
 import type { CraftPlan } from '../craft'
@@ -47,9 +48,18 @@ export function renderBackPanel(
   const warns = wrapLines(copy.warnings, Math.max(16, Math.floor(w / 2.05)), shortBack ? 2 : 4)
 
   const locale = resolveCopyLocale(brief)
-  if (system.sector === 'food' && shortBack) {
-    body += foodNutritionTable(x + padX, cursor, blockW, p, system, true, locale)
-    cursor += 14
+  const family = foodFamilyFromBlob(`${brief.subProduct} ${brief.productName} ${copy.product}`)
+  const sugarSalt = h >= 60
+  if (system.sector === 'food' || system.sector === 'beverage') {
+    const compact = shortBack || h < 90
+    const nutH = foodNutritionBlockHeight({ compact, sugarSalt, family })
+    body += foodNutritionTable(x + padX, cursor, blockW, p, system, compact, locale, {
+      family,
+      volume: copy.volume,
+      sugarSalt,
+      blob: `${brief.subProduct} ${brief.productName}`,
+    })
+    cursor += nutH + 1.4
   }
 
   const backFloor = y + h - (shortBack ? 14 : 32)
@@ -81,16 +91,6 @@ export function renderBackPanel(
       const b = legalBlock(x + padX, cursor, blockW, second?.title ?? 'CAUTION', warns, p, system.serif, shortBack ? 2.35 : 2.75, system.type.legalMm, system.type.trackingLegal, '02')
       body += b.markup
       cursor += b.height + 2.0
-    }
-  }
-
-  if (system.sector === 'food' && !shortBack) {
-    const compact = h < 90
-    const need = compact ? 16 : 28
-    const floor = compact ? 18 : 32
-    if (cursor + need < y + h - floor) {
-      body += foodNutritionTable(x + padX, cursor, blockW, p, system, compact, locale)
-      cursor += need
     }
   }
 

@@ -4,7 +4,7 @@ import { buildDieline } from '../buildDieline'
 import { generateForxaModel } from '../forxaGenerate'
 import { registry } from '../forxa/registry'
 import { renderStructureDoc } from '../renderDielineSvg'
-import { buildDielinePdf } from './pdfDieline'
+import { buildDielinePdf, encodePdfBytes } from './pdfDieline'
 import { boxFromMm, classifyGrammar, resolveMaterial, solveDimensions } from './solver'
 
 describe('Forxa structural pipeline', () => {
@@ -61,9 +61,33 @@ describe('Forxa structural pipeline', () => {
     expect(svg).toContain('data-type="cut"')
     expect(svg).toContain('data-type="crease"')
     const pdf = buildDielinePdf(model, 'A60')
-    expect(pdf.startsWith('%PDF-1.4')).toBe(true)
+    expect(pdf.startsWith('%PDF-1.6')).toBe(true)
     expect(pdf).toContain('%%EOF')
-    expect(pdf).toContain('not PDF/X')
+    expect(pdf).toContain('/S /GTS_PDFX')
+    expect(pdf).toContain('PDF/X-4')
+    expect(pdf).toContain('sRGB IEC61966-2.1')
+    expect(pdf).toContain('/TrimBox')
+    expect(pdf).toContain('/BleedBox')
+    expect(pdf).toContain('/MediaBox')
+    expect(pdf).toContain('/OutputIntents')
+    expect(pdf).toContain('/Trapped /False')
+    expect(pdf).toContain('DestOutputProfile')
+    expect(pdf).not.toContain('Helvetica')
+    expect(pdf).not.toContain('not PDF/X')
+    const bytes = encodePdfBytes(pdf)
+    expect(bytes[0]).toBe(0x25)
+    expect(bytes[7]).toBe(0x36)
+    expect(bytes[10]).toBe(0xe2)
+  })
+
+  it('writes PERF as its own layer for zipper aux', () => {
+    const model = generateForxaModel('tuck-end-box', { L: 80, W: 40, H: 80 }, undefined, '12')
+    expect((model.perf ?? []).length).toBeGreaterThan(0)
+    const svg = renderStructureDoc(model, 'zipper')
+    expect(svg).toContain('data-type="perf"')
+    const pdf = buildDielinePdf(model, 'zipper')
+    expect(pdf).toContain('0.75 0 0.75 RG')
+    expect(pdf).toContain('/S /GTS_PDFX')
   })
 
   it('keeps native perfume tuck-end off the A60 engine', () => {

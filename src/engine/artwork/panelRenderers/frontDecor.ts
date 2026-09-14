@@ -10,7 +10,7 @@ import type { DesignSystem } from '../../designSystem/types'
 import { paintPrimitives } from '../illustrationPrimitives'
 import { lockupWindow, type SafeRect } from '../motifs'
 import { paintPatternFamily, wrapPattern } from '../patternFamilies'
-import { labelDecor, modernStripe, sectorFrame } from './shared'
+import { labelDecor, sectorFrame } from './shared'
 import { paintPlanHero, type HeroPaintCtx } from './heroDispatch'
 import { bridgePicks, bridgePattern, bridgePrimitive, bridgeCtx } from '../../graphicLibrary/bridge'
 
@@ -24,6 +24,13 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
 
   if (grammar === 'label') {
     out += labelDecor(panel, system, p)
+    if (style === 'modern') {
+      const { x, y, w, h } = panel
+      for (let i = 1; i < 3; i++) {
+        const gx = x + (w / 3) * i
+        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="0.16" data-art="modern-grid" />`
+      }
+    }
     out += paintPlanHero(panel, system, p, plan, ctx)
   } else {
     const sector = system.sector
@@ -31,18 +38,17 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
       out += sectorFrame(panel, p, sector, style)
     } else if (style === 'modern') {
       if (sector === 'electronics') out += sectorFrame(panel, p, sector, style)
-      else out += modernStripe(panel, p)
     } else if (style === 'eco' || style === 'playful') {
       out += sectorFrame(panel, p, sector, style)
     } else if (style === 'minimal') {
       // P2-B: cosmetics use lockup hair; cleaning/food/electronics use sector bg. No extra top hairline.
     }
-    if (plan?.composition.intent === 'grid' && style === 'modern') {
+    if (style === 'modern') {
       const { x, y, w, h } = panel
       const cols = 3
       for (let i = 1; i < cols; i++) {
         const gx = x + (w / cols) * i
-        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.06" stroke-width="0.1" />`
+        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="0.16" data-art="modern-grid" />`
       }
     }
     out += paintPlanHero(panel, system, p, plan, ctx)

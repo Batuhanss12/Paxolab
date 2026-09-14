@@ -1,32 +1,15 @@
 /**
  * Forxa StructureEngine — Tuck End Box
  *
- * Klasik tuck-end kutu (aynı yönde iki tuck flap).
+ * Klasik straight tuck-end (ECMA A20): L×W kapak + tuck + dust.
+ * Native FORMA 13 panelli net ile aynı açılım; aux cihazlar (Euroslot,
+ * fermuar, dökme) bu host üzerine biner. Native perfume yolu değişmez.
  *
- * Net Layout (yatay açılım):
- *
- *   ┌────────┬────────┬────────┬────────┬───────┐
- *   │  Glue  │  Back  │ Bottom │ Front  │  ---  │
- *   │  Tab   │ Panel  │  Flap  │ Panel  │       │
- *   ├────────┼────────┼────────┼────────┼───────┤
- *   │        │  Top   │        │  Top   │       │
- *   │        │ Tuck   │        │ Tuck   │       │
- *   └────────┴────────┴────────┴────────┴───────┘
- *
- * Aslında standart tuck-end net (yatay):
- *
- *   [GlueTab] [Back] [BottomCrease] [Front] [TopCrease]
- *                  + dust flaps (yan kanatlar)
- *
- * Parametreler:
- *   length (L)  — ön/arka panel genişliği (mm)
- *   width  (W)  — yan panel genişliği (mm)
- *   height (H)  — kutu yüksekliği (mm)
- *   glueTabWidth — yapıştırma kulağı genişliği (mm, default L*0.15)
- *   tuckLength   — tuck flap uzunluğu (mm, default H*0.85)
- *   dustFlapWidth — dust flap genişliği (mm, default W/2)
- *   cornerRadius — köşe radyusu (mm, default 2)
- *   materialThickness — malzeme kalınlığı (mm, kerf için)
+ *   [topTuck]
+ *   [dust] [top L×W] [dust]
+ *   [glue] [left W] [front L] [right W] [back L]
+ *   [dust] [bottom L×W] [dust]
+ *   [bottomTuck]
  */
 
 import type {
@@ -42,6 +25,8 @@ import type {
 } from '../types';
 import { SVGBuilder, rect, linePath, polygonPath, bbox } from '../svgBuilder';
 import { validateParameters, getDefaultParams, mergeParams } from '../validator';
+import { creaseBetween, outlineUnion, rect as formaRect } from '../../dielineGeometry';
+import type { Panel as FormaPanel } from '../../../../types';
 
 export class TuckEndBox implements PackagingStructure {
   id = 'tuck-end-box';
@@ -107,185 +92,64 @@ export class TuckEndBox implements PackagingStructure {
       };
     }
 
-    const {
-      length: L,
-      width: W,
-      height: H,
-      glueTabWidth: G,
-      tuckLength: T,
-      dustFlapWidth: D,
-      cornerRadius: R,
-      materialThickness: M,
-    } = params;
+    const L = params.length;
+    const W = params.width;
+    const H = params.height;
+    const G = Math.min(Math.max(params.glueTabWidth, 8), Math.min(22, Math.max(10, W * 0.42)));
+    const T = Math.min(Math.max(params.tuckLength, 8), Math.max(12, Math.min(W * 0.85, H * 0.5)));
+    const dust = Math.min(Math.max(params.dustFlapWidth, 6), Math.max(6, W * 0.45));
 
-    // Kerf kompanzasyonu: malzeme kalınlığı kadar panel genişliğini ayarla
-    // (karton kalınlığı kadar fold çizgisi içeri kayar)
-    const kerf = M || 0.3; // default 0.3mm
-    const Wk = W - kerf; // kompanze edilmiş yan panel genişliği
-    const Lk = L; // ön/arka panel genişliği (kompanze edilmez)
+    const bodyY = T + W;
+    const glue = formaRect('glue-tab', 'glue', 0, bodyY, G, H);
+    const left = formaRect('left', 'body', G, bodyY, W, H);
+    const front = formaRect('front', 'body', G + W, bodyY, L, H);
+    const right = formaRect('right', 'body', G + W + L, bodyY, W, H);
+    const back = formaRect('back', 'body', G + W + L + W, bodyY, L, H);
+    const top = formaRect('top', 'flap', G + W, T, L, W);
+    const topTuck = formaRect('top-tuck', 'tuck', G + W, 0, L, T);
+    const bottom = formaRect('bottom', 'flap', G + W, bodyY + H, L, W);
+    const bottomTuck = formaRect('bottom-tuck', 'tuck', G + W, bodyY + H + W, L, T);
+    const dustLT = formaRect('dust-left-top', 'flap', G, bodyY - dust, W, dust);
+    const dustRT = formaRect('dust-right-top', 'flap', G + W + L, bodyY - dust, W, dust);
+    const dustLB = formaRect('dust-left-bottom', 'flap', G, bodyY + H, W, dust);
+    const dustRB = formaRect('dust-right-bottom', 'flap', G + W + L, bodyY + H, W, dust);
 
-    // ─── Net Layout (yatay) ─────────────────────────────────────
-    //
-    //  Yönelim: sol-üst origin (0,0), x sağa, y aşağı
-    //
-    //  Toplam genişlik = G + W + L + W + L + G (glue tab her iki uçta)
-    //  Hayır — standart tuck-end: tek glue tab
-    //
-    //  Layout:
-    //    [GlueTab G] [Back L] [Crease] [Front L] [Crease] [TopTuck T]
-    //    + [DustFlap D] üstte ve altta (front/back panellerde)
-    //
-    //  Aslında klasik tuck-end net:
-    //    Genişlik: G + W + L + W   (glue + side + back/front + side)
-    //    Yükseklik: H + T (top tuck) + T (bottom tuck)
-    //
-    //  Daha basit ve doğru layout (tek sıra):
-    //    X ekseni: [GlueTab] [Side1 W] [Back L] [Side2 W] [Front L]
-    //    Y ekseni: [TopTuck T] [Body H] [BottomTuck T]
-    //
-    //  Dust flap'ler top/bottom tuck ile birlikte yan panellerde
+    const laid: FormaPanel[] = [
+      glue, left, front, right, back, top, topTuck, bottom, bottomTuck, dustLT, dustRT, dustLB, dustRB,
+    ];
+    const pairs: [FormaPanel, FormaPanel][] = [
+      [glue, left], [left, front], [front, right], [right, back],
+      [topTuck, top], [top, front], [front, bottom], [bottom, bottomTuck],
+      [dustLT, left], [dustRT, right], [left, dustLB], [right, dustRB],
+    ];
+    const creaseSegs = pairs.map(([a, b]) => creaseBetween(a, b)).filter((x): x is [Point, Point] => !!x);
+    const creasePaths: Path[] = creaseSegs.map(([a, b]) => linePath(a, b));
+    const cutPaths: Path[] = [polygonPath(outlineUnion(laid))];
+    const gluePaths: Path[] = [rect(glue.x, glue.y, glue.w, glue.h)];
+    const perfPaths: Path[] = [];
+    const folds: FoldLine[] = creaseSegs.map(([a, b]) => ({ from: a, to: b, angle: 90, type: 'valley' as const }));
+
+    const faceOf = (id: string): string => {
+      if (id === 'glue-tab') return 'glue';
+      if (id === 'front') return 'front';
+      if (id === 'back') return 'back';
+      if (id === 'left') return 'left';
+      if (id === 'right') return 'right';
+      if (id === 'top') return 'top';
+      if (id === 'bottom') return 'bottom';
+      if (id.includes('tuck')) return 'lid-tuck';
+      return 'dust';
+    };
+    const panels: Panel[] = laid.map((p) => ({
+      id: p.id,
+      name: p.id,
+      polygon: rect(p.x, p.y, p.w, p.h),
+      face: faceOf(p.id),
+    }));
 
     const totalWidth = G + W + L + W + L;
-    const totalHeight = T + H + T;
+    const totalHeight = T + W + H + W + T;
 
-    // ─── Koordinat Hesaplama ────────────────────────────────────
-    const x0 = 0;
-    const x1 = G;            // glue tab → side1 crease
-    const x2 = G + W;        // side1 → back crease
-    const x3 = G + W + L;    // back → side2 crease
-    const x4 = G + W + L + W; // side2 → front crease
-    const x5 = totalWidth;    // front sağ kenar
-
-    const y0 = 0;             // top
-    const y1 = T;             // top tuck → body crease
-    const y2 = T + H;         // body → bottom tuck crease
-    const y3 = totalHeight;   // bottom
-
-    // ─── CUT Paths (dış kontur) ─────────────────────────────────
-    // Dış kontur: glue tab → üst tuck (yan panellerde dust flap) → sağ → alt tuck → sol
-
-    const cutPaths: Path[] = [];
-
-    // Ana dış kontur — basit dikdörtgen + glue tab açısı
-    // Glue tab: 5-10° açılı (profesyonel standart)
-    const glueAngleOffset = G * 0.15; // glue tab köşe offset
-
-    // Dust flap: yan panellerde üst/alt köşelerde açılı flap
-    // Dust flap açısı: 15° (profesyonel standart)
-    const dustFlapAngle = D * 0.25; // dust flap köşe offset
-
-    // Köşe radyusu uygula (R > 0 ise)
-    const cornerR = Math.min(R, T * 0.3, D * 0.3); // radyus sınırı
-
-    // Dış kontur — dust flap'ler ile
-    const outerContour: Point[] = [
-      // Sol alt → sol üst (glue tab açılı)
-      { x: x0, y: y3 },
-      { x: x0, y: y1 + glueAngleOffset },
-      { x: x0 + glueAngleOffset, y: y1 },
-      { x: x1, y: y1 },
-      // Üst: side1 dust flap (yukarı çık)
-      { x: x1, y: y0 + dustFlapAngle },
-      { x: x1 + dustFlapAngle, y: y0 },
-      // Üst tuck (back panel üstü)
-      { x: x2, y: y0 },
-      // Side2 dust flap
-      { x: x3 - dustFlapAngle, y: y0 },
-      { x: x3, y: y0 + dustFlapAngle },
-      // Sağ
-      { x: x5, y: y0 + dustFlapAngle },
-      { x: x5, y: y3 - dustFlapAngle },
-      // Alt: side2 dust flap
-      { x: x3, y: y3 - dustFlapAngle },
-      { x: x3 - dustFlapAngle, y: y3 },
-      // Alt tuck (back panel altı)
-      { x: x2, y: y3 },
-      // Side1 dust flap (alt)
-      { x: x1 + dustFlapAngle, y: y3 },
-      { x: x1, y: y3 - dustFlapAngle },
-      { x: x1, y: y2 },
-      // Sol alt (glue tab)
-      { x: x0 + glueAngleOffset, y: y2 },
-      { x: x0, y: y2 - glueAngleOffset },
-    ];
-
-    cutPaths.push(polygonPath(outerContour));
-    // Dikey cut çizgileri (dust flap ayırımları) — yan panellerde
-    for (const flapX of [x2, x3, x4]) {
-      cutPaths.push(linePath({ x: flapX, y: y0 }, { x: flapX, y: y1 }));
-      cutPaths.push(linePath({ x: flapX, y: y2 }, { x: flapX, y: y3 }));
-    }
-
-    // Tuck flap rounded uçları — köşe radyusu uygula
-    if (cornerR > 0) {
-      // Tuck flap köşelerine küçük yuvarlatma ekle (cut path olarak)
-      for (const tuckY of [y0, y3]) {
-        const dir = tuckY === y0 ? 1 : -1;
-        cutPaths.push(polygonPath([
-          { x: x2 + cornerR, y: tuckY },
-          { x: x2, y: tuckY + dir * cornerR },
-          { x: x2, y: tuckY },
-        ]));
-        cutPaths.push(polygonPath([
-          { x: x2 + L - cornerR, y: tuckY },
-          { x: x2 + L, y: tuckY + dir * cornerR },
-          { x: x2 + L, y: tuckY },
-        ]));
-      }
-    }
-
-    // ─── CREASE Paths (katlama çizgileri) ───────────────────────
-    const creasePaths: Path[] = [];
-
-    // Dikey crease'ler (panel araları)
-    creasePaths.push(linePath({ x: x1, y: y1 }, { x: x1, y: y2 })); // glue → side1
-    creasePaths.push(linePath({ x: x2, y: y1 }, { x: x2, y: y2 })); // side1 → back
-    creasePaths.push(linePath({ x: x3, y: y1 }, { x: x3, y: y2 })); // back → side2
-    creasePaths.push(linePath({ x: x4, y: y1 }, { x: x4, y: y2 })); // side2 → front
-
-    // Yatay crease'ler (top/bottom tuck)
-    creasePaths.push(linePath({ x: x1, y: y1 }, { x: x5, y: y1 })); // top tuck crease
-    creasePaths.push(linePath({ x: x1, y: y2 }, { x: x5, y: y2 })); // bottom tuck crease
-
-    // Dust flap ayırımları CUT katmanında; gövde bağlantıları yatay crease çizgileridir.
-
-    // ─── GLUE Paths (yapıştırma bölgesi) ────────────────────────
-    const gluePaths: Path[] = [];
-    // Glue tab bölgesi
-    gluePaths.push(polygonPath([
-      { x: x0, y: y1 + glueAngleOffset },
-      { x: x0 + glueAngleOffset, y: y1 },
-      { x: x1, y: y1 },
-      { x: x1, y: y2 },
-      { x: x0 + glueAngleOffset, y: y2 },
-      { x: x0, y: y2 - glueAngleOffset },
-    ]));
-
-    // ─── PERF Paths (perforasyon — şu an boş) ───────────────────
-    const perfPaths: Path[] = [];
-
-    // ─── FOLD Lines (3D için) ───────────────────────────────────
-    const folds: FoldLine[] = [
-      { from: { x: x1, y: y1 }, to: { x: x1, y: y2 }, angle: 90, type: 'valley' },
-      { from: { x: x2, y: y1 }, to: { x: x2, y: y2 }, angle: 90, type: 'valley' },
-      { from: { x: x3, y: y1 }, to: { x: x3, y: y2 }, angle: 90, type: 'valley' },
-      { from: { x: x4, y: y1 }, to: { x: x4, y: y2 }, angle: 90, type: 'valley' },
-      { from: { x: x1, y: y1 }, to: { x: x5, y: y1 }, angle: 90, type: 'valley' },
-      { from: { x: x1, y: y2 }, to: { x: x5, y: y2 }, angle: 90, type: 'valley' },
-    ];
-
-    // ─── PANELS (artwork mapping için) ──────────────────────────
-    const panels: Panel[] = [
-      { id: 'glue-tab', name: 'Yapıştırma Kulağı', polygon: gluePaths[0], face: 'glue' },
-      { id: 'side-left', name: 'Sol Yan', polygon: rect(x1 + kerf / 2, y1, Wk, H), face: 'left' },
-      { id: 'front', name: 'Ön Yüz', polygon: rect(x2, y1, Lk, H), face: 'front' },
-      { id: 'side-right', name: 'Sağ Yan', polygon: rect(x3 + kerf / 2, y1, Wk, H), face: 'right' },
-      { id: 'back', name: 'Arka Yüz', polygon: rect(x4, y1, Lk, H), face: 'back' },
-      { id: 'top-tuck', name: 'Üst Tuck', polygon: rect(x2, y0, Lk, T), face: 'top' },
-      { id: 'bottom-tuck', name: 'Alt Tuck', polygon: rect(x2, y2, Lk, T), face: 'bottom' },
-    ];
-
-    // ─── SVG Build ──────────────────────────────────────────────
     const builder = new SVGBuilder({
       width: totalWidth,
       height: totalHeight,
@@ -302,19 +166,14 @@ export class TuckEndBox implements PackagingStructure {
     for (const p of perfPaths) builder.addPerfPath(p);
     for (const f of folds) builder.addFold(f);
     for (const panel of panels) builder.addPanel(panel);
-
-    // Ölçüler
-    builder.addDimension({ x: x1, y: y2 + 5 }, { x: x2, y: y2 + 5 }, `L=${L}`, 8);
-    builder.addDimension({ x: x2, y: y2 + 5 }, { x: x3, y: y2 + 5 }, `W=${W}`, 8);
-    builder.addDimension({ x: x0 - 5, y: y1 }, { x: x0 - 5, y: y2 }, `H=${H}`, -10);
+    builder.addDimension({ x: G + W, y: totalHeight + 6 }, { x: G + W + L, y: totalHeight + 6 }, `L=${L}`, 8);
+    builder.addDimension({ x: G, y: totalHeight + 6 }, { x: G + W, y: totalHeight + 6 }, `W=${W}`, 8);
+    builder.addDimension({ x: -6, y: bodyY }, { x: -6, y: bodyY + H }, `H=${H}`, -10);
 
     const svg = builder.build();
-
-    // ─── Metadata ───────────────────────────────────────────────
-    const allPaths = [...cutPaths, ...creasePaths, ...gluePaths];
-    const bb = bbox(allPaths);
+    const bb = bbox([...cutPaths, ...creasePaths, ...gluePaths]);
+    const panelArea = L * H * 2 + W * H * 2 + L * W * 2 + L * T * 2 + G * H + W * dust * 4;
     const totalArea = bb.w * bb.h;
-    const panelArea = (L * H * 2) + (W * H * 2) + (L * T * 2) + (G * H);
     const wastePercentage = ((totalArea - panelArea) / totalArea) * 100;
 
     const metadata: StructureMetadata = {

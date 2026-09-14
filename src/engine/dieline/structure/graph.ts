@@ -15,20 +15,43 @@ function pointOnSegment(p: Point, a: Point, b: Point, eps = 0.35): boolean {
   return Math.abs(cross) <= eps * (Math.hypot(b.x - a.x, b.y - a.y) + 1)
 }
 
-function segmentTouchesPanel(a: Point, b: Point, panel: Panel): boolean {
-  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+function nearPolyEdge(p: Point, poly: Point[], eps = 0.45): boolean {
+  if (poly.length < 2) return false
+  const pts = poly[0] && poly[poly.length - 1] && almost(poly[0].x, poly[poly.length - 1]!.x) && almost(poly[0].y, poly[poly.length - 1]!.y)
+    ? poly.slice(0, -1)
+    : poly
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!
+    const b = pts[(i + 1) % pts.length]!
+    if (pointOnSegment(p, a, b, eps)) return true
+  }
+  return false
+}
+
+function pointOnPanelRim(p: Point, panel: Panel): boolean {
+  if (panel.polygon.length >= 2 && nearPolyEdge(p, panel.polygon)) return true
   const onBox =
-    almost(mid.x, panel.x) ||
-    almost(mid.x, panel.x + panel.w) ||
-    almost(mid.y, panel.y) ||
-    almost(mid.y, panel.y + panel.h)
+    almost(p.x, panel.x) ||
+    almost(p.x, panel.x + panel.w) ||
+    almost(p.y, panel.y) ||
+    almost(p.y, panel.y + panel.h)
   if (!onBox) return false
   return (
-    mid.x >= panel.x - 0.4 &&
-    mid.x <= panel.x + panel.w + 0.4 &&
-    mid.y >= panel.y - 0.4 &&
-    mid.y <= panel.y + panel.h + 0.4
+    p.x >= panel.x - 0.4 &&
+    p.x <= panel.x + panel.w + 0.4 &&
+    p.y >= panel.y - 0.4 &&
+    p.y <= panel.y + panel.h + 0.4
   )
+}
+
+function segmentTouchesPanel(a: Point, b: Point, panel: Panel): boolean {
+  const steps = 12
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    if (pointOnPanelRim(p, panel)) return true
+  }
+  return false
 }
 
 function panelType(panel: Panel): StructuralPanel['type'] {
@@ -78,16 +101,7 @@ export function buildPanelEdges(model: DielineModel): PanelEdge[] {
   return edges
 }
 
-export function graphConnected(edges: PanelEdge[], panelIds: string[]): boolean {
-  const bodies = panelIds.filter((id) => !/glue|aux-|dust|tuck|lock|cell-/i.test(id))
-  if (bodies.length <= 1) return true
-  const adj = new Map<string, string[]>()
-  for (const id of panelIds) adj.set(id, [])
-  for (const e of edges) {
-    adj.get(e.from)?.push(e.to)
-    adj.get(e.to)?.push(e.from)
-  }
-  const start = bodies[0]!
+function componentOf(start: string, adj: Map<string, string[]>): Set<string> {
   const seen = new Set<string>([start])
   const q = [start]
   while (q.length) {
@@ -98,7 +112,36 @@ export function graphConnected(edges: PanelEdge[], panelIds: string[]): boolean 
       q.push(n)
     }
   }
-  return bodies.every((id) => seen.has(id))
+  return seen
+}
+
+export function graphConnected(edges: PanelEdge[], panelIds: string[]): boolean {
+  const bodies = panelIds.filter((id) => !/glue|aux-|dust|tuck|lock|cell-/i.test(id))
+  if (bodies.length <= 1) return true
+  const adj = new Map<string, string[]>()
+  for (const id of panelIds) adj.set(id, [])
+  for (const e of edges) {
+    adj.get(e.from)?.push(e.to)
+    adj.get(e.to)?.push(e.from)
+  }
+  const remaining = new Set(bodies)
+  const groups: string[][] = []
+  while (remaining.size) {
+    const start = remaining.values().next().value!
+    const seen = componentOf(start, adj)
+    const group = bodies.filter((id) => seen.has(id))
+    for (const id of group) remaining.delete(id)
+    if (group.length) groups.push(group)
+  }
+  if (groups.length <= 1) return true
+  // Two-piece rigid: base-* and lid-* may sit on one sheet with a gap, not a crease.
+  if (groups.length === 2) {
+    const [a, b] = groups
+    const allBase = (g: string[]) => g.every((id) => id.startsWith('base-') || id === 'base')
+    const allLid = (g: string[]) => g.every((id) => id.startsWith('lid-') || id === 'lid')
+    if ((allBase(a!) && allLid(b!)) || (allLid(a!) && allBase(b!))) return true
+  }
+  return false
 }
 
 function flapType(panel: Panel): StructuralFlap['type'] | null {

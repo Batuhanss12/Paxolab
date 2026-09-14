@@ -17,6 +17,14 @@ function taggedCreases(model: DielineModel): TaggedPath[] {
   }))
 }
 
+function taggedPerf(model: DielineModel): TaggedPath[] {
+  return (model.perf ?? []).map((points, i) => ({
+    id: `perf-${i}`,
+    type: 'perforation' as const,
+    points,
+  }))
+}
+
 export function attachStructuralSolution(model: DielineModel, brief?: DesignBrief): DielineModel {
   const { grammar, ecmaCode } = classifyGrammar(model.structureId)
   const material = resolveMaterial(model.structureId === 'tuck-top-auto-bottom' ? 'carton-300' : undefined)
@@ -40,7 +48,7 @@ export function attachStructuralSolution(model: DielineModel, brief?: DesignBrie
     glueAreas,
     cutPaths: taggedCuts(model),
     creasePaths: taggedCreases(model),
-    perforationPaths: [],
+    perforationPaths: taggedPerf(model),
     artworkZones,
     findings,
     releaseReady: releaseReady(findings) && model.consistent && model.cut.length > 0,

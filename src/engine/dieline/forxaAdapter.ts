@@ -144,9 +144,9 @@ export function toDielineModel(
   const height = result.bounds.height || Math.max(0, ...panels.map((p) => p.y + p.h))
 
   const cut = result.paths.cut.map((path) => path.map((p) => ({ x: p.x, y: p.y })))
-  for (const path of result.paths.perf) {
-    if (path.length >= 2) cut.push(path.map((p) => ({ x: p.x, y: p.y })))
-  }
+  const perf = result.paths.perf
+    .filter((path) => path.length >= 2)
+    .map((path) => path.map((p) => ({ x: p.x, y: p.y })))
 
   return {
     structureId,
@@ -157,6 +157,7 @@ export function toDielineModel(
     panels,
     cut,
     crease: creaseSegments(result.paths.crease),
+    perf,
     glueIds,
     consistent: result.success && issues.length === 0 && panels.length > 0 && width > 0 && height > 0,
     issues,

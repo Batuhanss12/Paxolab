@@ -163,6 +163,9 @@ export class PolygonBox implements PackagingStructure {
     const creaseT = creasePaths.map(c => translatePts(c, dx, dy));
     const glueT = gluePaths.map(g => translatePts(g, dx, dy));
     const panelsT = panels.map(p => ({ ...p, polygon: translatePts(p.polygon, dx, dy) }));
+    if (closureType === 0 && glueT[0]) {
+      panelsT.push({ id: 'glue-tab', name: 'Yapıştırma kulağı', polygon: glueT[0], face: 'glue' });
+    }
 
     const totalWidth = rawBb.w;
     const totalHeight = rawBb.h;

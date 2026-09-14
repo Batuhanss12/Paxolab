@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DesignSpec } from '../types'
-import { downloadDielinePdf, downloadDxf, downloadPng, downloadSvg, downloadZip, printPdf } from '../engine/production/exportDoc'
+import { downloadZip } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
 type ProductionInfoProps = {
@@ -12,30 +12,9 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
   const passed = design.preflight.items.filter((i) => i.status === 'pass').length
   const blocked = design.preflight.blocking
 
-  function onSvg() {
-    const ok = downloadSvg(design)
-    setExportNote(ok ? 'Combined SVG indirildi.' : 'Dışa aktarma kapalı — çarpışma veya dieline hatası.')
-  }
-  function onPng() {
-    void downloadPng(design, 2).then((ok) => {
-      setExportNote(ok ? 'PNG indirildi (2x).' : 'PNG üretilemedi.')
-    })
-  }
-  function onDxf() {
-    const ok = downloadDxf(design)
-    setExportNote(ok ? 'DXF dieline indirildi.' : 'DXF yok — kapı kırmızı.')
-  }
   function onZip() {
     const ok = downloadZip(design)
-    setExportNote(ok ? 'ZIP: dieline + artwork + combined + manifest.' : 'ZIP yok — kapı kırmızı.')
-  }
-  function onDielinePdf() {
-    const ok = downloadDielinePdf(design)
-    setExportNote(ok ? 'Vektör dieline PDF indirildi (PDF/X değil).' : 'Dieline PDF yok — kapı kırmızı.')
-  }
-  function onPdf() {
-    const ok = printPdf(design)
-    setExportNote(ok ? 'Yazdır / PDF penceresi açıldı.' : 'PDF yok — kapı kırmızı.')
+    setExportNote(ok ? 'Teslim ZIP indirildi.' : 'ZIP yok — kapı kırmızı.')
   }
 
   return (
@@ -58,8 +37,8 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
           : design.overrides.printReady
-            ? 'Ön kontrol geçti. 2 mm güvenli + bleed guide (prova). SVG/DXF dışa aktarılır; PDF yazıcı diyaloğu — PDF/X değil.'
-            : 'Motor yüzeyi üretti. “baskıya hazırla” → 2 mm prova overlay; fail varsa yeşil olmaz.'}
+            ? 'Ön kontrol geçti. 3 mm güvenli + 3 mm bleed. Dieline PDF/X-4 sRGB; trap yok; FOGRA değil.'
+            : 'Motor yüzeyi üretti. “baskıya hazırla” → 3 mm prova overlay; fail varsa yeşil olmaz.'}
       </p>
 
       <ul className="prod__list">
@@ -77,36 +56,13 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       </ul>
 
       <div className="prod__actions">
-        <button type="button" className="ghost-btn" onClick={onSvg} disabled={!design.preflight.exportOk}>
-          SVG indir
-        </button>
-        <button type="button" className="ghost-btn" onClick={onPng} disabled={!design.preflight.exportOk}>
-          PNG indir
-        </button>
-        <button type="button" className="ghost-btn" onClick={onDxf} disabled={!design.preflight.exportOk}>
-          DXF dieline
-        </button>
         <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
-          ZIP (SVG + DXF + PDF + manifest)
-        </button>
-        <button type="button" className="ghost-btn" onClick={onDielinePdf} disabled={!design.preflight.exportOk}>
-          Dieline PDF
-        </button>
-        <button type="button" className="ghost-btn" onClick={onPdf} disabled={!design.preflight.exportOk}>
-          Yazdır / PDF
+          Teslim ZIP
         </button>
         {exportNote && <span className="prod__export-note">{exportNote}</span>}
       </div>
 
       <dl className="prod__spec">
-        <div>
-          <dt>Yapı</dt>
-          <dd>{design.structureId}</dd>
-        </div>
-        <div>
-          <dt>Şablon</dt>
-          <dd>{design.templateId}</dd>
-        </div>
         <div>
           <dt>Ölçü</dt>
           <dd>
@@ -120,24 +76,6 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
             {design.brief.barcodeDefaulted ? ' · örnek (GS1 değil)' : ''}
           </dd>
         </div>
-        {design.designPlan ? (
-          <>
-            <div>
-              <dt>Set</dt>
-              <dd>{design.designPlan.variationIndex + 1}</dd>
-            </div>
-            <div>
-              <dt>Hero</dt>
-              <dd>{design.designPlan.heroGraphic.family}</dd>
-            </div>
-            <div>
-              <dt>Crop</dt>
-              <dd>
-                {design.designPlan.artDirection.crop} · {design.designPlan.crop.safeInsets.toFixed(1)} mm
-              </dd>
-            </div>
-          </>
-        ) : null}
       </dl>
 
       <RatingBar designId={design.id} />

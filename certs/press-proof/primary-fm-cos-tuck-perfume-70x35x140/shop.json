@@ -1,0 +1,129 @@
+{
+  "sku": {
+    "role": "primary",
+    "templateId": "fm-cos-tuck-perfume",
+    "dims": {
+      "L": 70,
+      "W": 35,
+      "H": 140
+    },
+    "brand": "Aurelia",
+    "product": "Noir",
+    "sector": "Parfüm",
+    "subProduct": "parfüm",
+    "styleType": "luxury",
+    "volume": "50 ml",
+    "why": "Native FORMA 13-panel straight tuck. First board to cut."
+  },
+  "shop": {
+    "netMm": {
+      "L": 70,
+      "W": 35,
+      "H": 140
+    },
+    "sheetMm": {
+      "width": 224.7,
+      "height": 245
+    },
+    "grammar": "straight-tuck-end",
+    "material": "Thickness not specified. Kalıphane picks board. Motor does not invent gsm.",
+    "panels": [
+      {
+        "id": "glue",
+        "kind": "glue",
+        "w": 14.7,
+        "h": 140
+      },
+      {
+        "id": "left",
+        "kind": "side-spine",
+        "w": 35,
+        "h": 140
+      },
+      {
+        "id": "front",
+        "kind": "hero-front",
+        "w": 70,
+        "h": 140
+      },
+      {
+        "id": "right",
+        "kind": "side-spine",
+        "w": 35,
+        "h": 140
+      },
+      {
+        "id": "back",
+        "kind": "legal-back",
+        "w": 70,
+        "h": 140
+      },
+      {
+        "id": "top",
+        "kind": "plain",
+        "w": 70,
+        "h": 35
+      },
+      {
+        "id": "topTuck",
+        "kind": "tuck-flap",
+        "w": 70,
+        "h": 17.5
+      },
+      {
+        "id": "bottom",
+        "kind": "plain",
+        "w": 70,
+        "h": 35
+      },
+      {
+        "id": "bottomTuck",
+        "kind": "tuck-flap",
+        "w": 70,
+        "h": 17.5
+      },
+      {
+        "id": "leftDustTop",
+        "kind": "tuck-flap",
+        "w": 35,
+        "h": 14
+      },
+      {
+        "id": "rightDustTop",
+        "kind": "tuck-flap",
+        "w": 35,
+        "h": 14
+      },
+      {
+        "id": "leftDustBottom",
+        "kind": "tuck-flap",
+        "w": 35,
+        "h": 14
+      },
+      {
+        "id": "rightDustBottom",
+        "kind": "tuck-flap",
+        "w": 35,
+        "h": 14
+      }
+    ],
+    "glueIds": [
+      "glue"
+    ],
+    "cut": 1,
+    "crease": 12,
+    "perf": 0,
+    "bleedMm": 3,
+    "safeMm": 3,
+    "barcode": "2000988691984",
+    "sampleBarcode": true,
+    "honesty": [
+      "PDF/X-4 sRGB OutputIntent. Not FOGRA / GRACoL / a press CMYK condition.",
+      "Trapped /False. No trap.",
+      "Not veraPDF-certified in this repo.",
+      "BleedBox / safe = 3 mm / 3 mm. CUT stays on trim. Bleed is not baked into the knife.",
+      "Barcode 2000988691984 is a FORMA sample (200…). Not a GS1 GTIN.",
+      "Motor / preflight green ≠ the board sits. This pack is for one physical cut."
+    ]
+  }
+}

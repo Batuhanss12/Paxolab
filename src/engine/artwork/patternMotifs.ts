@@ -57,25 +57,27 @@ export function diagonalFoil(panel: Panel, color: string): string {
   return `<polygon points="${x + w * 0.42},${y} ${x + w},${y} ${x + w},${y + h * 0.38} ${x + w * 0.72},${y}" fill="${color}" opacity="0.1" />`
 }
 
-/** Woo / eco botanical silhouettes — stamps, not photos. */
-export function leafStampField(panel: Panel, color: string): string {
+/** Woo / eco botanical silhouettes — stamps, not photos. Dense enough to read at thumbnail. */
+export function leafStampField(panel: Panel, color: string, opacity = 0.12, safe?: SafeRect): string {
   const { x, y, w, h } = panel
-  const spots = [
-    [0.12, 0.22],
-    [0.86, 0.18],
-    [0.18, 0.78],
-    [0.82, 0.74],
-  ]
-  return spots
-    .map(([fx, fy]) => {
+  const cols = 4
+  const rows = 5
+  let out = ''
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const fx = 0.1 + (c / (cols - 1)) * 0.8 + (r % 2) * 0.04
+      const fy = 0.1 + (r / (rows - 1)) * 0.8
       const cx = x + w * fx
       const cy = y + h * fy
-      return `<g opacity="0.14">
-        <path d="M${cx} ${cy - 3.4} C${cx + 2.4} ${cy - 0.6} ${cx + 2.2} ${cy + 2.4} ${cx} ${cy + 3.8} C${cx - 2.2} ${cy + 2.4} ${cx - 2.4} ${cy - 0.6} ${cx} ${cy - 3.4}" fill="none" stroke="${color}" stroke-width="0.28" />
-        <line x1="${cx}" y1="${cy - 3}" x2="${cx}" y2="${cy + 3.2}" stroke="${color}" stroke-width="0.16" />
+      if (safe && cx > safe.x - 2 && cx < safe.x + safe.w + 2 && cy > safe.y - 2 && cy < safe.y + safe.h + 2) continue
+      const s = 0.85 + ((c + r) % 3) * 0.12
+      out += `<g opacity="${opacity}">
+        <path d="M${cx} ${cy - 3.2 * s} C${cx + 2.3 * s} ${cy - 0.5 * s} ${cx + 2.1 * s} ${cy + 2.2 * s} ${cx} ${cy + 3.6 * s} C${cx - 2.1 * s} ${cy + 2.2 * s} ${cx - 2.3 * s} ${cy - 0.5 * s} ${cx} ${cy - 3.2 * s}" fill="none" stroke="${color}" stroke-width="0.26" />
+        <line x1="${cx}" y1="${cy - 2.8 * s}" x2="${cx}" y2="${cy + 3 * s}" stroke="${color}" stroke-width="0.15" />
       </g>`
-    })
-    .join('')
+    }
+  }
+  return out
 }
 
 /** Classic ornamental double-line + small ticks. */

@@ -69,12 +69,12 @@ export function paletteFor(brief: DesignBrief, style: StyleType, _premium: boole
 
   if (style === 'playful') {
     if (lang === 'food-harvest') {
-      return { bg: '#2a1410', fg: '#fff4e4', accent: '#f0a040', muted: '#d4a080', paper: '#341c14' }
+      return { bg: '#f3b45c', fg: '#2a140c', accent: '#d44820', muted: '#8a4a30', paper: '#ebb050' }
     }
     if (lang === 'perfume-luxury') {
-      return { bg: '#2a1020', fg: '#fff4ea', accent: '#f08a6a', muted: '#d0a090', paper: '#381828' }
+      return { bg: '#f08a9a', fg: '#2a1020', accent: '#c42858', muted: '#8a4058', paper: '#e87a8c' }
     }
-    return { bg: '#1c1018', fg: '#fff6ea', accent: '#e88a4a', muted: '#c4a090', paper: '#281820' }
+    return { bg: '#f6c98a', fg: '#2a1410', accent: '#e85a2a', muted: '#8a5040', paper: '#f0bc78' }
   }
 
   if (style === 'classic') {

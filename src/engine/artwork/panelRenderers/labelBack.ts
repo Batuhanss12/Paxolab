@@ -10,7 +10,8 @@ import { perfumeAssetsAllowed } from '../../marks/MarkMatrix'
 import { barcodeSvg } from '../../barcode'
 import { resolveCopyLocale } from '../../copyLocale'
 import { escapeSvg as esc, panelClip as clip, wrapSvgLines as wrapLines } from '../svgGeometry'
-import { foodNutritionTable } from './foodElements'
+import { foodFamilyFromBlob } from '../foodFamily'
+import { foodNutritionBlockHeight, foodNutritionTable } from './foodElements'
 
 export function labelBackArt(
   panel: Panel,
@@ -21,12 +22,16 @@ export function labelBackArt(
 ): string {
   const { x, y, w, h } = panel
   const sticker = resolveStickerMarks(system.sector, w, h, brief)
+  const food = system.sector === 'food' || system.sector === 'beverage'
   const header = 11.2
   const footer = Math.min(22, Math.max(14, h * 0.22))
   const lineH = Math.max(2.65, h < 50 ? 2.35 : 2.65)
-  const bodySpace = h - header - footer - 8
+  const family = foodFamilyFromBlob(`${brief.subProduct} ${brief.productName} ${copy.product}`)
+  const sugarSalt = h >= 60
+  const nutH = food ? foodNutritionBlockHeight({ compact: true, sugarSalt, family }) : 0
+  const bodySpace = h - header - footer - 8 - (food && h >= 32 ? nutH : 0)
   const maxLines = Math.max(3, Math.floor(bodySpace / lineH))
-  const usage = wrapLines(copy.warnings || sticker.warnings, Math.max(16, Math.floor((w - 8) / 1.9)), Math.ceil(maxLines * 0.55))
+  const usage = wrapLines(copy.warnings || sticker.warnings, Math.max(16, Math.floor((w - 8) / 1.9)), Math.ceil(maxLines * 0.45))
   const how = wrapLines(copy.ingredients, Math.max(16, Math.floor((w - 8) / 1.9)), Math.max(2, maxLines - usage.length - 2))
   const ids = sticker.strip
   const footY = y + h - footer
@@ -34,22 +39,49 @@ export function labelBackArt(
   const locale = resolveCopyLocale(brief)
   body += `<text x="${x + 4}" y="${y + 5.4}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.7" letter-spacing="1.2">${locale === 'en' ? 'BACK' : 'ARKA YÜZ'}</text>`
   body += `<text x="${x + w - 4}" y="${y + 5.4}" text-anchor="end" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="1.7" letter-spacing="0.8">${esc(copy.brand.toUpperCase())}</text>`
-  body += `<text x="${x + 4}" y="${y + 9.6}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.2" letter-spacing="1.05">${locale === 'en' ? 'HOW TO USE' : 'KULLANIM'}</text>`
+  const firstTitle = food
+    ? locale === 'en'
+      ? 'INGREDIENTS'
+      : 'İÇİNDEKİLER'
+    : locale === 'en'
+      ? 'HOW TO USE'
+      : 'KULLANIM'
+  const secondTitle = food
+    ? locale === 'en'
+      ? 'STORAGE'
+      : 'SAKLAMA'
+    : locale === 'en'
+      ? 'WARNING'
+      : 'UYARI'
   let cursor = y + header + 1.2
+  if (food && h >= 32) {
+    body += foodNutritionTable(x + 4, cursor, w - 8, p, system, true, locale, {
+      family,
+      volume: copy.volume,
+      sugarSalt,
+      blob: `${brief.subProduct} ${brief.productName}`,
+    })
+    cursor += nutH + 1.6
+    body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.05" letter-spacing="1.05">${firstTitle}</text>`
+    cursor += 3.0
+  } else {
+    body += `<text x="${x + 4}" y="${y + 9.6}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.2" letter-spacing="1.05">${firstTitle}</text>`
+  }
   how.forEach((line) => {
+    if (cursor > footY - 8) return
     body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.95">${esc(line)}</text>`
     cursor += lineH
   })
   cursor += 2.4
-  body += `<text x="${x + 4}" y="${cursor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.05" letter-spacing="1.05">${locale === 'en' ? 'WARNING' : 'UYARI'}</text>`
-  cursor += 3.1
+  if (cursor < footY - 6) {
+    body += `<text x="${x + 4}" y="${cursor}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.05" letter-spacing="1.05">${secondTitle}</text>`
+    cursor += 3.1
+  }
   usage.forEach((line) => {
+    if (cursor > footY - 4) return
     body += `<text x="${x + 4}" y="${cursor}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.95">${esc(line)}</text>`
     cursor += lineH
   })
-  if (system.sector === 'food' && cursor + 14 < footY - 6) {
-    body += foodNutritionTable(x + 4, cursor + 2.2, w - 8, p, system, true, locale)
-  }
   if (copy.manufacturer) {
     body += `<text x="${x + 4}" y="${footY - 3.8}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.7">${esc(copy.manufacturer)}</text>`
   }

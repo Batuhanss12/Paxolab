@@ -4,9 +4,25 @@
  * P1-B: claim strip now measures label widths and shrinks/shortens/drops to fit panel.
  * P1-C: ingredient badges now measure text widths and scale/drop to fit panel + volume band.
  */
-import type { Palette, Panel } from '../../../types'
+import type { Palette, Panel, StyleType } from '../../../types'
 import type { DesignSystem } from '../../designSystem/types'
 import { estimateLineWidth } from '../../designSystem/glyphMetrics'
+import {
+  foodFamilyFromBlob,
+  foodNutritionBasis,
+  foodNutritionBlockHeight,
+  foodNutritionRows,
+  foodTableFooter,
+  type FoodFamily,
+} from '../foodFamily'
+
+export { foodNutritionBlockHeight }
+export type FoodNutritionOpts = {
+  family?: FoodFamily
+  volume?: string
+  sugarSalt?: boolean
+  blob?: string
+}
 
 export type FittedIngredientBadges = {
   claims: string[]
@@ -70,7 +86,7 @@ export function fitIngredientBadges(
   return { claims, widths, totalW, startX, fontSz, badgeH: BADGE_H, gap: BADGE_GAP }
 }
 
-/** Ingredient claim badges — rounded pills with + separators. */
+/** Ingredient claim badges — style-keyed chrome (eco stamp, playful sticker, modern chip). */
 export function ingredientBadges(
   raw: string,
   ax: number,
@@ -79,19 +95,29 @@ export function ingredientBadges(
   p: Palette,
   minMm: number,
   panel: { x: number; w: number },
+  style: StyleType | '' = '',
 ): string {
   const fitted = fitIngredientBadges(raw, ax, anchor, minMm, panel)
   if (!fitted) return ''
+  const playful = style === 'playful'
+  const modern = style === 'modern'
+  const eco = style === 'eco'
+  const rx = modern ? 0.45 : eco ? 1.1 : fitted.badgeH / 2
+  const fill = playful ? p.accent : eco ? p.accent : 'none'
+  const fillOp = playful ? 0.22 : eco ? 0.1 : 0
+  const stroke = playful ? 'none' : p.accent
+  const tracking = modern ? 0.38 : 0.25
+  const textFill = playful ? p.fg : p.accent
   let out = ''
   let cursor = fitted.startX
   fitted.claims.forEach((label, i) => {
     const badgeW = fitted.widths[i] ?? 11
     const bx = cursor
-    out += `<rect x="${bx}" y="${y}" width="${badgeW}" height="${fitted.badgeH}" rx="${fitted.badgeH / 2}" fill="none" stroke="${p.accent}" stroke-width="0.24" />`
-    out += `<text x="${bx + badgeW / 2}" y="${y + fitted.badgeH * 0.62}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${fitted.fontSz}" letter-spacing="0.25">${label}</text>`
+    out += `<rect x="${bx}" y="${y}" width="${badgeW}" height="${fitted.badgeH}" rx="${rx}" fill="${fill}" fill-opacity="${fillOp}" stroke="${stroke}" stroke-width="${stroke === 'none' ? 0 : 0.24}" />`
+    out += `<text x="${bx + badgeW / 2}" y="${y + fitted.badgeH * 0.62}" text-anchor="middle" fill="${textFill}" font-family="Inter, Arial, sans-serif" font-weight="${modern ? 600 : 500}" font-size="${fitted.fontSz}" letter-spacing="${tracking}">${label}</text>`
     cursor += badgeW + fitted.gap
   })
-  if (fitted.claims.length > 1) {
+  if (fitted.claims.length > 1 && !playful) {
     cursor = fitted.startX
     for (let i = 0; i < fitted.claims.length - 1; i++) {
       const badgeW = fitted.widths[i] ?? 11
@@ -100,10 +126,10 @@ export function ingredientBadges(
       cursor += badgeW + fitted.gap
     }
   }
-  return `<g data-art="ingredient-badges">${out}</g>`
+  return `<g data-art="ingredient-badges" data-badge="${style || 'default'}">${out}</g>`
 }
 
-/** Nutrition facts table — tabular figures, sector-specific rows. */
+/** Nutrition facts table — family-keyed rows, not a single cookie matrix. */
 export function foodNutritionTable(
   x: number,
   y: number,
@@ -112,55 +138,34 @@ export function foodNutritionTable(
   system: DesignSystem,
   compact = false,
   locale: 'tr' | 'en' = 'tr',
+  opts: FoodNutritionOpts = {},
 ): string {
   const en = locale === 'en'
-  const rows = compact
-    ? en
-      ? [
-          ['Energy', '1360 kJ / 320 kcal'],
-          ['Fat', '0 g'],
-          ['Carbohydrate', '80 g'],
-          ['Protein', '0.3 g'],
-        ]
-      : [
-          ['Enerji', '1360 kJ / 320 kcal'],
-          ['Yağ', '0 g'],
-          ['Karbonhidrat', '80 g'],
-          ['Protein', '0,3 g'],
-        ]
-    : en
-      ? [
-          ['Energy', '1360 kJ / 320 kcal'],
-          ['Fat', '0 g'],
-          ['Carbohydrate', '80 g'],
-          ['  - Sugars', '80 g'],
-          ['Protein', '0.3 g'],
-          ['Salt', '0 g'],
-        ]
-      : [
-          ['Enerji', '1360 kJ / 320 kcal'],
-          ['Yağ', '0 g'],
-          ['Karbonhidrat', '80 g'],
-          ['  - Şeker', '80 g'],
-          ['Protein', '0,3 g'],
-          ['Tuz', '0 g'],
-        ]
-  const colW = Math.min(w * (compact ? 0.62 : 0.48), compact ? 42 : 36)
+  const family = opts.family ?? foodFamilyFromBlob(opts.blob ?? '')
+  const sugarSalt = opts.sugarSalt ?? !compact
+  const rows = foodNutritionRows(family, locale, { compact, sugarSalt })
+  const basis = foodNutritionBasis(family, opts.volume ?? '', locale)
+  const colW = Math.min(w * (compact ? 0.72 : 0.58), compact ? 48 : 42)
   const sz = Math.max(system.type.legalMm, compact ? 1.55 : 1.7)
   const lineH = sz + (compact ? 0.7 : 0.95)
   let out = ''
   let cy = y
-  out += `<text x="${x}" y="${cy}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.0" letter-spacing="1.1">${en ? 'NUTRITION FACTS (100 g)' : 'BESİN DEĞERLERİ (100 g)'}</text>`
+  out += `<text x="${x}" y="${cy}" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="2.0" letter-spacing="1.05">${en ? `NUTRITION FACTS (${basis})` : `BESİN DEĞERLERİ (${basis})`}</text>`
   cy += 3.2
   out += `<line x1="${x}" y1="${cy}" x2="${x + colW}" y2="${cy}" stroke="${p.accent}" stroke-width="0.2" />`
   cy += 1.2
-  rows.forEach(([label, value], i) => {
-    out += `<text x="${x}" y="${cy + i * lineH}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${sz}">${label}</text>`
-    out += `<text x="${x + colW}" y="${cy + i * lineH}" text-anchor="end" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="500" font-feature-settings="'tnum'" font-size="${sz}">${value}</text>`
+  rows.forEach((row, i) => {
+    out += `<text x="${x}" y="${cy + i * lineH}" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${sz}">${row.label}</text>`
+    out += `<text x="${x + colW}" y="${cy + i * lineH}" text-anchor="end" fill="${p.fg}" font-family="Inter, Arial, sans-serif" font-weight="500" font-feature-settings="'tnum'" font-size="${sz}">${row.value}</text>`
   })
   cy += rows.length * lineH + 1.2
   out += `<line x1="${x}" y1="${cy}" x2="${x + colW}" y2="${cy}" stroke="${p.accent}" stroke-width="0.14" />`
-  return `<g data-art="nutrition-table">${out}</g>`
+  const foot = foodTableFooter(family, locale)
+  if (foot) {
+    cy += 2.1
+    out += `<text x="${x}" y="${cy}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="${Math.max(1.35, sz - 0.2)}">${foot}</text>`
+  }
+  return `<g data-art="nutrition-table" data-food-family="${family}">${out}</g>`
 }
 
 export type FittedFoodClaim = {

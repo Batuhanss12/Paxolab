@@ -1,0 +1,2031 @@
+{
+  "scope": "BOX dieline motor only",
+  "count": 26,
+  "excludedLabelCount": 3,
+  "excludedLabels": [
+    {
+      "id": "fm-cos-label-bottle",
+      "structureId": "wrap-label"
+    },
+    {
+      "id": "fm-food-label-jar",
+      "structureId": "flat-label"
+    },
+    {
+      "id": "fm-elec-label-device",
+      "structureId": "flat-label"
+    }
+  ],
+  "templates": [
+    {
+      "templateId": "fm-cos-tuck-perfume",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 70,
+        "W": 35,
+        "H": 140
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-cos-tuck-cream",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 80,
+        "W": 40,
+        "H": 80
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-cos-tuck-serum",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 45,
+        "W": 45,
+        "H": 120
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-food-tuck-oil",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 80,
+        "W": 50,
+        "H": 180
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-food-tray-snack",
+      "structureId": "simple-tray",
+      "packType": "box",
+      "packFamily": "simple-tray",
+      "library": "core",
+      "defaultsMm": {
+        "L": 160,
+        "W": 100,
+        "H": 40
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "simple-tray",
+        "glueRequired": false,
+        "creaseRequired": true,
+        "minPanels": 5,
+        "requiredAny": [
+          [
+            "trayFront"
+          ],
+          [
+            "trayBack"
+          ],
+          [
+            "trayLeft"
+          ],
+          [
+            "trayRight"
+          ],
+          [
+            "trayBottom"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "trayBottom"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "trayBottom"
+            ],
+            "dim": "W",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "trayFront"
+            ],
+            "dim": "H",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-elec-tuck-earbuds",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 90,
+        "W": 45,
+        "H": 90
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-elec-tuck-cable",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 120,
+        "W": 40,
+        "H": 80
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-tuck-universal",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "native-tuck",
+      "library": "core",
+      "defaultsMm": {
+        "L": 80,
+        "W": 40,
+        "H": 120
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/dielineStructures.ts"
+      },
+      "contract": {
+        "family": "native-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-sleeve",
+      "structureId": "sleeve",
+      "packType": "box",
+      "packFamily": "sleeve",
+      "library": "core",
+      "defaultsMm": {
+        "L": 90,
+        "W": 30,
+        "H": 150
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/sleeve.ts"
+      },
+      "contract": {
+        "family": "sleeve",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 5,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-mailer-ship",
+      "structureId": "mailer-box",
+      "packType": "box",
+      "packFamily": "mailer",
+      "library": "core",
+      "defaultsMm": {
+        "L": 180,
+        "W": 120,
+        "H": 80
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/mailerBox.ts"
+      },
+      "contract": {
+        "family": "mailer",
+        "glueRequired": false,
+        "creaseRequired": true,
+        "minPanels": 7,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "lid"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "lid-tuck"
+          ],
+          [
+            "side-flap-left"
+          ],
+          [
+            "side-flap-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "bottom"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-gift-hex-box",
+      "structureId": "polygon-box",
+      "packType": "box",
+      "packFamily": "polygon",
+      "library": "advanced",
+      "engineParams": {
+        "sides": 6,
+        "closureType": 0
+      },
+      "defaultsMm": {
+        "L": 60,
+        "W": 60,
+        "H": 120
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/polygonBox.ts"
+      },
+      "contract": {
+        "family": "polygon",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 4,
+        "requiredAny": [
+          [
+            "base"
+          ],
+          [
+            "wall-0"
+          ],
+          [
+            "glue-tab"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "H",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-gift-tri-box",
+      "structureId": "polygon-box",
+      "packType": "box",
+      "packFamily": "polygon",
+      "library": "advanced",
+      "engineParams": {
+        "sides": 3,
+        "closureType": 0
+      },
+      "defaultsMm": {
+        "L": 70,
+        "W": 70,
+        "H": 140
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/polygonBox.ts"
+      },
+      "contract": {
+        "family": "polygon",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 4,
+        "requiredAny": [
+          [
+            "base"
+          ],
+          [
+            "wall-0"
+          ],
+          [
+            "glue-tab"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "H",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-gift-octagon-d",
+      "structureId": "polygon-box",
+      "packType": "box",
+      "packFamily": "polygon",
+      "library": "advanced",
+      "engineParams": {
+        "sides": 8,
+        "closureType": 1
+      },
+      "defaultsMm": {
+        "L": 50,
+        "W": 50,
+        "H": 100
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/polygonBox.ts"
+      },
+      "contract": {
+        "family": "polygon",
+        "glueRequired": false,
+        "creaseRequired": true,
+        "minPanels": 4,
+        "requiredAny": [
+          [
+            "base"
+          ],
+          [
+            "wall-0"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "wall-0"
+            ],
+            "dim": "H",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-bev-carrier-6",
+      "structureId": "product-carrier-tray",
+      "packType": "box",
+      "packFamily": "carrier-tray",
+      "library": "advanced",
+      "engineParams": {
+        "rows": 2,
+        "cols": 3
+      },
+      "defaultsMm": {
+        "L": 180,
+        "W": 120,
+        "H": 45
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/productCarrierTray.ts"
+      },
+      "contract": {
+        "family": "carrier-tray",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 8,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "base"
+          ],
+          [
+            "cell-0"
+          ],
+          [
+            "glue-left"
+          ],
+          [
+            "glue-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "base"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "base"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-bev-carrier-2",
+      "structureId": "product-carrier-tray",
+      "packType": "box",
+      "packFamily": "carrier-tray",
+      "library": "advanced",
+      "engineParams": {
+        "rows": 1,
+        "cols": 2
+      },
+      "defaultsMm": {
+        "L": 160,
+        "W": 80,
+        "H": 50
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/productCarrierTray.ts"
+      },
+      "contract": {
+        "family": "carrier-tray",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 8,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "base"
+          ],
+          [
+            "cell-0"
+          ],
+          [
+            "glue-left"
+          ],
+          [
+            "glue-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "base"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "base"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-cos-tuck-euroslot",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "forxa-tuck-aux",
+      "library": "advanced",
+      "auxDevice": "62",
+      "defaultsMm": {
+        "L": 70,
+        "W": 35,
+        "H": 140
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/tuckEndBox.ts"
+      },
+      "contract": {
+        "family": "forxa-tuck-aux",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left",
+            "left"
+          ],
+          [
+            "side-right",
+            "right"
+          ],
+          [
+            "glue-tab",
+            "glue"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "bottom-tuck"
+          ],
+          [
+            "dust-left-top",
+            "leftDustTop"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left",
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-food-tuck-pour",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "forxa-tuck-aux",
+      "library": "advanced",
+      "auxDevice": "44",
+      "defaultsMm": {
+        "L": 80,
+        "W": 50,
+        "H": 160
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/tuckEndBox.ts"
+      },
+      "contract": {
+        "family": "forxa-tuck-aux",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left",
+            "left"
+          ],
+          [
+            "side-right",
+            "right"
+          ],
+          [
+            "glue-tab",
+            "glue"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "bottom-tuck"
+          ],
+          [
+            "dust-left-top",
+            "leftDustTop"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left",
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-mailer-handle",
+      "structureId": "mailer-box",
+      "packType": "box",
+      "packFamily": "mailer",
+      "library": "advanced",
+      "auxDevice": "82",
+      "defaultsMm": {
+        "L": 200,
+        "W": 140,
+        "H": 90
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/mailerBox.ts"
+      },
+      "contract": {
+        "family": "mailer",
+        "glueRequired": false,
+        "creaseRequired": true,
+        "minPanels": 7,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "lid"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "lid-tuck"
+          ],
+          [
+            "side-flap-left"
+          ],
+          [
+            "side-flap-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "bottom"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-pillow",
+      "structureId": "pillow-box",
+      "packType": "box",
+      "packFamily": "pillow",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 140,
+        "W": 70,
+        "H": 40
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/pillowBox.ts"
+      },
+      "contract": {
+        "family": "pillow",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 3,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "glue"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-snap-lock",
+      "structureId": "snap-lock-box",
+      "packType": "box",
+      "packFamily": "snap-lock",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 100,
+        "W": 60,
+        "H": 120
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/snapLockBox.ts"
+      },
+      "contract": {
+        "family": "snap-lock",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 7,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "glue-tab"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "bottom-lock"
+          ],
+          [
+            "side-left"
+          ],
+          [
+            "side-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-rigid-gift",
+      "structureId": "rigid-gift-box",
+      "packType": "box",
+      "packFamily": "rigid-gift",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 160,
+        "W": 120,
+        "H": 50
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/rigidGiftBox.ts"
+      },
+      "contract": {
+        "family": "rigid-gift",
+        "glueRequired": false,
+        "creaseRequired": true,
+        "minPanels": 6,
+        "requiredAny": [
+          [
+            "base-front"
+          ],
+          [
+            "base-back"
+          ],
+          [
+            "base-left"
+          ],
+          [
+            "base-right"
+          ],
+          [
+            "base-bottom"
+          ],
+          [
+            "lid-top"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "base-bottom"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "base-bottom"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-reverse-tuck",
+      "structureId": "reverse-tuck-end-box",
+      "packType": "box",
+      "packFamily": "reverse-tuck",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 70,
+        "W": 35,
+        "H": 120
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/reverseTuckEndBox.ts"
+      },
+      "contract": {
+        "family": "reverse-tuck",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 7,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left"
+          ],
+          [
+            "side-right"
+          ],
+          [
+            "glue-tab"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "bottom-tuck"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-tray-glued",
+      "structureId": "tray-box",
+      "packType": "box",
+      "packFamily": "glued-tray",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 180,
+        "W": 120,
+        "H": 40
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/trayBox.ts"
+      },
+      "contract": {
+        "family": "glued-tray",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 7,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "left"
+          ],
+          [
+            "right"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "glue-left"
+          ],
+          [
+            "glue-right"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "bottom"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "bottom"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-cos-tuck-zipper",
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "packFamily": "forxa-tuck-aux",
+      "library": "advanced",
+      "auxDevice": "12",
+      "defaultsMm": {
+        "L": 80,
+        "W": 40,
+        "H": 80
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/tuckEndBox.ts"
+      },
+      "contract": {
+        "family": "forxa-tuck-aux",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left",
+            "left"
+          ],
+          [
+            "side-right",
+            "right"
+          ],
+          [
+            "glue-tab",
+            "glue"
+          ],
+          [
+            "top"
+          ],
+          [
+            "bottom"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "bottom-tuck"
+          ],
+          [
+            "dust-left-top",
+            "leftDustTop"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "left",
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "top"
+            ],
+            "dim": "W",
+            "axis": "h"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-ecma-a60",
+      "structureId": "tuck-top-auto-bottom",
+      "packType": "box",
+      "packFamily": "tuck-top-auto-bottom",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 100,
+        "W": 50,
+        "H": 150
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/tuckTopAutoBottom.ts"
+      },
+      "contract": {
+        "family": "tuck-top-auto-bottom",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 12,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left"
+          ],
+          [
+            "side-right"
+          ],
+          [
+            "glue-tab"
+          ],
+          [
+            "top-tuck"
+          ],
+          [
+            "auto-bottom-front"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          }
+        ]
+      }
+    },
+    {
+      "templateId": "fm-box-rsc-ship",
+      "structureId": "rsc-carton",
+      "packType": "box",
+      "packFamily": "rsc",
+      "library": "advanced",
+      "defaultsMm": {
+        "L": 200,
+        "W": 150,
+        "H": 150
+      },
+      "entrypoints": {
+        "catalog": "src/engine/catalog/formaTemplateCatalog.json",
+        "facade": "src/engine/dieline/buildDieline.ts",
+        "builder": "src/engine/dieline/forxa/structures/rscCarton.ts"
+      },
+      "contract": {
+        "family": "rsc",
+        "glueRequired": true,
+        "creaseRequired": true,
+        "minPanels": 13,
+        "requiredAny": [
+          [
+            "front"
+          ],
+          [
+            "back"
+          ],
+          [
+            "side-left"
+          ],
+          [
+            "side-right"
+          ],
+          [
+            "glue-tab"
+          ],
+          [
+            "major-top-front"
+          ],
+          [
+            "minor-top-left"
+          ]
+        ],
+        "reflow": [
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "L",
+            "axis": "w"
+          },
+          {
+            "anyOf": [
+              "front"
+            ],
+            "dim": "H",
+            "axis": "h"
+          },
+          {
+            "anyOf": [
+              "side-left"
+            ],
+            "dim": "W",
+            "axis": "w"
+          }
+        ]
+      }
+    }
+  ],
+  "builders": [
+    {
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "route": "native",
+      "file": "src/engine/dieline/dielineStructures.ts (native) · src/engine/dieline/forxa/structures/tuckEndBox.ts (aux/Forxa)",
+      "catalogTemplateIds": [
+        "fm-cos-tuck-perfume",
+        "fm-cos-tuck-cream",
+        "fm-cos-tuck-serum",
+        "fm-food-tuck-oil",
+        "fm-elec-tuck-earbuds",
+        "fm-elec-tuck-cable",
+        "fm-box-tuck-universal"
+      ]
+    },
+    {
+      "structureId": "simple-tray",
+      "packType": "box",
+      "route": "native",
+      "file": "src/engine/dieline/dielineStructures.ts",
+      "catalogTemplateIds": [
+        "fm-food-tray-snack"
+      ]
+    },
+    {
+      "structureId": "sleeve",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/sleeve.ts",
+      "catalogTemplateIds": [
+        "fm-box-sleeve"
+      ]
+    },
+    {
+      "structureId": "mailer-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/mailerBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-mailer-ship",
+        "fm-box-mailer-handle"
+      ]
+    },
+    {
+      "structureId": "polygon-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/polygonBox.ts",
+      "catalogTemplateIds": [
+        "fm-gift-hex-box",
+        "fm-gift-tri-box",
+        "fm-gift-octagon-d"
+      ]
+    },
+    {
+      "structureId": "product-carrier-tray",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/productCarrierTray.ts",
+      "catalogTemplateIds": [
+        "fm-bev-carrier-6",
+        "fm-bev-carrier-2"
+      ]
+    },
+    {
+      "structureId": "pillow-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/pillowBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-pillow"
+      ]
+    },
+    {
+      "structureId": "snap-lock-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/snapLockBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-snap-lock"
+      ]
+    },
+    {
+      "structureId": "rigid-gift-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/rigidGiftBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-rigid-gift"
+      ]
+    },
+    {
+      "structureId": "reverse-tuck-end-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/reverseTuckEndBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-reverse-tuck"
+      ]
+    },
+    {
+      "structureId": "tray-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/trayBox.ts",
+      "catalogTemplateIds": [
+        "fm-box-tray-glued"
+      ]
+    },
+    {
+      "structureId": "tuck-top-auto-bottom",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/tuckTopAutoBottom.ts",
+      "catalogTemplateIds": [
+        "fm-box-ecma-a60"
+      ]
+    },
+    {
+      "structureId": "rsc-carton",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/rscCarton.ts",
+      "catalogTemplateIds": [
+        "fm-box-rsc-ship"
+      ]
+    },
+    {
+      "structureId": "tuck-end-box",
+      "packType": "box",
+      "route": "forxa",
+      "file": "src/engine/dieline/forxa/structures/tuckEndBox.ts",
+      "catalogTemplateIds": [
+        "fm-cos-tuck-euroslot",
+        "fm-food-tuck-pour",
+        "fm-cos-tuck-zipper"
+      ]
+    }
+  ]
+}

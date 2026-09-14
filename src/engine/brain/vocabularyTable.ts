@@ -100,7 +100,7 @@ export const VOCAB: VocabularyRow[] = [
     sectorId: 'cream', subProductId: 'cream',
     paletteFamilies: ['paper-clean', 'warm-cream'],
     heroFamilies: ['oval', 'botanical', 'seal', 'emblem', 'monstera', 'palm', 'organic-wave', 'zebra'],
-    patternFamilies: ['contour', 'grain', 'none'],
+    patternFamilies: ['contour', 'grain', 'lattice', 'none'],
     backgroundTreatments: ['quiet-paper', 'dark-field'],
     ornamentLevel: 1,
     primitives: ['rule', 'dot'],

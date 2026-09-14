@@ -26,12 +26,57 @@ export type SubProductOverride = {
 
 export const SUB_PRODUCT_OVERRIDES: SubProductOverride[] = [
   {
-    match: (sub) => /yağ|zeytin/.test(sub),
+    match: (sub) => /yağ|zeytin/.test(sub) && !/reçel|jam/.test(sub),
     override: {
       tagline: 'Soğuk sıkım. Tek bahçe.',
       volume: '500 ml',
       ingredients: '100% soğuk sıkım sızma zeytinyağı. Menşei: Ege, TR. Asit ≤ 0,8%. Lot / SKT kapakta.',
       extraWarnings: 'Işıktan koruyun. Serin ve karanlık saklayın.',
+    },
+  },
+  {
+    match: (sub) => /\bbal\b|honey|çiçek bal/.test(sub),
+    override: {
+      tagline: 'Dağ çiçeği. Saf damla.',
+      volume: '340 g',
+      ingredients: 'Çiçek balı. Alerjen: yok (örnek). Üretim yeri: TR.',
+      extraWarnings: 'Alerjen: yok (örnek). Serin ve kuru yerde saklayın.',
+    },
+  },
+  {
+    match: (sub) => /reçel|jam|preserve/.test(sub),
+    override: {
+      tagline: 'Bahçeden kavanoza.',
+      volume: '300 g',
+      ingredients: 'Meyve, şeker. Alerjen: yok (örnek).',
+      extraWarnings: 'Alerjen: yok (örnek). Açıldıktan sonra buzdolabında saklayın.',
+    },
+  },
+  {
+    match: (sub) => /çay|tea|adaçayı/.test(sub),
+    override: {
+      tagline: 'Demlikte sakin.',
+      volume: '100 g',
+      ingredients: 'Adaçayı yaprağı. Alerjen: yok (örnek).',
+      extraWarnings: 'Alerjen: yok (örnek). Kuru ve ışıksız saklayın.',
+    },
+  },
+  {
+    match: (sub) => /çikolata|cacao|chocolate|kakao/.test(sub),
+    override: {
+      tagline: 'Kakaodan gelen yoğunluk.',
+      volume: '80 g',
+      ingredients: 'Kakao kitlesi, kakao yağı, şeker. Alerjen: süt olabilir (örnek).',
+      extraWarnings: 'Alerjen: süt olabilir (örnek). Serin ve kuru yerde saklayın.',
+    },
+  },
+  {
+    match: (sub) => /kurabiye|biscuit|cookie/.test(sub),
+    override: {
+      tagline: 'Fırından, olduğu gibi.',
+      volume: '180 g',
+      ingredients: 'Buğday unu, tereyağı, kakao kitlesi, deniz tuzu. Alerjen: gluten, süt. Üretim yeri: TR.',
+      extraWarnings: 'Alerjen: gluten, süt. Serin ve kuru yerde saklayın.',
     },
   },
   {
@@ -45,12 +90,57 @@ export const SUB_PRODUCT_OVERRIDES: SubProductOverride[] = [
 
 export const SUB_PRODUCT_OVERRIDES_EN: SubProductOverride[] = [
   {
-    match: (sub) => /yağ|zeytin|olive|oil/.test(sub),
+    match: (sub) => /yağ|zeytin|olive/.test(sub) && !/reçel|jam/.test(sub) || /olive oil/.test(sub),
     override: {
       tagline: 'Cold pressed. Single grove.',
       volume: '500 ml',
       ingredients: '100% cold-pressed extra virgin olive oil. Origin: Aegean, TR. Acidity ≤ 0.8%. Lot / EXP on cap.',
       extraWarnings: 'Protect from light. Store cool and dark.',
+    },
+  },
+  {
+    match: (sub) => /\bbal\b|honey|çiçek bal/.test(sub),
+    override: {
+      tagline: 'Mountain flower. A clean drop.',
+      volume: '340 g',
+      ingredients: 'Blossom honey. Allergen: none (sample). Made in TR.',
+      extraWarnings: 'Allergen: none (sample). Store cool and dry.',
+    },
+  },
+  {
+    match: (sub) => /reçel|jam|preserve/.test(sub),
+    override: {
+      tagline: 'From garden to jar.',
+      volume: '300 g',
+      ingredients: 'Fruit, sugar. Allergen: none (sample).',
+      extraWarnings: 'Allergen: none (sample). Refrigerate after opening.',
+    },
+  },
+  {
+    match: (sub) => /çay|tea|adaçayı/.test(sub),
+    override: {
+      tagline: 'Quiet in the pot.',
+      volume: '100 g',
+      ingredients: 'Sage leaf. Allergen: none (sample).',
+      extraWarnings: 'Allergen: none (sample). Store dry and away from light.',
+    },
+  },
+  {
+    match: (sub) => /çikolata|cacao|chocolate|kakao/.test(sub),
+    override: {
+      tagline: 'Density from cacao.',
+      volume: '80 g',
+      ingredients: 'Cocoa mass, cocoa butter, sugar. Allergen: may contain milk (sample).',
+      extraWarnings: 'Allergen: may contain milk (sample). Store cool and dry.',
+    },
+  },
+  {
+    match: (sub) => /kurabiye|biscuit|cookie/.test(sub),
+    override: {
+      tagline: 'From the oven, as it is.',
+      volume: '180 g',
+      ingredients: 'Wheat flour, butter, cocoa mass, sea salt. Allergen: gluten, milk. Made in TR.',
+      extraWarnings: 'Allergen: gluten, milk. Store cool and dry.',
     },
   },
   {
@@ -89,10 +179,10 @@ export const SECTOR_COPY: Record<SectorId, SectorCopyTemplate> = {
   },
   food: {
     sector: 'food',
-    tagline: 'Fırından, olduğu gibi.',
-    volume: '180 g',
-    ingredients: 'Buğday unu, tereyağı, kakao kitlesi, deniz tuzu. Alerjen: gluten, süt. Üretim yeri: TR.',
-    extraWarnings: 'Alerjen: gluten, süt. Serin ve kuru yerde saklayın.',
+    tagline: 'Masada duran lezzet.',
+    volume: '200 g',
+    ingredients: 'İçerik listesi brief ile doğrulanmalıdır. Örnek / düzenlenebilir.',
+    extraWarnings: 'Serin ve kuru yerde saklayın. Örnek alerjen satırı brief ile doğrulanmalıdır.',
     cta: 'Üretime al',
   },
   beverage: {
@@ -172,10 +262,10 @@ export const SECTOR_COPY_EN: Record<SectorId, SectorCopyTemplate> = {
   },
   food: {
     sector: 'food',
-    tagline: 'From the oven, as it is.',
-    volume: '180 g',
-    ingredients: 'Wheat flour, butter, cocoa mass, sea salt. Allergen: gluten, milk. Made in TR.',
-    extraWarnings: 'Allergen: gluten, milk. Store cool and dry.',
+    tagline: 'Flavour that holds the table.',
+    volume: '200 g',
+    ingredients: 'Ingredient list must be confirmed from the brief. Sample / editable.',
+    extraWarnings: 'Store cool and dry. Sample allergen line must be confirmed from the brief.',
     cta: 'Send to production',
   },
   beverage: {

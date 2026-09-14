@@ -11,6 +11,7 @@ import { findHeroPanel, isGluePanel } from '../dieline/panelKind'
 import { isProductionGrammar } from '../dieline/structure/solver'
 import type { DesignSystem } from '../designSystem/types'
 import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
+import { pressBleedMm, pressSafeMm } from './pressBoxes'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
   return { id, label, detail, status }
@@ -88,7 +89,9 @@ export function runPreflight(
     plan ? `set ${plan.variationIndex + 1}` : null,
     plan?.heroGraphic.family && plan.heroGraphic.family !== 'none' ? plan.heroGraphic.family : null,
     plan ? `crop ${plan.artDirection.crop}` : null,
-    spec.overrides.printReady ? '2 mm güvenli + bleed guide · PDF/X yok' : '2 mm güvenli (structure)',
+    spec.overrides.printReady
+      ? `${pressSafeMm(spec.dieline)} mm güvenli + bleed · PDF/X-4 sRGB · trap yok`
+      : `${pressSafeMm(spec.dieline)} mm güvenli (structure)`,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -152,7 +155,14 @@ export function runPreflight(
       proofDetail || 'Kesim / kat + güvenli',
       spec.overrides.printReady && exportOk ? 'pass' : 'warn',
     ),
-    item('bleed', 'Taşma / güvenli', spec.overrides.printReady ? '2 mm güvenli · 2 mm bleed guide (prova; press bleed yok)' : 'Henüz kilitlenmedi', spec.overrides.printReady && exportOk ? 'pass' : 'warn'),
+    item(
+      'bleed',
+      'Taşma / güvenli',
+      spec.overrides.printReady
+        ? `${pressSafeMm(spec.dieline)} mm güvenli · ${pressBleedMm(spec.dieline)} mm bleed (PDF/X-4 sRGB · trap yok · FOGRA değil)`
+        : 'Henüz kilitlenmedi',
+      spec.overrides.printReady && exportOk ? 'pass' : 'warn',
+    ),
     item(
       'contrast',
       'Renk kontrastı',

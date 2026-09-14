@@ -1,5 +1,5 @@
 export { artworkZonesFromModel } from './artworkZones'
-export { buildDielinePdf } from './pdfDieline'
+export { buildDielinePdf, encodePdfBytes } from './pdfDieline'
 export { attachStructuralSolution } from './solve'
 export {
   boxFromMm,

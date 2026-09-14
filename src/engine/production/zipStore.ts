@@ -46,8 +46,8 @@ function concat(parts: Uint8Array[]): Uint8Array {
   return out
 }
 
-/** Build a ZIP archive (store method, no compression) from named string files. */
-export function zipStore(files: { name: string; data: string }[]): Blob {
+/** Build a ZIP archive (store method, no compression) from named string or raw-byte files. */
+export function zipStore(files: { name: string; data: string | Uint8Array }[]): Blob {
   const enc = new TextEncoder()
   const now = new Date()
   const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)
@@ -57,7 +57,7 @@ export function zipStore(files: { name: string; data: string }[]): Blob {
   let offset = 0
   for (const f of files) {
     const name = enc.encode(f.name)
-    const data = enc.encode(f.data)
+    const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data
     const crc = crc32(data)
     const local = concat([
       u32(0x04034b50),

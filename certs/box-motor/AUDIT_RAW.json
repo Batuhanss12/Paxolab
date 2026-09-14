@@ -1,0 +1,1479 @@
+{
+  "scope": "BOX dieline motor only",
+  "generatedAt": "2026-09-14T00:57:27.625Z",
+  "inventoryCount": 26,
+  "templateCount": 26,
+  "sampleCount": 78,
+  "p0": 0,
+  "p1": 0,
+  "p2": 0,
+  "verdict": "PASS",
+  "templates": [
+    {
+      "templateId": "fm-cos-tuck-perfume",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 70,
+            "W": 35,
+            "H": 140
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 43,
+            "W": 22,
+            "H": 87
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 95,
+            "W": 28,
+            "H": 171
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-cos-tuck-cream",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 80,
+            "W": 40,
+            "H": 80
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 50,
+            "W": 25,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 108,
+            "W": 31,
+            "H": 98
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-cos-tuck-serum",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 45,
+            "W": 45,
+            "H": 120
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 36,
+            "W": 28,
+            "H": 74
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 61,
+            "W": 35,
+            "H": 146
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-food-tuck-oil",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 80,
+            "W": 50,
+            "H": 180
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 50,
+            "W": 31,
+            "H": 112
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 108,
+            "W": 39,
+            "H": 220
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-food-tray-snack",
+      "structureId": "simple-tray",
+      "packFamily": "simple-tray",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 160,
+            "W": 100,
+            "H": 40
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 0
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 99,
+            "W": 62,
+            "H": 28
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 0
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 216,
+            "W": 78,
+            "H": 49
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 0
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-elec-tuck-earbuds",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 90,
+            "W": 45,
+            "H": 90
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 56,
+            "W": 28,
+            "H": 56
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 122,
+            "W": 35,
+            "H": 110
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-elec-tuck-cable",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 120,
+            "W": 40,
+            "H": 80
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 74,
+            "W": 25,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 162,
+            "W": 31,
+            "H": 98
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-tuck-universal",
+      "structureId": "tuck-end-box",
+      "packFamily": "native-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 80,
+            "W": 40,
+            "H": 120
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 50,
+            "W": 25,
+            "H": 74
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 108,
+            "W": 31,
+            "H": 146
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 1,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-sleeve",
+      "structureId": "sleeve",
+      "packFamily": "sleeve",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 90,
+            "W": 30,
+            "H": 150
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 56,
+            "W": 22,
+            "H": 93
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 122,
+            "W": 28,
+            "H": 183
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-mailer-ship",
+      "structureId": "mailer-box",
+      "packFamily": "mailer",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 180,
+            "W": 120,
+            "H": 80
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 10,
+          "glue": 0
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 112,
+            "W": 74,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 10,
+          "glue": 0
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 243,
+            "W": 94,
+            "H": 98
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 10,
+          "glue": 0
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-gift-hex-box",
+      "structureId": "polygon-box",
+      "packFamily": "polygon",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 60,
+            "W": 60,
+            "H": 120
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 1,
+          "crease": 7,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 37,
+            "W": 37,
+            "H": 74
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 1,
+          "crease": 7,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 81,
+            "W": 47,
+            "H": 146
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 1,
+          "crease": 7,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "fixed"
+    },
+    {
+      "templateId": "fm-gift-tri-box",
+      "structureId": "polygon-box",
+      "packFamily": "polygon",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 70,
+            "W": 70,
+            "H": 140
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 43,
+            "W": 43,
+            "H": 87
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 95,
+            "W": 55,
+            "H": 171
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 5,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "fixed"
+    },
+    {
+      "templateId": "fm-gift-octagon-d",
+      "structureId": "polygon-box",
+      "packFamily": "polygon",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 50,
+            "W": 50,
+            "H": 100
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 1,
+          "crease": 16,
+          "glue": 0
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 36,
+            "W": 31,
+            "H": 62
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 1,
+          "crease": 16,
+          "glue": 0
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 68,
+            "W": 39,
+            "H": 122
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 1,
+          "crease": 16,
+          "glue": 0
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-bev-carrier-6",
+      "structureId": "product-carrier-tray",
+      "packFamily": "carrier-tray",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 180,
+            "W": 120,
+            "H": 45
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 112,
+            "W": 74,
+            "H": 28
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 243,
+            "W": 94,
+            "H": 55
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 4,
+          "glue": 2
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-bev-carrier-2",
+      "structureId": "product-carrier-tray",
+      "packFamily": "carrier-tray",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 160,
+            "W": 80,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 3,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 99,
+            "W": 50,
+            "H": 31
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 3,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 216,
+            "W": 62,
+            "H": 61
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 9,
+          "cut": 3,
+          "crease": 4,
+          "glue": 2
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-cos-tuck-euroslot",
+      "structureId": "tuck-end-box",
+      "packFamily": "forxa-tuck-aux",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 70,
+            "W": 35,
+            "H": 140
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 43,
+            "W": 22,
+            "H": 87
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 95,
+            "W": 28,
+            "H": 171
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-food-tuck-pour",
+      "structureId": "tuck-end-box",
+      "packFamily": "forxa-tuck-aux",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 80,
+            "W": 50,
+            "H": 160
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 1,
+          "crease": 13,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 50,
+            "W": 31,
+            "H": 99
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 1,
+          "crease": 13,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 108,
+            "W": 39,
+            "H": 195
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 14,
+          "cut": 1,
+          "crease": 13,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-mailer-handle",
+      "structureId": "mailer-box",
+      "packFamily": "mailer",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 200,
+            "W": 140,
+            "H": 90
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 2,
+          "crease": 38,
+          "glue": 0
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 124,
+            "W": 87,
+            "H": 56
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 2,
+          "crease": 38,
+          "glue": 0
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 270,
+            "W": 109,
+            "H": 110
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 8,
+          "cut": 2,
+          "crease": 38,
+          "glue": 0
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-pillow",
+      "structureId": "pillow-box",
+      "packFamily": "pillow",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 140,
+            "W": 70,
+            "H": 40
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 3,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 87,
+            "W": 43,
+            "H": 28
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 3,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 189,
+            "W": 55,
+            "H": 49
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 3,
+          "cut": 1,
+          "crease": 4,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-snap-lock",
+      "structureId": "snap-lock-box",
+      "packFamily": "snap-lock",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 100,
+            "W": 60,
+            "H": 120
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 6,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 62,
+            "W": 37,
+            "H": 74
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 6,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 135,
+            "W": 47,
+            "H": 146
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 6,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-rigid-gift",
+      "structureId": "rigid-gift-box",
+      "packFamily": "rigid-gift",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 160,
+            "W": 120,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 6,
+          "cut": 2,
+          "crease": 8,
+          "glue": 0
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 99,
+            "W": 74,
+            "H": 31
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 6,
+          "cut": 2,
+          "crease": 8,
+          "glue": 0
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 216,
+            "W": 94,
+            "H": 61
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 6,
+          "cut": 2,
+          "crease": 8,
+          "glue": 0
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-reverse-tuck",
+      "structureId": "reverse-tuck-end-box",
+      "packFamily": "reverse-tuck",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 70,
+            "W": 35,
+            "H": 120
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 14,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 43,
+            "W": 22,
+            "H": 74
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 14,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 95,
+            "W": 28,
+            "H": 146
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 14,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-tray-glued",
+      "structureId": "tray-box",
+      "packFamily": "glued-tray",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 180,
+            "W": 120,
+            "H": 40
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 112,
+            "W": 74,
+            "H": 28
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 4,
+          "glue": 2
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 243,
+            "W": 94,
+            "H": 49
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 7,
+          "cut": 1,
+          "crease": 4,
+          "glue": 2
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-cos-tuck-zipper",
+      "structureId": "tuck-end-box",
+      "packFamily": "forxa-tuck-aux",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 80,
+            "W": 40,
+            "H": 80
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 15,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 50,
+            "W": 25,
+            "H": 50
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 15,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 108,
+            "W": 31,
+            "H": 98
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 15,
+          "cut": 2,
+          "crease": 12,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-ecma-a60",
+      "structureId": "tuck-top-auto-bottom",
+      "packFamily": "tuck-top-auto-bottom",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 100,
+            "W": 50,
+            "H": 150
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 12,
+          "cut": 7,
+          "crease": 13,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 62,
+            "W": 31,
+            "H": 93
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 12,
+          "cut": 7,
+          "crease": 13,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 135,
+            "W": 39,
+            "H": 183
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 12,
+          "cut": 7,
+          "crease": 13,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    },
+    {
+      "templateId": "fm-box-rsc-ship",
+      "structureId": "rsc-carton",
+      "packFamily": "rsc",
+      "samples": [
+        {
+          "name": "default",
+          "dims": {
+            "L": 200,
+            "W": 150,
+            "H": 150
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 6,
+          "glue": 1
+        },
+        {
+          "name": "compact",
+          "dims": {
+            "L": 124,
+            "W": 93,
+            "H": 93
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 6,
+          "glue": 1
+        },
+        {
+          "name": "stress",
+          "dims": {
+            "L": 270,
+            "W": 117,
+            "H": 183
+          },
+          "ok": true,
+          "crashed": false,
+          "findings": [],
+          "panels": 13,
+          "cut": 7,
+          "crease": 6,
+          "glue": 1
+        }
+      ],
+      "p0": [],
+      "p1": [],
+      "p2": [],
+      "status": "pass"
+    }
+  ],
+  "progressNote": [
+    "Forxa aux tuck is now a 13-panel net: L×W lids + dust + tucks (tuckEndBox.ts). Native perfume tuck unchanged.",
+    "Fold graph: crease hits polygon edges (star nets); rigid base/lid allowed as two components.",
+    "PERF is a separate DielineModel layer — SVG data-type=perf, DXF PERF, PDF magenta dash. Not merged into CUT."
+  ],
+  "commands": [
+    "npx --yes vite-node scripts/forma-box-cert.ts",
+    "npx vitest run src/engine/dieline/formaBoxCert.test.ts",
+    "npx vitest run"
+  ]
+}

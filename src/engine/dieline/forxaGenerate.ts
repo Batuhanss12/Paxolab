@@ -33,6 +33,7 @@ function failedModel(structureId: StructureId, dimensions: DimensionsMm, issues:
     panels: [],
     cut: [],
     crease: [],
+    perf: [],
     glueIds: [],
     consistent: false,
     issues,

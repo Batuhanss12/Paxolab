@@ -13,11 +13,11 @@ export function goldBar(panel: Panel, p: Palette, volume: string, estimated: boo
   const bh = 9.15
   const y = panel.y + panel.h - bh
   const type = { ...system.type, volumeMm: Math.max(system.type.volumeMm, 2.95) }
-  return `
+  return `<g data-art="gold-bar">
     <rect x="${panel.x}" y="${y}" width="${panel.w}" height="${bh}" fill="${p.accent}" />
     <rect x="${panel.x + 1.15}" y="${y + 1.05}" width="${panel.w - 2.3}" height="${bh - 2.1}" fill="none" stroke="${p.bg}" stroke-opacity="0.38" stroke-width="0.22" />
     ${volumeMarkup(panel.x + panel.w / 2, y + bh * 0.64, volume, type, p.bg, 'middle', fontStack('sans'), estimated)}
-  `
+  </g>`
 }
 
 /** Capsule volume — playful rounded pill. */
@@ -26,10 +26,10 @@ export function capsuleVolume(panel: Panel, p: Palette, volume: string, system: 
   const bh = 8.4
   const x = panel.x + (panel.w - bw) / 2
   const y = panel.y + panel.h - bh - 4.2
-  return `
+  return `<g data-art="capsule-volume">
     <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="${bh / 2}" fill="${p.accent}" />
     ${volumeMarkup(x + bw / 2, y + bh * 0.66, volume, system.type, p.bg, 'middle', fontStack('sans'), volumeUsesEstimated(volume))}
-  `
+  </g>`
 }
 
 /** Stamp volume — eco rectangular stamp. */

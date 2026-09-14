@@ -110,9 +110,9 @@ export function flapGround(panel: Panel, p: Palette, luxuryTick: boolean, mark =
 /** Label decor — frame or stripe depending on style. */
 export function labelDecor(panel: Panel, system: DesignSystem, p: Palette): string {
   const { style } = system
-  if (system.wrapSeam) return ''
+  if (system.wrapSeam && style !== 'modern') return ''
   if (style === 'luxury' || style === 'classic') return frames(panel, p, 1, false, false)
   if (style === 'playful' || style === 'eco') return frames(panel, p, 1, true)
-  if (style === 'modern') return modernStripe(panel, p)
+  if (style === 'modern') return ''
   return ''
 }

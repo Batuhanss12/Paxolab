@@ -17,5 +17,13 @@ function polyline(layer: string, points: Point[]): string {
 export function buildDielineDxf(dieline: DielineModel): string {
   const cut = dieline.cut.map((ring) => polyline('CUT', ring)).join('')
   const crease = dieline.crease.map(([a, b]) => line('CREASE', a, b)).join('')
-  return `${pair(0, 'SECTION')}${pair(2, 'HEADER')}${pair(9, '$INSUNITS')}${pair(70, 4)}${pair(0, 'ENDSEC')}${pair(0, 'SECTION')}${pair(2, 'ENTITIES')}${cut}${crease}${pair(0, 'ENDSEC')}${pair(0, 'EOF')}`
+  const perf = (dieline.perf ?? [])
+    .flatMap((ring) => {
+      if (ring.length === 2) return [line('PERF', ring[0]!, ring[1]!)]
+      const segs: string[] = []
+      for (let i = 0; i < ring.length - 1; i++) segs.push(line('PERF', ring[i]!, ring[i + 1]!))
+      return segs
+    })
+    .join('')
+  return `${pair(0, 'SECTION')}${pair(2, 'HEADER')}${pair(9, '$INSUNITS')}${pair(70, 4)}${pair(0, 'ENDSEC')}${pair(0, 'SECTION')}${pair(2, 'ENTITIES')}${cut}${crease}${perf}${pair(0, 'ENDSEC')}${pair(0, 'EOF')}`
 }

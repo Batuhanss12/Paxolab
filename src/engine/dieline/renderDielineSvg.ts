@@ -1,7 +1,8 @@
 import type { DielineModel } from '../../types'
 
-const CUT = '#111111'
-const CREASE = '#cc3333'
+const CUT = '#ff6b6b'
+const CREASE = '#5b9fff'
+const PERF = '#e07ae0'
 const GLUE = 'rgba(201, 168, 108, 0.32)'
 const PANEL = 'rgba(255,255,255,0.035)'
 const SAFE = 'rgba(90, 180, 120, 0.32)'
@@ -17,7 +18,7 @@ export function renderDielineSvg(
   const w = model.width + pad * 2
   const h = model.height + pad * 2
   const combined = opts?.mode === 'combined' || !!opts?.showArtwork
-  const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#0b0b0b')
+  const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#141414')
 
   const cut = model.cut
     .map((ring, index) => {
@@ -31,8 +32,14 @@ export function renderDielineSvg(
         `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" data-type="crease" data-id="crease-${index}" />`,
     )
     .join('')
+  const perf = (model.perf ?? [])
+    .map((ring, index) => {
+      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ')
+      return `<path d="${d}" fill="none" stroke="${PERF}" stroke-width="0.4" stroke-dasharray="1.1 0.7" data-type="perf" data-id="perf-${index}" />`
+    })
+    .join('')
 
-  // When printReady (safeInsetMm > 0): inward safe + outward bleed guide. Guide-only — not press bleed / PDF/X.
+  // When printReady (safeInsetMm > 0): overlay matches press boxes (solver 3 mm). Knife geometry stays trim-only.
   const safeInset = opts?.safeInsetMm ?? 0
   const proofPanels =
     combined && safeInset > 0 ? model.panels.filter((p) => !model.glueIds.includes(p.id)) : []
@@ -71,6 +78,7 @@ export function renderDielineSvg(
     ${combinedBleed ? `<g data-proof="bleed-set">${combinedBleed}</g>` : ''}
     ${combinedSafe ? `<g data-proof="safe-set">${combinedSafe}</g>` : ''}
     <g>${crease}</g>
+    <g>${perf}</g>
     <g>${cut}</g>
   </svg>`
 }
@@ -91,6 +99,12 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
         `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" data-type="crease" data-id="crease-${index}" />`,
     )
     .join('')
+  const perf = (model.perf ?? [])
+    .map((ring, index) => {
+      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ')
+      return `<path d="${d}" fill="none" stroke="#c000c0" stroke-width="0.35" stroke-dasharray="1.1 0.7" data-type="perf" data-id="perf-${index}" />`
+    })
+    .join('')
   const labels = model.panels
     .map(
       (p) =>
@@ -102,6 +116,7 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
   <title>${title} — FORMA dieline</title>
   ${labels}
   ${crease}
+  ${perf}
   ${cut}
 </svg>`
 }

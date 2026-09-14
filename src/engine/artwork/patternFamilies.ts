@@ -4,7 +4,7 @@ import { contourGoldField, geoLattice, leafStampField } from './motifs'
 
 export const PATTERN_OPACITY_CAP: Record<PatternFamily, number> = {
   contour: 0.22,
-  lattice: 0.12,
+  lattice: 0.18,
   stripe: 0.2,
   grain: 0.12,
   ornament: 0.18,
@@ -39,7 +39,7 @@ export function paintPatternFamily(
     }
     return out
   }
-  if (family === 'grain') return leafStampField(panel, color)
+  if (family === 'grain') return leafStampField(panel, color, op, safe)
   if (family === 'ornament') {
     const { x, y, w, h } = panel
     const cx = x + w / 2

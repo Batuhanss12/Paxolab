@@ -58,6 +58,8 @@ describe('Forxa adapter (D7-A)', () => {
       const fatal = (model.structural?.findings ?? []).filter((f) => f.code === 'CUT_SELF_INTERSECTION')
       expect(fatal).toEqual([])
       expect(model.panels.every((p) => p.w > 0 && p.h > 0)).toBe(true)
+      expect(model.glueIds.length).toBeGreaterThan(0)
+      expect(model.panels.some((p) => p.id === 'glue-tab')).toBe(true)
     }
   })
 
@@ -66,7 +68,21 @@ describe('Forxa adapter (D7-A)', () => {
     expect(model.consistent).toBe(true)
     expect(model.panels.every((p) => p.w > 0 && p.h > 0)).toBe(true)
     expect(model.panels.some((p) => p.id.startsWith('aux-'))).toBe(true)
-    expect(model.cut.length).toBeGreaterThan(1)
+    expect(model.cut.length).toBeGreaterThan(0)
+    expect((model.perf ?? []).length).toBeGreaterThan(0)
+  })
+
+  it('builds Forxa aux tuck with L×W lids and dust', () => {
+    const model = generateForxaModel('tuck-end-box', { L: 70, W: 35, H: 140 }, undefined, '62')
+    const top = model.panels.find((p) => p.id === 'top')
+    const bottom = model.panels.find((p) => p.id === 'bottom')
+    expect(model.panels.length).toBeGreaterThanOrEqual(13)
+    expect(top?.w).toBeCloseTo(70, 0)
+    expect(top?.h).toBeCloseTo(35, 0)
+    expect(bottom?.w).toBeCloseTo(70, 0)
+    expect(bottom?.h).toBeCloseTo(35, 0)
+    expect(model.panels.some((p) => p.id.startsWith('dust-'))).toBe(true)
+    expect(model.structural?.findings.some((f) => f.code === 'CUT_SELF_INTERSECTION')).toBe(false)
   })
 })
 

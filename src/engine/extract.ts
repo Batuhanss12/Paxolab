@@ -5,6 +5,7 @@
  */
 import type { Attachment, AwaitingKey, DesignBrief } from '../types'
 import { mergeBrief, parseDimensions } from './fields'
+import { applyVolumeCarton } from './catalog/volumeCarton'
 import { assignAwaiting } from './assignAwaiting'
 import { extractFields } from './extractFields'
 import { labeled, looksLikeSector, sameName } from './extractHelpers'
@@ -62,5 +63,5 @@ export function applyExtraction(
   if (next.productName && next.brandName && sameName(next.productName, next.brandName)) {
     next = { ...next, productName: '' }
   }
-  return next
+  return applyVolumeCarton(next)
 }

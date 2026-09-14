@@ -5,6 +5,7 @@
  */
 import type { DesignBrief, DielineModel, DimensionsMm, StructureId } from '../../types'
 import { getTemplate } from '../catalog/catalog'
+import { estimateCartonMm } from '../catalog/volumeCarton'
 import { flatLabel, simpleTray, tuckEnd, wrapLabel } from './dielineStructures'
 import { generateForxaModel, isForxaStructure } from './forxaGenerate'
 import { findHeroPanel, withPanelKinds } from './panelKind'
@@ -14,6 +15,15 @@ export { outlineUnion } from './dielineGeometry'
 
 export function resolveDimensions(brief: DesignBrief): DimensionsMm {
   const d = brief.dimensionsMm
+  if (d.L > 0 && d.H > 0) {
+    return {
+      L: d.L,
+      W: brief.packagingMode === 'label' ? 0 : d.W > 0 ? d.W : 40,
+      H: d.H,
+    }
+  }
+  const estimated = estimateCartonMm(brief.volume, brief, brief.templateId ? getTemplate(brief.templateId) : undefined)
+  if (estimated) return estimated
   const L = d.L > 0 ? d.L : 80
   const W = brief.packagingMode === 'label' ? 0 : d.W > 0 ? d.W : 40
   const H = d.H > 0 ? d.H : brief.packagingMode === 'label' ? 90 : 120

@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-09-14T00:56:40.669Z",
+  "primary": "primary-fm-cos-tuck-perfume-70x35x140",
+  "packs": [
+    {
+      "role": "primary",
+      "folder": "primary-fm-cos-tuck-perfume-70x35x140",
+      "templateId": "fm-cos-tuck-perfume",
+      "dims": {
+        "L": 70,
+        "W": 35,
+        "H": 140
+      },
+      "structureId": "tuck-end-box",
+      "exportOk": true
+    },
+    {
+      "role": "alternate",
+      "folder": "alternate-fm-box-ecma-a60-100x50x150",
+      "templateId": "fm-box-ecma-a60",
+      "dims": {
+        "L": 100,
+        "W": 50,
+        "H": 150
+      },
+      "structureId": "tuck-top-auto-bottom",
+      "exportOk": true
+    }
+  ]
+}

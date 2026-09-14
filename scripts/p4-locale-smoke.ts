@@ -53,7 +53,10 @@ assert(recelTr.copy.tagline.includes('Fırından') || /[çğıöşüÇĞİÖŞÜ
 assert(recelTrFace.includes('DOĞAL'), 'tr claims missing DOĞAL')
 assert(!recelTrFace.includes('NATURAL'), 'tr face has EN claims')
 assert(recelEnFace.includes('PRESERVE') || recelEnFace.includes('ARTISAN'), `en food category ${recelEnFace.slice(0, 200)}`)
-assert(recelEn.copy.tagline.includes('oven') || recelEn.copy.tagline.includes('From the'), `en tagline ${recelEn.copy.tagline}`)
+assert(
+  recelEn.copy.tagline.includes('garden') || recelEn.copy.tagline.includes('jar') || recelEn.copy.tagline.includes('From'),
+  `en tagline ${recelEn.copy.tagline}`,
+)
 assert(recelEnFace.includes('NATURAL'), 'en claims missing NATURAL')
 assert(!recelEnFace.includes('DOĞAL'), 'en face has TR claims')
 assert(recelTr.copy.brand === recelEn.copy.brand, 'brand translated')
@@ -75,7 +78,10 @@ const cream = generate('06-krem-wrap-modern', 0, 'tr')
 const creamFace = face(cream)
 assert(creamFace.includes('YÜZ KREMİ'), 'cream wrap missing TR category')
 assert(!creamFace.includes('FACE CREAM'), 'cream wrap still FACE CREAM + TR tagline')
-assert(cream.copy.tagline.includes('onarır') || cream.copy.tagline.includes('Gece'), `cream tagline ${cream.copy.tagline}`)
+assert(
+  cream.copy.tagline.includes('onarır') || cream.copy.tagline.includes('Klinik') || cream.copy.tagline.includes('Gece'),
+  `cream tagline ${cream.copy.tagline}`,
+)
 assert(/GECE KREMİ/.test(cream.copy.product.toLocaleUpperCase('tr')), `sample product not localized: ${cream.copy.product}`)
 assert(/GECE KREMİ/.test(creamFace), `cream face missing GECE KREMİ: product painted as ASCII?`)
 assert(mixItem(cream)?.status === 'pass', `localized sample still mix: ${mixItem(cream)?.detail}`)
@@ -100,7 +106,12 @@ assert(face(printWrap).includes('data-art="seam"'), 'printReady missing seam mar
 
 const creamEn = generate('06-krem-wrap-modern', 0, 'en')
 assert(face(creamEn).includes('FACE CREAM'), 'en cream missing FACE CREAM')
-assert(creamEn.copy.tagline.includes('overnight') || creamEn.copy.tagline.includes('Repairs'), `en cream tagline ${creamEn.copy.tagline}`)
+assert(
+  creamEn.copy.tagline.includes('Clinical') ||
+    creamEn.copy.tagline.includes('repair') ||
+    creamEn.copy.tagline.includes('overnight'),
+  `en cream tagline ${creamEn.copy.tagline}`,
+)
 assert(!face(creamEn).includes('YÜZ KREMİ'), 'en cream has TR category')
 
 const recelBrief = briefFrom(job('12-recel-label-eco'))
@@ -134,7 +145,7 @@ assert(clean0Face.includes('750 ml') && !clean0Face.includes('750 ML'), 'cleanin
 assert(serum0Face.includes('data-art="ingredient-badges"'), 'serum badges omitted')
 {
   const panel = serum0.dieline.panels.find((n) => n.id === 'front' || n.id === 'label')
-  const group = serum0Face.match(/<g data-art="ingredient-badges">([\s\S]*?)<\/g>/)?.[1] ?? ''
+  const group = serum0Face.match(/<g data-art="ingredient-badges"[^>]*>([\s\S]*?)<\/g>/)?.[1] ?? ''
   const rectRe = /<rect x="([\d.]+)"[^>]*width="([\d.]+)"/g
   let m: RegExpExecArray | null
   let badgeCount = 0

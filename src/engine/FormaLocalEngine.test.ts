@@ -75,7 +75,7 @@ describe('FormaLocalEngine', () => {
     expect(dxf).toMatch(/LWPOLYLINE[\s\S]*?\n70\n1\n/)
   })
 
-  it('printReady proof draws 2 mm safe + bleed guides and stays honest (not PDF/X)', () => {
+  it('printReady proof draws 3 mm safe + bleed and stays honest (PDF/X-4 sRGB, no trap)', () => {
     const design = new FormaLocalEngine().generate({
       brief: perfumeBrief(),
       overridePatch: { printReady: true },
@@ -84,16 +84,20 @@ describe('FormaLocalEngine', () => {
     expect(svg).toBeTruthy()
     expect(svg!).toContain('data-proof="safe"')
     expect(svg!).toContain('data-proof="bleed"')
-    expect(svg!).toContain('not PDF/X')
-    expect(svg!).not.toMatch(/3 mm|5 mm/)
+    expect(svg!).toContain('PDF/X-4 sRGB')
+    expect(svg!).toContain('3 mm')
+    expect(svg!).toContain('trap yok')
+    expect(svg!).toContain('FOGRA değil')
+    expect(svg!).not.toContain('not PDF/X')
 
     const bleed = design.preflight.items.find((i) => i.id === 'bleed')
-    expect(bleed?.detail).toMatch(/2 mm/)
-    expect(bleed?.detail).toMatch(/bleed guide/)
-    expect(bleed?.detail).not.toMatch(/3 mm|5 mm/)
+    expect(bleed?.detail).toMatch(/3 mm/)
+    expect(bleed?.detail).toMatch(/PDF\/X-4 sRGB/)
+    expect(bleed?.detail).toMatch(/trap yok/)
+    expect(bleed?.detail).not.toMatch(/FOGRA39|GRACoL/)
     const proof = design.preflight.items.find((i) => i.id === 'proof')
-    expect(proof?.detail).toMatch(/2 mm/)
-    expect(proof?.detail).not.toMatch(/3 mm|5 mm/)
+    expect(proof?.detail).toMatch(/3 mm/)
+    expect(proof?.detail).toMatch(/PDF\/X-4 sRGB/)
   })
 
   it('blocks a country-looking barcode marked as invented', () => {
@@ -128,7 +132,8 @@ describe('FormaLocalEngine', () => {
     const face = frontMarkup(design)
 
     expect(design.structureId).toBe('wrap-label')
-    expect(face).toMatch(/SEAM/)
+    expect(face).toContain('data-art="seam"')
+    expect(face).not.toMatch(/>SEAM</)
     expect(face).toContain('data-art="wrap-continuity"')
   })
 

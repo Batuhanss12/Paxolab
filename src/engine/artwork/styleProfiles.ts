@@ -29,7 +29,7 @@ export function styleProfile(style: StyleType): StyleProfile {
     case 'eco':
       return { ornament: 0.55, tracking: 3.0, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced', align: 'center', paperFill: true }
     case 'playful':
-      return { ornament: 0.65, tracking: 1.4, frame: 1, serif: false, goldBar: true, corners: false, density: 'dense', align: 'center', paperFill: false }
+      return { ornament: 0.65, tracking: 1.4, frame: 1, serif: false, goldBar: false, corners: false, density: 'dense', align: 'center', paperFill: true }
     default:
       return { ornament: 0.4, tracking: 4, frame: 1, serif: true, goldBar: false, corners: false, density: 'balanced', align: 'center', paperFill: false }
   }

@@ -107,7 +107,7 @@ export function renderFrontLockup(
   }
 
   if (extras.showBadges && brief.ingredientClaims?.trim()) {
-    body += ingredientBadges(brief.ingredientClaims, ax, extras.badgeY, anchor, p, system.type.minMm, panel)
+    body += ingredientBadges(brief.ingredientClaims, ax, extras.badgeY, anchor, p, system.type.minMm, panel, style)
   }
 
   return body

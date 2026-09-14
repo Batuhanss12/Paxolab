@@ -3,6 +3,7 @@
  * Extracted from exportDoc.ts to isolate manifest generation from download logic.
  */
 import type { DesignSpec } from '../../types'
+import { pressBleedMm, pressSafeMm } from './pressBoxes'
 
 /** Build a JSON manifest with project metadata for export bundles. */
 export function buildManifest(spec: DesignSpec): string {
@@ -35,6 +36,13 @@ export function buildManifest(spec: DesignSpec): string {
       cutCount: spec.dieline.cut.length,
       creaseCount: spec.dieline.crease.length,
       consistent: spec.dieline.consistent,
+    },
+    pdf: {
+      profile: 'PDF/X-4',
+      outputIntent: 'sRGB IEC61966-2.1',
+      bleedMm: pressBleedMm(spec.dieline),
+      safeMm: pressSafeMm(spec.dieline),
+      trapped: false,
     },
     preflight: {
       exportOk: spec.preflight.exportOk,

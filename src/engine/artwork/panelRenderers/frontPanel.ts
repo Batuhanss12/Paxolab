@@ -27,9 +27,8 @@ function wrapSeam(panel: Panel, p: Palette, printReady: boolean): string {
     const ty = top + ((bot - top) / ticks) * i
     tickMarks += `<line x1="${sx - 0.8}" y1="${ty}" x2="${sx + 0.4}" y2="${ty}" stroke="${p.accent}" stroke-opacity="0.35" stroke-width="0.1" />`
   }
-  const label = printReady
-    ? ''
-    : `<text x="${sx - 1.2}" y="${y + h * 0.5}" text-anchor="end" transform="rotate(-90 ${sx - 1.2} ${y + h * 0.5})" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="1.4" letter-spacing="0.6">SEAM</text>`
+  void printReady
+  const label = ''
   return `
     <g data-art="seam">
     <line x1="${sx}" y1="${top}" x2="${sx}" y2="${bot}" stroke="${p.accent}" stroke-opacity="0.3" stroke-width="0.12" stroke-dasharray="0.8 0.6" />

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { DesignBrief } from '../../types'
 import { emptyBrief } from '../fields'
 import { buildDieline } from '../dieline/buildDieline'
+import { generateForxaModel } from '../dieline/forxaGenerate'
 import { buildDielineDxf } from './dxf'
 
 function boxBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
@@ -36,6 +37,13 @@ describe('buildDielineDxf', () => {
     // first vertex of the union ring is present (Y flipped for DXF)
     expect(dxf).toContain(`10\n${ring[0]!.x}\n`)
     expect(dxf).toContain(`20\n${-ring[0]!.y}\n`)
+  })
+
+  it('puts zipper perforation on PERF, not CUT', () => {
+    const model = generateForxaModel('tuck-end-box', { L: 80, W: 40, H: 80 }, undefined, '12')
+    const dxf = buildDielineDxf(model)
+    expect((model.perf ?? []).length).toBeGreaterThan(0)
+    expect(dxf).toContain('PERF')
   })
 
   it('wrap-label DXF keeps CUT closed rings and one CREASE', () => {

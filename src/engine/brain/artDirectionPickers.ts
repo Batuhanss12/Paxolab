@@ -98,7 +98,7 @@ export function pickPattern(ctx: ArtCtx): PatternFamily {
 export function patternOpacity(style: StyleType, density: Density, restrain: boolean): number {
   if (restrain || density === 'sparse') return style === 'luxury' ? 0.12 : 0.07
   if (style === 'luxury') return 0.2
-  if (style === 'modern') return 0.08
+  if (style === 'modern') return 0.14
   if (style === 'playful') return 0.16
   if (style === 'eco') return 0.1
   if (style === 'classic') return 0.14

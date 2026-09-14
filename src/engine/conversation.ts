@@ -117,7 +117,7 @@ export function runConversation(input: {
 
   if (ready && !brief.templateId) {
     replies.push(
-      `${ack ? `${ack}. ` : ''}Sektöre uygun şablonları sağda açtım. Kart seçin; ölçüleri düzenleyebilir, dieline’ı canlı görebilirsiniz.`,
+      `${ack ? `${ack}. ` : ''}Bu sektörün kutularını sağda açtım. Kart seçin; ml varsa ölçü tahmini dolu gelir, düzeltebilirsiniz.`,
     )
     return {
       brief,

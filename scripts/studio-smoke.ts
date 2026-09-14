@@ -134,7 +134,9 @@ const ready = engine.generate({
 const svg = buildCombinedSvg(ready)
 assert(!!svg && svg.includes('data-proof="safe"'), 'printReady combined missing safe inset')
 assert(!!svg && svg.includes('data-proof="bleed"'), 'printReady combined missing bleed guide')
-assert(!!svg && svg.includes('not PDF/X'), 'proof comment missing')
+assert(!!svg && svg.includes('PDF/X-4 sRGB'), 'proof comment missing PDF/X-4 honesty')
+assert(!!svg && svg.includes('3 mm'), 'proof comment missing 3 mm boxes')
+assert(!!svg && svg.includes('trap yok'), 'proof comment missing trap honesty')
 
 if (fails) {
   console.error(`Studio smoke failed (${fails})`)

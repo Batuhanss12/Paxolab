@@ -3,6 +3,7 @@ import { findHeroPanel, findLabelBackPanel, findLegalPanel, isSpinePanel } from 
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { PERFUME_VIEWBOXES } from '../marks/perfumeAssets'
 import type { DesignSystem } from './types'
+import { foodFamilyFromBlob } from '../artwork/foodFamily'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
   return { id, label, detail, status }
@@ -219,6 +220,26 @@ export function evaluateDesignGates(
       system.markRecipe.sampleLegal ? 'warn' : 'pass',
     ),
   )
+
+  if (system.sector === 'food' || system.sector === 'beverage') {
+    const family = foodFamilyFromBlob(`${spec.brief.subProduct} ${spec.brief.productName} ${spec.copy.product}`)
+    const foodArt = `${spec.copy.ingredients}\n${backArt}\n${labelBackArt}`
+    const bakeryLeak = family !== 'biscuit' && /Buğday unu|Wheat flour/.test(foodArt)
+    const oilZeroFat = family === 'oil' && !/>100 g</.test(foodArt)
+    const foodFail = bakeryLeak || oilZeroFat
+    items.push(
+      item(
+        'ds-food-family',
+        'Gıda ailesi',
+        foodFail
+          ? bakeryLeak
+            ? 'Fırın içeriği yanlış SKU’da'
+            : 'Yağ ailesinde yağ 0 g'
+          : `${family} · besin + içerik`,
+        foodFail ? 'fail' : 'pass',
+      ),
+    )
+  }
 
   return items
 }

@@ -1,0 +1,169 @@
+{
+  "schema": "forma-export/v1",
+  "generatedAt": "2026-09-14T00:56:40.654Z",
+  "project": {
+    "id": "6sc925jq",
+    "brand": "Aurelia",
+    "product": "Noir",
+    "volume": "50 ml",
+    "sector": "Parfüm",
+    "subProduct": "parfüm",
+    "styleType": "luxury",
+    "packagingMode": "box",
+    "copyLocale": "tr"
+  },
+  "dimensions": {
+    "widthMm": 70,
+    "depthMm": 35,
+    "heightMm": 140,
+    "unit": "mm"
+  },
+  "dieline": {
+    "structureId": "tuck-end-box",
+    "width": 224.7,
+    "height": 245,
+    "panelCount": 13,
+    "cutCount": 1,
+    "creaseCount": 12,
+    "consistent": true
+  },
+  "pdf": {
+    "profile": "PDF/X-4",
+    "outputIntent": "sRGB IEC61966-2.1",
+    "bleedMm": 3,
+    "safeMm": 3,
+    "trapped": false
+  },
+  "preflight": {
+    "exportOk": true,
+    "blocking": false,
+    "collisions": false,
+    "itemSummary": [
+      {
+        "id": "brand",
+        "status": "pass"
+      },
+      {
+        "id": "product",
+        "status": "pass"
+      },
+      {
+        "id": "size",
+        "status": "pass"
+      },
+      {
+        "id": "dieline",
+        "status": "pass"
+      },
+      {
+        "id": "collision",
+        "status": "pass"
+      },
+      {
+        "id": "copy",
+        "status": "pass"
+      },
+      {
+        "id": "copy-locale-mix",
+        "status": "pass"
+      },
+      {
+        "id": "barcode",
+        "status": "warn"
+      },
+      {
+        "id": "ds-brand",
+        "status": "pass"
+      },
+      {
+        "id": "ds-legal",
+        "status": "pass"
+      },
+      {
+        "id": "ds-luxury",
+        "status": "pass"
+      },
+      {
+        "id": "ds-label",
+        "status": "pass"
+      },
+      {
+        "id": "ds-voice",
+        "status": "pass"
+      },
+      {
+        "id": "ds-marks",
+        "status": "pass"
+      },
+      {
+        "id": "ds-barcode-honesty",
+        "status": "pass"
+      },
+      {
+        "id": "ds-sample-legal",
+        "status": "warn"
+      },
+      {
+        "id": "glue-art",
+        "status": "pass"
+      },
+      {
+        "id": "type-fit",
+        "status": "pass"
+      },
+      {
+        "id": "proof",
+        "status": "pass"
+      },
+      {
+        "id": "bleed",
+        "status": "pass"
+      },
+      {
+        "id": "contrast",
+        "status": "pass"
+      },
+      {
+        "id": "text-overflow",
+        "status": "pass"
+      },
+      {
+        "id": "export",
+        "status": "pass"
+      },
+      {
+        "id": "structural",
+        "status": "pass"
+      }
+    ]
+  },
+  "copy": {
+    "tagline": "Sessiz bir yoğunluk.",
+    "ingredients": "Alcohol Denat., Parfum (Fragrance), Aqua (Water), Linalool, Limonene, Coumarin, Citronellol, Geraniol. Örnek / düzenlenebilir.",
+    "warnings": "Harici kullanıma mahsustur. Alevden ve ısı kaynaklarından uzak tutun. Gözle temasından kaçının. Tahrişte kullanımı bırakın. Çocukların ulaşamayacağı yerde saklayın.",
+    "barcode": "2000988691984",
+    "manufacturer": "Aurelia Üretim A.Ş."
+  },
+  "files": [
+    {
+      "name": "aurelia-dieline.svg",
+      "type": "dieline"
+    },
+    {
+      "name": "aurelia-artwork.svg",
+      "type": "artwork"
+    },
+    {
+      "name": "aurelia-combined.svg",
+      "type": "combined"
+    },
+    {
+      "name": "aurelia-dieline.dxf",
+      "type": "dxf"
+    },
+    {
+      "name": "aurelia-dieline.pdf",
+      "type": "dieline-pdf"
+    }
+  ]
+}

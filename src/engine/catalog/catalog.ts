@@ -7,28 +7,90 @@ function norm(value: string): string {
   return value.trim().toLocaleLowerCase('tr')
 }
 
+const GENERIC_QUERY = new Set(['genel', 'kutu', 'kutusu', 'ambalaj', 'box', 'paket', 'ürün', 'urun', 'pack'])
+
+const SECTOR_KEYS: Record<string, string[]> = {
+  kozmetik: ['kozmetik', 'cosmetic', 'cosmetics', 'parfüm', 'parfum', 'perfume'],
+  parfüm: ['parfüm', 'parfum', 'perfume', 'kozmetik'],
+  parfum: ['parfüm', 'parfum', 'perfume', 'kozmetik'],
+  perfume: ['parfüm', 'parfum', 'perfume', 'kozmetik'],
+  gıda: ['gıda', 'gida', 'food'],
+  gida: ['gıda', 'gida', 'food'],
+  food: ['gıda', 'gida', 'food'],
+  içecek: ['içecek', 'icecek', 'beverage'],
+  icecek: ['içecek', 'icecek', 'beverage'],
+  elektronik: ['elektronik', 'teknoloji', 'tech'],
+  teknoloji: ['elektronik', 'teknoloji', 'tech'],
+  'e-ticaret': ['e-ticaret', 'eticaret', 'kargo'],
+  kargo: ['e-ticaret', 'kargo'],
+  hediye: ['hediye', 'gift'],
+  ev: ['ev', 'home'],
+  ilaç: ['ilaç', 'ilac', 'sağlık', 'saglik'],
+  sağlık: ['sağlık', 'saglik', 'ilaç', 'ilac'],
+}
+
+const PRODUCT_KEYS: Record<string, string[]> = {
+  parfüm: ['parfüm', 'parfum', 'perfume', 'edp', 'eau de parfum', 'kolonya'],
+  parfum: ['parfüm', 'parfum', 'perfume', 'edp', 'eau de parfum', 'kolonya'],
+  perfume: ['parfüm', 'parfum', 'perfume', 'edp', 'eau de parfum', 'kolonya'],
+  edp: ['parfüm', 'parfum', 'perfume', 'edp', 'eau de parfum'],
+  krem: ['krem', 'cream', 'night cream'],
+  cream: ['krem', 'cream', 'night cream'],
+  serum: ['serum', 'ampul'],
+  yağ: ['yağ', 'zeytinyağı', 'sos'],
+  zeytinyağı: ['yağ', 'zeytinyağı'],
+  sos: ['sos', 'yağ', 'dökme', 'akışkan'],
+  atıştırmalık: ['atıştırmalık', 'çikolata', 'kurabiye'],
+  çikolata: ['atıştırmalık', 'çikolata'],
+  kulaklık: ['kulaklık', 'earbuds'],
+  earbuds: ['kulaklık', 'earbuds'],
+  kablo: ['kablo', 'şarj'],
+  şarj: ['kablo', 'şarj'],
+  askı: ['askı', 'euroslot', 'blister'],
+  euroslot: ['askı', 'euroslot', 'blister'],
+}
+
+function keysFor(table: Record<string, string[]>, value: string): string[] {
+  const n = norm(value)
+  return table[n] ?? [n]
+}
+
+function overlap(a: string[], b: string[]): boolean {
+  const set = new Set(b.map(norm))
+  return a.some((x) => set.has(norm(x)))
+}
+
+export function sectorHits(template: FormaTemplate, sector: string): boolean {
+  const query = keysFor(SECTOR_KEYS, sector)
+  return template.sectors.some((s) => overlap(query, keysFor(SECTOR_KEYS, s)))
+}
+
+function productHits(template: FormaTemplate, product: string): boolean {
+  const query = keysFor(PRODUCT_KEYS, product)
+  return template.subProducts.some((s) => {
+    if (GENERIC_QUERY.has(norm(s))) return false
+    return overlap(query, keysFor(PRODUCT_KEYS, s))
+  })
+}
+
 export function activeTemplates(includeAdvanced = false): FormaTemplate[] {
   return FORMA_TEMPLATES.filter((t) => t.status === 'active' && (includeAdvanced || t.library !== 'advanced'))
 }
 
-export function filterTemplates(brief: DesignBrief, opts?: { includeAdvanced?: boolean }): FormaTemplate[] {
-  const sector = norm(brief.sector)
-  const sub = norm(brief.subProduct || brief.productName)
+/**
+ * Right-rail cards: every active carton in that sector, including ECMA/aux.
+ * Packaging mode filters box vs label. Product only sorts, it does not hide siblings.
+ */
+export function filterTemplates(brief: DesignBrief): FormaTemplate[] {
   const mode = brief.packagingMode
-  const pool = activeTemplates(opts?.includeAdvanced).filter((t) => !mode || t.packagingMode === mode)
-
-  const scored = pool
-    .map((t) => {
-      let score = 0
-      if (sector && t.sectors.some((s) => sector.includes(norm(s)) || norm(s).includes(sector))) score += 4
-      if (sub && t.subProducts.some((s) => sub.includes(norm(s)) || norm(s).includes(sub))) score += 5
-      if (mode && t.packagingMode === mode) score += 2
-      return { t, score }
-    })
-    .sort((a, b) => b.score - a.score)
-
-  const hits = scored.filter((s) => s.score > 0).map((s) => s.t)
-  return hits.length ? hits : pool
+  const sector = norm(brief.sector)
+  const product = norm(brief.subProduct)
+  const hasProduct = !!product && !GENERIC_QUERY.has(product)
+  const pool = activeTemplates(true).filter((t) => !mode || t.packagingMode === mode)
+  const sectorPool = sector ? pool.filter((t) => sectorHits(t, sector)) : pool
+  if (!sectorPool.length) return []
+  if (!hasProduct) return sectorPool
+  return [...sectorPool].sort((a, b) => Number(productHits(b, product)) - Number(productHits(a, product)))
 }
 
 export function getTemplate(id: string): FormaTemplate | undefined {
@@ -40,7 +102,7 @@ export function pickTemplate(brief: DesignBrief): FormaTemplate {
     const exact = getTemplate(brief.templateId)
     if (exact) return exact
   }
-  return filterTemplates(brief)[0] ?? activeTemplates()[0]
+  return filterTemplates(brief)[0] ?? activeTemplates(true)[0]
 }
 
 export function structureFromTemplate(template: FormaTemplate): StructureId {

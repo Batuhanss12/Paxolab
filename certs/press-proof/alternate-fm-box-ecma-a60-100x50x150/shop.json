@@ -1,0 +1,124 @@
+{
+  "sku": {
+    "role": "alternate",
+    "templateId": "fm-box-ecma-a60",
+    "dims": {
+      "L": 100,
+      "W": 50,
+      "H": 150
+    },
+    "brand": "FORXA",
+    "product": "A60",
+    "sector": "kozmetik",
+    "subProduct": "a60",
+    "styleType": "modern",
+    "volume": "",
+    "why": "ECMA A60.20.00.03 vs owner drawing becf-11101.pdf (100×50×150). Cut only to compare that sheet."
+  },
+  "shop": {
+    "netMm": {
+      "L": 100,
+      "W": 50,
+      "H": 150
+    },
+    "sheetMm": {
+      "width": 313,
+      "height": 250
+    },
+    "grammar": "tuck-top-auto-bottom",
+    "ecmaCode": "A60.20.00.03",
+    "material": "carton-300 0.389 mm — becf-11101.pdf only. Not a mill table for other SKUs.",
+    "panels": [
+      {
+        "id": "glue-tab",
+        "kind": "glue",
+        "w": 13,
+        "h": 150
+      },
+      {
+        "id": "back",
+        "kind": "legal-back",
+        "w": 100,
+        "h": 150
+      },
+      {
+        "id": "side-left",
+        "kind": "side-spine",
+        "w": 50,
+        "h": 150
+      },
+      {
+        "id": "front",
+        "kind": "hero-front",
+        "w": 100,
+        "h": 150
+      },
+      {
+        "id": "side-right",
+        "kind": "side-spine",
+        "w": 50,
+        "h": 150
+      },
+      {
+        "id": "top-tuck",
+        "kind": "tuck-flap",
+        "w": 100,
+        "h": 64
+      },
+      {
+        "id": "dust-left",
+        "kind": "tuck-flap",
+        "w": 50,
+        "h": 32
+      },
+      {
+        "id": "dust-right",
+        "kind": "tuck-flap",
+        "w": 50,
+        "h": 32
+      },
+      {
+        "id": "auto-bottom-back",
+        "kind": "tuck-flap",
+        "w": 100,
+        "h": 36
+      },
+      {
+        "id": "auto-bottom-left",
+        "kind": "tuck-flap",
+        "w": 50,
+        "h": 25
+      },
+      {
+        "id": "auto-bottom-front",
+        "kind": "tuck-flap",
+        "w": 100,
+        "h": 36
+      },
+      {
+        "id": "auto-bottom-right",
+        "kind": "tuck-flap",
+        "w": 50,
+        "h": 25
+      }
+    ],
+    "glueIds": [
+      "glue-tab"
+    ],
+    "cut": 7,
+    "crease": 13,
+    "perf": 0,
+    "bleedMm": 3,
+    "safeMm": 3,
+    "barcode": "2008098376142",
+    "sampleBarcode": true,
+    "honesty": [
+      "PDF/X-4 sRGB OutputIntent. Not FOGRA / GRACoL / a press CMYK condition.",
+      "Trapped /False. No trap.",
+      "Not veraPDF-certified in this repo.",
+      "BleedBox / safe = 3 mm / 3 mm. CUT stays on trim. Bleed is not baked into the knife.",
+      "Barcode 2008098376142 is a FORMA sample (200…). Not a GS1 GTIN.",
+      "Motor / preflight green ≠ the board sits. This pack is for one physical cut."
+    ]
+  }
+}

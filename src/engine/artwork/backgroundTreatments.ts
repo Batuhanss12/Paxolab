@@ -1,5 +1,6 @@
 import type { Palette, Panel, StyleType } from '../../types'
 import type { BackgroundTreatment } from '../brain/DesignPlan'
+import { leafStampField, waveRibbon } from './patternMotifs'
 
 /** Extra fields only. dark-field / quiet-paper / kraft keep the existing rect + eco grain. */
 export function paintBackgroundTreatment(panel: Panel, treatment: BackgroundTreatment, p: Palette): string {
@@ -21,51 +22,43 @@ export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette)
   const { x, y, w, h } = panel
 
   if (style === 'eco') {
-    const spots = [
-      [0.12, 0.18],
-      [0.28, 0.42],
-      [0.48, 0.14],
-      [0.66, 0.36],
-      [0.82, 0.22],
-      [0.18, 0.68],
-      [0.38, 0.78],
-      [0.58, 0.62],
-      [0.74, 0.84],
-      [0.88, 0.56],
-      [0.08, 0.48],
-      [0.52, 0.5],
-    ]
-    const dots = spots
-      .map(([fx, fy], i) => {
-        const cx = x + w * fx
-        const cy = y + h * fy
-        const r = 0.28 + (i % 3) * 0.08
-        return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.fg}" opacity="0.055" />`
+    const weave = [0.2, 0.38, 0.56, 0.74]
+      .map((fy, i) => {
+        const yy = y + h * fy
+        return `<path d="M${x + 1.2} ${yy} C${x + w * 0.28} ${yy + (i % 2 ? 2.4 : -2.1)} ${x + w * 0.62} ${yy + (i % 2 ? -2.2 : 2.6)} ${x + w - 1.2} ${yy}" fill="none" stroke="${p.fg}" stroke-opacity="0.08" stroke-width="0.28" />`
       })
       .join('')
-    return `<g data-art="bg" data-bg="eco-grain">${dots}</g>`
+    return `<g data-art="bg" data-bg="eco-grain">${leafStampField(panel, p.fg, 0.11)}${weave}</g>`
   }
 
   if (style === 'playful') {
     const items = [
-      { dx: 0.22, dy: 0.1 },
-      { dx: 0.5, dy: 0.08 },
-      { dx: 0.78, dy: 0.1 },
+      { dx: 0.14, dy: 0.08 },
+      { dx: 0.38, dy: 0.12 },
+      { dx: 0.62, dy: 0.07 },
+      { dx: 0.86, dy: 0.11 },
+      { dx: 0.22, dy: 0.86 },
+      { dx: 0.5, dy: 0.9 },
+      { dx: 0.78, dy: 0.85 },
+      { dx: 0.1, dy: 0.42 },
+      { dx: 0.9, dy: 0.48 },
     ]
     const caps = items
       .map(({ dx, dy }) => {
         const cx = x + w * dx
         const cy = y + h * dy
-        return `<rect x="${cx - 4.4}" y="${cy - 1.7}" width="8.8" height="3.4" rx="1.7" fill="${p.accent}" opacity="0.12" />`
+        return `<rect x="${cx - 3.6}" y="${cy - 1.45}" width="7.2" height="2.9" rx="1.45" fill="${p.accent}" opacity="0.16" />`
       })
       .join('')
-    return `<g data-art="bg" data-bg="playful-capsules">${caps}</g>`
+    const wave = waveRibbon(panel, p.accent, y + h * 0.28, 0.22, 0.55)
+    return `<g data-art="bg" data-bg="playful-capsules">${caps}${wave}</g>`
   }
 
   if (style === 'modern') {
     return `
       <rect x="${x}" y="${y}" width="${w}" height="1.8" fill="${p.accent}" />
       <rect x="${x}" y="${y + h - 1.8}" width="${w}" height="1.8" fill="${p.accent}" opacity="0.55" />
+      <rect x="${x}" y="${y}" width="2.8" height="${h}" fill="${p.accent}" data-art="modern-rail" />
     `
   }
 

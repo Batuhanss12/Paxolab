@@ -170,7 +170,7 @@ export function filledEntries(
   push('templateId', brief.templateId)
   push('styleType', styleLabel(brief.styleType) || brief.styleType)
   const userDims = formatDimensions(brief.dimensionsMm)
-  if (userDims) push('dimensionsMm', userDims)
+  if (userDims) push('dimensionsMm', userDims, !!brief.dimsFromVolume || !!brief.dimsDefaulted)
   else if (extras?.sampleDims) push('dimensionsMm', extras.sampleDims, true)
   push('colors', brief.colors)
   if (hasUserVolume(brief)) push('volume', brief.volume)

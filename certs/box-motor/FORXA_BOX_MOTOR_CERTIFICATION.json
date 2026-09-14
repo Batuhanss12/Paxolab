@@ -1,0 +1,237 @@
+{
+  "scope": "BOX dieline motor only",
+  "generatedAt": "2026-09-14T00:57:27.625Z",
+  "verdict": "PASS",
+  "counts": {
+    "templates": 26,
+    "samples": 78,
+    "p0": 0,
+    "p1": 0,
+    "p2": 0,
+    "pass": 24,
+    "fail": 0,
+    "fixed": 2,
+    "deferred": 0
+  },
+  "templates": [
+    {
+      "templateId": "fm-cos-tuck-perfume",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-cos-tuck-cream",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-cos-tuck-serum",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-food-tuck-oil",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-food-tray-snack",
+      "structureId": "simple-tray",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-elec-tuck-earbuds",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-elec-tuck-cable",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-tuck-universal",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-sleeve",
+      "structureId": "sleeve",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-mailer-ship",
+      "structureId": "mailer-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-gift-hex-box",
+      "structureId": "polygon-box",
+      "status": "fixed",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-gift-tri-box",
+      "structureId": "polygon-box",
+      "status": "fixed",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-gift-octagon-d",
+      "structureId": "polygon-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-bev-carrier-6",
+      "structureId": "product-carrier-tray",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-bev-carrier-2",
+      "structureId": "product-carrier-tray",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-cos-tuck-euroslot",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-food-tuck-pour",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-mailer-handle",
+      "structureId": "mailer-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-pillow",
+      "structureId": "pillow-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-snap-lock",
+      "structureId": "snap-lock-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-rigid-gift",
+      "structureId": "rigid-gift-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-reverse-tuck",
+      "structureId": "reverse-tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-tray-glued",
+      "structureId": "tray-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-cos-tuck-zipper",
+      "structureId": "tuck-end-box",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-ecma-a60",
+      "structureId": "tuck-top-auto-bottom",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    },
+    {
+      "templateId": "fm-box-rsc-ship",
+      "structureId": "rsc-carton",
+      "status": "pass",
+      "p0": [],
+      "p1": [],
+      "p2": []
+    }
+  ],
+  "openP0": [],
+  "commands": [
+    "npx --yes vite-node scripts/forma-box-cert.ts",
+    "npx vitest run src/engine/dieline/formaBoxCert.test.ts",
+    "npx vitest run"
+  ],
+  "progressNote": [
+    "Forxa aux tuck is now a 13-panel net: L×W lids + dust + tucks (tuckEndBox.ts). Native perfume tuck unchanged.",
+    "Fold graph: crease hits polygon edges (star nets); rigid base/lid allowed as two components.",
+    "PERF is a separate DielineModel layer — SVG data-type=perf, DXF PERF, PDF magenta dash. Not merged into CUT."
+  ]
+}

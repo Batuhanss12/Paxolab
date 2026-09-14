@@ -56,6 +56,8 @@ export type DesignBrief = {
   /** User accepted a sample/template value instead of providing one */
   volumeDefaulted?: boolean
   dimsDefaulted?: boolean
+  /** L×W×H came from fill-ml carton estimate, not a typed mill size. */
+  dimsFromVolume?: boolean
   /** User skipped a line name — lockup keeps brand only */
   productSkipped?: boolean
   barcode: string
@@ -145,6 +147,8 @@ export type DielineModel = {
   panels: Panel[]
   cut: Point[][]
   crease: [Point, Point][]
+  /** Perforation / kiss-cut. Not CUT, not CREASE. */
+  perf?: Point[][]
   glueIds: string[]
   consistent: boolean
   issues: string[]

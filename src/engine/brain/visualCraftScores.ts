@@ -187,7 +187,7 @@ export function scoreSectorFit(ctx: ScoreCtx): number {
 export function scoreProductFit(ctx: ScoreCtx): number {
   const { face, plan } = ctx
   let productFit = 64
-  if (plan.sector === 'cream' && /CERAMIDE|badge|FACE CREAM|YÜZ KREMİ/.test(face)) productFit += 12
+  if (plan.sector === 'cream' && /CERAMIDE|SHEA|CENTELLA|badge|FACE CREAM|YÜZ KREMİ/.test(face)) productFit += 12
   if (plan.sector === 'serum' && /NIACINAMIDE|CONCENTRATE|SERUM/.test(face)) productFit += 12
   if (plan.sector === 'cleaning' && /YÜZEY BAKIMI|SURFACE CARE/.test(face)) productFit += 12
   if (plan.sector === 'food' && /VIRGIN|ARTISAN|SIZMA|GURME|ÇİKOLATA|REÇEL|NET/.test(face)) productFit += 10

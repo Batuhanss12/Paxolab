@@ -1,0 +1,50 @@
+FORXA — KALIPHANE / FİZİKSEL PROVA
+Motor yeşili ≠ sacda oturur. Bu paket kesim içindir; kesim burada yapılmaz.
+
+BİRİNCİL SKU: fm-cos-tuck-perfume  70×35×140 mm
+Native FORMA 13-panel straight tuck. First board to cut.
+Klasör: primary-fm-cos-tuck-perfume-70x35x140
+
+KESİM İÇİN KULLAN
+  dieline.dxf   katmanlar CUT / CREASE / PERF   birim mm ($INSUNITS 4)
+  dieline.pdf   PDF/X-4 sRGB   CUT kırmızı  CREASE mavi  PERF magenta
+  dieline.svg   yapı neti (kesim siyah, kat kırmızı)
+
+KESİM İÇİN KULLANMA
+  combined.svg  stüdyo prova overlay (3 mm güvenli + 3 mm bleed kılavuz)
+  artwork.svg   baskı yüzü — bıçak değil
+
+KAT SONRASI ÖLÇ
+  Kapalı kutu 70 × 35 × 140 mm
+  Ön yüz L×H, kapak L×W, yapıştırma kulağı içte, tuck otursun, dust çarpışmasın
+  Toleransı kalıphane koyar. Motor ± mm uydurmaz.
+
+RENK / KATMAN
+  DXF: CUT, CREASE, PERF — renk yok, katman adı var
+  PDF: CUT 1 0 0 RGB · CREASE 0 0 1 RGB · PERF 0.75 0 0.75 RGB
+
+DÜRÜSTLÜK
+  PDF/X-4 sRGB OutputIntent. Not FOGRA / GRACoL / a press CMYK condition.
+  Trapped /False. No trap.
+  Not veraPDF-certified in this repo.
+  BleedBox / safe = 3 mm / 3 mm. CUT stays on trim. Bleed is not baked into the knife.
+  Barcode 2000988691984 is a FORMA sample (200…). Not a GS1 GTIN.
+  Motor / preflight green ≠ the board sits. This pack is for one physical cut.
+
+SKU PRIMARY  fm-cos-tuck-perfume
+  70×35×140 mm  yapı tuck-end-box
+  grammar straight-tuck-end
+  net sac 224.7 × 245.0 mm
+  CUT 1  CREASE 12  PERF 0
+  Thickness not specified. Kalıphane picks board. Motor does not invent gsm.
+  Native FORMA 13-panel straight tuck. First board to cut.
+
+SKU ALTERNATE  fm-box-ecma-a60
+  100×50×150 mm  yapı tuck-top-auto-bottom
+  grammar tuck-top-auto-bottom  A60.20.00.03
+  net sac 313.0 × 250.0 mm
+  CUT 7  CREASE 13  PERF 0
+  carton-300 0.389 mm — becf-11101.pdf only. Not a mill table for other SKUs.
+  ECMA A60.20.00.03 vs owner drawing becf-11101.pdf (100×50×150). Cut only to compare that sheet.
+
+Yeniden üret: npm run cert:press

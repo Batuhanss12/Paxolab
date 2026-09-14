@@ -41,7 +41,11 @@ export function InputsPanel({ brief, design, open, onToggle }: InputsPanelProps)
                   <dt>{row.label}</dt>
                   <dd>
                     {row.value}
-                    {row.sample && <span className="girdiler__hint">örnek / varsayılan</span>}
+                    {row.sample && (
+                      <span className="girdiler__hint">
+                        {row.key === 'dimensionsMm' && brief.dimsFromVolume ? 'ml tahmini' : 'örnek / varsayılan'}
+                      </span>
+                    )}
                   </dd>
                 </div>
               ))}
