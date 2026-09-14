@@ -13,9 +13,9 @@ import {
   paintDrop,
   paintHeroGraphic,
   paintOval,
-  paintSeal,
   wrapHero,
 } from '../heroGraphics'
+import { remapBannedHero } from '../../brain/DesignPlan'
 import { resolveHeroPlacement, type HeroPlacement } from '../heroes/heroPlacement'
 
 export type HeroPaintCtx = {
@@ -32,10 +32,7 @@ function perfumeCrest(panel: Panel, p: Palette, dense: boolean, yFrac = 0.148, s
 }
 
 function classicCartouche(panel: Panel, p: Palette, yFrac = 0.16, scale = 1, xFrac = 0.5): string {
-  const cx = panel.x + panel.w * xFrac
-  const cy = panel.y + panel.h * yFrac
-  const r = Math.min(8.4, panel.w * 0.16) * scale
-  return paintSeal(cx, cy, r, p.accent)
+  return perfumeCrest(panel, p, true, yFrac, scale, xFrac)
 }
 
 function ecoLeaf(panel: Panel, p: Palette, yFrac = 0.17, scale = 1, xFrac = 0.5): string {
@@ -107,13 +104,18 @@ export function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette, pl
   return ''
 }
 
-/** Render the plan hero — library hero if family differs from kit, otherwise kit hero. */
-export function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
-  const kitFamily = kitHeroFamily(system.decor)
-  const family = plan?.heroGraphic.family ?? kitFamily
+/** Same placement paintPlanHero uses — for occupancy/collision before motif paint. */
+export function resolveFrontHeroPlacement(
+  panel: Panel,
+  system: DesignSystem,
+  plan?: DesignPlan,
+  ctx?: HeroPaintCtx,
+): HeroPlacement {
+  const kitFamily = remapBannedHero(kitHeroFamily(system.decor), system.sector)
+  const family = remapBannedHero(plan?.heroGraphic.family ?? kitFamily, system.sector)
   const useLib = family !== 'none' && family !== kitFamily
   const mode = useLib || kitFamily === 'none' ? 'lib' : 'kit'
-  const place = resolveHeroPlacement({
+  return resolveHeroPlacement({
     panel,
     system,
     plan,
@@ -123,6 +125,14 @@ export function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, pl
     overrides: ctx?.overrides,
     ingredientClaims: ctx?.ingredientClaims,
   })
+}
+
+/** Render the plan hero — library hero if family differs from kit, otherwise kit hero. */
+export function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
+  const kitFamily = remapBannedHero(kitHeroFamily(system.decor), system.sector)
+  const family = remapBannedHero(plan?.heroGraphic.family ?? kitFamily, system.sector)
+  const useLib = family !== 'none' && family !== kitFamily
+  const place = resolveFrontHeroPlacement(panel, system, plan, ctx)
   if (place.omitted) {
     if (plan && place.reason === 'hero-omitted-lockup' && !plan.risks.includes('hero-omitted-lockup')) {
       plan.risks.push('hero-omitted-lockup')

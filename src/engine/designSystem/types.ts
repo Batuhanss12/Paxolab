@@ -103,6 +103,8 @@ export type DesignSystem = {
   brandOnTucks: boolean
   brandOnTop: boolean
   fullDecorOnFrontOnly: boolean
+  /** Phase 15 — skip style-pack chrome; motifs + type craft only. */
+  blankCanvas?: boolean
   /** Optional Director refinements — painter stays the same, extras may quiet down. */
   director?: {
     restrainDecor: boolean

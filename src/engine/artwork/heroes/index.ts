@@ -5,7 +5,6 @@
 import type { Palette, Panel } from '../../../types'
 import type { HeroFamily } from '../../brain/DesignPlan'
 import { paintCrest } from './crestMark'
-import { paintSeal } from './sealMark'
 import { paintOval } from './ovalMark'
 import { paintBadge } from './badgeMark'
 import { paintBotanical } from './botanicalMark'
@@ -39,8 +38,7 @@ function origin(panel: Panel, scale: number, yFrac = 0.148, xFrac = 0.5): { cx: 
 /** Library heroes only. Crest / oval / harvest kit paths stay in composeArtwork. */
 export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, scale = 1, yFrac = 0.148, xFrac = 0.5): string {
   const { cx, cy, r } = origin(panel, scale, yFrac, xFrac)
-  if (family === 'crest') return paintCrest(cx, cy, r, p.accent, false)
-  if (family === 'seal') return paintSeal(cx, cy, r, p.accent)
+  if (family === 'crest' || family === 'seal') return paintCrest(cx, cy, r, p.accent, false)
   if (family === 'botanical') return paintBotanical(cx, cy, r, p.accent)
   if (family === 'emblem') return paintBadge(cx, cy, r, p.accent)
   if (family === 'harvest') return paintHarvest(cx, cy, r, p.accent)
@@ -56,8 +54,9 @@ export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, s
 
 export function wrapHero(family: HeroFamily, markup: string, place?: { xFrac: number; yFrac: number }): string {
   if (!markup) return ''
+  const live = family === 'seal' ? 'crest' : family
   const axis = place
     ? ` data-hero-x="${place.xFrac.toFixed(3)}" data-hero-y="${place.yFrac.toFixed(3)}"`
     : ''
-  return `<g data-art="hero" data-hero="${family}"${axis}>${markup}</g>`
+  return `<g data-art="hero" data-hero="${live}"${axis}>${markup}</g>`
 }

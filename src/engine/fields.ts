@@ -9,7 +9,7 @@ export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
   packagingMode: 'Yüzey',
   templateId: 'Şablon',
   dimensionsMm: 'Ölçüler',
-  styleType: 'Stil',
+  styleType: 'Ruh hali',
   colors: 'Renkler',
   volume: 'Hacim',
   paoMonths: 'PAO',

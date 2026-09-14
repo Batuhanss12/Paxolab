@@ -5,7 +5,7 @@ import { JOBS, briefFrom } from './catalog-jobs'
 
 const BEFORE: Record<string, { hero: string; exportOk: boolean; notes: string }> = {
   '01-parfum-tuck-luxury': { hero: 'crest', exportOk: true, notes: 'strong' },
-  '02-kolonya-tuck-classic': { hero: 'seal', exportOk: true, notes: '' },
+  '02-kolonya-tuck-classic': { hero: 'crest', exportOk: true, notes: '' },
   '03-krem-tuck-luxury': { hero: 'oval', exportOk: true, notes: '' },
   '04-serum-tuck-minimal': { hero: 'none', exportOk: true, notes: 'minimal air' },
   '05-parfum-wrap-luxury': { hero: 'crest-plan-no-paint', exportOk: true, notes: 'hero missing on face' },

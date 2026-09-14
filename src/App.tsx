@@ -277,7 +277,7 @@ export default function App() {
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
-          overridePatch: result?.overridePatch,
+          overridePatch: { blankCanvas: true, ...result?.overridePatch },
           copyPatch: result?.copyPatch,
           llmCopy,
           logoHref: logo?.dataUrl,
@@ -442,7 +442,7 @@ export default function App() {
     if (!designRef.current) return
     dispatch({
       type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `Stil ${styleLabel(style)} — yüzey yeniden kuruldu.` }],
+      messages: [{ id: uid(), role: 'assistant', content: `Ruh hali ${styleLabel(style)} — boş tuvalden yeniden kuruldu.` }],
     })
     runGenerate(next)
   }, [runGenerate])

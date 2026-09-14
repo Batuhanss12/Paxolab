@@ -16,7 +16,11 @@
     "test:all": "vitest run && vitest run --config vitest.server.config.ts",
     "smoke:api": "node scripts/smoke-api.mjs",
     "cert:box": "npx --yes vite-node scripts/forma-box-cert.ts",
-    "cert:press": "npx --yes vite-node scripts/forma-press-proof.ts"
+    "cert:press": "npx --yes vite-node scripts/forma-press-proof.ts",
+    "pattern:ingest": "npx --yes vite-node scripts/ingest-art-pattern-library.ts",
+    "pattern:mix": "npx --yes vite-node scripts/generate-pattern-mix.ts",
+    "pattern:compose": "npx --yes vite-node scripts/generate-pattern-compositions.ts",
+    "pattern:blank": "npx --yes vite-node scripts/generate-blank-canvas.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",

@@ -7,7 +7,8 @@ import { rememberArt } from './DesignMemory'
 import { allowedDecorFor, sectorRisks, styleRule } from './DesignRules'
 import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
-import { planSummaryTr, type DesignPlan, type DirectorCue, type NegativeSpace } from './DesignPlan'
+import type { DesignPlan, DirectorCue, NegativeSpace, BackgroundTreatment } from './DesignPlan'
+import { planSummaryTr } from './DesignPlan'
 import { studioRecipe } from './VariationRecipes'
 import { lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
 
@@ -19,6 +20,8 @@ export type DirectorInput = {
   cue?: DirectorCue | string
   variationIndex?: number
   forceHero?: import('./DesignPlan').HeroFamily
+  blankCanvas?: boolean
+  backgroundTreatment?: BackgroundTreatment
 }
 
 function asCue(raw?: string): DirectorCue {
@@ -160,7 +163,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
     risks: sectorRisks(sector),
     summaryTr: '',
   }
-  const studio = !restrainExtras ? studioRecipe(variationIndex) : null
+  const studio = !input.blankCanvas && !restrainExtras ? studioRecipe(variationIndex) : null
   if (studio) {
     const lockup = surface === 'label' && /wrap/i.test(input.template?.structureId ?? input.brief.templateId)
       ? 'left'
@@ -179,6 +182,12 @@ export function createPlan(input: DirectorInput): DesignPlan {
   }
   if (plan.composition.intent === 'full-bleed') {
     plan.heroGraphic.scale = Math.min(plan.heroGraphic.scale, 0.9)
+  }
+  if (input.blankCanvas) {
+    plan.patternSystem = { family: 'none', opacity: 0, avoidLockup: true, sideIntentional: false }
+    plan.illustrationSystem = { primitives: [], density: plan.decor.density }
+    plan.artDirection = { ...plan.artDirection, chrome: 'quiet' }
+    if (input.backgroundTreatment) plan.backgroundTreatment = input.backgroundTreatment
   }
   plan.summaryTr = planSummaryTr(plan)
   rememberArt(style, { hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })

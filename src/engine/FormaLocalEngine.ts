@@ -5,8 +5,10 @@ import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
 import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor, varyPalette } from './artwork/languages'
+import { paletteFromBrief } from './artwork/briefPalette'
+import { composeBlankFace } from './artwork/composeBlankFace'
 import { defaultIngredientClaims, resolveProductLine, sampleCopy } from './artwork/copy'
-import { resolveDesignSystem } from './designSystem'
+import { resolveDesignSystem, resolveSector } from './designSystem'
 import { runPreflight } from './production/preflight'
 import { formaSampleEan, normalizeEan13 } from './barcode'
 import { resolveCopyLocale } from './copyLocale'
@@ -94,6 +96,16 @@ export class FormaLocalEngine implements EnginePort {
       0,
       Math.floor(overrides.variationIndex ?? input.prev?.designPlan?.variationIndex ?? 0),
     )
+    const blankCanvas = !!overrides.blankCanvas
+    const wrap = /wrap/i.test(brief.templateId) || template.structureId === 'wrap-label'
+    const blankFace = blankCanvas
+      ? composeBlankFace(brief, resolveSector(brief), {
+          grammar: brief.packagingMode === 'label' ? 'label' : 'box',
+          wrap,
+          recipeId: overrides.motifRecipeId,
+          premium: overrides.premium,
+        })
+      : null
     const designPlan = createPlan({
       brief,
       template,
@@ -101,14 +113,18 @@ export class FormaLocalEngine implements EnginePort {
       prev: styleChanged ? undefined : input.prev?.designPlan,
       cue: overrides.directorCue,
       variationIndex,
-      forceHero: overrides.heroFamily,
+      forceHero: blankCanvas ? (overrides.heroFamily ?? blankFace?.finish.heroFamily) : overrides.heroFamily,
+      blankCanvas,
+      backgroundTreatment: blankFace?.finish.backgroundTreatment,
     })
     if (designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
       overrides.titleScale = 1.1
     }
 
     const palette = varyPalette(
-      paletteFor(brief, brief.styleType || 'classic', overrides.premium),
+      blankCanvas
+        ? (blankFace?.palette ?? paletteFromBrief(brief, style, overrides.premium))
+        : paletteFor(brief, brief.styleType || 'classic', overrides.premium),
       variationIndex,
     )
     const layout = {
@@ -118,7 +134,10 @@ export class FormaLocalEngine implements EnginePort {
     }
 
     const paint = (plan: typeof designPlan) => {
-      const system = applyPlanToSystem(resolveDesignSystem(brief, template.structureId), plan)
+      const system = applyPlanToSystem(
+        resolveDesignSystem(brief, template.structureId, { blankCanvas }),
+        plan,
+      )
       const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
       const draft = {
         brief,

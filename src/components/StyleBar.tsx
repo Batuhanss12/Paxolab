@@ -31,8 +31,8 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary, className, va
     .join(' ')
 
   return (
-    <section className={rootClass} aria-label="Stil">
-      <div className="style-chips" role="listbox" aria-label="Stil seçimi">
+    <section className={rootClass} aria-label="Ruh hali">
+      <div className="style-chips" role="listbox" aria-label="Ruh hali (kostüm değil)">
         {STYLE_OPTIONS.map((opt) => (
           <button
             key={opt.id}

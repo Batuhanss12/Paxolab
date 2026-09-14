@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="10.53 115.73 2863.22 3873.75">
+<defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: none;
+      }
+
+      .cls-3 {
+        fill: currentColor;
+      }
+
+      .cls-3, .cls-4 {
+        fill-rule: evenodd;
+        opacity: .3;
+      }
+
+      .cls-4 {
+        fill: currentColor;
+      }
+    </style>
+  </defs>
+<path class="cls-3" d="M2867.75,3983.47H16.53V121.73c7.87,285.58,83.72,1077.93,667.42,1435.2,719.01,440.09,1667.36,458.68,1797.52,1518.6,40.27,327.93,180.89,639.79,386.28,907.95"/>
+</svg>

@@ -29,7 +29,9 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
     'Barkod / GTIN nedir? Yazmazsanız örnek bir barkod çizerim — Girdiler’de örnek diye işaretlenir, gerçek GS1 değildir.',
   manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
   manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
-  styleType: 'Soldaki stil çiplerinden seçin: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik.',
+  styleType: 'Soldaki ruh hali çipleri ipucu: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik. Kostüm şablonu değil — renk ve motifler brief’ten kurulur.',
+  colors:
+    'Renkler nedir — hex veya isim (ör. #1a0a0a · #c9a227, siyah altın)? “yok” derseniz paleti ruh hali ve sektörden türetirim.',
   templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
   copyLocale: 'Metinler Türkçe mi, İngilizce mi?',
 }

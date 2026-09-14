@@ -58,7 +58,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
       }
       if (style === 'eco' && currentStyle === 'eco') overridePatch.directorCue = 'warm-natural'
       if ((style === 'modern' || style === 'playful') && currentStyle === style) overridePatch.directorCue = 'graphic-push'
-      notes.push(`Stil ${style} yönüne çekildi — yüzey yeniden kuruldu.`)
+      notes.push(`Ruh hali ${style} — boş tuvalden yeniden kuruldu.`)
       break
     }
   }

@@ -106,6 +106,20 @@ export type DesignOverrides = {
   variationIndex?: number
   /** Pin a library hero (monstera / palm / organic-wave / zebra). Must stay vocab-legal. */
   heroFamily?: import('./engine/brain/DesignPlan').HeroFamily
+  /** Phase 12 opt-in overlay from ART-PATTERN-DESİGN. Gallery jobs omit this. */
+  artPatternId?: string
+  /**
+   * Opt-in library composition: faces are built from extracted pattern/deco parts.
+   * Default gallery / ossified lockup chrome stays off this path.
+   */
+  artPatternCompose?: boolean
+  /** Phase 14 motif recipe. Opt-in; gallery jobs omit this. */
+  motifRecipeId?: 'luxury-frame' | 'stamp-field' | 'band-story' | 'corner-deco'
+  /**
+   * Phase 15 production path: brief → blank face → motif match → compose.
+   * Catalog / gallery fixtures omit this so style kits stay QA-reproducible.
+   */
+  blankCanvas?: boolean
 }
 
 export type Palette = {

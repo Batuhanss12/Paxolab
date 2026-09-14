@@ -61,7 +61,7 @@ export function composeArtwork(
   palette: Palette,
   overrides: DesignOverrides,
   logoHref?: string,
-  system = resolveDesignSystem(brief, dieline.structureId),
+  system = resolveDesignSystem(brief, dieline.structureId, { blankCanvas: overrides.blankCanvas }),
   designPlan?: DesignPlan,
 ): ArtworkModel {
   const plan = buildCraftPlan(brief, dieline, copy, system)

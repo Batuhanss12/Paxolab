@@ -4,7 +4,7 @@ import type { HeroFamily, VisualConceptBlock } from './DesignPlan'
 
 const CONCEPTS: Record<string, VisualConceptBlock> = {
   'perfume:luxury': { id: 'nocturne-crest', tags: ['night', 'foil-signal', 'one-hero'] },
-  'perfume:classic': { id: 'heraldic-seal', tags: ['seal', 'double-line', 'heritage'] },
+  'perfume:classic': { id: 'heraldic-crest', tags: ['crest', 'double-line', 'heritage'] },
   'perfume:eco': { id: 'botanical-night', tags: ['leaf', 'quiet-gold'] },
   'cream:luxury': { id: 'soft-oval', tags: ['cream', 'oval', 'air'] },
   'serum:luxury': { id: 'drop-concentrate', tags: ['serum', 'drop'] },

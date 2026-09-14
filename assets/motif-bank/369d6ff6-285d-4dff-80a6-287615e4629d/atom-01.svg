@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="244.49 172.39 876 876">
+<defs>
+    <style>
+      .cls-1 {
+        fill: currentColor;
+      }
+
+      .cls-2 {
+        fill: currentColor;
+      }
+
+      .cls-3 {
+        fill: currentColor;
+      }
+
+      .cls-4 {
+        fill: none;
+      }
+
+      .cls-5 {
+        fill: currentColor;
+      }
+
+      .cls-6 {
+        fill: currentColor;
+      }
+
+      .cls-7 {
+        fill: currentColor;
+      }
+
+      .cls-8 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-4" x="250.49" y="178.39" width="864" height="864"/>
+    </clipPath>
+  </defs>
+<rect class="cls-5" x="250.49" y="178.39" width="864" height="864"/>
+</svg>

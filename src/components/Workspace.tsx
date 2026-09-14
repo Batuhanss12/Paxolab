@@ -181,7 +181,7 @@ export function Workspace({
                 Girdiler
               </button>
               {toolsMenu === 'style' && (
-                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Stil">
+                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Ruh hali">
                   <StyleBar
                     brief={brief}
                     design={design}

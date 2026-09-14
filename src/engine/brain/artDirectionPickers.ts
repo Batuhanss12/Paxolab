@@ -9,7 +9,7 @@ import { pickAllowed, studioRecipe } from './VariationRecipes'
 import { vocabHeroRequired } from './SectorVisualVocabulary'
 import { allowedHeroes, allowedPatterns, defaultPattern } from './artDirectionAllowed'
 import type { ArtCtx } from './ArtDirection'
-import type { HeroFamily, PatternFamily, PrimitiveId } from './DesignPlan'
+import { remapBannedHero, type HeroFamily, type PatternFamily, type PrimitiveId } from './DesignPlan'
 
 const OVERLOAD_PRIMS: PrimitiveId[] = ['leaf', 'grain', 'diamond', 'wave', 'arc', 'dot', 'tick']
 
@@ -43,7 +43,6 @@ function requiredHero(ctx: ArtCtx, allowed: HeroFamily[]): HeroFamily | null {
   }
   if (ctx.sector === 'food' && allowed.includes('harvest')) return 'harvest'
   if (ctx.sector === 'perfume') {
-    if (ctx.style === 'classic' && allowed.includes('seal')) return 'seal'
     if (allowed.includes('crest')) return 'crest'
   }
   const first = allowed.find((h) => h !== 'none')
@@ -51,7 +50,9 @@ function requiredHero(ctx: ArtCtx, allowed: HeroFamily[]): HeroFamily | null {
 }
 
 export function pickHero(ctx: ArtCtx): HeroFamily {
+  if (ctx.forceHero === 'none') return 'none'
   const allowed = allowedHeroes(ctx.style, ctx.sector, ctx.vocab)
+  if (ctx.forceHero === 'seal') return remapBannedHero('seal', ctx.sector)
   if (ctx.forceHero && allowed.includes(ctx.forceHero)) return ctx.forceHero
   const preferred = allowed[0] ?? 'none'
   const index = ctx.variationIndex ?? 0
@@ -61,17 +62,19 @@ export function pickHero(ctx: ArtCtx): HeroFamily {
     ctx.cue === 'luxury-arrive' ||
     ctx.cue === 'open-air' ||
     ctx.cue === 'warm-natural'
-  if (ctx.cue === 'force-overload') return preferred
+  if (ctx.cue === 'force-overload') return remapBannedHero(preferred, ctx.sector)
   if (keepCue && !indexChanged && ctx.prev?.heroGraphic.family && allowed.includes(ctx.prev.heroGraphic.family)) {
-    return ctx.prev.heroGraphic.family
+    return remapBannedHero(ctx.prev.heroGraphic.family, ctx.sector)
   }
   if (index <= 0) {
     const needed = requiredHero(ctx, allowed)
-    return needed ?? preferred
+    return remapBannedHero(needed ?? preferred, ctx.sector)
   }
   const recipe = studioRecipe(index)
-  if (recipe) return pickAllowed(allowed, recipe.hero, index)
-  return pickFromSet(allowed, index, lastForStyle(ctx.style)?.hero ?? ctx.prev?.heroGraphic.family)
+  const picked = recipe
+    ? pickAllowed(allowed, recipe.hero, index)
+    : pickFromSet(allowed, index, lastForStyle(ctx.style)?.hero ?? ctx.prev?.heroGraphic.family)
+  return remapBannedHero(picked, ctx.sector)
 }
 
 export function pickPattern(ctx: ArtCtx): PatternFamily {

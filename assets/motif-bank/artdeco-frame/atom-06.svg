@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="1153.52 797.45 63.52 84.12">
+<defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-2 {
+        fill: url(#linear-gradient-4);
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient-3);
+      }
+
+      .cls-4 {
+        fill: currentColor;
+      }
+
+      .cls-5 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="658.88" y1="1742.23" x2="2464.44" y2="-63.33" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="currentColor"/>
+      <stop offset="1" stop-color="currentColor"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="905.66" y1="839.45" x2="2217.66" y2="839.45" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient-3" x1="775.16" y1="840.45" x2="808.16" y2="840.45" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient-4" x1="2315.16" y1="840.45" x2="2348.16" y2="840.45" xlink:href="#linear-gradient"/>
+  </defs>
+<path class="cls-4" d="M1180.04,808.54h-24.14v-8.71h58.76v8.71h-24.26v70.65h-10.36v-70.65Z"/>
+</svg>

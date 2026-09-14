@@ -5,6 +5,7 @@ import { resolveCopyLocale } from '../copyLocale'
 import { categoryFor, pickDecor, pickLockup, typeScaleFor } from './kits'
 import { resolveSector, sectorBlob } from './sector'
 import type { DesignSystem, LegalBlockDef, MarkSet, SurfaceMode } from './types'
+import { composeBlankFace } from '../artwork/composeBlankFace'
 
 function legalPlan(sector: DesignSystem['sector'], locale: 'tr' | 'en' = 'tr'): LegalBlockDef[] {
   const en = locale === 'en'
@@ -69,26 +70,38 @@ function markSet(sector: DesignSystem['sector']): MarkSet {
   return 'cosmetics'
 }
 
-export function resolveDesignSystem(brief: DesignBrief, structureId?: StructureId): DesignSystem {
+export type ResolveDesignOpts = {
+  blankCanvas?: boolean
+}
+
+export function resolveDesignSystem(
+  brief: DesignBrief,
+  structureId?: StructureId,
+  opts?: ResolveDesignOpts,
+): DesignSystem {
   const style = (brief.styleType || 'luxury') as StyleType
   const surfaceMode: SurfaceMode = brief.packagingMode === 'label' ? 'label' : 'box'
   const grammar = surfaceMode
   const sector = resolveSector(brief)
   const blob = sectorBlob(brief)
   const wrap = structureId === 'wrap-label' || /wrap/i.test(brief.templateId)
-  const lockup = pickLockup(style, sector, grammar, wrap)
+  const blank = !!opts?.blankCanvas
+  const blankFace = blank ? composeBlankFace(brief, sector, { grammar, wrap }) : null
+  const lockup = blankFace?.finish.lockup ?? pickLockup(style, sector, grammar, wrap)
   const sw = styleProfile(style)
-  const goldBar = sw.goldBar && grammar === 'box' && style === 'luxury'
+  const goldBar = blankFace
+    ? blankFace.finish.goldBar
+    : sw.goldBar && grammar === 'box' && style === 'luxury'
 
   return {
-    key: `${surfaceMode}:${sector}:${style}:${lockup}`,
+    key: `${surfaceMode}:${sector}:${style}:${lockup}${blank ? ':blank' : ''}`,
     surfaceMode,
     grammar,
     sector,
     style,
     lockup,
-    decor: pickDecor(style, sector, lockup),
-    density: sw.density,
+    decor: blankFace?.finish.decor ?? pickDecor(style, sector, lockup),
+    density: blankFace ? (style === 'minimal' || style === 'luxury' ? 'sparse' : sw.density) : sw.density,
     type: typeScaleFor(style, grammar, wrap, sector),
     marks: markSet(sector),
     markRecipe: resolveMarkRecipe(sector, surfaceMode, brief),
@@ -98,11 +111,12 @@ export function resolveDesignSystem(brief: DesignBrief, structureId?: StructureI
     pao: sector === 'perfume' || sector === 'cream' || sector === 'serum',
     goldBar,
     serif: sw.serif,
-    align: wrap ? 'left' : grammar === 'label' ? (style === 'modern' ? 'left' : 'center') : sw.align,
+    align: wrap ? 'left' : grammar === 'label' ? (style === 'modern' ? 'left' : 'center') : blankFace && style === 'modern' ? 'left' : sw.align,
     wrapSeam: grammar === 'label' && wrap,
     brandOnSides: false,
     brandOnTucks: false,
     brandOnTop: true,
     fullDecorOnFrontOnly: true,
+    blankCanvas: blank,
   }
 }

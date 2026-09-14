@@ -155,6 +155,7 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
   if (plan.style === 'playful' && /data-bg="playful-capsules"/.test(face) && /data-pattern=/.test(face)) decoration += 4
   if (plan.style === 'eco' && /data-art="title-card"/.test(face)) decoration += 6
   if (/data-art="bg-kit"/.test(face)) decoration += 8
+  if (/data-art="art-pattern"/.test(face)) decoration += 6
   if (/data-art="step-pill"/.test(face)) decoration += 6
   if (plan.surface === 'label' && /data-art="step-pill"/.test(face) && /data-pattern=/.test(face)) decoration += 4
   const richPattern = /data-pattern="(weave|dotgrid|wave|hexagon)"/.test(face)

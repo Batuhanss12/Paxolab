@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="63.43 235.64 25.35 18.23">
+<defs>
+    <style>
+      .cls-1, .cls-2 {
+        fill: currentColor;
+      }
+
+      .cls-3 {
+        fill: none;
+      }
+
+      .cls-4 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-5 {
+        clip-path: url(#clippath-3);
+      }
+
+      .cls-6 {
+        fill: currentColor;
+      }
+
+      .cls-7 {
+        clip-path: url(#clippath-2);
+      }
+
+      .cls-2 {
+        fill-rule: evenodd;
+      }
+
+      .cls-8 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-3" x="37.54" y="70.07" width="225" height="225"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="cls-3" x="262.54" y="70.07" width="225" height="225"/>
+    </clipPath>
+    <clipPath id="clippath-2">
+      <rect class="cls-3" x="37.54" y="295.07" width="225" height="225"/>
+    </clipPath>
+    <clipPath id="clippath-3">
+      <rect class="cls-3" x="262.54" y="295.07" width="225" height="225"/>
+    </clipPath>
+  </defs>
+<path class="cls-2" d="M69.28,240.1c-2.68,2.2-4.23,7.29-.77,9.6,1.4.93,3.56.68,4.18-1.05.26-.72.16-1.51-.37-2.08-.3-.32-.69-.55-1.11-.67-.17-.05-.99-.02-1.05-.16-.23-.51,1.65-.43,1.79-.39.92.24,1.69.96,1.98,1.87.61,1.88-.67,3.87-2.47,4.45-4.26,1.38-7.23-3.42-6.64-7.13.62-3.91,3.84-6.71,7.63-7.39,3.96-.71,8.34.62,11.43,3.14,1.76,1.44,3.16,3.38,3.6,5.63.5,2.56-.22,5.51-2.36,7.15,1.99-1.63,2.64-4.43,2.13-6.88-.43-2.05-1.71-3.81-3.34-5.09-3.86-3.06-10.55-4.36-14.63-.99-.54.44.55-.45,0,0Z"/>
+</svg>

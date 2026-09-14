@@ -16,6 +16,19 @@ export type DirectorCue =
   | 'force-overload'
 
 export type HeroFamily = 'crest' | 'seal' | 'botanical' | 'emblem' | 'harvest' | 'tech' | 'oval' | 'monstera' | 'palm' | 'organic-wave' | 'zebra' | 'line-scene' | 'none'
+
+/** P10b — empty octagon/hex seal is retired. Keep the type for old plans; never paint it. */
+export function remapBannedHero(family: HeroFamily, sector?: string): HeroFamily {
+  if (family !== 'seal') return family
+  if (sector === 'perfume') return 'crest'
+  if (sector === 'food' || sector === 'beverage') return 'harvest'
+  return 'oval'
+}
+
+export function withoutSeal(list: HeroFamily[], sector?: string): HeroFamily[] {
+  const next = list.filter((h) => h !== 'seal')
+  return next.length ? next : [remapBannedHero('seal', sector)]
+}
 export type PatternFamily = 'contour' | 'lattice' | 'stripe' | 'grain' | 'ornament' | 'capsule' | 'weave' | 'dotgrid' | 'wave' | 'hexagon' | 'none'
 export type BackgroundTreatment = 'dark-field' | 'quiet-paper' | 'vignette' | 'dual-tone' | 'kraft'
 export type PrimitiveId = 'leaf' | 'grain' | 'diamond' | 'rule' | 'wave' | 'arc' | 'dot' | 'tick'

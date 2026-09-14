@@ -8,25 +8,26 @@ import type { VocabularyRow } from './SectorVisualVocabulary'
 import { styleForbiddenPatterns } from './SectorVisualVocabulary'
 import { styleHeroes } from './styleHeroConfig'
 import type { BackgroundTreatment, HeroFamily, PatternFamily } from './DesignPlan'
+import { withoutSeal } from './DesignPlan'
 
 export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
   // P2-A: minimal unlocks ONE quiet hero per sector (not luxury crests, just micro signals).
   if (style === 'minimal') {
     if (sector === 'cream' || sector === 'serum' || sector === 'baby') return ['line-scene', 'oval']
-    if (sector === 'electronics') return ['none', 'tech']
+    if (sector === 'electronics') return withoutSeal(['none', 'tech'], sector)
     // cleaning, food, perfume, generic: stay none — rely on sector bg accent
     return ['none']
   }
   const preferred = styleHeroes(style, sector)
   if (vocab) {
-    const safe = vocab.heroFamilies.filter((h) => !vocab.forbiddenHeroes.includes(h))
+    const safe = vocab.heroFamilies.filter((h) => !vocab.forbiddenHeroes.includes(h) && h !== 'seal')
     if (safe.length) {
-      const head = preferred.filter((h) => h !== 'none' && safe.includes(h))
+      const head = preferred.filter((h) => h !== 'none' && h !== 'seal' && safe.includes(h))
       const tail = safe.filter((h) => !head.includes(h))
-      return head.length ? [...head, ...tail] : safe
+      return withoutSeal(head.length ? [...head, ...tail] : safe, sector)
     }
   }
-  return preferred
+  return withoutSeal(preferred, sector)
 }
 
 export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?: SectorId): PatternFamily[] {
@@ -102,7 +103,7 @@ export function defaultBackground(style: StyleType): BackgroundTreatment {
 
 export function heroFromDecor(decor: DecorFamily): HeroFamily {
   if (decor === 'crest') return 'crest'
-  if (decor === 'cartouche') return 'seal'
+  if (decor === 'cartouche') return 'crest'
   if (decor === 'leaf' || decor === 'drop') return 'botanical'
   if (decor === 'badge') return 'emblem'
   if (decor === 'olive' || decor === 'harvest') return 'harvest'

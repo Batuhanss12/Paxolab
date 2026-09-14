@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="687.42 446.97 129.18 89.46">
+<defs>
+    <style>
+      .cls-1 {
+        fill: currentColor;
+      }
+
+      .cls-2 {
+        fill: currentColor;
+      }
+
+      .cls-3 {
+        fill: currentColor;
+      }
+
+      .cls-4 {
+        fill: none;
+      }
+
+      .cls-5 {
+        fill: currentColor;
+      }
+
+      .cls-6 {
+        fill: currentColor;
+      }
+
+      .cls-7 {
+        fill: currentColor;
+      }
+
+      .cls-8 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-4" x="250.49" y="178.39" width="864" height="864"/>
+    </clipPath>
+  </defs>
+<path class="cls-6" d="M694.48,450.99c-.79.32-.74.09-1.73,8.39-.99,8.36-1.67,17.63-1.36,18.44.43,1.11,3.98,6.57,5.52,8.48,7.12,8.85,41.88,32.53,61.03,38.95,21.39,7.17,39.81,4.61,55.01,7.53-6.44-5.6-12.58-8.77-21.44-12.7-9.23-4.1-12.82-5.97-18.87-8.39-14.28-5.72-17.24-8.05-28.04-13.47-6.2-3.11-9.71-5.37-15.44-9.93-5.14-4.09-15.25-14.2-18.42-18.42-3.03-4.03-9.65-11.65-10.22-13.56-.32-1.07-2.47-3.73-3.81-4.72q-1.31-.96-2.23-.59h0Z"/>
+</svg>

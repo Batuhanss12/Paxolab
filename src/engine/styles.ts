@@ -8,12 +8,12 @@ export type StyleOption = {
 }
 
 export const STYLE_OPTIONS: StyleOption[] = [
-  { id: 'luxury', label: 'Lüks', hint: 'Siyah–altın', swatch: '#c9a86c' },
-  { id: 'modern', label: 'Modern', hint: 'Soğuk çizgi', swatch: '#7ec8d4' },
-  { id: 'minimal', label: 'Minimal', hint: 'Hava', swatch: '#d8d4ca' },
-  { id: 'eco', label: 'Eco', hint: 'Kraft', swatch: '#8a7a4e' },
-  { id: 'playful', label: 'Eğlenceli', hint: 'Rozet', swatch: '#e88a4a' },
-  { id: 'classic', label: 'Klasik', hint: 'Serif', swatch: '#6b1d2a' },
+  { id: 'luxury', label: 'Lüks', hint: 'Sıkı, yüksek kontrast, metalik vurgu — kostüm değil', swatch: '#c9a86c' },
+  { id: 'modern', label: 'Modern', hint: 'Keskin sans, seyrek süs', swatch: '#7ec8d4' },
+  { id: 'minimal', label: 'Minimal', hint: 'Hava, az motif', swatch: '#d8d4ca' },
+  { id: 'eco', label: 'Eco', hint: 'Doğal, botanik eğilim', swatch: '#8a7a4e' },
+  { id: 'playful', label: 'Eğlenceli', hint: 'Canlı, rozet eğilimi', swatch: '#e88a4a' },
+  { id: 'classic', label: 'Klasik', hint: 'Serif, klasik süs eğilimi', swatch: '#6b1d2a' },
 ]
 
 export function styleLabel(style: StyleType | ''): string {

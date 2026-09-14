@@ -1,0 +1,6196 @@
+{
+  "sourceDir": "C:\\Users\\Admin\\Desktop\\ART-PATTERN-DESİGN",
+  "ingestedAt": "2026-09-14T09:45:29.701Z",
+  "sheets": [
+    {
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "atomCount": 6,
+      "weak": false
+    },
+    {
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "atomCount": 17,
+      "weak": false
+    },
+    {
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "atomCount": 8,
+      "weak": false
+    },
+    {
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "atomCount": 22,
+      "weak": false
+    },
+    {
+      "sheetId": "252",
+      "sourceName": "252.svg",
+      "atomCount": 0,
+      "weak": true
+    },
+    {
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "atomCount": 40,
+      "weak": false
+    },
+    {
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "atomCount": 28,
+      "weak": false
+    },
+    {
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "atomCount": 9,
+      "weak": false
+    },
+    {
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "atomCount": 11,
+      "weak": false
+    },
+    {
+      "sheetId": "68",
+      "sourceName": "68 [Dönüştürülmüş].svg",
+      "atomCount": 3,
+      "weak": false
+    },
+    {
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "atomCount": 40,
+      "weak": false
+    },
+    {
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "atomCount": 5,
+      "weak": false
+    },
+    {
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "atomCount": 12,
+      "weak": false
+    },
+    {
+      "sheetId": "artdeco2-3",
+      "sourceName": "artdeco2_3_ [Dönüştürülmüş].svg",
+      "atomCount": 3,
+      "weak": false
+    },
+    {
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "atomCount": 9,
+      "weak": false
+    },
+    {
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "atomCount": 15,
+      "weak": false
+    },
+    {
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "atomCount": 20,
+      "weak": false
+    },
+    {
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "atomCount": 40,
+      "weak": false
+    }
+  ],
+  "atoms": [
+    {
+      "id": "11701003__atom-00",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 553.41,
+        "y": 829.13,
+        "w": 579.88,
+        "h": 784.31
+      },
+      "viewBox": "547.41 823.13 591.88 796.31",
+      "bytes": 84860,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 166,
+      "markup": ""
+    },
+    {
+      "id": "11701003__atom-01",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 553.41,
+        "y": 0.02,
+        "w": 579.87,
+        "h": 784.18
+      },
+      "viewBox": "547.41 -5.98 591.87 796.18",
+      "bytes": 86764,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 154,
+      "markup": ""
+    },
+    {
+      "id": "11701003__atom-02",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 1.34,
+        "y": 829.13,
+        "w": 510.72,
+        "h": 784.32
+      },
+      "viewBox": "-4.66 823.13 522.72 796.32",
+      "bytes": 74796,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 135,
+      "markup": ""
+    },
+    {
+      "id": "11701003__atom-03",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 1174.66,
+        "y": 829.13,
+        "w": 510.71,
+        "h": 784.32
+      },
+      "viewBox": "1168.66 823.13 522.71 796.32",
+      "bytes": 77683,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 136,
+      "markup": ""
+    },
+    {
+      "id": "11701003__atom-04",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 510.7,
+        "h": 784.31
+      },
+      "viewBox": "-6 -6 522.7 796.31",
+      "bytes": 109988,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 204,
+      "markup": ""
+    },
+    {
+      "id": "11701003__atom-05",
+      "sheetId": "11701003",
+      "sourceName": "11701003.svg",
+      "bbox": {
+        "x": 1174.67,
+        "y": 0,
+        "w": 510.68,
+        "h": 784.31
+      },
+      "viewBox": "1168.67 -6 522.68 796.31",
+      "bytes": 76195,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 138,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-00",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 316.45,
+        "y": 0,
+        "w": 142.08,
+        "h": 136.17
+      },
+      "viewBox": "312.19 -4.26 150.6 144.69",
+      "bytes": 33982,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 18,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-01",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 479.51,
+        "y": 4.12,
+        "w": 120.73,
+        "h": 119.21
+      },
+      "viewBox": "475.89 0.5 127.97 126.45",
+      "bytes": 18870,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 28,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-02",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 175.3,
+        "y": 7.64,
+        "w": 114.47,
+        "h": 117.98
+      },
+      "viewBox": "171.76 4.1 121.55 125.06",
+      "bytes": 30999,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 66,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-03",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.1,
+        "y": 151.92,
+        "w": 145.25,
+        "h": 83.86
+      },
+      "viewBox": "-4.46 147.56 153.97 92.57",
+      "bytes": 30364,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 35,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-04",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 484.75,
+        "y": 139.09,
+        "w": 110.08,
+        "h": 110.09
+      },
+      "viewBox": "481.45 135.79 116.69 116.7",
+      "bytes": 33841,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 91,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-05",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 7.69,
+        "y": 261.37,
+        "w": 131.8,
+        "h": 77.73
+      },
+      "viewBox": "3.74 257.42 139.71 85.64",
+      "bytes": 23115,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 23,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-06",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 327.48,
+        "y": 151.9,
+        "w": 121.09,
+        "h": 83.83
+      },
+      "viewBox": "323.85 148.27 128.36 91.1",
+      "bytes": 27060,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-07",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 163.53,
+        "y": 253.89,
+        "w": 137.22,
+        "h": 67.74
+      },
+      "viewBox": "159.41 249.77 145.45 75.97",
+      "bytes": 10901,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 35,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-08",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 8.49,
+        "y": 3.87,
+        "w": 129.2,
+        "h": 63.71
+      },
+      "viewBox": "4.61 -0.01 136.95 71.46",
+      "bytes": 14383,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 23,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-09",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 16.42,
+        "y": 351.59,
+        "w": 113.03,
+        "h": 67.62
+      },
+      "viewBox": "13.03 348.2 119.81 74.4",
+      "bytes": 17970,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 44,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-10",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 178.95,
+        "y": 157.34,
+        "w": 106.09,
+        "h": 71.42
+      },
+      "viewBox": "175.77 154.16 112.46 77.79",
+      "bytes": 16777,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 19,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-11",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 4.04,
+        "y": 76.05,
+        "w": 139.54,
+        "h": 53.6
+      },
+      "viewBox": "-0.15 71.86 147.91 61.97",
+      "bytes": 6942,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 20,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-12",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 484.11,
+        "y": 353.23,
+        "w": 110.83,
+        "h": 64.6
+      },
+      "viewBox": "480.79 349.91 117.48 71.25",
+      "bytes": 14562,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 41,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-13",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 179.24,
+        "y": 351.62,
+        "w": 105.79,
+        "h": 67.39
+      },
+      "viewBox": "176.07 348.45 112.14 73.74",
+      "bytes": 17437,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 45,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-14",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 336.91,
+        "y": 351.63,
+        "w": 102.11,
+        "h": 67
+      },
+      "viewBox": "333.85 348.57 108.24 73.13",
+      "bytes": 16492,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 53,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-15",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 484.73,
+        "y": 272.89,
+        "w": 110.17,
+        "h": 54.2
+      },
+      "viewBox": "481.42 269.58 116.78 60.81",
+      "bytes": 11546,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 20,
+      "markup": ""
+    },
+    {
+      "id": "1577__atom-16",
+      "sheetId": "1577",
+      "sourceName": "1577 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 334.87,
+        "y": 268.52,
+        "w": 107.13,
+        "h": 51.94
+      },
+      "viewBox": "331.66 265.31 113.56 58.37",
+      "bytes": 8054,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 16,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-00",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1433.23,
+        "y": -51.79,
+        "w": 672.38,
+        "h": 729.45
+      },
+      "viewBox": "1427.23 -57.79 684.38 741.45",
+      "bytes": 44122,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 106,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-01",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.01,
+        "y": 1381.62,
+        "w": 672.38,
+        "h": 729.44
+      },
+      "viewBox": "-6.01 1375.62 684.38 741.44",
+      "bytes": 43917,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 106,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-02",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 684.25,
+        "y": 0.03,
+        "w": 709.16,
+        "h": 683.91
+      },
+      "viewBox": "678.25 -5.97 721.16 695.91",
+      "bytes": 37021,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 88,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-03",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1433.59,
+        "y": 1400.93,
+        "w": 683.91,
+        "h": 709.13
+      },
+      "viewBox": "1427.59 1394.93 695.91 721.13",
+      "bytes": 37055,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 88,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-04",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 694.57,
+        "y": 716.74,
+        "w": 701.97,
+        "h": 672.02
+      },
+      "viewBox": "688.57 710.74 713.97 684.02",
+      "bytes": 37503,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 104,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-05",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1431.32,
+        "y": 714.79,
+        "w": 674.3,
+        "h": 679.52
+      },
+      "viewBox": "1425.32 708.79 686.3 691.52",
+      "bytes": 45083,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 114,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-06",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.02,
+        "y": 714.79,
+        "w": 674.3,
+        "h": 679.52
+      },
+      "viewBox": "-6.02 708.79 686.3 691.52",
+      "bytes": 44830,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 114,
+      "markup": ""
+    },
+    {
+      "id": "19989__atom-07",
+      "sheetId": "19989",
+      "sourceName": "19989 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.24,
+        "y": -0.23,
+        "w": 672.25,
+        "h": 672.32
+      },
+      "viewBox": "-6.24 -6.23 684.25 684.32",
+      "bytes": 104144,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-00",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 201.5,
+        "y": 215.97,
+        "w": 174.72,
+        "h": 30.54
+      },
+      "viewBox": "196.26 210.73 185.2 41.02",
+      "bytes": 2308,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-01",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 361.78,
+        "w": 176.49,
+        "h": 27.77
+      },
+      "viewBox": "-5.29 356.49 187.08 38.36",
+      "bytes": 1811,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-02",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 198.95,
+        "y": 263.31,
+        "w": 179.83,
+        "h": 26.93
+      },
+      "viewBox": "193.56 257.92 190.62 37.72",
+      "bytes": 2136,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-03",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 5.37,
+        "y": 151.02,
+        "w": 165.75,
+        "h": 28.92
+      },
+      "viewBox": "0.4 146.05 175.7 38.87",
+      "bytes": 1182,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-04",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 222.44,
+        "y": 73.2,
+        "w": 132.84,
+        "h": 32.57
+      },
+      "viewBox": "218.45 69.21 140.81 40.54",
+      "bytes": 1405,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-05",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 218.32,
+        "y": 330.2,
+        "w": 141.05,
+        "h": 28.75
+      },
+      "viewBox": "214.09 325.97 149.51 37.21",
+      "bytes": 1499,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-06",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 204.88,
+        "y": 366.56,
+        "w": 167.98,
+        "h": 23
+      },
+      "viewBox": "199.84 361.52 178.06 33.08",
+      "bytes": 2179,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-07",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 18.09,
+        "y": 112.4,
+        "w": 140.32,
+        "h": 26.07
+      },
+      "viewBox": "13.88 108.19 148.74 34.49",
+      "bytes": 1080,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-08",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 7.87,
+        "y": 191.03,
+        "w": 160.75,
+        "h": 20.83
+      },
+      "viewBox": "3.05 186.21 170.4 30.47",
+      "bytes": 951,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-09",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 215.98,
+        "y": 36.53,
+        "w": 145.75,
+        "h": 21.92
+      },
+      "viewBox": "211.61 32.16 154.49 30.67",
+      "bytes": 2179,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-10",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 211.2,
+        "y": 3.23,
+        "w": 155.3,
+        "h": 19.53
+      },
+      "viewBox": "206.54 -1.43 164.62 28.85",
+      "bytes": 876,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-11",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 15.89,
+        "y": 0,
+        "w": 144.71,
+        "h": 18.24
+      },
+      "viewBox": "11.55 -4.34 153.39 26.92",
+      "bytes": 1678,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-12",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 224.09,
+        "y": 181.07,
+        "w": 129.53,
+        "h": 19.92
+      },
+      "viewBox": "220.2 177.18 137.3 27.69",
+      "bytes": 1705,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-13",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 12.21,
+        "y": 297.38,
+        "w": 152.08,
+        "h": 16.45
+      },
+      "viewBox": "7.65 292.82 161.2 25.57",
+      "bytes": 1027,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-14",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 233.49,
+        "y": 116.59,
+        "w": 110.76,
+        "h": 21.88
+      },
+      "viewBox": "230.17 113.27 117.41 28.53",
+      "bytes": 1933,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-15",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 5.32,
+        "y": 43.88,
+        "w": 165.82,
+        "h": 14.56
+      },
+      "viewBox": "0.35 38.91 175.77 24.51",
+      "bytes": 955,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-16",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 23.49,
+        "y": 228.03,
+        "w": 129.55,
+        "h": 18.49
+      },
+      "viewBox": "19.6 224.14 137.32 26.26",
+      "bytes": 1557,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-17",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 215.99,
+        "y": 302.46,
+        "w": 145.76,
+        "h": 15.47
+      },
+      "viewBox": "211.62 298.09 154.51 24.22",
+      "bytes": 1010,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-18",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 13.51,
+        "y": 262.21,
+        "w": 149.48,
+        "h": 14.56
+      },
+      "viewBox": "9.03 257.73 158.45 23.53",
+      "bytes": 1059,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-19",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 222.25,
+        "y": 151.02,
+        "w": 133.22,
+        "h": 13.08
+      },
+      "viewBox": "218.25 147.02 141.21 21.07",
+      "bytes": 1479,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-20",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 23.48,
+        "y": 80.21,
+        "w": 129.54,
+        "h": 12.39
+      },
+      "viewBox": "19.59 76.32 137.31 20.16",
+      "bytes": 1655,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "2106-m04-i036-n002__atom-21",
+      "sheetId": "2106-m04-i036-n002",
+      "sourceName": "2106_m04_i036_n002 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 27.69,
+        "y": 332.19,
+        "w": 121.11,
+        "h": 12.39
+      },
+      "viewBox": "24.06 328.56 128.38 19.66",
+      "bytes": 1266,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-00",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 250.49,
+        "y": 178.39,
+        "w": 864,
+        "h": 864
+      },
+      "viewBox": "244.49 172.39 876 876",
+      "bytes": 768,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-01",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 250.49,
+        "y": 178.39,
+        "w": 864,
+        "h": 864
+      },
+      "viewBox": "244.49 172.39 876 876",
+      "bytes": 768,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-02",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -1.95,
+        "y": -1.76,
+        "w": 502.88,
+        "h": 393.27
+      },
+      "viewBox": "-7.95 -7.76 514.88 405.27",
+      "bytes": 19537,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 38,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-03",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -1.95,
+        "y": 862.24,
+        "w": 502.88,
+        "h": 393.27
+      },
+      "viewBox": "-7.95 856.24 514.88 405.27",
+      "bytes": 19582,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 38,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-04",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 862.05,
+        "y": -1.76,
+        "w": 502.88,
+        "h": 393.27
+      },
+      "viewBox": "856.05 -7.76 514.88 405.27",
+      "bytes": 19584,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 38,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-05",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 862.05,
+        "y": 862.24,
+        "w": 502.88,
+        "h": 393.27
+      },
+      "viewBox": "856.05 856.24 514.88 405.27",
+      "bytes": 19640,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 38,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-06",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 266.34,
+        "y": 448.07,
+        "w": 342.96,
+        "h": 464.56
+      },
+      "viewBox": "260.34 442.07 354.96 476.56",
+      "bytes": 11815,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 16,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-07",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 755.68,
+        "y": 448.07,
+        "w": 342.96,
+        "h": 464.56
+      },
+      "viewBox": "749.68 442.07 354.96 476.56",
+      "bytes": 11829,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 16,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-08",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 565.13,
+        "y": 926.1,
+        "w": 234.7,
+        "h": 232.58
+      },
+      "viewBox": "559.13 920.1 246.7 244.58",
+      "bytes": 10557,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 17,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-09",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 565.13,
+        "y": 62.1,
+        "w": 234.7,
+        "h": 232.57
+      },
+      "viewBox": "559.13 56.1 246.7 244.57",
+      "bytes": 10526,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 17,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-10",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 691.54,
+        "y": 430.21,
+        "w": 238.47,
+        "h": 212.41
+      },
+      "viewBox": "685.54 424.21 250.47 224.41",
+      "bytes": 2148,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-11",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 430.63,
+        "y": 430.21,
+        "w": 238.47,
+        "h": 212.41
+      },
+      "viewBox": "424.63 424.21 250.47 224.41",
+      "bytes": 2146,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-12",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 995.23,
+        "y": 372.08,
+        "w": 197.01,
+        "h": 245.29
+      },
+      "viewBox": "989.23 366.08 209.01 257.29",
+      "bytes": 4586,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 3,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-13",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 131.23,
+        "y": 372.08,
+        "w": 197.01,
+        "h": 245.29
+      },
+      "viewBox": "125.23 366.08 209.01 257.29",
+      "bytes": 4573,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 3,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-14",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 690.85,
+        "y": 495.4,
+        "w": 155.04,
+        "h": 242.99
+      },
+      "viewBox": "684.85 489.4 167.04 254.99",
+      "bytes": 1392,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-15",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 514.75,
+        "y": 495.4,
+        "w": 155.04,
+        "h": 242.99
+      },
+      "viewBox": "508.75 489.4 167.04 254.99",
+      "bytes": 1377,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-16",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 620.5,
+        "y": 735.92,
+        "w": 130.2,
+        "h": 213
+      },
+      "viewBox": "614.5 729.92 142.2 225",
+      "bytes": 4164,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-17",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 389.12,
+        "y": 328.23,
+        "w": 242.53,
+        "h": 110.29
+      },
+      "viewBox": "383.12 322.23 254.53 122.29",
+      "bytes": 1694,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-18",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 729,
+        "y": 328.23,
+        "w": 242.53,
+        "h": 110.29
+      },
+      "viewBox": "723 322.23 254.53 122.29",
+      "bytes": 1689,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-19",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 481.42,
+        "y": 306.57,
+        "w": 192.37,
+        "h": 76.02
+      },
+      "viewBox": "475.65 300.8 203.91 87.56",
+      "bytes": 1336,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-20",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 687.45,
+        "y": 306.4,
+        "w": 191.14,
+        "h": 76.2
+      },
+      "viewBox": "681.72 300.67 202.61 87.67",
+      "bytes": 1385,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-21",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 506.37,
+        "y": 897.7,
+        "w": 116.05,
+        "h": 122.6
+      },
+      "viewBox": "502.69 894.02 123.41 129.96",
+      "bytes": 1316,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-22",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 482.85,
+        "y": 205.73,
+        "w": 131.05,
+        "h": 106.39
+      },
+      "viewBox": "478.92 201.8 138.91 114.25",
+      "bytes": 1251,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-23",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 748.34,
+        "y": 892.32,
+        "w": 110.29,
+        "h": 119.92
+      },
+      "viewBox": "744.74 888.72 117.49 127.12",
+      "bytes": 1131,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-24",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 697.76,
+        "y": 332.6,
+        "w": 166.14,
+        "h": 77.75
+      },
+      "viewBox": "692.78 327.62 176.11 87.72",
+      "bytes": 1051,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-25",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 496.52,
+        "y": 332.6,
+        "w": 166.14,
+        "h": 77.75
+      },
+      "viewBox": "491.54 327.62 176.11 87.72",
+      "bytes": 1051,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-26",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 655.71,
+        "y": 395.2,
+        "w": 49.66,
+        "h": 241.34
+      },
+      "viewBox": "649.71 389.2 61.66 253.34",
+      "bytes": 1427,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-27",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 691.08,
+        "y": 450.63,
+        "w": 121.87,
+        "h": 82.15
+      },
+      "viewBox": "687.42 446.97 129.18 89.46",
+      "bytes": 1139,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-28",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 547.69,
+        "y": 450.63,
+        "w": 121.87,
+        "h": 82.15
+      },
+      "viewBox": "544.03 446.97 129.18 89.46",
+      "bytes": 1135,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-29",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 685.55,
+        "y": 526.41,
+        "w": 62.21,
+        "h": 143.53
+      },
+      "viewBox": "681.24 522.1 70.82 152.14",
+      "bytes": 1472,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-30",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 612.88,
+        "y": 526.41,
+        "w": 62.21,
+        "h": 143.53
+      },
+      "viewBox": "608.57 522.1 70.82 152.14",
+      "bytes": 1463,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-31",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 207.19,
+        "y": 714.64,
+        "w": 93.39,
+        "h": 88.82
+      },
+      "viewBox": "204.39 711.84 98.99 94.42",
+      "bytes": 3400,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-32",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1071.19,
+        "y": 714.64,
+        "w": 93.39,
+        "h": 88.82
+      },
+      "viewBox": "1068.39 711.84 98.99 94.42",
+      "bytes": 3409,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-33",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 580.2,
+        "y": 745.68,
+        "w": 88.25,
+        "h": 90.91
+      },
+      "viewBox": "577.47 742.95 93.7 96.36",
+      "bytes": 3385,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-34",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 778.41,
+        "y": 218.75,
+        "w": 88.25,
+        "h": 90.9
+      },
+      "viewBox": "775.68 216.02 93.7 96.35",
+      "bytes": 3382,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-35",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 801.79,
+        "y": 507.14,
+        "w": 71.03,
+        "h": 90.55
+      },
+      "viewBox": "799.07 504.42 76.46 95.98",
+      "bytes": 1014,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-36",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 487.82,
+        "y": 507.14,
+        "w": 71.03,
+        "h": 90.55
+      },
+      "viewBox": "485.1 504.42 76.46 95.98",
+      "bytes": 1011,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-37",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 686.61,
+        "y": 404.86,
+        "w": 123.79,
+        "h": 51.04
+      },
+      "viewBox": "682.9 401.15 131.22 58.47",
+      "bytes": 1337,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-38",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 550.24,
+        "y": 404.86,
+        "w": 123.79,
+        "h": 51.04
+      },
+      "viewBox": "546.53 401.15 131.22 58.47",
+      "bytes": 1332,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "369d6ff6-285d-4dff-80a6-287615e4629d__atom-39",
+      "sheetId": "369d6ff6-285d-4dff-80a6-287615e4629d",
+      "sourceName": "369d6ff6-285d-4dff-80a6-287615e4629d [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 771.45,
+        "y": 541.28,
+        "w": 72.36,
+        "h": 76.77
+      },
+      "viewBox": "769.15 538.98 76.97 81.38",
+      "bytes": 1290,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-00",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 42.29,
+        "y": 74.38,
+        "w": 216.26,
+        "h": 219.37
+      },
+      "viewBox": "36.29 68.38 228.26 231.37",
+      "bytes": 12758,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 24,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-01",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 99.02,
+        "y": 149.17,
+        "w": 82.19,
+        "h": 75.86
+      },
+      "viewBox": "96.55 146.7 87.12 80.79",
+      "bytes": 10112,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 24,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-02",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 61.15,
+        "y": 223.19,
+        "w": 83.38,
+        "h": 68.97
+      },
+      "viewBox": "58.65 220.69 88.38 73.97",
+      "bytes": 10807,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 27,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-03",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 161.39,
+        "y": 224.65,
+        "w": 69.57,
+        "h": 76.82
+      },
+      "viewBox": "159.09 222.35 74.18 81.43",
+      "bytes": 10119,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 24,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-04",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 161.39,
+        "y": -0.35,
+        "w": 69.57,
+        "h": 76.81
+      },
+      "viewBox": "159.09 -2.65 74.18 81.42",
+      "bytes": 10092,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 24,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-05",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 167.99,
+        "y": 125.88,
+        "w": 85.59,
+        "h": 60.52
+      },
+      "viewBox": "165.42 123.31 90.73 65.66",
+      "bytes": 14756,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-06",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 120.51,
+        "y": 195.96,
+        "w": 70.6,
+        "h": 66.21
+      },
+      "viewBox": "118.39 193.84 74.84 70.45",
+      "bytes": 14781,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-07",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 241.03,
+        "y": 89.28,
+        "w": 52.95,
+        "h": 86.76
+      },
+      "viewBox": "238.43 86.68 58.16 91.97",
+      "bytes": 14499,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-08",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 16.03,
+        "y": 89.28,
+        "w": 52.95,
+        "h": 86.76
+      },
+      "viewBox": "13.43 86.68 58.16 91.97",
+      "bytes": 14475,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-09",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 20.87,
+        "y": 166.71,
+        "w": 52.76,
+        "h": 86.85
+      },
+      "viewBox": "18.26 164.1 57.97 92.06",
+      "bytes": 14648,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-10",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 245.87,
+        "y": 166.71,
+        "w": 52.75,
+        "h": 86.85
+      },
+      "viewBox": "243.26 164.1 57.96 92.06",
+      "bytes": 14672,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-11",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 152.15,
+        "y": 74.84,
+        "w": 69.73,
+        "h": 64.22
+      },
+      "viewBox": "150.06 72.75 73.91 68.4",
+      "bytes": 10976,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 35,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-12",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 100.57,
+        "y": 259.81,
+        "w": 77.01,
+        "h": 56.23
+      },
+      "viewBox": "98.26 257.5 81.63 60.85",
+      "bytes": 14472,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-13",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 34.4,
+        "y": 58.81,
+        "w": 77.05,
+        "h": 56.2
+      },
+      "viewBox": "32.09 56.5 81.67 60.82",
+      "bytes": 14411,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-14",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 100.57,
+        "y": 34.81,
+        "w": 77.01,
+        "h": 56.22
+      },
+      "viewBox": "98.26 32.5 81.63 60.84",
+      "bytes": 14449,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-15",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 34.4,
+        "y": 283.82,
+        "w": 77.05,
+        "h": 56.19
+      },
+      "viewBox": "32.09 281.51 81.67 60.81",
+      "bytes": 14428,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-16",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 56.32,
+        "y": 107.61,
+        "w": 57.47,
+        "h": 74.38
+      },
+      "viewBox": "54.09 105.38 61.93 78.84",
+      "bytes": 14605,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-17",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 206.92,
+        "y": 169.12,
+        "w": 50.08,
+        "h": 74.73
+      },
+      "viewBox": "204.68 166.88 54.56 79.21",
+      "bytes": 9689,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 13,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-18",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 112.6,
+        "y": 87.81,
+        "w": 45.51,
+        "h": 72.92
+      },
+      "viewBox": "110.41 85.62 49.89 77.3",
+      "bytes": 9977,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-19",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 61.78,
+        "y": 182.29,
+        "w": 62.79,
+        "h": 52.53
+      },
+      "viewBox": "59.9 180.41 66.56 56.3",
+      "bytes": 9980,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 15,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-20",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 224.99,
+        "y": 8.78,
+        "w": 43.52,
+        "h": 69.72
+      },
+      "viewBox": "222.9 6.69 47.7 73.9",
+      "bytes": 9903,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-21",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 224.99,
+        "y": 233.78,
+        "w": 43.52,
+        "h": 69.72
+      },
+      "viewBox": "222.9 231.69 47.7 73.9",
+      "bytes": 9919,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-22",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.01,
+        "y": 233.78,
+        "w": 43.52,
+        "h": 69.72
+      },
+      "viewBox": "-2.1 231.69 47.7 73.9",
+      "bytes": 9900,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-23",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 209.89,
+        "y": 81.99,
+        "w": 51.34,
+        "h": 45.46
+      },
+      "viewBox": "208.35 80.45 54.42 48.54",
+      "bytes": 8160,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 11,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-24",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 182.71,
+        "y": 184.05,
+        "w": 27.24,
+        "h": 48.21
+      },
+      "viewBox": "181.26 182.6 30.13 51.1",
+      "bytes": 5912,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 6,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-25",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 43.21,
+        "y": 252.41,
+        "w": 31.02,
+        "h": 29.31
+      },
+      "viewBox": "42.28 251.48 32.88 31.17",
+      "bytes": 4113,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-26",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 64.23,
+        "y": 236.44,
+        "w": 23.75,
+        "h": 16.63
+      },
+      "viewBox": "63.43 235.64 25.35 18.23",
+      "bytes": 1591,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "47122__atom-27",
+      "sheetId": "47122",
+      "sourceName": "47122 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 259.4,
+        "y": 284.69,
+        "w": 9.63,
+        "h": 12.01
+      },
+      "viewBox": "258.6 283.89 11.23 13.61",
+      "bytes": 2040,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-00",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 356.17,
+        "y": 141.98,
+        "w": 148.8,
+        "h": 132.9
+      },
+      "viewBox": "351.71 137.52 157.73 141.83",
+      "bytes": 69678,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 113,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-01",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 175.79,
+        "y": 2.07,
+        "w": 155,
+        "h": 120.88
+      },
+      "viewBox": "171.14 -2.58 164.3 130.18",
+      "bytes": 22949,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 20,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-02",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 4.13,
+        "w": 151.97,
+        "h": 116.78
+      },
+      "viewBox": "-4.56 -0.43 161.09 125.9",
+      "bytes": 39503,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 87,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-03",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 179.06,
+        "y": 146.94,
+        "w": 148.44,
+        "h": 115.59
+      },
+      "viewBox": "174.61 142.49 157.35 124.5",
+      "bytes": 25445,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 78,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-04",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 363.83,
+        "y": 0,
+        "w": 133.46,
+        "h": 125.06
+      },
+      "viewBox": "359.83 -4 141.47 133.07",
+      "bytes": 35238,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 45,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-05",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 355.62,
+        "y": 302.67,
+        "w": 149.85,
+        "h": 108.43
+      },
+      "viewBox": "351.12 298.17 158.84 117.42",
+      "bytes": 26297,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 66,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-06",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 6.92,
+        "y": 295.89,
+        "w": 138.21,
+        "h": 116.1
+      },
+      "viewBox": "2.77 291.74 146.5 124.39",
+      "bytes": 41808,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 64,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-07",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 3.12,
+        "y": 149.39,
+        "w": 145.79,
+        "h": 108.95
+      },
+      "viewBox": "-1.25 145.02 154.54 117.7",
+      "bytes": 48374,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 95,
+      "markup": ""
+    },
+    {
+      "id": "48133dt__atom-08",
+      "sheetId": "48133dt",
+      "sourceName": "48133dt [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 191.27,
+        "y": 289.2,
+        "w": 124.03,
+        "h": 126.9
+      },
+      "viewBox": "187.46 285.39 131.64 134.51",
+      "bytes": 42554,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 89,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-00",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1383.63,
+        "y": 587.84,
+        "w": 1783.38,
+        "h": 1783.25
+      },
+      "viewBox": "1377.63 581.84 1795.38 1795.25",
+      "bytes": 1175726,
+      "tags": [
+        "classic",
+        "vintage",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 420,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-01",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 42.35,
+        "y": 1079.24,
+        "w": 1190.64,
+        "h": 787.26
+      },
+      "viewBox": "36.35 1073.24 1202.64 799.26",
+      "bytes": 1078049,
+      "tags": [
+        "classic",
+        "vintage",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 171,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-02",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 3264.71,
+        "y": 1141.31,
+        "w": 1295.62,
+        "h": 650.59
+      },
+      "viewBox": "3258.71 1135.31 1307.62 662.59",
+      "bytes": 1306976,
+      "tags": [
+        "classic",
+        "vintage",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 3380,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-03",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 2597.78,
+        "w": 2128.63,
+        "h": 169.43
+      },
+      "viewBox": "-6 2591.78 2140.63 181.43",
+      "bytes": 920671,
+      "tags": [
+        "classic",
+        "vintage",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 92,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-04",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2424.63,
+        "y": 2928.27,
+        "w": 2199.87,
+        "h": 162.72
+      },
+      "viewBox": "2418.63 2922.27 2211.87 174.72",
+      "bytes": 910670,
+      "tags": [
+        "classic",
+        "vintage",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 60,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-05",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2545.59,
+        "y": 0,
+        "w": 711.33,
+        "h": 501.2
+      },
+      "viewBox": "2539.59 -6 723.33 513.2",
+      "bytes": 902137,
+      "tags": [
+        "classic",
+        "vintage",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 16,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-06",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2432.67,
+        "y": 2608.4,
+        "w": 2221.47,
+        "h": 121.29
+      },
+      "viewBox": "2426.67 2602.4 2233.47 133.29",
+      "bytes": 916965,
+      "tags": [
+        "classic",
+        "vintage",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 92,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-07",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 142.9,
+        "y": 20.02,
+        "w": 827.79,
+        "h": 319.36
+      },
+      "viewBox": "136.9 14.02 839.79 331.36",
+      "bytes": 918543,
+      "tags": [
+        "classic",
+        "vintage",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 18,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-08",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 3695.86,
+        "y": 84.7,
+        "w": 736.44,
+        "h": 358.76
+      },
+      "viewBox": "3689.86 78.7 748.44 370.76",
+      "bytes": 904648,
+      "tags": [
+        "classic",
+        "vintage",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 10,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-09",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1350.84,
+        "y": 32.69,
+        "w": 736.16,
+        "h": 338.17
+      },
+      "viewBox": "1344.84 26.69 748.16 350.17",
+      "bytes": 904136,
+      "tags": [
+        "classic",
+        "vintage",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 26,
+      "markup": ""
+    },
+    {
+      "id": "588vintage__atom-10",
+      "sheetId": "588vintage",
+      "sourceName": "588vintage [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 2886.74,
+        "w": 2131.8,
+        "h": 105.15
+      },
+      "viewBox": "-6 2880.74 2143.8 117.15",
+      "bytes": 903639,
+      "tags": [
+        "classic",
+        "vintage",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 24,
+      "markup": ""
+    },
+    {
+      "id": "68__atom-00",
+      "sheetId": "68",
+      "sourceName": "68 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1154.87,
+        "y": 16.53,
+        "w": 2828.6,
+        "h": 3966.94
+      },
+      "viewBox": "1148.87 10.53 2840.6 3978.94",
+      "bytes": 638,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "68__atom-01",
+      "sheetId": "68",
+      "sourceName": "68 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 16.53,
+        "y": 121.73,
+        "w": 2851.22,
+        "h": 3861.75
+      },
+      "viewBox": "10.53 115.73 2863.22 3873.75",
+      "bytes": 625,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "68__atom-02",
+      "sheetId": "68",
+      "sourceName": "68 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 16.53,
+        "y": 16.53,
+        "w": 3966.94,
+        "h": 1289.36
+      },
+      "viewBox": "10.53 10.53 3978.94 1301.36",
+      "bytes": 627,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-00",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 1024,
+        "h": 810.88
+      },
+      "viewBox": "199.26 -6 1036 822.88",
+      "bytes": 39437,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 8,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-01",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-02",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-03",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-04",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-05",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-06",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 260.9,
+        "w": 1024,
+        "h": 763.1
+      },
+      "viewBox": "199.26 254.9 1036 775.1",
+      "bytes": 35506,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-07",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 895.46,
+        "h": 825.14
+      },
+      "viewBox": "-6 -6 907.46 837.14",
+      "bytes": 35529,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-08",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 895.46,
+        "h": 810.88
+      },
+      "viewBox": "199.26 -6 907.46 822.88",
+      "bytes": 35529,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-09",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 895.46,
+        "h": 810.88
+      },
+      "viewBox": "199.26 -6 907.46 822.88",
+      "bytes": 35529,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-10",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 895.46,
+        "h": 810.88
+      },
+      "viewBox": "199.26 -6 907.46 822.88",
+      "bytes": 35529,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-11",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 895.46,
+        "h": 810.88
+      },
+      "viewBox": "199.26 -6 907.46 822.88",
+      "bytes": 35529,
+      "tags": [
+        "misc",
+        "field-fill"
+      ],
+      "roleGuess": "field-fill",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-12",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-13",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-14",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-15",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-16",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-17",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 627.2,
+        "y": 383.74,
+        "w": 602.06,
+        "h": 640.26
+      },
+      "viewBox": "621.2 377.74 614.06 652.26",
+      "bytes": 55149,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-18",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-19",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-20",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-21",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-22",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-23",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 88.69,
+        "w": 843.53,
+        "h": 426.66
+      },
+      "viewBox": "198.94 82.69 855.53 438.66",
+      "bytes": 28585,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 4,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-24",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-25",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-26",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-27",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-28",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-29",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 0,
+        "w": 686.86,
+        "h": 503.68
+      },
+      "viewBox": "199.26 -6 698.86 515.68",
+      "bytes": 42011,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-30",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-31",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-32",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-33",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-34",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-35",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 205.26,
+        "y": 708.54,
+        "w": 935.34,
+        "h": 295.75
+      },
+      "viewBox": "199.26 702.54 947.34 307.75",
+      "bytes": 26389,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-36",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 62.67,
+        "w": 568.21,
+        "h": 423.37
+      },
+      "viewBox": "198.94 56.67 580.21 435.37",
+      "bytes": 26872,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-37",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 62.67,
+        "w": 568.21,
+        "h": 423.37
+      },
+      "viewBox": "198.94 56.67 580.21 435.37",
+      "bytes": 26872,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-38",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 62.67,
+        "w": 568.21,
+        "h": 423.37
+      },
+      "viewBox": "198.94 56.67 580.21 435.37",
+      "bytes": 26872,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "7f15fe79-4e1d-4526-b211-fe6dd617e458__atom-39",
+      "sheetId": "7f15fe79-4e1d-4526-b211-fe6dd617e458",
+      "sourceName": "7f15fe79-4e1d-4526-b211-fe6dd617e458.svg",
+      "bbox": {
+        "x": 204.94,
+        "y": 62.67,
+        "w": 568.21,
+        "h": 423.37
+      },
+      "viewBox": "198.94 56.67 580.21 435.37",
+      "bytes": 26873,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 2,
+      "markup": ""
+    },
+    {
+      "id": "art-deco-pattern-gold-black-166__atom-00",
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 371.74,
+        "w": 1440,
+        "h": 696.52
+      },
+      "viewBox": "-6 365.74 1452 708.52",
+      "bytes": 14584,
+      "tags": [
+        "classic",
+        "artdeco",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 13,
+      "markup": ""
+    },
+    {
+      "id": "art-deco-pattern-gold-black-166__atom-01",
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 12.3,
+        "y": 731.74,
+        "w": 1415.39,
+        "h": 696.52
+      },
+      "viewBox": "6.3 725.74 1427.39 708.52",
+      "bytes": 14384,
+      "tags": [
+        "classic",
+        "artdeco",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 10,
+      "markup": ""
+    },
+    {
+      "id": "art-deco-pattern-gold-black-166__atom-02",
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 12.3,
+        "y": 11.74,
+        "w": 1415.39,
+        "h": 696.52
+      },
+      "viewBox": "6.3 5.74 1427.39 708.52",
+      "bytes": 14331,
+      "tags": [
+        "classic",
+        "artdeco",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 10,
+      "markup": ""
+    },
+    {
+      "id": "art-deco-pattern-gold-black-166__atom-03",
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 1091.74,
+        "w": 1440,
+        "h": 348.27
+      },
+      "viewBox": "-6 1085.74 1452 360.27",
+      "bytes": 13479,
+      "tags": [
+        "classic",
+        "artdeco",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 10,
+      "markup": ""
+    },
+    {
+      "id": "art-deco-pattern-gold-black-166__atom-04",
+      "sheetId": "art-deco-pattern-gold-black-166",
+      "sourceName": "Art-Deco-Pattern-Gold-Black-166 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 348.26
+      },
+      "viewBox": "-6 -6 1452 360.26",
+      "bytes": 13672,
+      "tags": [
+        "classic",
+        "artdeco",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 13,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-00",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1982.97,
+        "y": 799.8,
+        "w": 81.02,
+        "h": 79.37
+      },
+      "viewBox": "1980.54 797.37 85.88 84.23",
+      "bytes": 1466,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-01",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1563.66,
+        "y": 798.41,
+        "w": 72.54,
+        "h": 82.07
+      },
+      "viewBox": "1561.2 795.95 77.46 86.99",
+      "bytes": 1361,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-02",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 975.39,
+        "y": 799.81,
+        "w": 66.41,
+        "h": 79.37
+      },
+      "viewBox": "973.01 797.43 71.17 84.13",
+      "bytes": 1317,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-03",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1883.94,
+        "y": 799.81,
+        "w": 66.41,
+        "h": 79.37
+      },
+      "viewBox": "1881.56 797.43 71.17 84.13",
+      "bytes": 1319,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-04",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1295.55,
+        "y": 799.23,
+        "w": 65.23,
+        "h": 80.66
+      },
+      "viewBox": "1293.13 796.81 70.07 85.5",
+      "bytes": 1449,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-05",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1474.3,
+        "y": 798.54,
+        "w": 60.29,
+        "h": 81.95
+      },
+      "viewBox": "1471.84 796.08 65.21 86.87",
+      "bytes": 1386,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-06",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1155.9,
+        "y": 799.83,
+        "w": 58.76,
+        "h": 79.36
+      },
+      "viewBox": "1153.52 797.45 63.52 84.12",
+      "bytes": 1184,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-07",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1077,
+        "y": 799.23,
+        "w": 51.69,
+        "h": 79.96
+      },
+      "viewBox": "1074.6 796.83 56.49 84.76",
+      "bytes": 1534,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-08",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1802.45,
+        "y": 799.23,
+        "w": 51.69,
+        "h": 79.96
+      },
+      "viewBox": "1800.05 796.83 56.49 84.76",
+      "bytes": 1531,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-09",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1397.4,
+        "y": 799.82,
+        "w": 44.75,
+        "h": 79.37
+      },
+      "viewBox": "1395.02 797.44 49.51 84.13",
+      "bytes": 1203,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-10",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2103.18,
+        "y": 799.82,
+        "w": 44.75,
+        "h": 79.37
+      },
+      "viewBox": "2100.8 797.44 49.51 84.13",
+      "bytes": 1203,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco-frame__atom-11",
+      "sheetId": "artdeco-frame",
+      "sourceName": "artdeco_frame [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1721.45,
+        "y": 799.82,
+        "w": 42.74,
+        "h": 79.38
+      },
+      "viewBox": "1719.07 797.44 47.5 84.14",
+      "bytes": 1193,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco2-3__atom-00",
+      "sheetId": "artdeco2-3",
+      "sourceName": "artdeco2_3_ [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1336.43,
+        "y": 0,
+        "w": 1431.78,
+        "h": 1370.03
+      },
+      "viewBox": "1330.43 -6 1443.78 1382.03",
+      "bytes": 16673,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco2-3__atom-01",
+      "sheetId": "artdeco2-3",
+      "sourceName": "artdeco2_3_ [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2916.21,
+        "y": 89.3,
+        "w": 1203.49,
+        "h": 1203.14
+      },
+      "viewBox": "2910.21 83.3 1215.49 1215.14",
+      "bytes": 10629,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "artdeco2-3__atom-02",
+      "sheetId": "artdeco2-3",
+      "sourceName": "artdeco2_3_ [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 0,
+        "y": 66.49,
+        "w": 1178.53,
+        "h": 1178.91
+      },
+      "viewBox": "-6 60.49 1190.53 1190.91",
+      "bytes": 11270,
+      "tags": [
+        "classic",
+        "artdeco",
+        "geometric",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-00",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.34,
+        "y": 778.13,
+        "w": 534.94,
+        "h": 695.52
+      },
+      "viewBox": "-6.34 772.13 546.94 707.52",
+      "bytes": 18854,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 42,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-01",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 12.85,
+        "y": -0.98,
+        "w": 521.58,
+        "h": 711.95
+      },
+      "viewBox": "6.85 -6.98 533.58 723.95",
+      "bytes": 30205,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 27,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-02",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 648.77,
+        "y": 16.29,
+        "w": 528.92,
+        "h": 698.98
+      },
+      "viewBox": "642.77 10.29 540.92 710.98",
+      "bytes": 57348,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 60,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-03",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1978.87,
+        "y": 20.98,
+        "w": 528.8,
+        "h": 690.57
+      },
+      "viewBox": "1972.87 14.98 540.8 702.57",
+      "bytes": 48033,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 65,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-04",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1323.8,
+        "y": 766.25,
+        "w": 501.94,
+        "h": 718.48
+      },
+      "viewBox": "1317.8 760.25 513.94 730.48",
+      "bytes": 16256,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 30,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-05",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 683.46,
+        "y": 775.67,
+        "w": 498.22,
+        "h": 698.89
+      },
+      "viewBox": "677.46 769.67 510.22 710.89",
+      "bytes": 13980,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-06",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 2003.79,
+        "y": 775.29,
+        "w": 482.9,
+        "h": 699.32
+      },
+      "viewBox": "1997.79 769.29 494.9 711.32",
+      "bytes": 19393,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 5,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-07",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1364.71,
+        "y": 30.93,
+        "w": 491.28,
+        "h": 672.44
+      },
+      "viewBox": "1358.71 24.93 503.28 684.44",
+      "bytes": 23596,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 21,
+      "markup": ""
+    },
+    {
+      "id": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233__atom-08",
+      "sheetId": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233",
+      "sourceName": "eaa766ea-0fdc-4fe6-9325-9b63a1f8e233 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 563.02,
+        "y": 1612.35,
+        "w": 1381.27,
+        "h": 94.38
+      },
+      "viewBox": "557.02 1606.35 1393.27 106.38",
+      "bytes": 6938,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 12,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-00",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 930.84,
+        "y": 538.61,
+        "w": 913.71,
+        "h": 913.68
+      },
+      "viewBox": "924.84 532.61 925.71 925.68",
+      "bytes": 72606,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 185,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-01",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 51.92,
+        "y": 1158.43,
+        "w": 765.8,
+        "h": 778.19
+      },
+      "viewBox": "45.92 1152.43 777.8 790.19",
+      "bytes": 53522,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 166,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-02",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1968.99,
+        "y": 62.96,
+        "w": 753.98,
+        "h": 763.79
+      },
+      "viewBox": "1962.99 56.96 765.98 775.79",
+      "bytes": 47061,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 117,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-03",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 51.51,
+        "y": 64.66,
+        "w": 751.25,
+        "h": 737.46
+      },
+      "viewBox": "45.51 58.66 763.25 749.46",
+      "bytes": 36442,
+      "tags": [
+        "classic",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 77,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-04",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1967.8,
+        "y": 1166.84,
+        "w": 723.62,
+        "h": 726.09
+      },
+      "viewBox": "1961.8 1160.84 735.62 738.09",
+      "bytes": 40340,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 50,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-05",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1907.01,
+        "y": 1123.19,
+        "w": 544.97,
+        "h": 544.59
+      },
+      "viewBox": "1901.01 1117.19 556.97 556.59",
+      "bytes": 22750,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 30,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-06",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 273.31,
+        "y": 1181.56,
+        "w": 519.64,
+        "h": 523.35
+      },
+      "viewBox": "267.31 1175.56 531.64 535.35",
+      "bytes": 33745,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 113,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-07",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 282.53,
+        "y": 294.05,
+        "w": 510.74,
+        "h": 510.63
+      },
+      "viewBox": "276.53 288.05 522.74 522.63",
+      "bytes": 39552,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 51,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-08",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1969.09,
+        "y": 306.19,
+        "w": 468.34,
+        "h": 468.19
+      },
+      "viewBox": "1963.09 300.19 480.34 480.19",
+      "bytes": 15596,
+      "tags": [
+        "classic",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 32,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-09",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 863.87,
+        "y": 328.6,
+        "w": 1048.69,
+        "h": 181
+      },
+      "viewBox": "857.87 322.6 1060.69 193",
+      "bytes": 27181,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 47,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-10",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 888.4,
+        "y": 75.6,
+        "w": 984.81,
+        "h": 168.21
+      },
+      "viewBox": "882.4 69.6 996.81 180.21",
+      "bytes": 21621,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 39,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-11",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 916.18,
+        "y": 1731.01,
+        "w": 934.75,
+        "h": 170.27
+      },
+      "viewBox": "910.18 1725.01 946.75 182.27",
+      "bytes": 27156,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 61,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-12",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1918.63,
+        "y": 887.63,
+        "w": 778.97,
+        "h": 196.44
+      },
+      "viewBox": "1912.63 881.63 790.97 208.44",
+      "bytes": 7825,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 29,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-13",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 68.51,
+        "y": 891.02,
+        "w": 800.98,
+        "h": 179.51
+      },
+      "viewBox": "62.51 885.02 812.98 191.51",
+      "bytes": 29181,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 75,
+      "markup": ""
+    },
+    {
+      "id": "islamic-border-new-2__atom-14",
+      "sheetId": "islamic-border-new-2",
+      "sourceName": "islamic_border_new_2 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1023.82,
+        "y": 1475.51,
+        "w": 718,
+        "h": 189.67
+      },
+      "viewBox": "1017.82 1469.51 730 201.67",
+      "bytes": 14946,
+      "tags": [
+        "classic",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 32,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-00",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -8.5,
+        "y": 3159.25,
+        "w": 3255.91,
+        "h": 373.29
+      },
+      "viewBox": "-14.5 3153.25 3267.91 385.29",
+      "bytes": 113539,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 208,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-01",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 110.23,
+        "y": 912.16,
+        "w": 3018.44,
+        "h": 366.1
+      },
+      "viewBox": "104.23 906.16 3030.44 378.1",
+      "bytes": 57242,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 104,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-02",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 54.82,
+        "y": 4995.28,
+        "w": 3129.27,
+        "h": 342.66
+      },
+      "viewBox": "48.82 4989.28 3141.27 354.66",
+      "bytes": 261642,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 510,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-03",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 62.67,
+        "y": 3770.39,
+        "w": 3113.57,
+        "h": 325.4
+      },
+      "viewBox": "56.67 3764.39 3125.57 337.4",
+      "bytes": 79234,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 88,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-04",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 70.15,
+        "y": 226.37,
+        "w": 3098.61,
+        "h": 301.57
+      },
+      "viewBox": "64.15 220.37 3110.61 313.57",
+      "bytes": 64506,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 68,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-05",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 83.9,
+        "y": 2084.07,
+        "w": 3071.11,
+        "h": 303.7
+      },
+      "viewBox": "77.9 2078.07 3083.11 315.7",
+      "bytes": 150338,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 252,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-06",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 45.52,
+        "y": 4137,
+        "w": 3147.91,
+        "h": 268.16
+      },
+      "viewBox": "39.52 4131 3159.91 280.16",
+      "bytes": 32896,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 20,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-07",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 77.63,
+        "y": 2617.87,
+        "w": 3085.75,
+        "h": 263.01
+      },
+      "viewBox": "71.63 2611.87 3097.75 275.01",
+      "bytes": 84634,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 12,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-08",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 61.66,
+        "y": 4444.03,
+        "w": 3115.58,
+        "h": 259.5
+      },
+      "viewBox": "55.66 4438.03 3127.58 271.5",
+      "bytes": 36596,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 22,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-09",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 109.92,
+        "y": 589.8,
+        "w": 3019.08,
+        "h": 264.55
+      },
+      "viewBox": "103.92 583.8 3031.08 276.55",
+      "bytes": 172625,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 275,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-10",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 42.78,
+        "y": 4731.8,
+        "w": 3153.89,
+        "h": 221.57
+      },
+      "viewBox": "36.78 4725.8 3165.89 233.57",
+      "bytes": 23286,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-11",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 80.26,
+        "y": -25.07,
+        "w": 3078.39,
+        "h": 212
+      },
+      "viewBox": "74.26 -31.07 3090.39 224",
+      "bytes": 23126,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 14,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-12",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 141.23,
+        "y": 1564.82,
+        "w": 2956.44,
+        "h": 209.81
+      },
+      "viewBox": "135.23 1558.82 2968.44 221.81",
+      "bytes": 54729,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 45,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-13",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 54.21,
+        "y": 5613.5,
+        "w": 3130.48,
+        "h": 197.52
+      },
+      "viewBox": "48.21 5607.5 3142.48 209.52",
+      "bytes": 56621,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 36,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-14",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 118.12,
+        "y": 1325.85,
+        "w": 3007.89,
+        "h": 183.33
+      },
+      "viewBox": "112.12 1319.85 3019.89 195.33",
+      "bytes": 39442,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 44,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-15",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 77.57,
+        "y": 1840.37,
+        "w": 3083.77,
+        "h": 178.1
+      },
+      "viewBox": "71.57 1834.37 3095.77 190.1",
+      "bytes": 61419,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 84,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-16",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 91.84,
+        "y": 2933.44,
+        "w": 3055.22,
+        "h": 175.5
+      },
+      "viewBox": "85.84 2927.44 3067.22 187.5",
+      "bytes": 51626,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 56,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-17",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 65.2,
+        "y": 5390.1,
+        "w": 3108.52,
+        "h": 169.15
+      },
+      "viewBox": "59.2 5384.1 3120.52 181.15",
+      "bytes": 29045,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 56,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-18",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 75.05,
+        "y": 3592.04,
+        "w": 3088.81,
+        "h": 125.65
+      },
+      "viewBox": "69.05 3586.04 3100.81 137.65",
+      "bytes": 61440,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 84,
+      "markup": ""
+    },
+    {
+      "id": "pattern16__atom-19",
+      "sheetId": "pattern16",
+      "sourceName": "pattern16 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 79.66,
+        "y": 2449.9,
+        "w": 3079.16,
+        "h": 99.33
+      },
+      "viewBox": "73.66 2443.9 3091.16 111.33",
+      "bytes": 30670,
+      "tags": [
+        "geometric",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 42,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-00",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": -0.01,
+        "y": 394.32,
+        "w": 1150.76,
+        "h": 1384.14
+      },
+      "viewBox": "-6.01 388.32 1162.76 1396.14",
+      "bytes": 59982,
+      "tags": [
+        "misc",
+        "ornament",
+        "crestish"
+      ],
+      "roleGuess": "ornament",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-01",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1035.77,
+        "y": 836.99,
+        "w": 647.63,
+        "h": 806.97
+      },
+      "viewBox": "1029.77 830.99 659.63 818.97",
+      "bytes": 35793,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-02",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 395.19,
+        "y": -1.87,
+        "w": 939.32,
+        "h": 543.91
+      },
+      "viewBox": "389.19 -7.87 951.32 555.91",
+      "bytes": 22020,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-03",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 401.07,
+        "y": 470.57,
+        "w": 422.67,
+        "h": 852.43
+      },
+      "viewBox": "395.07 464.57 434.67 864.43",
+      "bytes": 13519,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-04",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 772.45,
+        "y": 725.89,
+        "w": 286.72,
+        "h": 863.84
+      },
+      "viewBox": "766.45 719.89 298.72 875.84",
+      "bytes": 17139,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-05",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1265.06,
+        "y": 346.13,
+        "w": 297.82,
+        "h": 755.49
+      },
+      "viewBox": "1259.06 340.13 309.82 767.49",
+      "bytes": 13133,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-06",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 331.93,
+        "y": 156.93,
+        "w": 747.88,
+        "h": 292.24
+      },
+      "viewBox": "325.93 150.93 759.88 304.24",
+      "bytes": 10483,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-07",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 625.55,
+        "y": 969.21,
+        "w": 365.46,
+        "h": 460.87
+      },
+      "viewBox": "619.55 963.21 377.46 472.87",
+      "bytes": 6177,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-08",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1040.78,
+        "y": 518.27,
+        "w": 397.19,
+        "h": 418.94
+      },
+      "viewBox": "1034.78 512.27 409.19 430.94",
+      "bytes": 9245,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-09",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1024.13,
+        "y": 1077.39,
+        "w": 210,
+        "h": 567.63
+      },
+      "viewBox": "1018.13 1071.39 222 579.63",
+      "bytes": 5048,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-10",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 148.96,
+        "y": 367.74,
+        "w": 212.09,
+        "h": 538.72
+      },
+      "viewBox": "142.96 361.74 224.09 550.72",
+      "bytes": 7206,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-11",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1067.66,
+        "y": 935.09,
+        "w": 194.06,
+        "h": 543.52
+      },
+      "viewBox": "1061.66 929.09 206.06 555.52",
+      "bytes": 3319,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-12",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1050.52,
+        "y": 960.66,
+        "w": 183.48,
+        "h": 459.18
+      },
+      "viewBox": "1044.52 954.66 195.48 471.18",
+      "bytes": 2773,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-13",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 532.82,
+        "y": 1610.39,
+        "w": 564.02,
+        "h": 122.11
+      },
+      "viewBox": "526.82 1604.39 576.02 134.11",
+      "bytes": 5018,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-14",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 721.03,
+        "y": 335.49,
+        "w": 294.69,
+        "h": 232.85
+      },
+      "viewBox": "715.03 329.49 306.69 244.85",
+      "bytes": 4450,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-15",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 825.54,
+        "y": 558.33,
+        "w": 281.07,
+        "h": 227.37
+      },
+      "viewBox": "819.54 552.33 293.07 239.37",
+      "bytes": 1046,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-16",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 389.83,
+        "y": 340.09,
+        "w": 396.89,
+        "h": 157.18
+      },
+      "viewBox": "383.83 334.09 408.89 169.18",
+      "bytes": 3518,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-17",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 825.05,
+        "y": 550.55,
+        "w": 245.64,
+        "h": 172.48
+      },
+      "viewBox": "819.05 544.55 257.64 184.48",
+      "bytes": 3208,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-18",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 600.19,
+        "y": 1500.31,
+        "w": 395.83,
+        "h": 106.12
+      },
+      "viewBox": "594.19 1494.31 407.83 118.12",
+      "bytes": 1802,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-19",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1098.37,
+        "y": 915.94,
+        "w": 157.39,
+        "h": 242.4
+      },
+      "viewBox": "1092.37 909.94 169.39 254.4",
+      "bytes": 1781,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-20",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1274.92,
+        "y": 35.76,
+        "w": 286.75,
+        "h": 131.41
+      },
+      "viewBox": "1268.92 29.76 298.75 143.41",
+      "bytes": 1815,
+      "tags": [
+        "misc",
+        "corner",
+        "border"
+      ],
+      "roleGuess": "corner",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-21",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 871.69,
+        "y": 107.99,
+        "w": 172.58,
+        "h": 180.74
+      },
+      "viewBox": "866.27 102.57 183.42 191.58",
+      "bytes": 3033,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-22",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1048.49,
+        "y": 318.22,
+        "w": 199.08,
+        "h": 152.09
+      },
+      "viewBox": "1042.52 312.25 211.02 164.03",
+      "bytes": 2304,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-23",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 527.44,
+        "y": 397.52,
+        "w": 255.9,
+        "h": 115.98
+      },
+      "viewBox": "521.44 391.52 267.9 127.98",
+      "bytes": 5590,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-24",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 505.3,
+        "y": 210.39,
+        "w": 213.22,
+        "h": 129.54
+      },
+      "viewBox": "499.3 204.39 225.22 141.54",
+      "bytes": 1532,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-25",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1018.64,
+        "y": 246.15,
+        "w": 163.79,
+        "h": 159.81
+      },
+      "viewBox": "1013.73 241.24 173.62 169.64",
+      "bytes": 978,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-26",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 951.63,
+        "y": 185.73,
+        "w": 149.27,
+        "h": 152.26
+      },
+      "viewBox": "947.06 181.16 158.41 161.4",
+      "bytes": 1249,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-27",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1030.17,
+        "y": 283.87,
+        "w": 171.48,
+        "h": 131.67
+      },
+      "viewBox": "1025.03 278.73 181.77 141.96",
+      "bytes": 828,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-28",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 971.78,
+        "y": 200.87,
+        "w": 141.97,
+        "h": 146
+      },
+      "viewBox": "967.4 196.49 150.73 154.76",
+      "bytes": 637,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-29",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1117.77,
+        "y": 66.96,
+        "w": 260.63,
+        "h": 77.71
+      },
+      "viewBox": "1111.77 60.96 272.63 89.71",
+      "bytes": 792,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-30",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1009.7,
+        "y": 254.96,
+        "w": 147.67,
+        "h": 135.59
+      },
+      "viewBox": "1005.27 250.53 156.53 144.45",
+      "bytes": 584,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-31",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1039.81,
+        "y": 315.72,
+        "w": 153.76,
+        "h": 126.14
+      },
+      "viewBox": "1035.2 311.11 162.99 135.37",
+      "bytes": 800,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-32",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 710.32,
+        "y": 1392.18,
+        "w": 287.99,
+        "h": 61.55
+      },
+      "viewBox": "704.32 1386.18 299.99 73.55",
+      "bytes": 1025,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-33",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 927.75,
+        "y": 158.36,
+        "w": 125.97,
+        "h": 135
+      },
+      "viewBox": "923.7 154.31 134.07 143.1",
+      "bytes": 677,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-34",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 522.12,
+        "y": 305.43,
+        "w": 201.26,
+        "h": 79.39
+      },
+      "viewBox": "516.12 299.43 213.26 91.39",
+      "bytes": 2547,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-35",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 390.14,
+        "y": 1674.41,
+        "w": 167.42,
+        "h": 92.39
+      },
+      "viewBox": "385.12 1669.39 177.47 102.44",
+      "bytes": 3325,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-36",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 97.21,
+        "y": 36.23,
+        "w": 197.34,
+        "h": 77.05
+      },
+      "viewBox": "91.29 30.31 209.18 88.89",
+      "bytes": 1253,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-37",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 981.18,
+        "y": 258.97,
+        "w": 112.22,
+        "h": 121.4
+      },
+      "viewBox": "977.54 255.33 119.5 128.68",
+      "bytes": 1364,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-38",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 1129.72,
+        "y": 1572.33,
+        "w": 118.7,
+        "h": 114.38
+      },
+      "viewBox": "1126.16 1568.77 125.82 121.5",
+      "bytes": 2109,
+      "tags": [
+        "misc",
+        "stamp",
+        "crestish"
+      ],
+      "roleGuess": "stamp",
+      "complexity": 1,
+      "markup": ""
+    },
+    {
+      "id": "x-copy-124__atom-39",
+      "sheetId": "x-copy-124",
+      "sourceName": "x_copy_124 [Dönüştürülmüş].svg",
+      "bbox": {
+        "x": 823.76,
+        "y": 768.58,
+        "w": 68.35,
+        "h": 196.65
+      },
+      "viewBox": "817.86 762.68 80.15 208.45",
+      "bytes": 921,
+      "tags": [
+        "misc",
+        "band",
+        "border"
+      ],
+      "roleGuess": "band",
+      "complexity": 1,
+      "markup": ""
+    }
+  ]
+}

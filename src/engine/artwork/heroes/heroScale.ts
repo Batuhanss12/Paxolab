@@ -16,7 +16,7 @@ export function heroPaintScale(plan: DesignPlan | undefined, kitScale = 1): numb
 
 export function kitHeroFamily(decor: DecorFamily): HeroFamily {
   if (decor === 'crest') return 'crest'
-  if (decor === 'cartouche') return 'seal'
+  if (decor === 'cartouche') return 'crest'
   if (decor === 'leaf' || decor === 'drop') return 'botanical'
   if (decor === 'badge') return 'emblem'
   if (decor === 'olive' || decor === 'harvest') return 'harvest'

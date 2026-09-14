@@ -66,7 +66,7 @@ export function runConversation(input: {
     return {
       brief,
       awaiting: null,
-      replies: ['İterasyon: stil çipi, “luxury yap / eco’ya geç”, “logoyu büyüt”, “daha premium”, “metni … yap”, “baskıya hazırla”.'],
+      replies: ['İterasyon: ruh hali çipi, “lüks istiyorum / eco’ya geç”, renk hex, “logoyu büyüt”, “daha premium”, “metni … yap”, “baskıya hazırla”.'],
       shouldGenerate: false,
       showTemplates: false,
       overridePatch: {},
@@ -102,7 +102,7 @@ export function runConversation(input: {
     replies.push(
       `${ack || 'Brief yeterli.'} Forxa tasarım motorunu çalıştırıyorum — dieline, vektör artwork ve üretim kapısı aynı anda çıkacak.`,
     )
-    replies.push('Stil çiplerinden duruşu değiştirin veya yazın: “luxury yap”, “eco’ya geç”, “logoyu büyüt”, “daha premium”.')
+    replies.push('Ruh hali çipleri ipucu (kostüm değil). Renk verirseniz palet ondan kurulur: “luxury yap”, “eco’ya geç”, “logoyu büyüt”, “daha premium”.')
     return {
       brief,
       awaiting: null,

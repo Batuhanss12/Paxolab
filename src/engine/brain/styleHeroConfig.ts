@@ -22,16 +22,16 @@ export const STYLE_HEROES: StyleHeroEntry[] = [
   { style: 'minimal', sector: '*', heroes: ['none'] },
 
   // Perfume
-  { style: 'luxury', sector: 'perfume', heroes: ['crest', 'seal'] },
-  { style: 'classic', sector: 'perfume', heroes: ['seal', 'crest'] },
+  { style: 'luxury', sector: 'perfume', heroes: ['crest', 'oval'] },
+  { style: 'classic', sector: 'perfume', heroes: ['crest'] },
   { style: 'eco', sector: 'perfume', heroes: ['botanical', 'monstera'] },
-  { style: 'playful', sector: 'perfume', heroes: ['emblem', 'seal'] },
+  { style: 'playful', sector: 'perfume', heroes: ['emblem'] },
   { style: 'modern', sector: 'perfume', heroes: ['none'] },
 
   // Cream
   { style: 'eco', sector: 'cream', heroes: ['botanical', 'monstera', 'palm'] },
   { style: 'playful', sector: 'cream', heroes: ['emblem', 'oval'] },
-  { style: 'classic', sector: 'cream', heroes: ['oval', 'seal'] },
+  { style: 'classic', sector: 'cream', heroes: ['oval', 'crest'] },
   { style: 'modern', sector: 'cream', heroes: ['oval', 'emblem'] },
   { style: 'luxury', sector: 'cream', heroes: ['oval', 'botanical'] },
 
@@ -43,12 +43,12 @@ export const STYLE_HEROES: StyleHeroEntry[] = [
   { style: 'classic', sector: 'serum', heroes: ['botanical', 'oval'] },
 
   // Food
-  { style: 'luxury', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
-  { style: 'classic', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
-  { style: 'modern', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
-  { style: 'eco', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
-  { style: 'playful', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
-  { style: 'minimal', sector: 'food', heroes: ['harvest', 'botanical', 'seal'] },
+  { style: 'luxury', sector: 'food', heroes: ['harvest', 'botanical'] },
+  { style: 'classic', sector: 'food', heroes: ['harvest', 'botanical'] },
+  { style: 'modern', sector: 'food', heroes: ['harvest', 'botanical'] },
+  { style: 'eco', sector: 'food', heroes: ['harvest', 'botanical'] },
+  { style: 'playful', sector: 'food', heroes: ['harvest', 'botanical'] },
+  { style: 'minimal', sector: 'food', heroes: ['harvest', 'botanical'] },
 
   // Electronics
   { style: 'luxury', sector: 'electronics', heroes: ['tech', 'none'] },
@@ -61,8 +61,8 @@ export const STYLE_HEROES: StyleHeroEntry[] = [
   // Generic fallbacks by style
   { style: 'playful', sector: '*', heroes: ['emblem', 'oval'] },
   { style: 'eco', sector: '*', heroes: ['botanical', 'monstera', 'palm'] },
-  { style: 'classic', sector: '*', heroes: ['seal', 'crest'] },
-  { style: 'luxury', sector: '*', heroes: ['crest', 'seal'] },
+  { style: 'classic', sector: '*', heroes: ['crest', 'oval'] },
+  { style: 'luxury', sector: '*', heroes: ['crest', 'oval'] },
   { style: 'modern', sector: '*', heroes: ['oval', 'none'] },
   { style: 'minimal', sector: '*', heroes: ['none'] },
 ]

@@ -33,7 +33,6 @@ function entry(
 
 export const heroEntries: GraphicEntry[] = [
   entry('crest', 'Crest', ['luxury', 'classic'], ['perfume'], 'balanced'),
-  entry('seal', 'Seal', ['classic', 'luxury'], ['perfume'], 'balanced'),
   entry('oval', 'Oval plaque', ['luxury', 'modern'], ['cream', 'serum'], 'balanced'),
   entry('emblem', 'Badge emblem', ['playful', 'modern'], ['cream', 'serum'], 'balanced'),
   entry('botanical', 'Botanical', ['eco'], ['food', 'beverage'], 'balanced'),

@@ -50,12 +50,13 @@ export function renderFrontLockup(
     body += `<image href="${logoHref}" x="${ax - (left ? 0 : ls / 2)}" y="${logoY - ls / 2}" width="${ls}" height="${ls}" preserveAspectRatio="xMidYMid meet" />`
   }
 
+  const compose = Boolean(overrides.artPatternCompose || overrides.blankCanvas || system.blankCanvas)
   const locale = resolveCopyLocale(brief)
   const brandLines = layout.brandLines.length ? layout.brandLines : [copy.brand.toUpperCase()]
   const brandYs = layout.brandYs.length ? layout.brandYs : [layout.brandY]
   const hair = isHairRetail(brief) && system.wrapSeam
   const titleCard =
-    style === 'eco' || (style === 'playful' && (system.sector === 'food' || hair))
+    !compose && (style === 'eco' || (style === 'playful' && (system.sector === 'food' || hair)))
   if (titleCard) {
     const top = Math.min(...brandYs) - layout.brandSize * 0.92
     const bot = layout.taglineY + layout.taglineSize * 0.55 + 2.8
@@ -65,7 +66,7 @@ export function renderFrontLockup(
     const cardFill = style === 'eco' ? '#f4efe4' : p.paper
     body += `<rect data-art="title-card" x="${px}" y="${top}" width="${plateW}" height="${plateH}" rx="3" fill="${cardFill}" fill-opacity="0.92" />`
   }
-  if (hair) {
+  if (hair && !compose) {
     const pill = hairStepLabel(locale)
     const pw = Math.min(panel.w * 0.42, 28)
     const ph = 3.6

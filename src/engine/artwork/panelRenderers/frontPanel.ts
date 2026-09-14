@@ -9,6 +9,11 @@ import type { DesignPlan } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
 import { expandKitSafe, kitLevel } from '../bgKits'
+import { paintArtPatternOverlay } from '../artPatternLibrary'
+import { paintArtPatternCompositionById } from '../artPatternCompose'
+import { paintMotifRecipeById, paintMotifRecipeFromAtoms, resolveMotifRecipeId, type MotifPaintOpts } from '../artMotifCompose'
+import { matchMotifs } from '../artMotifMatch'
+import { paintPlanHero, resolveFrontHeroPlacement } from './heroDispatch'
 import { paintBackgroundTreatment, paintSectorBackground, paintStyleBackground } from '../backgroundTreatments'
 import { foodBoxTheatre } from '../foodLandscape'
 import { wrapContinuity } from '../motifs'
@@ -60,25 +65,89 @@ export function renderFrontPanel(
   const theatre = foodBoxTheatre(system, panel, labelFace)
   const density = kitLevel(designPlan?.variationIndex)
 
-  let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}" />`
+  let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}"${system.blankCanvas ? ' data-face="blank-canvas"' : ''} />`
   if (safe) body += lockoutClip(id, panel, safe)
 
-  body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
-  body += paintStyleBackground(panel, system.style, p, {
+  const compose = Boolean(overrides.artPatternCompose && overrides.artPatternId)
+  const blank = Boolean(system.blankCanvas || overrides.blankCanvas)
+  const heroCtx = { copy, overrides, ingredientClaims: brief.ingredientClaims ?? '' }
+  const heroPlace = blank || compose ? resolveFrontHeroPlacement(panel, system, designPlan, heroCtx) : undefined
+  const heroBox = heroPlace && !heroPlace.omitted && heroPlace.box.w > 0 ? heroPlace.box : undefined
+  const motifOpts: MotifPaintOpts = {
     safe,
-    density,
+    style: system.style,
+    seed: designPlan?.variationIndex ?? 0,
+    lockup,
+    heroBox,
+    goldBar: system.goldBar,
     sector: system.sector,
-    grammar: system.grammar,
-    theatre,
-    variationIndex: designPlan?.variationIndex,
-  })
-  if (designPlan) body += paintSectorBackground(panel, system.sector, system.style, p)
+  }
+  if (blank) {
+    const match = matchMotifs({
+      mood: system.style,
+      sector: system.sector,
+      colors: brief.colors,
+      seed: designPlan?.variationIndex ?? 0,
+      sheetId: overrides.artPatternId,
+    })
+    const recipeId = overrides.motifRecipeId ?? resolveMotifRecipeId(match.atoms, system.style, designPlan?.variationIndex ?? 0)
+    const motif = paintMotifRecipeFromAtoms(panel, p, match.atoms, { ...motifOpts, recipeId })
+    if (motif.markup) body += motif.markup
+    if (designPlan?.heroGraphic.family && designPlan.heroGraphic.family !== 'none') {
+      body += paintPlanHero(panel, system, p, designPlan, heroCtx)
+    }
+  } else if (compose) {
+    const motif = paintMotifRecipeById(panel, p, overrides.artPatternId!, {
+      ...motifOpts,
+      recipeId: overrides.motifRecipeId,
+    })
+    if (motif.markup) {
+      body += motif.markup
+      if (motif.keepHero) {
+        body += paintPlanHero(panel, system, p, designPlan, {
+          copy,
+          overrides,
+          ingredientClaims: brief.ingredientClaims ?? '',
+        })
+      }
+    } else {
+      const composed = paintArtPatternCompositionById(panel, p, overrides.artPatternId!, {
+        safe,
+        style: system.style,
+      })
+      body += composed.markup
+      if (composed.recipe.keepHero) {
+        body += paintPlanHero(panel, system, p, designPlan, {
+          copy,
+          overrides,
+          ingredientClaims: brief.ingredientClaims ?? '',
+        })
+      }
+    }
+  } else {
+    body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
+    body += paintStyleBackground(panel, system.style, p, {
+      safe,
+      density,
+      sector: system.sector,
+      grammar: system.grammar,
+      theatre,
+      variationIndex: designPlan?.variationIndex,
+    })
+    if (designPlan) body += paintSectorBackground(panel, system.sector, system.style, p)
+    if (overrides.artPatternId) {
+      body += paintArtPatternOverlay(panel, p, overrides.artPatternId, {
+        safe,
+        style: system.style,
+      })
+    }
 
-  body += frontDecor(panel, system, p, lockup, designPlan, {
-    copy,
-    overrides,
-    ingredientClaims: brief.ingredientClaims ?? '',
-  })
+    body += frontDecor(panel, system, p, lockup, designPlan, {
+      copy,
+      overrides,
+      ingredientClaims: brief.ingredientClaims ?? '',
+    })
+  }
   if (labelFace && system.wrapSeam) {
     body += wrapSeam(panel, p, overrides.printReady)
     body += wrapContinuity(panel, p.accent)

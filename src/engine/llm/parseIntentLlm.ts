@@ -26,7 +26,7 @@ interface LlmIntentResponse {
 const SYSTEM_PROMPT = `You are an intent parser for FORMA, a packaging design tool.
 Parse the user's iteration request and return a JSON object with only the fields that apply.
 Accepted fields:
-- styleType: one of "luxury" | "modern" | "minimal" | "eco" | "playful" | "classic"
+- styleType: mood hint one of "luxury" | "modern" | "minimal" | "eco" | "playful" | "classic" (not a costume/template)
 - titleScale: number (e.g. 1.28 to enlarge, 0.82 to shrink) — only if user asks to resize text
 - logoScale: number (e.g. 1.35 to enlarge, 0.72 to shrink) — only if user asks to resize logo
 - paletteShift: "gold" | "dark" | "warm" | "minimal" | "" — only if user mentions color/finish
@@ -87,7 +87,7 @@ User request: "${text}"`
       overridePatch.premium = false
       overridePatch.paletteShift = 'minimal'
     }
-    notes.push(`Stil ${parsed.styleType} yönüne çekildi.`)
+    notes.push(`Ruh hali ${parsed.styleType} yönüne çekildi.`)
   }
 
   if (parsed.titleScale && parsed.titleScale > 0 && parsed.titleScale < 3) {
