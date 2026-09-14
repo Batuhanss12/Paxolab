@@ -13,10 +13,19 @@ import { paintPatternFamily, wrapPattern } from '../patternFamilies'
 import { labelDecor, sectorFrame } from './shared'
 import { paintPlanHero, type HeroPaintCtx } from './heroDispatch'
 import { bridgePicks, bridgePattern, bridgePrimitive, bridgeCtx } from '../../graphicLibrary/bridge'
+import { foodBoxTheatre, landscapeHeroBand } from '../foodLandscape'
+import { foodFamilyFromCategory } from '../foodFamily'
 
 export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?: SafeRect, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
   const { style, grammar } = system
   let out = ''
+  if (foodBoxTheatre(system, panel, grammar === 'label')) {
+    out += landscapeHeroBand(panel, p, foodFamilyFromCategory(system.category), {
+      density: plan ? undefined : 0,
+      variationIndex: plan?.variationIndex,
+      safe,
+    })
+  }
 
   // GraphicLibrary bridge — opt-in at variation >= 1 (pattern + primitive; hero stays with motor)
   const libPicks = bridgePicks(plan, system)

@@ -50,14 +50,14 @@ assert(!recelTrFace.includes('ARTISAN FOOD'), 'tr food still ARTISAN FOOD')
 assert(!recelTrFace.includes('NET WEIGHT'), 'tr food used NET WEIGHT as category')
 assert(recelTrFace.includes('REÇEL') || recelTrFace.includes('GURME'), `tr food category missing: ${recelTr.designPlan?.vocabularyId}`)
 assert(recelTr.copy.tagline.includes('Fırından') || /[çğıöşüÇĞİÖŞÜ]/.test(recelTr.copy.tagline), `tr tagline ${recelTr.copy.tagline}`)
-assert(recelTrFace.includes('DOĞAL'), 'tr claims missing DOĞAL')
-assert(!recelTrFace.includes('NATURAL'), 'tr face has EN claims')
+assert(/BAHÇE|GÜNEŞ|MEYVE/.test(recelTrFace), `tr jam claims missing family voice: ${recelTr.copy.tagline}`)
+assert(!recelTrFace.includes('NATURAL') && !recelTrFace.includes('GARDEN'), 'tr face has EN claims')
 assert(recelEnFace.includes('PRESERVE') || recelEnFace.includes('ARTISAN'), `en food category ${recelEnFace.slice(0, 200)}`)
 assert(
   recelEn.copy.tagline.includes('garden') || recelEn.copy.tagline.includes('jar') || recelEn.copy.tagline.includes('From'),
   `en tagline ${recelEn.copy.tagline}`,
 )
-assert(recelEnFace.includes('NATURAL'), 'en claims missing NATURAL')
+assert(/GARDEN|SUN|FRUIT/.test(recelEnFace), 'en jam claims missing family voice')
 assert(!recelEnFace.includes('DOĞAL'), 'en face has TR claims')
 assert(recelTr.copy.brand === recelEn.copy.brand, 'brand translated')
 assert(recelTr.preflight.exportOk, `recel tr export ${recelTr.preflight.items.filter((i) => i.status === 'fail').map((i) => i.id).join(',')}`)

@@ -427,6 +427,20 @@ export const JOBS: Job[] = [
     heroFamily: 'zebra',
     variationIndex: 4,
   },
+  {
+    slug: '29-sampuan-wrap-modern',
+    sectorFolder: '02-krem',
+    title: 'Şampuan wrap etiket',
+    brandName: 'CAPA',
+    productName: 'Keratin Repair',
+    sector: 'kozmetik',
+    subProduct: 'şampuan',
+    templateId: 'fm-cos-label-bottle',
+    packagingMode: 'label',
+    styleType: 'modern',
+    colors: 'siyah mint',
+    volume: '250 ml',
+  },
 ]
 
 export function briefFrom(job: Job): DesignBrief {

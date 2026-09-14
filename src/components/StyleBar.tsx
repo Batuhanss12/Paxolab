@@ -7,9 +7,11 @@ type StyleBarProps = {
   onStyle: (style: StyleType) => void
   onDims: (dims: DimensionsMm) => void
   onVary?: () => void
+  className?: string
+  variant?: 'rail'
 }
 
-export function StyleBar({ brief, design, onStyle, onDims, onVary }: StyleBarProps) {
+export function StyleBar({ brief, design, onStyle, onDims, onVary, className, variant }: StyleBarProps) {
   const active = brief.styleType || design?.brief.styleType || 'luxury'
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
@@ -18,15 +20,18 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary }: StyleBarPro
         ? { L: design.layout.widthMm, W: design.layout.depthMm, H: design.layout.heightMm }
         : { L: 0, W: 0, H: 0 }
   const showDims = !!design
-  const showW = (brief.packagingMode || design?.kind) !== 'label' && (design?.kind !== 'label')
+  const showW = (brief.packagingMode || design?.kind) !== 'label' && design?.kind !== 'label'
 
   function setNum(key: keyof DimensionsMm, value: string) {
     onDims({ ...dims, [key]: Number(value) || 0 })
   }
 
+  const rootClass = ['style-bar', variant === 'rail' ? 'style-bar--rail' : '', className]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <section className="style-bar" aria-label="Stil">
-      <p className="style-bar__label">Stil</p>
+    <section className={rootClass} aria-label="Stil">
       <div className="style-chips" role="listbox" aria-label="Stil seçimi">
         {STYLE_OPTIONS.map((opt) => (
           <button
@@ -34,12 +39,12 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary }: StyleBarPro
             type="button"
             role="option"
             aria-selected={active === opt.id}
+            title={opt.hint}
             className={`style-chip ${active === opt.id ? 'is-active' : ''}`}
             onClick={() => onStyle(opt.id)}
           >
             <span className="style-chip__swatch" style={{ background: opt.swatch }} />
             <span className="style-chip__name">{opt.label}</span>
-            <span className="style-chip__hint">{opt.hint}</span>
           </button>
         ))}
       </div>

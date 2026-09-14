@@ -8,7 +8,9 @@ import type { SafeRect } from '../artwork/motifs'
 import type { DesignSystem, LineBox } from './types'
 import { estimateLineWidth, lineBBox } from './glyphMetrics'
 import { boxesOverlap, type ArtBox } from './artBox'
-import { fitFoodClaims, fitIngredientBadges } from '../artwork/panelRenderers/foodElements'
+import { foodClaimStripY, fitFoodClaims, fitIngredientBadges } from '../artwork/panelRenderers/foodElements'
+import { foodBoxTheatre } from '../artwork/foodLandscape'
+import { foodFamilyFromCategory } from '../artwork/foodFamily'
 import { placeFrontExtras } from '../artwork/panelRenderers/frontExtras'
 import { volumeDisplay, volumeUsesEstimated } from './volumeFormat'
 import { faceUpper } from '../copyLocale'
@@ -196,7 +198,8 @@ export function layoutFrontLockup(
   const cap = brandFit.size * 0.72
   let stackH = cap + afterBrand + afterRule + afterProduct + airToTag + taglineSize * 0.35
   const crest = ['crest', 'cartouche', 'leaf', 'badge', 'olive', 'harvest'].includes(system.decor)
-  const topLimit = y + h * (wrap ? 0.18 : crest ? 0.235 : labelFace ? 0.14 : 0.16)
+  const theatre = foodBoxTheatre(system, panel, labelFace)
+  const topLimit = y + h * (theatre ? 0.48 : wrap ? 0.18 : crest ? 0.235 : labelFace ? 0.14 : 0.16)
   const bottomLimit = y + h - (system.goldBar ? 13.2 : wrap ? 9.2 : labelFace ? 11.5 : 10.4)
   const avail = bottomLimit - topLimit
   let gapScale = 1
@@ -205,7 +208,7 @@ export function layoutFrontLockup(
     stackH = Math.min(stackH, avail)
   }
 
-  const opticalY = y + h * type.opticalCenter
+  const opticalY = y + h * (theatre ? 0.62 : type.opticalCenter)
   let brandTop = opticalY - stackH * 0.42
   if (brandTop < topLimit) brandTop = topLimit
   if (brandTop + stackH > bottomLimit) brandTop = bottomLimit - stackH
@@ -340,13 +343,17 @@ export function collectFrontDecorBoxes(
   }
 
   if (system.sector === 'food') {
-    const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
-    const claimY = netY + (copy.volume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
-    if (claimY + (labelFace ? 6 : 8) < y + h - (labelFace ? 8 : 14)) {
+    const claimY = foodClaimStripY(panel, system, layout, labelFace, !!copy.volume.trim())
+    if (claimY != null) {
       const locale = /PRESERVE|ARTISAN FOOD|EXTRA VIRGIN|CHOCOLATE|BISCUIT|HERBAL TEA/.test(system.category)
         ? 'en'
         : 'tr'
-      const fitted = fitFoodClaims(panel, claimY, layout.ax, layout.anchor, system.type.minMm, locale)
+      const theatre = foodBoxTheatre(system, panel, labelFace)
+      const fitted = fitFoodClaims(panel, claimY, layout.ax, layout.anchor, system.type.minMm, locale, {
+        family: foodFamilyFromCategory(system.category),
+        theatre,
+        rich: true,
+      })
       fitted.forEach((claim, i) => {
         const box = { id: `claim-${i}`, x: claim.cx - claim.r, y: claimY - claim.r, w: claim.r * 2, h: claim.r * 2 + 3 }
         if (box.x < x - 0.55 || box.x + box.w > x + w + 0.55) return

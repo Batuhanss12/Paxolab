@@ -12,7 +12,7 @@ import type { BackgroundTreatment, HeroFamily, PatternFamily } from './DesignPla
 export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
   // P2-A: minimal unlocks ONE quiet hero per sector (not luxury crests, just micro signals).
   if (style === 'minimal') {
-    if (sector === 'cream' || sector === 'serum') return ['none', 'oval']
+    if (sector === 'cream' || sector === 'serum' || sector === 'baby') return ['line-scene', 'oval']
     if (sector === 'electronics') return ['none', 'tech']
     // cleaning, food, perfume, generic: stay none — rely on sector bg accent
     return ['none']
@@ -45,7 +45,7 @@ export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?
         : style === 'eco'
           ? ['grain', 'ornament', 'weave']
           : style === 'playful'
-            ? ['capsule', 'wave', 'none']
+            ? ['capsule', 'wave', 'grain']
             : style === 'classic'
               ? ['ornament', 'contour']
               : style === 'minimal'
@@ -63,11 +63,21 @@ export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?
   if (vocab) {
     const safe = vocab.patternFamilies.filter((p) => !vocab.forbiddenPatterns.includes(p) && !leak.includes(p))
     const head = styleSafe.filter((p) => safe.includes(p))
-    if (head.length) return [...head, ...safe.filter((p) => !head.includes(p))]
-    if (styleSafe.length) return styleSafe
-    if (safe.length) return safe
+    if (head.length) {
+      const mergedSafe = [...head, ...safe.filter((p) => !head.includes(p))]
+      return fillRequired(style, sector, mergedSafe)
+    }
+    if (styleSafe.length) return fillRequired(style, sector, styleSafe)
+    if (safe.length) return fillRequired(style, sector, safe)
   }
-  return styleSafe.length ? styleSafe : ['none']
+  return fillRequired(style, sector, styleSafe)
+}
+
+function fillRequired(style: StyleType, sector: SectorId | undefined, list: PatternFamily[]): PatternFamily[] {
+  if (style === 'minimal') return list.length ? list : ['none']
+  const filled = list.filter((p) => p !== 'none')
+  if (filled.length) return filled
+  return [defaultPattern(style, sector)]
 }
 
 export function defaultPattern(style: StyleType, sector?: SectorId): PatternFamily {

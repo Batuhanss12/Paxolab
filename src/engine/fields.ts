@@ -19,6 +19,8 @@ export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
   logo: 'Logo',
   references: 'Referans',
   copyOverrides: 'Metin',
+  story: 'Hikâye',
+  scentNotes: 'Notalar',
   copyLocale: 'Dil',
 }
 
@@ -182,6 +184,8 @@ export function filledEntries(
   push('logo', brief.logo)
   push('references', brief.references)
   push('copyOverrides', brief.copyOverrides)
+  if (brief.story) push('story', brief.story)
+  if (brief.scentNotes) push('scentNotes', brief.scentNotes)
   if (brief.copyLocale) push('copyLocale', brief.copyLocale === 'en' ? 'English' : 'Türkçe')
   return rows
 }

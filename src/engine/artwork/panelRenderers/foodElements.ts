@@ -15,6 +15,8 @@ import {
   foodTableFooter,
   type FoodFamily,
 } from '../foodFamily'
+import { foodBoxTheatre, foodTheatreClaimY } from '../foodLandscape'
+import { claimMotifSvg, type ClaimMotifKind } from '../icons'
 
 export { foodNutritionBlockHeight }
 export type FoodNutritionOpts = {
@@ -169,11 +171,67 @@ export function foodNutritionTable(
 }
 
 export type FittedFoodClaim = {
-  icon: string
+  icon: ClaimMotifKind
   label: string
   cx: number
   r: number
   sz: number
+}
+
+export type FoodClaimOpts = {
+  family?: FoodFamily
+  theatre?: boolean
+  /** Family-voice phrases on any food face (label or box). */
+  rich?: boolean
+}
+
+export function foodClaimStripY(
+  panel: Panel,
+  system: DesignSystem,
+  layout: { taglineY: number },
+  labelFace: boolean,
+  hasVolume: boolean,
+): number | null {
+  if (foodBoxTheatre(system, panel, labelFace)) return foodTheatreClaimY(panel)
+  const netY = layout.taglineY + (labelFace ? 3.4 : 4.2)
+  const claimY = netY + (hasVolume ? (labelFace ? 7.2 : 11.4) : (labelFace ? 5.4 : 8.6))
+  if (claimY + (labelFace ? 6 : 8) < panel.y + panel.h - (labelFace ? 8 : 14)) return claimY
+  return null
+}
+
+function claimPairs(locale: 'tr' | 'en', family: FoodFamily, rich: boolean): [ClaimMotifKind, string][] {
+  const en = locale === 'en'
+  if (!rich) {
+    return en
+      ? [
+          ['leaf', 'NATURAL'],
+          ['check', 'NO ADDITIVES'],
+          ['drop', 'NATURAL PRODUCT'],
+        ]
+      : [
+          ['leaf', 'DOĞAL'],
+          ['check', 'KATKISIZ'],
+          ['drop', 'DOĞAL ÜRÜN'],
+        ]
+  }
+  if (family === 'honey') {
+    return en
+      ? [['mountain', 'HIGHLAND'], ['bee', 'HILL FLOWER'], ['drop', 'COLD DROP'], ['check', 'PLAIN']]
+      : [['mountain', 'YAYLA'], ['bee', 'DAĞ ÇİÇEĞİ'], ['drop', 'SAF DAMLA'], ['check', 'KATKISIZ']]
+  }
+  if (family === 'jam') {
+    return en
+      ? [['leaf', 'GARDEN'], ['sun', 'SUN JAR'], ['jar', 'FRUIT'], ['check', 'PLAIN']]
+      : [['leaf', 'BAHÇE'], ['sun', 'GÜNEŞ'], ['jar', 'MEYVE'], ['check', 'KATKISIZ']]
+  }
+  if (family === 'oil') {
+    return en
+      ? [['leaf', 'GROVE'], ['drop', 'VIRGIN'], ['mountain', 'EARLY'], ['check', 'PLAIN']]
+      : [['leaf', 'KORU'], ['drop', 'SIZMA'], ['mountain', 'ERKEN'], ['check', 'KATKISIZ']]
+  }
+  return en
+    ? [['leaf', 'TABLE'], ['mountain', 'LOCAL'], ['drop', 'HONEST'], ['check', 'PLAIN']]
+    : [['leaf', 'SOFRA'], ['mountain', 'YEREL'], ['drop', 'SADIK TAT'], ['check', 'KATKISIZ']]
 }
 
 /** Shared claim-strip fit — painter and collision use the same boxes. */
@@ -184,21 +242,22 @@ export function fitFoodClaims(
   anchor: 'middle' | 'start',
   minMm: number,
   locale: 'tr' | 'en' = 'tr',
+  opts: FoodClaimOpts = {},
 ): FittedFoodClaim[] {
-  const allClaims: [string, string][] = locale === 'en'
-    ? [
-        ['%100', 'NATURAL'],
-        ['✓', 'NO ADDITIVES'],
-        ['❋', 'NATURAL PRODUCT'],
-      ]
-    : [
-        ['%100', 'DOĞAL'],
-        ['✓', 'KATKISIZ'],
-        ['❋', 'DOĞAL ÜRÜN'],
-      ]
+  const family = opts.family ?? 'default-food'
+  const rich = opts.rich ?? !!opts.theatre
+  const allClaims = claimPairs(locale, family, rich)
   const shortenMap: Record<string, string> = locale === 'en'
-    ? { 'NATURAL PRODUCT': 'NATURAL', 'NO ADDITIVES': 'PLAIN' }
-    : { 'DOĞAL ÜRÜN': 'DOĞAL' }
+    ? {
+        'NATURAL PRODUCT': 'NATURAL',
+        'NO ADDITIVES': 'PLAIN',
+        'HILL FLOWER': 'FLOWER',
+        'COLD DROP': 'DROP',
+        'SUN JAR': 'SUN',
+        'SADIK TAT': 'SADIK',
+        HONEST: 'TRUE',
+      }
+    : { 'DOĞAL ÜRÜN': 'DOĞAL', 'DAĞ ÇİÇEĞİ': 'ÇİÇEK', 'SAF DAMLA': 'SAF', 'SADIK TAT': 'SADIK' }
   const r = Math.min(4.2, panel.w * 0.054)
   const margin = 4
   const maxW = panel.w - 2 * margin
@@ -208,7 +267,7 @@ export function fitFoodClaims(
     return Math.max(labelW, r * 2) / 2 + r + 1.2
   }
 
-  function tryFit(claims: [string, string][], sz: number): { gap: number; fits: boolean } {
+  function tryFit(claims: [ClaimMotifKind, string][], sz: number): { gap: number; fits: boolean } {
     const gaps = claims.map(([, label]) => measureGap(label, sz))
     const maxGap = Math.max(...gaps)
     const totalW = (claims.length - 1) * maxGap * 2 + maxGap
@@ -223,11 +282,11 @@ export function fitFoodClaims(
     fit = tryFit(claims, sz)
   }
   if (!fit.fits) {
-    claims = claims.map(([icon, label]) => [icon, shortenMap[label] ?? label]) as [string, string][]
+    claims = claims.map(([icon, label]) => [icon, shortenMap[label] ?? label])
     fit = tryFit(claims, sz)
   }
-  if (!fit.fits && claims.length > 2) {
-    claims = claims.slice(0, 2)
+  while (!fit.fits && claims.length > 2) {
+    claims = claims.slice(0, -1)
     fit = tryFit(claims, sz)
   }
 
@@ -241,14 +300,21 @@ export function fitFoodClaims(
 }
 
 /** Food claim strip — natural/additive-free badges. P1-B: measures label widths and fits. */
-export function foodClaimStrip(panel: Panel, p: Palette, y: number, ax: number, anchor: 'middle' | 'start', minMm: number, locale: 'tr' | 'en' = 'tr'): string {
-  const fitted = fitFoodClaims(panel, y, ax, anchor, minMm, locale)
-  const iconSz = Math.max(minMm + 0.5, 2.2)
+export function foodClaimStrip(
+  panel: Panel,
+  p: Palette,
+  y: number,
+  ax: number,
+  anchor: 'middle' | 'start',
+  minMm: number,
+  locale: 'tr' | 'en' = 'tr',
+  opts: FoodClaimOpts = {},
+): string {
+  const fitted = fitFoodClaims(panel, y, ax, anchor, minMm, locale, opts)
   let out = ''
   fitted.forEach(({ icon, label, cx, r, sz }) => {
-    out += `<rect x="${cx - r}" y="${y - r}" width="${r * 2}" height="${r * 2}" fill="${p.accent}" fill-opacity="0.08" stroke="${p.accent}" stroke-width="0.24" />`
-    out += `<line x1="${cx - r + 0.7}" y1="${y - r + 0.55}" x2="${cx + r - 0.7}" y2="${y - r + 0.55}" stroke="${p.accent}" stroke-opacity="0.4" stroke-width="0.12" />`
-    out += `<text x="${cx}" y="${y + 0.65}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="${iconSz}" letter-spacing="0.1">${icon}</text>`
+    out += `<circle cx="${cx}" cy="${y}" r="${r}" fill="${p.accent}" fill-opacity="0.08" stroke="${p.accent}" stroke-width="0.24" />`
+    out += claimMotifSvg(icon, cx, y, r, p.accent)
     out += `<text x="${cx}" y="${y + r + 2.4}" text-anchor="middle" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="${sz}" letter-spacing="0.4">${label}</text>`
   })
   return `<g data-art="claim-strip">${out}</g>`

@@ -104,6 +104,24 @@ export function iconGlassFork(x: number, y: number, s: number, color: string): s
   </g>`
 }
 
+export type ClaimMotifKind = 'leaf' | 'bee' | 'jar' | 'sun' | 'mountain' | 'drop' | 'check'
+
+const CLAIM_MOTIF_PATH: Record<ClaimMotifKind, string> = {
+  leaf: '<path d="M6 2.1C3.2 4.2 2.6 7.6 4.6 9.5c1.4 1.3 3.4 1.3 4.8 0 1.9-1.9 1.2-5.3-1.5-7.4Z"/><path d="M6 3.3v6.2"/>',
+  bee: '<ellipse cx="6" cy="6.7" rx="1.85" ry="2.35"/><path d="M4.15 5.35C2.7 3.55 4.55 2.7 5.55 4.15"/><path d="M7.85 5.35C9.3 3.55 7.45 2.7 6.45 4.15"/>',
+  jar: '<path d="M4 4.55h4v5.3H4Z"/><path d="M4.55 3.25h2.9v1.3H4.55Z"/>',
+  sun: '<circle cx="6" cy="6" r="1.65"/><path d="M6 2.35v1.15M6 8.5v1.15M2.35 6h1.15M8.5 6h1.15"/>',
+  mountain: '<path d="M1.9 9.15 4.55 4.55 7.05 8.05 8.25 6.35 10.2 9.15"/>',
+  drop: '<path d="M6 2.45C6 2.45 3.55 6.2 3.55 8.05a2.45 2.45 0 0 0 4.9 0C8.45 6.2 6 2.45 6 2.45Z"/>',
+  check: '<path d="M3.15 6.15 5.25 8.25 8.9 3.85"/>',
+}
+
+/** Stroke-only claim-circle motifs. Paths stay inside a 12-unit box scaled into `r`. */
+export function claimMotifSvg(kind: ClaimMotifKind, cx: number, cy: number, r: number, color: string): string {
+  const s = r * 1.48
+  return `<g data-art="claim-motif" data-motif="${kind}" transform="translate(${cx - s / 2} ${cy - s / 2}) scale(${s / 12})" fill="none" stroke="${color}" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round">${CLAIM_MOTIF_PATH[kind]}</g>`
+}
+
 /** Legacy kind strip — prefer renderMarkStrip from the marks matrix. */
 export function iconStrip(
   x: number,

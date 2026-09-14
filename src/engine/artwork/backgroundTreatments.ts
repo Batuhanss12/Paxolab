@@ -1,6 +1,15 @@
 import type { Palette, Panel, StyleType } from '../../types'
 import type { BackgroundTreatment } from '../brain/DesignPlan'
+import type { SectorId } from '../designSystem/types'
+import { kitLevel, paintBgKit, resolveBgKit, type BgKitOpts } from './bgKits'
 import { leafStampField, waveRibbon } from './patternMotifs'
+
+export type StyleBgOpts = BgKitOpts & {
+  sector?: SectorId | string
+  grammar?: 'box' | 'label' | string
+  theatre?: boolean
+  variationIndex?: number
+}
 
 /** Extra fields only. dark-field / quiet-paper / kraft keep the existing rect + eco grain. */
 export function paintBackgroundTreatment(panel: Panel, treatment: BackgroundTreatment, p: Palette): string {
@@ -18,8 +27,13 @@ export function paintBackgroundTreatment(panel: Panel, treatment: BackgroundTrea
 }
 
 /** Style-specific background enrichment. Runs AFTER the base bg rect. */
-export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette): string {
+export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette, opts: StyleBgOpts = {}): string {
   const { x, y, w, h } = panel
+  const density = opts.density ?? kitLevel(opts.variationIndex)
+  const safe = opts.safe
+  const kitId = resolveBgKit(style, opts.sector ?? '', opts.grammar ?? 'box', !!opts.theatre)
+  const styleKit =
+    kitId && kitId !== 'meadow-wash' ? paintBgKit(panel, kitId, p, { safe, density, opacity: opts.opacity }) : ''
 
   if (style === 'eco') {
     const weave = [0.2, 0.38, 0.56, 0.74]
@@ -28,7 +42,7 @@ export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette)
         return `<path d="M${x + 1.2} ${yy} C${x + w * 0.28} ${yy + (i % 2 ? 2.4 : -2.1)} ${x + w * 0.62} ${yy + (i % 2 ? -2.2 : 2.6)} ${x + w - 1.2} ${yy}" fill="none" stroke="${p.fg}" stroke-opacity="0.08" stroke-width="0.28" />`
       })
       .join('')
-    return `<g data-art="bg" data-bg="eco-grain">${leafStampField(panel, p.fg, 0.11)}${weave}</g>`
+    return `<g data-art="bg" data-bg="eco-grain">${styleKit}${leafStampField(panel, p.fg, kitId === 'botanical-field' ? 0.06 : 0.12, safe)}${weave}</g>`
   }
 
   if (style === 'playful') {
@@ -76,7 +90,7 @@ export function paintStyleBackground(panel: Panel, style: StyleType, p: Palette)
     return out
   }
 
-  return ''
+  return styleKit
 }
 
 /** Sector-specific background enrichment. Adds subtle texture that reinforces sector identity. */
@@ -95,6 +109,11 @@ export function paintSectorBackground(panel: Panel, sector: string, style: Style
 
   // Food/beverage: warm horizon line at lower third.
   // P2-B: minimal now allows this accent at quieter opacity (0.05 instead of 0.08).
+  if ((sector === 'cream' || sector === 'serum' || sector === 'baby') && style === 'minimal') {
+    const hy = y + h * 0.22
+    return `<g data-art="bg" data-bg="line-horizon"><line x1="${x + 3}" y1="${hy}" x2="${x + w - 3}" y2="${hy}" stroke="${p.accent}" stroke-opacity="0.08" stroke-width="0.16" /></g>`
+  }
+
   if (sector === 'food' || sector === 'beverage') {
     const hy = y + h * 0.72
     const op = style === 'minimal' ? 0.05 : 0.08

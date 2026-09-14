@@ -45,7 +45,7 @@ function panelArt(
     return renderBackPanel(panel, brief, copy, p, system, plan)
   }
   if (kind === 'side-spine' || id === 'left' || id === 'right' || id === 'trayLeft' || id === 'trayRight') {
-    return renderSidePanel(panel, copy, p, system, designPlan)
+    return renderSidePanel(panel, copy, p, system, designPlan, brief)
   }
   if (id === 'top' || id === 'bottom' || id === 'trayBottom') {
     return renderTopPanel(panel, copy, p, system)

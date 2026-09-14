@@ -15,7 +15,7 @@ export type DirectorCue =
   | 'graphic-push'
   | 'force-overload'
 
-export type HeroFamily = 'crest' | 'seal' | 'botanical' | 'emblem' | 'harvest' | 'tech' | 'oval' | 'monstera' | 'palm' | 'organic-wave' | 'zebra' | 'none'
+export type HeroFamily = 'crest' | 'seal' | 'botanical' | 'emblem' | 'harvest' | 'tech' | 'oval' | 'monstera' | 'palm' | 'organic-wave' | 'zebra' | 'line-scene' | 'none'
 export type PatternFamily = 'contour' | 'lattice' | 'stripe' | 'grain' | 'ornament' | 'capsule' | 'weave' | 'dotgrid' | 'wave' | 'hexagon' | 'none'
 export type BackgroundTreatment = 'dark-field' | 'quiet-paper' | 'vignette' | 'dual-tone' | 'kraft'
 export type PrimitiveId = 'leaf' | 'grain' | 'diamond' | 'rule' | 'wave' | 'arc' | 'dot' | 'tick'

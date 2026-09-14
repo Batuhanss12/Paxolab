@@ -98,7 +98,7 @@ export function heroApproxBox(
   const cx = x + w * xFrac
   const cy = y + h * yFrac
   const r = glyphRadius(panel, family, scale)
-  const tall = family === 'botanical' || family === 'monstera' || family === 'palm' || family === 'harvest'
+  const tall = family === 'botanical' || family === 'monstera' || family === 'palm' || family === 'harvest' || family === 'line-scene'
   const hh = r * (tall ? 2.2 : 2)
   const ww = r * 2.2
   return { id: 'hero', x: cx - ww / 2, y: cy - hh / 2, w: ww, h: hh }

@@ -8,7 +8,9 @@ import type { DesignBrief, DesignOverrides, DesignSpec, Palette, Panel } from '.
 import type { DesignPlan } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
+import { expandKitSafe, kitLevel } from '../bgKits'
 import { paintBackgroundTreatment, paintSectorBackground, paintStyleBackground } from '../backgroundTreatments'
+import { foodBoxTheatre } from '../foodLandscape'
 import { wrapContinuity } from '../motifs'
 import { panelClip as clip } from '../svgGeometry'
 import { lockoutClip } from './shared'
@@ -54,12 +56,22 @@ export function renderFrontPanel(
 
   const layout = layoutFrontLockup(panel, system, copy, overrides, labelFace)
   const lockup = layout?.rect
+  const safe = expandKitSafe(lockup, system.style === 'eco' ? 3 : 2.4)
+  const theatre = foodBoxTheatre(system, panel, labelFace)
+  const density = kitLevel(designPlan?.variationIndex)
 
   let body = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.bg}" />`
-  if (lockup) body += lockoutClip(id, panel, lockup)
+  if (safe) body += lockoutClip(id, panel, safe)
 
   body += paintBackgroundTreatment(panel, designPlan?.backgroundTreatment ?? 'quiet-paper', p)
-  body += paintStyleBackground(panel, system.style, p)
+  body += paintStyleBackground(panel, system.style, p, {
+    safe,
+    density,
+    sector: system.sector,
+    grammar: system.grammar,
+    theatre,
+    variationIndex: designPlan?.variationIndex,
+  })
   if (designPlan) body += paintSectorBackground(panel, system.sector, system.style, p)
 
   body += frontDecor(panel, system, p, lockup, designPlan, {

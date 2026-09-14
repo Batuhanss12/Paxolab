@@ -89,10 +89,19 @@ export function pickPattern(ctx: ArtCtx): PatternFamily {
   if (keepCue && !indexChanged && ctx.prev?.patternSystem.family && allowed.includes(ctx.prev.patternSystem.family)) {
     return ctx.prev.patternSystem.family
   }
-  if (index <= 0) return safePreferred
+  if (index <= 0) return coerceFilledPattern(ctx, safePreferred, allowed)
   const recipe = studioRecipe(index)
-  if (recipe) return pickAllowed(allowed, recipe.pattern, index)
-  return pickFromSet(allowed, index, lastForStyle(ctx.style)?.pattern ?? ctx.prev?.patternSystem.family)
+  if (recipe) return coerceFilledPattern(ctx, pickAllowed(allowed, recipe.pattern, index), allowed)
+  return coerceFilledPattern(
+    ctx,
+    pickFromSet(allowed, index, lastForStyle(ctx.style)?.pattern ?? ctx.prev?.patternSystem.family),
+    allowed,
+  )
+}
+
+function coerceFilledPattern(ctx: ArtCtx, picked: PatternFamily, allowed: PatternFamily[]): PatternFamily {
+  if (picked !== 'none' || ctx.style === 'minimal') return picked
+  return allowed.find((p) => p !== 'none') ?? defaultPattern(ctx.style, ctx.sector)
 }
 
 export function patternOpacity(style: StyleType, density: Density, restrain: boolean): number {

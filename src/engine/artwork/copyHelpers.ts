@@ -15,6 +15,7 @@ const SAMPLE_PRODUCT: Record<string, { tr: string; en: string }> = {
   surface: { tr: 'Yüzey', en: 'Surface' },
   concentrate: { tr: 'Konsantre', en: 'Concentrate' },
   biscuit: { tr: 'Kurabiye', en: 'Biscuit' },
+  'keratin repair': { tr: 'Keratin Onarım', en: 'Keratin Repair' },
 }
 
 export function localizeSampleProduct(raw: string, locale: CopyLocale): string {

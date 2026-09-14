@@ -43,6 +43,7 @@ export const heroEntries: GraphicEntry[] = [
   entry('palm', 'Palm frond', ['eco', 'playful'], ['cream', 'serum'], 'balanced'),
   entry('organic-wave', 'Organic wave', ['playful', 'eco'], ['cream', 'serum'], 'balanced'),
   entry('zebra', 'Zebra pattern', ['modern', 'playful'], ['cream', 'serum'], 'balanced'),
+  entry('line-scene', 'Line horizon', ['minimal'], ['cream', 'serum', 'baby'], 'sparse'),
   entry('none', 'No hero', ['minimal'], [], 'sparse'),
 ]
 

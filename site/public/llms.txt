@@ -1,0 +1,33 @@
+# Paxolab
+
+> Professional packaging, box, and label design studio. Design engine: FORMA (vector dieline + artwork — not an image-generation model).
+
+Marketing site (this app) informs; real design work happens in the studio.
+
+## Product facts
+- Brand: Paxolab
+- Engine: FORMA — chat/brief → dieline + vector artwork
+- Not Midjourney-style image gen; final print surface is vector-first
+- Studio local default: http://localhost:5173 (NEXT_PUBLIC_STUDIO_URL)
+- Contact: merhaba@paxolab.com
+
+## Primary pages (TR default at root; EN under /en)
+- /ambalaj-tasarimi — Packaging design
+- /kutu-tasarimi — Box design
+- /etiket-tasarimi — Label design
+- /bicki-cizimi — Dieline concept
+- /baskiya-hazir-dieline — Print-ready dieline / export focus
+- /kozmetik-ambalaj-tasarimi — Cosmetic packaging
+- /serum-krem-kutusu-tasarimi — Serum & cream box
+- /parfum-kutusu-tasarimi — Perfume box
+- /gida-ambalaj-tasarimi — Food packaging
+- /ai-ambalaj-tasarimi — What AI packaging means here
+- /etiket-mi-kutu-mu — Label vs box decision
+- /nasil-calisir — How it works
+- /ornekler — Illustrative examples
+- /fiyatlandirma — Credits/pricing
+- /sss — FAQ
+
+## Optional
+- Sitemap: /sitemap.xml
+- Robots: /robots.txt (disallows crawlers on localhost until production SITE_URL)

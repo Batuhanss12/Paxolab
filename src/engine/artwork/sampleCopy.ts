@@ -53,6 +53,7 @@ export function defaultIngredientClaims(brief: DesignBrief): string {
   if (brief.ingredientClaims?.trim()) return brief.ingredientClaims.trim()
   const sector = resolveSector(brief)
   const sub = `${brief.subProduct} ${brief.productName}`.toLocaleLowerCase('tr')
+  if (/şampuan|shampoo|keratin|saç/i.test(sub)) return 'BIOTIN + KERATIN'
   if (sector === 'serum') return 'NIACINAMIDE + HYALURONIC ACID'
   if (sector === 'cream' || /krem|cream/.test(sub)) {
     const style = brief.styleType

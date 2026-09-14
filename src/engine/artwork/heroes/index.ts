@@ -13,6 +13,7 @@ import { paintHarvest } from './harvestMark'
 import { paintTech } from './techMark'
 import { paintMonstera } from './monsteraMark'
 import { paintPalm } from './palmMark'
+import { paintLineScene } from './lineSceneMark'
 
 export { paintCrest } from './crestMark'
 export { paintSeal } from './sealMark'
@@ -24,6 +25,7 @@ export { paintHarvest } from './harvestMark'
 export { paintTech } from './techMark'
 export { paintMonstera } from './monsteraMark'
 export { paintPalm } from './palmMark'
+export { paintLineScene } from './lineSceneMark'
 
 export { heroPaintScale, heroYFrac, kitHeroFamily } from './heroScale'
 
@@ -48,6 +50,7 @@ export function paintHeroGraphic(family: HeroFamily, panel: Panel, p: Palette, s
   if (family === 'palm') return paintPalm(cx, cy, r, p.accent)
   if (family === 'organic-wave') return paintOval(cx, cy, r, p.accent)
   if (family === 'zebra') return paintBadge(cx, cy, r, p.accent)
+  if (family === 'line-scene') return paintLineScene(cx, cy, r, p.accent)
   return ''
 }
 

@@ -70,10 +70,11 @@ export function scoreHero(ctx: ScoreCtx, notes: string[]): number {
   const face = ctx.face
   let hero = 48
   if (plan.style === 'minimal') {
-    const sectorAccent = /data-bg="(tech-grid|warm-horizon|fresh-accent)"/.test(face)
+    const sectorAccent = /data-bg="(tech-grid|warm-horizon|fresh-accent|line-horizon)"/.test(face)
     const classMeta = /SERUM|YÜZ KREMİ|YÜZEY BAKIMI|FACE CREAM|SURFACE CARE|CONCENTRATE/.test(face)
     hero = 82
     if (hasHero || sectorAccent || classMeta) hero += 10
+    if (/data-hero="line-scene"/.test(face)) hero += 8
   }
   else if (required && hasHero) {
     hero = 78
@@ -148,6 +149,14 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
   const { face, plan, hasHero, leak, geoDensity } = ctx
   let decoration = 50
   if (/data-pattern=/.test(face) && plan.style !== 'minimal') decoration += 10
+  else if (plan.style === 'eco' && /data-bg="eco-grain"/.test(face)) decoration += 10
+  else if (plan.style === 'playful' && /data-bg="playful-capsules"/.test(face)) decoration += 10
+  if (plan.style === 'eco' && /data-bg="eco-grain"/.test(face) && /data-pattern=/.test(face)) decoration += 4
+  if (plan.style === 'playful' && /data-bg="playful-capsules"/.test(face) && /data-pattern=/.test(face)) decoration += 4
+  if (plan.style === 'eco' && /data-art="title-card"/.test(face)) decoration += 6
+  if (/data-art="bg-kit"/.test(face)) decoration += 8
+  if (/data-art="step-pill"/.test(face)) decoration += 6
+  if (plan.surface === 'label' && /data-art="step-pill"/.test(face) && /data-pattern=/.test(face)) decoration += 4
   const richPattern = /data-pattern="(weave|dotgrid|wave|hexagon)"/.test(face)
   const surfaceLayers = (face.match(/(?:fill|stroke)-opacity="0\.(0[4-9]|1[0-2])"/g) || []).length
   const sectorFrame = /data-art="l-bracket"/.test(face) || (face.match(/<polygon[^>]*points="[^"]*" fill="[^"]*"[^>]*\/>/g) || []).length >= 4
@@ -164,7 +173,9 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
     notes.push('Serum contour sızıntısı')
   }
   if (plan.style === 'minimal' && !/data-pattern=/.test(face)) decoration += 12
-  if (plan.style === 'minimal' && /data-bg="(tech-grid|warm-horizon|fresh-accent)"/.test(face)) decoration += 6
+  if (plan.style === 'minimal' && /data-pattern="(stripe|hexagon|dotgrid)"/.test(face)) decoration += 10
+  if (plan.style === 'minimal' && /data-bg="(tech-grid|warm-horizon|fresh-accent|line-horizon)"/.test(face)) decoration += 6
+  if (plan.style === 'minimal' && /data-hero="line-scene"/.test(face)) decoration += 4
   decoration += geoDensity
   return decoration
 }
@@ -173,11 +184,12 @@ export function scoreSectorFit(ctx: ScoreCtx): number {
   const { face, back, plan, leak } = ctx
   let sectorFit = 62
   if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"/.test(face)) sectorFit += 16
-  if (plan.sector === 'food' && /harvest|NET|BESİN|DOĞAL/.test(`${face}\n${back}`)) sectorFit += 14
+  if (plan.sector === 'food' && /harvest|NET|BESİN|DOĞAL|YAYLA|BAHÇE|SOFRA|YEREL/.test(`${face}\n${back}`)) sectorFit += 14
   if (plan.sector === 'electronics' && /WIRELESS|PRECISION|KABLOSUZ|HASSAS|data-hero="tech"|WEEE/.test(`${face}\n${back}`)) sectorFit += 14
   if (plan.sector === 'serum' && !leak) sectorFit += 10
   if (plan.sector === 'cleaning' && /YÜZEY|SURFACE|fresh-accent/.test(face)) sectorFit += 12
-  if (plan.sector === 'electronics' && /data-pattern="(hexagon|dotgrid|lattice)"/.test(face)) sectorFit += 6
+  if (plan.sector === 'electronics' && /data-pattern="(hexagon|dotgrid|lattice|stripe)"/.test(face)) sectorFit += 6
+  if (plan.sector === 'electronics' && plan.style === 'minimal' && /data-pattern="stripe"/.test(face)) sectorFit += 2
   if ((plan.sector === 'food' || plan.sector === 'beverage') && /data-pattern="(weave|grain|ornament)"/.test(face)) sectorFit += 6
   if (plan.sector === 'cleaning' && /data-pattern="(wave|stripe)"/.test(face)) sectorFit += 6
   if (plan.sector !== 'perfume' && /2004\.78/.test(face)) sectorFit -= 30
@@ -201,7 +213,9 @@ export function scoreInformationDesign(ctx: ScoreCtx, notes: string[]): number {
     if (/BESİN DEĞERLERİ|NUTRITION FACTS/.test(back)) informationDesign += 22
     else notes.push('Gıda nutrition yok')
     if (/data-art="claim-strip"|NET/.test(face)) informationDesign += 14
-    if (/DOĞAL|NATURAL/.test(face)) informationDesign += 6
+    if (/DOĞAL|NATURAL|YAYLA|DAĞ ÇİÇEĞİ|SAF DAMLA|BAHÇE|MEYVE|KORU|SIZMA|SOFRA|YEREL|SADIK|HIGHLAND|GARDEN|GROVE/.test(face)) {
+      informationDesign += 6
+    }
   } else if (plan.sector === 'perfume') {
     informationDesign += /INCI|COMPOSITION|12\s*M|2004/.test(back) ? 22 : 8
   } else {

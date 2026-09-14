@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
 import { Chat } from './Chat'
@@ -82,6 +83,8 @@ function ConversationBrief({
   )
 }
 
+type ToolsMenu = 'none' | 'style' | 'inputs'
+
 export function Workspace({
   messages,
   prompt,
@@ -117,6 +120,25 @@ export function Workspace({
   const showPreview = !!design || generating || showTemplates
   const showTabs = !!design
   const showStyles = !!design || showTemplates || isCoreReady(brief)
+  const [toolsMenu, setToolsMenu] = useState<ToolsMenu>('none')
+  const toolsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (toolsMenu === 'none') return
+    function onDoc(e: MouseEvent) {
+      if (!toolsRef.current?.contains(e.target as Node)) setToolsMenu('none')
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setToolsMenu('none')
+    }
+    document.addEventListener('mousedown', onDoc)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [toolsMenu])
+
 
   return (
     <div className="workspace">
@@ -138,8 +160,58 @@ export function Workspace({
             ))}
           </nav>
         )}
+
         <div className="topbar__right">
-          {syncNote && <span className="topbar__sync" title={syncNote}>{syncNote}</span>}
+          {showStyles && (
+            <div className="topbar-tools" ref={toolsRef}>
+              <button
+                type="button"
+                className={`ghost-btn ${toolsMenu === 'style' ? 'is-active' : ''}`}
+                aria-expanded={toolsMenu === 'style'}
+                onClick={() => setToolsMenu((m) => (m === 'style' ? 'none' : 'style'))}
+              >
+                Stil
+              </button>
+              <button
+                type="button"
+                className={`ghost-btn ${toolsMenu === 'inputs' ? 'is-active' : ''}`}
+                aria-expanded={toolsMenu === 'inputs'}
+                onClick={() => setToolsMenu((m) => (m === 'inputs' ? 'none' : 'inputs'))}
+              >
+                Girdiler
+              </button>
+              {toolsMenu === 'style' && (
+                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Stil">
+                  <StyleBar
+                    brief={brief}
+                    design={design}
+                    onStyle={onStyle}
+                    onDims={onDims}
+                    onVary={onVary}
+                    variant="rail"
+                  />
+                </div>
+              )}
+              {toolsMenu === 'inputs' && (
+                <div className="topbar-popover topbar-popover--inputs" role="dialog" aria-label="Girdiler">
+                  <InputsPanel
+                    brief={brief}
+                    design={design}
+                    open
+                    onToggle={() => {
+                      setToolsMenu('none')
+                      if (inputsOpen) onToggleInputs()
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {syncNote && (
+            <span className="topbar__sync" title={syncNote}>
+              {syncNote}
+            </span>
+          )}
           <div className="history-actions">
             <button type="button" className="ghost-btn" onClick={onUndo} disabled={!designHistory.length}>
               Geri al
@@ -157,10 +229,6 @@ export function Workspace({
 
       <div className={`workspace__body ${showPreview ? 'has-preview' : ''}`}>
         <aside className="workspace__left">
-          <InputsPanel brief={brief} design={design} open={inputsOpen} onToggle={onToggleInputs} />
-          {showStyles && (
-            <StyleBar brief={brief} design={design} onStyle={onStyle} onDims={onDims} onVary={onVary} />
-          )}
           <Chat
             messages={messages}
             prompt={prompt}

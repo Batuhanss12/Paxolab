@@ -71,6 +71,10 @@ export type DesignBrief = {
   copyOverrides: string
   /** Ingredient claim badges for label front, e.g. "BIOTIN + COLLAGEN" or "KERATIN, ARGAN, COLLAGEN" */
   ingredientClaims?: string
+  /** Brand story paragraph for perfume (and optional other backs). */
+  story?: string
+  /** Scent pyramid: "bergamot / rose / amber" or `none` to skip the notes table. */
+  scentNotes?: string
   /** Primary copy locale. Missing → resolve as `tr`. Do not store on ArtworkModel.language. */
   copyLocale?: CopyLocale
 }

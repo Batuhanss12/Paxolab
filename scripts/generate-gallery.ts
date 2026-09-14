@@ -33,7 +33,11 @@ async function main() {
   let totalGenerated = 0
   const summary: string[] = []
 
-  for (const job of JOBS) {
+  const filter = process.argv.slice(2).filter((a) => !a.startsWith('-'))
+  const jobs = filter.length ? JOBS.filter((j) => filter.some((f) => j.slug.includes(f))) : JOBS
+  if (!jobs.length) throw new Error(`no gallery jobs match: ${filter.join(', ')}`)
+
+  for (const job of jobs) {
     resetArtMemory()
     const sectorDir = path.join(OUT_ROOT, job.sectorFolder)
     await fs.mkdir(sectorDir, { recursive: true })
@@ -119,7 +123,7 @@ ${totalGenerated} SVG dosyası üretildi.
 
 ## Mimari
 
-- 75 grafik kayıtlı (18 pattern, 23 motif, 12 primitive, 8 composition, 14 hero)
+- 76 grafik kayıtlı (18 pattern, 23 motif, 12 primitive, 8 composition, 15 hero)
 - 180 grammar kombinasyonu çözülebilir
 - Deterministic selection (brief+style+sector+variation → graphic picks)
 - Composition intent'ler: symmetric, asymmetric, grid, offset, diagonal, editorial, floating, full-bleed

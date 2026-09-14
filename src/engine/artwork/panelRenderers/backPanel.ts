@@ -11,6 +11,7 @@ import { fontStack } from '../languages'
 import { volumeMarkup } from '../../designSystem/typeSystem'
 import { escapeSvg as esc, minMm as mm, panelClip as clip, wrapSvgLines as wrapLines } from '../svgGeometry'
 import { foodFamilyFromBlob } from '../foodFamily'
+import { perfumeNotesBlock, perfumeStoryBlock, resolvePerfumeNotes, resolvePerfumeStory } from '../perfumeStory'
 import { foodNutritionBlockHeight, foodNutritionTable } from './foodElements'
 import { frames } from './shared'
 import { legalHead, legalBlock, marksBar } from './legalBlocks'
@@ -44,10 +45,22 @@ export function renderBackPanel(
   const first = system.legal[0]
   const second = system.legal[1]
   const shortBack = h < 70
-  const inci = wrapLines(copy.ingredients, Math.max(16, Math.floor(w / 2.05)), shortBack && system.sector === 'food' ? 2 : perfume ? 6 : 5)
+  const locale = resolveCopyLocale(brief)
+  if (perfume && !shortBack) {
+    const story = resolvePerfumeStory(brief, locale)
+    const storyPaint = perfumeStoryBlock(x + padX, cursor, blockW, story, p, system.serif)
+    body += storyPaint.markup
+    cursor += storyPaint.height + 1.2
+    const notes = resolvePerfumeNotes(brief, locale)
+    if (notes) {
+      const notesPaint = perfumeNotesBlock(x + padX, cursor, blockW, notes, p, locale)
+      body += notesPaint.markup
+      cursor += notesPaint.height + 2.0
+    }
+  }
+  const inci = wrapLines(copy.ingredients, Math.max(16, Math.floor(w / 2.05)), shortBack && system.sector === 'food' ? 2 : perfume ? 4 : 5)
   const warns = wrapLines(copy.warnings, Math.max(16, Math.floor(w / 2.05)), shortBack ? 2 : 4)
 
-  const locale = resolveCopyLocale(brief)
   const family = foodFamilyFromBlob(`${brief.subProduct} ${brief.productName} ${copy.product}`)
   const sugarSalt = h >= 60
   if (system.sector === 'food' || system.sector === 'beverage') {

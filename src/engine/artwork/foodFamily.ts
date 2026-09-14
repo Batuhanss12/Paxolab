@@ -23,6 +23,10 @@ export function foodFamilyFromBlob(sub: string): FoodFamily {
   return 'default-food'
 }
 
+export function foodFamilyFromCategory(cat: string): FoodFamily {
+  return foodFamilyFromBlob(cat)
+}
+
 export function foodNutritionBasis(family: FoodFamily, volume: string, locale: CopyLocale): string {
   const en = locale === 'en'
   if (family === 'oil' && /\bml\b/i.test(volume)) return en ? '100 ml' : '100 ml'

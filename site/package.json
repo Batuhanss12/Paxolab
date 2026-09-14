@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seo:smoke": "node scripts/seo-route-smoke.mjs"
   },
   "dependencies": {
     "next": "^16.3.5",
