@@ -1,8 +1,7 @@
 import type { DielineModel } from '../../types'
 
-const CUT = '#ff6b6b'
-const CREASE = '#5b9fff'
-const PERF = '#e07ae0'
+const CUT = '#111111'
+const CREASE = '#cc3333'
 const GLUE = 'rgba(201, 168, 108, 0.32)'
 const PANEL = 'rgba(255,255,255,0.035)'
 const SAFE = 'rgba(90, 180, 120, 0.32)'
@@ -18,28 +17,22 @@ export function renderDielineSvg(
   const w = model.width + pad * 2
   const h = model.height + pad * 2
   const combined = opts?.mode === 'combined' || !!opts?.showArtwork
-  const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#141414')
+  const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#0b0b0b')
 
   const cut = model.cut
-    .map((ring, index) => {
+    .map((ring) => {
       const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="${CUT}" stroke-width="0.55" stroke-linejoin="miter" data-type="cut" data-id="cut-${index}" />`
+      return `<path d="${d}" fill="none" stroke="${CUT}" stroke-width="0.55" stroke-linejoin="miter" />`
     })
     .join('')
   const crease = model.crease
     .map(
-      ([a, b], index) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" data-type="crease" data-id="crease-${index}" />`,
+      ([a, b]) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" />`,
     )
     .join('')
-  const perf = (model.perf ?? [])
-    .map((ring, index) => {
-      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ')
-      return `<path d="${d}" fill="none" stroke="${PERF}" stroke-width="0.4" stroke-dasharray="1.1 0.7" data-type="perf" data-id="perf-${index}" />`
-    })
-    .join('')
 
-  // When printReady (safeInsetMm > 0): overlay matches press boxes (solver 3 mm). Knife geometry stays trim-only.
+  // When printReady (safeInsetMm > 0): inward safe + outward bleed guide. Guide-only — not press bleed / PDF/X.
   const safeInset = opts?.safeInsetMm ?? 0
   const proofPanels =
     combined && safeInset > 0 ? model.panels.filter((p) => !model.glueIds.includes(p.id)) : []
@@ -78,7 +71,6 @@ export function renderDielineSvg(
     ${combinedBleed ? `<g data-proof="bleed-set">${combinedBleed}</g>` : ''}
     ${combinedSafe ? `<g data-proof="safe-set">${combinedSafe}</g>` : ''}
     <g>${crease}</g>
-    <g>${perf}</g>
     <g>${cut}</g>
   </svg>`
 }
@@ -88,22 +80,16 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
   const w = model.width + pad * 2
   const h = model.height + pad * 2
   const cut = model.cut
-    .map((ring, index) => {
+    .map((ring) => {
       const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" data-type="cut" data-id="cut-${index}" />`
+      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" />`
     })
     .join('')
   const crease = model.crease
     .map(
-      ([a, b], index) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" data-type="crease" data-id="crease-${index}" />`,
+      ([a, b]) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" />`,
     )
-    .join('')
-  const perf = (model.perf ?? [])
-    .map((ring, index) => {
-      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ')
-      return `<path d="${d}" fill="none" stroke="#c000c0" stroke-width="0.35" stroke-dasharray="1.1 0.7" data-type="perf" data-id="perf-${index}" />`
-    })
     .join('')
   const labels = model.panels
     .map(
@@ -113,10 +99,9 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
     .join('')
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
-  <title>${title} — FORMA dieline</title>
+  <title>${title} — Grapxor dieline</title>
   ${labels}
   ${crease}
-  ${perf}
   ${cut}
 </svg>`
 }

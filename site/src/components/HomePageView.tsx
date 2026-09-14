@@ -27,7 +27,7 @@ function ProductStage({
             <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
           </div>
           <p className="text-[11px] tracking-wide text-cream/35">
-            Paxolab Studio
+            Grapxor Studio
           </p>
           <span className="w-10" aria-hidden />
         </div>
@@ -43,8 +43,8 @@ function ProductStage({
               </div>
               <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-md border border-copper/25 bg-copper/10 px-4 py-3 text-sm text-cream/85">
                 {locale === "en"
-                  ? "FORMA drafted structure + vector art. Review the preview →"
-                  : "FORMA yapı + vektör yüzeyi hazırladı. Önizlemeyi inceleyin →"}
+                  ? "Grapxor drafted structure + vector art. Review the preview →"
+                  : "Grapxor yapı + vektör yüzeyi hazırladı. Önizlemeyi inceleyin →"}
               </div>
             </div>
 

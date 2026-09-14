@@ -10,6 +10,10 @@ import { atomsForEntry } from './artMotifBank'
 import { isWeakSheet, type MotifAtom } from './artMotifAtomizer'
 import { moodPrior, type MoodId } from '../brain/moodPriors'
 import { resolveMotifDesign, resolvedMotifRole, seedTieBreak, visualWeightOf } from './artMotifMeta'
+import { atomFitsConceptFamily, motifFamilyOf, selectFamilyPool } from './artMotifFamily'
+import { loadAtomicFamilyAtoms } from './assetCatalog/familyAssets'
+import { lookupAssetRecordForAtom } from './assetCatalog/catalog'
+import type { AssetMode } from './assetCatalog/types'
 
 export type MotifMatchQuery = {
   mood: MoodId | StyleType | ''
@@ -18,12 +22,17 @@ export type MotifMatchQuery = {
   seed?: number
   sheetId?: string
   maxAtoms?: number
+  family?: import('../brain/DesignPlan').MotifFamilyId
+  supportFamily?: import('../brain/DesignPlan').MotifFamilyId
+  conceptId?: string
 }
 
 export type MotifMatchResult = {
   atoms: MotifAtom[]
   sheetIds: string[]
   scores: { id: string; sheetId: string; score: number }[]
+  matchLevel?: 'EXACT' | 'COMPATIBLE' | 'NONE'
+  fallbackMode?: AssetMode
 }
 
 export type MotifSheetVocab = {
@@ -160,6 +169,8 @@ export function scoreAtom(
   }
   if (
     (mood === 'luxury' || mood === 'classic') &&
+    sector !== 'food' &&
+    sector !== 'beverage' &&
     (meta.styleTags ?? []).some((t) => t === 'artdeco' || t === 'art_deco')
   ) {
     score += 3
@@ -168,6 +179,22 @@ export function scoreAtom(
   if (mood === 'minimal' && (role === 'corner' || role === 'stamp' || role === 'accent')) score += 2
   if (mood === 'modern' && (role === 'band' || role === 'divider')) score += 2
   if (mood === 'eco' && atom.tags.some((t) => /eco|botanic|leaf/.test(t))) score += 3
+  if (query.family) {
+    const fam = motifFamilyOf(atom)
+    if (fam === query.family) score += 100
+    else if (query.supportFamily && fam === query.supportFamily) score += 50
+    else if (atomFitsConceptFamily(atom, query.family, query.supportFamily)) score += 50
+    else score -= 1000
+  }
+  const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
+  if (query.conceptId && rec?.conceptCompatibility.includes(query.conceptId)) score += 8
+  if (rec?.file) score += 12
+  if (rec?.complexity != null && rec.complexity <= 0.28) score += 1
+  if (rec?.family === 'quiet-line' && rec.role === 'field-fill') score -= 6
+  if (sector === 'food' || sector === 'beverage') {
+    if (/leaf|botanic|olive|harvest|grain/.test(`${atom.sourceName} ${atom.tags.join(' ')}`)) score += 4
+    if ((meta.styleTags ?? []).some((t) => t === 'artdeco' || t === 'art_deco')) score -= 10
+  }
   if (prior.fieldSparse > 0.7 && atom.complexity > 40) score -= 2
   if (prior.ornament < 0.15 && role === 'field-fill') score -= 3
   if ((mood === 'minimal' || prior.fieldSparse > 0.85) && weight > 0.72) score -= 8
@@ -175,14 +202,50 @@ export function scoreAtom(
   return score
 }
 
+function stampCatalogFamily(atom: MotifAtom): MotifAtom {
+  const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
+  if (!rec) return atom
+  return {
+    ...atom,
+    design: {
+      ...atom.design,
+      family: rec.family,
+      subfamily: rec.subfamily ?? atom.design?.subfamily,
+    },
+  }
+}
+
 function collectAtoms(sheetId?: string): { atom: MotifAtom; vocab: SheetVocab }[] {
   const entries = usableArtPatterns(loadArtPatternLibrary()).filter((e) => !SKIP_IDS.has(e.id) && (!sheetId || e.id === sheetId))
   const out: { atom: MotifAtom; vocab: SheetVocab }[] = []
   for (const entry of entries) {
+    if (entry.atomic) continue
     const atoms = atomsForEntry(entry)
     if (isWeakSheet(entry, atoms) || !atoms.length) continue
     const vocab = vocabFor(entry.id, entry.tags, entry.sourceName)
-    for (const atom of atoms) out.push({ atom, vocab })
+    for (const atom of atoms) out.push({ atom: stampCatalogFamily(atom), vocab })
+  }
+  if (!sheetId || loadAtomicFamilyAtoms().some((a) => a.sheetId === sheetId)) {
+    for (const atom of loadAtomicFamilyAtoms()) {
+      if (sheetId && atom.sheetId !== sheetId) continue
+      const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
+      const vocab: SheetVocab = {
+        moods: (rec?.style.filter((s) => /luxury|classic|minimal|modern|eco|playful/.test(s)) as MoodId[]) ?? ['luxury', 'eco', 'classic'],
+        sectors: rec?.sectorCompatibility ?? ['food', 'cream'],
+        tags: rec?.style ?? atom.tags,
+        color:
+          rec?.family === 'botanical' || atom.design?.family === 'botanical'
+            ? 'botanical'
+            : rec?.family === 'quiet-line'
+              ? 'light'
+              : rec?.family === 'linear-tech'
+                ? 'geometric'
+                : rec?.family === 'heraldic'
+                  ? 'dark-metal'
+                  : 'ornate',
+      }
+      out.push({ atom, vocab })
+    }
   }
   return out
 }
@@ -190,11 +253,29 @@ function collectAtoms(sheetId?: string): { atom: MotifAtom; vocab: SheetVocab }[
 export function matchMotifs(query: MotifMatchQuery): MotifMatchResult {
   const family = colorFamilyOf(parseBriefColors(query.colors))
   const pool = collectAtoms(query.sheetId)
-  const empty: MotifMatchResult = { atoms: [], sheetIds: [], scores: [] }
+  const empty: MotifMatchResult = {
+    atoms: [],
+    sheetIds: [],
+    scores: [],
+    matchLevel: query.family ? 'NONE' : 'NONE',
+    fallbackMode: query.family ? 'typography-only' : 'none',
+  }
   if (!pool.length) return empty
 
+  const scoped = selectFamilyPool(
+    pool.map((row) => row.atom),
+    query.family,
+    query.supportFamily,
+    query.conceptId,
+  )
+  if (query.family && !scoped.atoms.length) {
+    return { ...empty, matchLevel: 'NONE', fallbackMode: 'typography-only' }
+  }
+  const allowedIds = new Set(scoped.atoms.map((a) => a.id))
+  const filtered = query.family ? pool.filter((row) => allowedIds.has(row.atom.id)) : pool
+
   const seed = query.seed ?? 0
-  const scored = pool
+  const scored = filtered
     .map(({ atom, vocab }) => ({
       atom,
       vocab,
@@ -208,35 +289,46 @@ export function matchMotifs(query: MotifMatchQuery): MotifMatchResult {
       return ta === tb ? a.atom.id.localeCompare(b.atom.id) : ta - tb
     })
 
-  const bySheet = new Map<string, number>()
-  for (const row of scored) {
-    const cur = bySheet.get(row.atom.sheetId) ?? 0
-    bySheet.set(row.atom.sheetId, Math.max(cur, row.score))
-  }
-  const rankedSheets = [...bySheet.entries()].sort((a, b) => b[1] - a[1])
-  const primary = rankedSheets[0]?.[0]
-  const secondary =
-    rankedSheets[1] && rankedSheets[0] && rankedSheets[1][1] >= rankedSheets[0][1] * 0.78 ? rankedSheets[1][0] : undefined
-
-  const max = Math.min(5, Math.max(2, query.maxAtoms ?? 4))
+  const max = Math.min(query.family ? 8 : 5, Math.max(2, query.maxAtoms ?? (query.family ? 6 : 4)))
+  const eligible = scored.filter((row) => row.score > -500)
   const picked: MotifAtom[] = []
   const used = new Set<string>()
-  const takeFrom = (sheetId: string | undefined, count: number) => {
-    if (!sheetId) return
-    for (const row of scored) {
-      if (picked.length >= count) break
-      if (row.atom.sheetId !== sheetId || used.has(row.atom.id)) continue
+  if (query.family) {
+    for (const row of eligible) {
+      if (picked.length >= max) break
+      if (used.has(row.atom.id)) continue
       used.add(row.atom.id)
       picked.push(row.atom)
     }
+  } else {
+    const bySheet = new Map<string, number>()
+    for (const row of eligible) {
+      const cur = bySheet.get(row.atom.sheetId) ?? 0
+      bySheet.set(row.atom.sheetId, Math.max(cur, row.score))
+    }
+    const sheetRank = [...bySheet.entries()].sort((a, b) => b[1] - a[1])
+    const primary = sheetRank[0]?.[0]
+    const secondary =
+      sheetRank[1] && sheetRank[0] && sheetRank[1][1] >= sheetRank[0][1] * 0.78 ? sheetRank[1][0] : undefined
+    const takeFrom = (sheetId: string | undefined, count: number) => {
+      if (!sheetId) return
+      for (const row of eligible) {
+        if (picked.length >= count) break
+        if (row.atom.sheetId !== sheetId || used.has(row.atom.id)) continue
+        used.add(row.atom.id)
+        picked.push(row.atom)
+      }
+    }
+    takeFrom(primary, Math.min(max, 4))
+    if (secondary && picked.length < max) takeFrom(secondary, max)
   }
-  takeFrom(primary, Math.min(max, 4))
-  if (secondary && picked.length < max) takeFrom(secondary, max)
 
   const sheetIds = [...new Set(picked.map((a) => a.sheetId))]
   return {
     atoms: picked,
     sheetIds,
     scores: scored.slice(0, 12).map((row) => ({ id: row.atom.id, sheetId: row.atom.sheetId, score: row.score })),
+    matchLevel: scoped.level,
+    fallbackMode: scoped.fallbackMode,
   }
 }

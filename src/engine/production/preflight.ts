@@ -10,6 +10,8 @@ import { evaluateDesignGates, layoutFrontLockup, resolveDesignSystem } from '../
 import { findHeroPanel, isGluePanel } from '../dieline/panelKind'
 import { isProductionGrammar } from '../dieline/structure/solver'
 import type { DesignSystem } from '../designSystem/types'
+import { markupFamilyGate } from '../artwork/assetCatalog/constraints'
+import { hexLuminance } from '../artwork/briefPalette'
 import { checkContrast, checkTextOverflow, detectCollisions } from './preflightChecks'
 import { pressBleedMm, pressSafeMm } from './pressBoxes'
 
@@ -74,6 +76,10 @@ export function runPreflight(
           f.code === 'CUT_OPEN' ||
           f.code === 'STRUCTURAL_COLLISION')),
   )
+  const familyGate = spec.designPlan
+    ? markupFamilyGate(faceArt, spec.designPlan)
+    : { ok: true, detail: 'plan yok', families: [] as string[], fallback: 'none' as const }
+  const familyFail = !familyGate.ok
   const exportOk =
     !collisions &&
     !badDie &&
@@ -83,7 +89,8 @@ export function runPreflight(
     !inventedGtin &&
     !glueDirty &&
     !localeMixFail &&
-    !blockStruct
+    !blockStruct &&
+    !familyFail
   const plan = spec.designPlan
   const proofDetail = [
     plan ? `set ${plan.variationIndex + 1}` : null,
@@ -185,6 +192,20 @@ export function runPreflight(
           }`
         : 'Çözüm yok',
       !spec.dieline.structural ? 'na' : blockStruct ? 'fail' : spec.dieline.structural.releaseReady ? 'pass' : 'warn',
+    ),
+    item(
+      'asset-family',
+      'Asset family',
+      spec.designPlan ? familyGate.detail : 'plan yok',
+      !spec.designPlan ? 'na' : familyFail ? 'fail' : 'pass',
+    ),
+    item(
+      'accent-ground',
+      'Accent ≠ zemin',
+      Math.abs(hexLuminance(palette.bg) - hexLuminance(palette.accent)) >= 0.22
+        ? 'Accent zeminle ayrılıyor'
+        : 'Accent zeminle aynı tonda — motif kaybolabilir',
+      Math.abs(hexLuminance(palette.bg) - hexLuminance(palette.accent)) >= 0.22 ? 'pass' : 'warn',
     ),
   ]
 

@@ -13,6 +13,7 @@ import { paintArtPatternOverlay } from '../artPatternLibrary'
 import { paintArtPatternCompositionById } from '../artPatternCompose'
 import { paintMotifRecipeById, paintMotifRecipeFromAtoms, resolveMotifRecipeId, type MotifPaintOpts } from '../artMotifCompose'
 import { matchMotifs } from '../artMotifMatch'
+import { selectMotifComposition } from '../compositionCandidates'
 import { paintPlanHero, resolveFrontHeroPlacement } from './heroDispatch'
 import { paintBackgroundTreatment, paintSectorBackground, paintStyleBackground } from '../backgroundTreatments'
 import { foodBoxTheatre } from '../foodLandscape'
@@ -71,7 +72,7 @@ export function renderFrontPanel(
   const compose = Boolean(overrides.artPatternCompose && overrides.artPatternId)
   const blank = Boolean(system.blankCanvas || overrides.blankCanvas)
   const heroCtx = { copy, overrides, ingredientClaims: brief.ingredientClaims ?? '' }
-  const heroPlace = blank || compose ? resolveFrontHeroPlacement(panel, system, designPlan, heroCtx) : undefined
+  const heroPlace = resolveFrontHeroPlacement(panel, system, designPlan, heroCtx)
   const heroBox = heroPlace && !heroPlace.omitted && heroPlace.box.w > 0 ? heroPlace.box : undefined
   const motifOpts: MotifPaintOpts = {
     safe,
@@ -89,10 +90,25 @@ export function renderFrontPanel(
       colors: brief.colors,
       seed: designPlan?.variationIndex ?? 0,
       sheetId: overrides.artPatternId,
+      family: designPlan?.visualConcept.family,
+      supportFamily: designPlan?.visualConcept.supportFamily,
+      conceptId: designPlan?.visualConcept.id,
     })
-    const recipeId = overrides.motifRecipeId ?? resolveMotifRecipeId(match.atoms, system.style, designPlan?.variationIndex ?? 0)
-    const motif = paintMotifRecipeFromAtoms(panel, p, match.atoms, { ...motifOpts, recipeId })
-    if (motif.markup) body += motif.markup
+    if (designPlan) {
+      const picked = selectMotifComposition({
+        panel,
+        palette: p,
+        atoms: match.atoms,
+        plan: designPlan,
+        opts: motifOpts,
+        forcedRecipe: overrides.motifRecipeId,
+      })
+      if (picked.markup) body += picked.markup
+    } else {
+      const recipeId = overrides.motifRecipeId ?? resolveMotifRecipeId(match.atoms, system.style, 0)
+      const motif = paintMotifRecipeFromAtoms(panel, p, match.atoms, { ...motifOpts, recipeId })
+      if (motif.markup) body += motif.markup
+    }
     if (designPlan?.heroGraphic.family && designPlan.heroGraphic.family !== 'none') {
       body += paintPlanHero(panel, system, p, designPlan, heroCtx)
     }
@@ -140,6 +156,26 @@ export function renderFrontPanel(
         safe,
         style: system.style,
       })
+    }
+    if (designPlan?.visualConcept.family) {
+      const match = matchMotifs({
+        mood: system.style,
+        sector: system.sector,
+        colors: brief.colors,
+        seed: designPlan.variationIndex ?? 0,
+        family: designPlan.visualConcept.family,
+        supportFamily: designPlan.visualConcept.supportFamily,
+        conceptId: designPlan.visualConcept.id,
+      })
+      const picked = selectMotifComposition({
+        panel,
+        palette: p,
+        atoms: match.atoms,
+        plan: designPlan,
+        opts: motifOpts,
+        forcedRecipe: overrides.motifRecipeId,
+      })
+      if (picked.markup) body += picked.markup
     }
 
     body += frontDecor(panel, system, p, lockup, designPlan, {

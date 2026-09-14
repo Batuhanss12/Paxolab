@@ -94,7 +94,7 @@ function projectTitle(state: AppState): string {
   if (brand && product) return `${brand} · ${product}`
   if (brand) return brand
   if (state.design?.copy?.brand) return String(state.design.copy.brand)
-  return 'FORMA projesi'
+  return 'Grapxor projesi'
 }
 
 export function buildCloudPayload(state: AppState): { version: number; state: PersistedSession } {

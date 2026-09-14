@@ -231,7 +231,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     const title =
       typeof body.title === 'string' && body.title.trim()
         ? body.title.trim()
-        : 'FORMA projesi'
+        : 'Grapxor projesi'
     const payload_json = JSON.stringify(body.payload ?? {})
     db.prepare(
       `INSERT INTO projects (id, user_id, title, payload_json, updated_at, created_at)
@@ -258,7 +258,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     const title =
       typeof body.title === 'string' && body.title.trim()
         ? body.title.trim()
-        : existing?.title ?? 'FORMA projesi'
+        : existing?.title ?? 'Grapxor projesi'
     const payload_json =
       body.payload !== undefined
         ? JSON.stringify(body.payload)

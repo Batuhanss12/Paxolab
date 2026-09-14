@@ -76,7 +76,7 @@ function ConversationBrief({
       {design && (
         <p className="brief-log__note">
           {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
-          Forxa motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
+          Grapxor motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
         </p>
       )}
     </div>
@@ -144,7 +144,7 @@ export function Workspace({
     <div className="workspace">
       <header className="topbar">
         <button type="button" className="wordmark wordmark--btn" onClick={onReset}>
-          Forxa
+          Grapxor
         </button>
         {showTabs && (
           <nav className="tabs" aria-label="Görünüm">
@@ -181,7 +181,7 @@ export function Workspace({
                 Girdiler
               </button>
               {toolsMenu === 'style' && (
-                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Ruh hali">
+                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Stil">
                   <StyleBar
                     brief={brief}
                     design={design}
@@ -246,7 +246,7 @@ export function Workspace({
             {generating && (
               <div className="engine-wait">
                 <span className="engine-wait__bar" />
-                <p>Forxa motoru çalışıyor</p>
+                <p>Grapxor motoru çalışıyor</p>
               </div>
             )}
             {!generating && !design && showTemplates && (

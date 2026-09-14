@@ -1,15 +1,15 @@
-# Paxolab
+# Grapxor
 
-> Professional packaging, box, and label design studio. Design engine: FORMA (vector dieline + artwork — not an image-generation model).
+> Professional packaging, box, and label design studio. Design engine: Grapxor (vector dieline + artwork — not an image-generation model).
 
 Marketing site (this app) informs; real design work happens in the studio.
 
 ## Product facts
-- Brand: Paxolab
-- Engine: FORMA — chat/brief → dieline + vector artwork
+- Brand: Grapxor
+- Engine: Grapxor — chat/brief → dieline + vector artwork
 - Not Midjourney-style image gen; final print surface is vector-first
 - Studio local default: http://localhost:5173 (NEXT_PUBLIC_STUDIO_URL)
-- Contact: merhaba@paxolab.com
+- Contact: merhaba@grapxor.com
 
 ## Primary pages (TR default at root; EN under /en)
 - /ambalaj-tasarimi — Packaging design

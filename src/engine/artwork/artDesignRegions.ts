@@ -21,7 +21,7 @@ import {
   seedTieBreak,
 } from './artMotifMeta'
 
-export type SlotKind = 'stamp' | 'nw' | 'ne' | 'sw' | 'se' | 'band-top' | 'frame' | 'hero-stamp'
+export type SlotKind = 'stamp' | 'nw' | 'ne' | 'sw' | 'se' | 'band-top' | 'band-bottom' | 'frame' | 'hero-stamp'
 
 export type DesignRegion = {
   id: MotifRegionId
@@ -89,6 +89,10 @@ export function slotBox(
   if (kind === 'sw') return { x: x + inset, y: y + h - inset - stamp, w: stamp, h: stamp }
   if (kind === 'se') return { x: x + w - inset - stamp, y: y + h - inset - stamp, w: stamp, h: stamp }
   if (kind === 'band-top') return { x, y, w, h: Math.max(8, h * 0.15) }
+  if (kind === 'band-bottom') {
+    const band = Math.max(8, h * 0.12)
+    return { x: x + inset, y: y + h - inset - band, w: w - inset * 2, h: band }
+  }
   if (kind === 'frame') {
     const pad = m * 0.05
     return { x: x + pad, y: y + pad, w: w - pad * 2, h: h - pad * 2 }
@@ -103,6 +107,7 @@ export function slotBox(
 
 export function slotKindToRegion(kind: SlotKind): MotifRegionId {
   if (kind === 'band-top') return 'top'
+  if (kind === 'band-bottom') return 'bottom'
   if (kind === 'frame') return 'field'
   if (kind === 'hero-stamp') return 'top'
   if (kind === 'stamp') return 'center'
@@ -212,7 +217,7 @@ function suitability(id: MotifRegionId): Record<string, number> {
     'field-fill': id === 'field' ? 1 : 0.1,
     ornament: id === 'field' || corner > 0.5 ? 0.7 : 0.35,
     divider: id === 'top' || id === 'bottom' ? 1 : 0.1,
-    accent: id === 'ne' || id === 'nw' || id === 'top' ? 0.8 : 0.3,
+    accent: id === 'ne' || id === 'nw' || id === 'top' || id === 'bottom' ? 0.8 : 0.3,
   }
 }
 
@@ -276,6 +281,7 @@ function scaleBox(box: BBox, scale: number, kind: SlotKind): BBox {
   if (kind === 'nw') return { x: box.x, y: box.y, w, h }
   if (kind === 'se') return { x: box.x + box.w - w, y: box.y + box.h - h, w, h }
   if (kind === 'sw') return { x: box.x, y: box.y + box.h - h, w, h }
+  if (kind === 'band-bottom') return { x: box.x + (box.w - w) / 2, y: box.y + box.h - h, w, h }
   return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h }
 }
 
@@ -381,7 +387,8 @@ export function scoreAtomForRegion(
   }
   if (meta.styleTags?.length && style) {
     if (meta.styleTags.includes(style)) score += 2
-    if (style === 'luxury' && meta.styleTags.some((t) => t === 'artdeco' || t === 'art_deco')) score += 3
+    if (style === 'luxury' && sector !== 'food' && sector !== 'beverage' && meta.styleTags.some((t) => t === 'artdeco' || t === 'art_deco')) score += 3
+    if ((sector === 'food' || sector === 'beverage') && meta.styleTags.some((t) => t === 'eco' || t === 'botanic' || t === 'harvest')) score += 4
   }
   if (meta.compatibleSectors?.length) {
     if (sector && meta.compatibleSectors.includes(sector)) score += 3

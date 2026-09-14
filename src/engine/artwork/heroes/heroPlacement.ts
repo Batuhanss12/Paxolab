@@ -225,7 +225,7 @@ export function measureHeroCollision(
     system,
     plan,
     family,
-    mode: useLib || kitFamily === 'none' ? 'lib' : 'kit',
+    mode: useLib || (kitFamily as HeroFamily) === 'none' ? 'lib' : 'kit',
     copy,
     overrides,
     ingredientClaims,

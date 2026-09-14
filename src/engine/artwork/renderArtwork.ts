@@ -35,7 +35,7 @@ export function renderArtworkDoc(dieline: DielineModel, artwork: ArtworkModel, t
   const height = dieline.height + pad * 2
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}mm" height="${height}mm">
-  <title>${escapeSvg(title)} — FORMA artwork</title>
+  <title>${escapeSvg(title)} — Grapxor artwork</title>
   <defs>${clipDefs(dieline)}</defs>
   <g transform="translate(${pad} ${pad})">${artworkMarkup(artwork)}</g>
 </svg>`

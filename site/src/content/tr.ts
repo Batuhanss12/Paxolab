@@ -4,10 +4,10 @@ import type { SiteContent } from "@/content/types";
 
 const content: SiteContent = {
   brand: {
-    name: "Paxolab",
+    name: "Grapxor",
     tagline: "Profesyonel ambalaj ve etiket tasarım stüdyosu",
-    engine: "FORMA",
-    email: "merhaba@paxolab.com",
+    engine: "Grapxor",
+    email: "merhaba@grapxor.com",
   },
 
   nav: {
@@ -47,7 +47,7 @@ const content: SiteContent = {
       { href: "/sss", label: "SSS" },
       { href: "/private-label-gida-kutusu-brief", label: "Private label gıda brief" },
       { href: "/serum-kutusu-olcu-brief", label: "Serum ölçü brief" },
-      { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+      { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
       { href: "/ambalaj-preflight-checklist", label: "Preflight checklist" },
       { href: "/e-ticaret-kutusu-tasarimi", label: "E-ticaret kutusu" },
       { href: "/iletisim", label: "İletişim" },
@@ -56,7 +56,7 @@ const content: SiteContent = {
 
   footer: {
     blurb:
-      "Paxolab, stüdyo ve tasarım motorunu tek isim altında sunar: baskıya hazır ambalaj, kutu ve etiket. Nihai çıktı vektördür.",
+      "Grapxor, stüdyo ve tasarım motorunu tek isim altında sunar: baskıya hazır ambalaj, kutu ve etiket. Nihai çıktı vektördür.",
     product: "Ürün",
     company: "Kurumsal",
     legal: "Yasal",
@@ -66,14 +66,14 @@ const content: SiteContent = {
       { href: "/kullanim-kosullari", label: "Kullanım koşulları" },
     ],
     contactLabel: "İletişim",
-    copyright: (y: number) => `© ${y} Paxolab. Tüm hakları saklıdır.`,
+    copyright: (y: number) => `© ${y} Grapxor. Tüm hakları saklıdır.`,
   },
 
   home: {
     meta: {
       title: "Ambalaj & etiket tasarım stüdyosu",
       description:
-        "Paxolab ile kutu, etiket ve bıçak çizimini profesyonelce tasarlayın. Tasarım motoru baskıya hazır vektör üretir. Stüdyoyu hemen deneyin.",
+        "Grapxor ile kutu, etiket ve bıçak çizimini profesyonelce tasarlayın. Tasarım motoru baskıya hazır vektör üretir. Stüdyoyu hemen deneyin.",
     },
     hero: {
       eyebrow: "Stüdyo + tasarım motoru",
@@ -81,7 +81,7 @@ const content: SiteContent = {
       lead: "Brief verin — kutu, etiket ve dieline baskıya hazır vektör olarak çıksın. Görsel model değil; tasarım motoru.",
       primaryCta: "Stüdyoyu aç",
       secondaryCta: "Nasıl çalışır?",
-      askPlaceholder: "Paxolab’ya sor…",
+      askPlaceholder: "Grapxor’a sor…",
       stageHint: "Dieline önizleme",
     },
     valueProps: [
@@ -125,7 +125,7 @@ const content: SiteContent = {
     ],
     ctaTitle: "Stüdyoda üretmeye başlayın",
     ctaLead:
-      "Brief’inizi yazın, FORMA baskıya uygun vektör yüzeyi üretsin. Krediler ve paketler stüdyo içinde.",
+      "Brief’inizi yazın, Grapxor baskıya uygun vektör yüzeyi üretsin. Krediler ve paketler stüdyo içinde.",
   },
 
   services: {
@@ -134,11 +134,11 @@ const content: SiteContent = {
       meta: {
         title: "Profesyonel ambalaj tasarım stüdyosu",
         description:
-          "Marka ambalajınızı Paxolab ile yapılandırın: form, yüzey ve baskı hazırlığı tek stüdyoda. vektör çıktı.",
+          "Marka ambalajınızı Grapxor ile yapılandırın: form, yüzey ve baskı hazırlığı tek stüdyoda. vektör çıktı.",
       },
       hero: {
         title: "Ambalaj tasarımı",
-        lead: "Ürün koruması, rafta ayrışma ve baskı gerçekliği aynı brief’te buluşur. Paxolab, ambalajın hem yapısını hem yüzünü stüdyoda ilerletmenizi sağlar.",
+        lead: "Ürün koruması, rafta ayrışma ve baskı gerçekliği aynı brief’te buluşur. Grapxor, ambalajın hem yapısını hem yüzünü stüdyoda ilerletmenizi sağlar.",
       },
       sections: [
         {
@@ -162,8 +162,8 @@ const content: SiteContent = {
       ],
       faqs: [
         {
-          q: "FORMA ambalajı nasıl üretir?",
-          a: "Chat veya brief ile ihtiyacı netleştirirsiniz; FORMA dieline üzerinde vektör yüzey üretir. Görsel üretim modeli değil, tasarım motorudur. Asıl iş stüdyoda açılır.",
+          q: "Grapxor ambalajı nasıl üretir?",
+          a: "Chat veya brief ile ihtiyacı netleştirirsiniz; Grapxor dieline üzerinde vektör yüzey üretir. Görsel üretim modeli değil, tasarım motorudur. Asıl iş stüdyoda açılır.",
         },
         {
           q: "Çıktı vektör mü, yoksa görsel mi?",
@@ -186,11 +186,11 @@ const content: SiteContent = {
       meta: {
         title: "Profesyonel kutu tasarımı stüdyosu",
         description:
-          "Profesyonel kutu tasarımı: yapı, yüzey grafiği ve bıçak çizimi. Paxolab stüdyosunda baskıya hazır ilerleyin.",
+          "Profesyonel kutu tasarımı: yapı, yüzey grafiği ve bıçak çizimi. Grapxor stüdyosunda baskıya hazır ilerleyin.",
       },
       hero: {
         title: "Kutu tasarımı",
-        lead: "Katlanır kutu formları, logo yerleşimi ve üretim hatları birlikte düşünülür. Paxolab ile kutu brief’inizi stüdyoda somutlaştırın.",
+        lead: "Katlanır kutu formları, logo yerleşimi ve üretim hatları birlikte düşünülür. Grapxor ile kutu brief’inizi stüdyoda somutlaştırın.",
       },
       sections: [
         {
@@ -238,11 +238,11 @@ const content: SiteContent = {
       meta: {
         title: "Baskıya uygun etiket tasarımı",
         description:
-          "Şişe ve ürün etiketleri için okunaklı, baskıya uygun etiket tasarımı. Paxolab stüdyosunda brief’ten vektöre.",
+          "Şişe ve ürün etiketleri için okunaklı, baskıya uygun etiket tasarımı. Grapxor stüdyosunda brief’ten vektöre.",
       },
       hero: {
         title: "Etiket tasarımı",
-        lead: "Küçük yüzeyde hiyerarşi, yasal metin alanı ve marka kimliği dengelenir. Etiketlerinizi Paxolab ile düzenli ve üretilebilir tutun.",
+        lead: "Küçük yüzeyde hiyerarşi, yasal metin alanı ve marka kimliği dengelenir. Etiketlerinizi Grapxor ile düzenli ve üretilebilir tutun.",
       },
       sections: [
         {
@@ -271,7 +271,7 @@ const content: SiteContent = {
         },
         {
           q: "Çıktı baskıya uygun mu?",
-          a: "Amaç baskı toleranslı vektör düzendir. Malzeme ve renk onayı matbaa ile ayrıca yapılır. FORMA görsel model değil, tasarım motorudur.",
+          a: "Amaç baskı toleranslı vektör düzendir. Malzeme ve renk onayı matbaa ile ayrıca yapılır. Grapxor görsel model değil, tasarım motorudur.",
         },
         {
           q: "Kozmetik şişe etiketi yapabilir miyim?",
@@ -286,11 +286,11 @@ const content: SiteContent = {
       meta: {
         title: "Ambalaj bıçak çizimi ve dieline",
         description:
-          "Ambalaj bıçak çizimi ve dieline: kesim, kat ve yapışkan hatları. Paxolab ile üretim odaklı yapı.",
+          "Ambalaj bıçak çizimi ve dieline: kesim, kat ve yapışkan hatları. Grapxor ile üretim odaklı yapı.",
       },
       hero: {
         title: "Bıçak çizimi / dieline",
-        lead: "Dieline, ambalajın üretim dilidir. Paxolab stüdyosu tasarımı bu yapı üzerinde ilerletir; rastgele bir görsel değil, panelli bir yüzey üretir.",
+        lead: "Dieline, ambalajın üretim dilidir. Grapxor stüdyosu tasarımı bu yapı üzerinde ilerletir; rastgele bir görsel değil, panelli bir yüzey üretir.",
       },
       sections: [
         {
@@ -311,10 +311,10 @@ const content: SiteContent = {
       faqs: [
         {
           q: "Dieline / bıçak çizimi nedir?",
-          a: "Dieline, kesim, kat ve yapışkan hatlarının üretim dilidir. Paxolab tasarımı bu yapı üzerinde ilerletir; rastgele bir görsel değildir.",
+          a: "Dieline, kesim, kat ve yapışkan hatlarının üretim dilidir. Grapxor tasarımı bu yapı üzerinde ilerletir; rastgele bir görsel değildir.",
         },
         {
-          q: "FORMA dieline’i nasıl kullanır?",
+          q: "Grapxor dieline’i nasıl kullanır?",
           a: "Brief’te ürün tipi ve ölçüleri paylaşın; motor yapıya uygun vektör yüzey üretir. Revizyonlarla metin ve grafiği sıkılaştırırsınız.",
         },
         {
@@ -345,11 +345,11 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "Kozmetik ambalaj tasarımı",
         description:
-          "Kozmetik kutu ve etiket tasarımı: raf görünümü, marka dili ve baskı hazırlığı. Paxolab stüdyosu.",
+          "Kozmetik kutu ve etiket tasarımı: raf görünümü, marka dili ve baskı hazırlığı. Grapxor stüdyosu.",
       },
       hero: {
         title: "Kozmetik ambalaj tasarımı",
-        lead: "Serum, krem ve set kutularında sade hiyerarşi ve premium his. Paxolab ile kozmetik brief’inizi stüdyoda üretin.",
+        lead: "Serum, krem ve set kutularında sade hiyerarşi ve premium his. Grapxor ile kozmetik brief’inizi stüdyoda üretin.",
       },
       sections: [
         {
@@ -377,8 +377,8 @@ serviceName: "Bıçak çizimi",
           a: "Çoğu kozmetik SKU’da şişe etiketi ile dış kutu aynı marka sistemindedir. Gerekirse etiket ve kutu sayfalarını birlikte kullanın.",
         },
         {
-          q: "Paxolab görsel mi üretir?",
-          a: "Hayır. Paxolab vektör tasarım motorudur: brief → dieline + artwork. Moodboard görseli arıyorsanız başka araçlar daha uygun olabilir.",
+          q: "Grapxor görsel mi üretir?",
+          a: "Hayır. Grapxor vektör tasarım motorudur: brief → dieline + artwork. Moodboard görseli arıyorsanız başka araçlar daha uygun olabilir.",
         },
         {
           q: "İçerik listesi (INCI) otomatik mi eklenir?",
@@ -393,11 +393,11 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "Parfüm kutusu tasarımı",
         description:
-          "Parfüm kutusu ve ikincil ambalaj tasarımı. Paxolab ile yapı, yüzey ve dieline birlikte.",
+          "Parfüm kutusu ve ikincil ambalaj tasarımı. Grapxor ile yapı, yüzey ve dieline birlikte.",
       },
       hero: {
         title: "Parfüm kutusu tasarımı",
-        lead: "Parfüm kutusu rafta ve hediye anında markayı taşır. Paxolab stüdyosunda form ve tipografi dengeli bir yüzey üretin.",
+        lead: "Parfüm kutusu rafta ve hediye anında markayı taşır. Grapxor stüdyosunda form ve tipografi dengeli bir yüzey üretin.",
       },
       sections: [
         {
@@ -426,7 +426,7 @@ serviceName: "Bıçak çizimi",
         },
         {
           q: "Çıktı vektör mü?",
-          a: "Evet. Paxolab görsel model değil, vektör tasarım motorudur. Asıl iş stüdyoda açılır.",
+          a: "Evet. Grapxor görsel model değil, vektör tasarım motorudur. Asıl iş stüdyoda açılır.",
         },
         {
           q: "Fiyatı nerede görürüm?",
@@ -441,16 +441,16 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "Gıda ambalaj tasarımı",
         description:
-          "Gıda kutu ve etiket tasarımını Paxolab stüdyosunda brief’ten vektöre taşıyın. Paxolab baskıya hazır yüzey üretir — görsel model değil, tasarım motoru.",
+          "Gıda kutu ve etiket tasarımını Grapxor stüdyosunda brief’ten vektöre taşıyın. Grapxor baskıya hazır yüzey üretir — görsel model değil, tasarım motoru.",
       },
       hero: {
         title: "Gıda ambalaj tasarımı",
-        lead: "Gıda markaları için kutu ve etiket yüzeyini brief’ten vektöre taşıyın. Paxolab, rafta okunaklı ve baskıya yönelik bir düzen üretir — görsel üretim modeli değil, tasarım motoru.",
+        lead: "Gıda markaları için kutu ve etiket yüzeyini brief’ten vektöre taşıyın. Grapxor, rafta okunaklı ve baskıya yönelik bir düzen üretir — görsel üretim modeli değil, tasarım motoru.",
       },
       sections: [
         {
           title: "Raf ve okunaklılık",
-          body: "Gıda ambalajında ürün adı, net miktar ve temel bilgiler hızlı okunmalıdır. Paxolab stüdyosunda brief’i panellere böler, hiyerarşiyi sade tutarsınız.",
+          body: "Gıda ambalajında ürün adı, net miktar ve temel bilgiler hızlı okunmalıdır. Grapxor stüdyosunda brief’i panellere böler, hiyerarşiyi sade tutarsınız.",
         },
         {
           title: "Kutu ve etiket birlikte",
@@ -458,11 +458,11 @@ serviceName: "Bıçak çizimi",
         },
         {
           title: "Brief’ten dieline + vektöre",
-          body: "Akış sohbet veya brief ile başlar; FORMA dieline üzerinde vektör artwork üretir. Pazarlama sitesi bilgilendirir — asıl iş stüdyoda açılır.",
+          body: "Akış sohbet veya brief ile başlar; Grapxor dieline üzerinde vektör artwork üretir. Pazarlama sitesi bilgilendirir — asıl iş stüdyoda açılır.",
         },
         {
           title: "Baskıya hazırlık",
-          body: "Amaç rastgele bir görsel değil, üretim diline yakın bir yüzeydir. Yapı tarafı için bıçak çizimi ve baskıya hazır dieline sayfalarını inceleyin; sorularınız için merhaba@paxolab.com.",
+          body: "Amaç rastgele bir görsel değil, üretim diline yakın bir yüzeydir. Yapı tarafı için bıçak çizimi ve baskıya hazır dieline sayfalarını inceleyin; sorularınız için merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -474,8 +474,8 @@ serviceName: "Bıçak çizimi",
       ],
       faqs: [
         {
-          q: "Paxolab gıda ambalajını nasıl üretir?",
-          a: "Chat veya brief ile ihtiyacı netleştirirsiniz; FORMA dieline + vektör yüzey üretir. Rastgele bir görsel modeli değil, baskıya yönelik bir tasarım motorudur.",
+          q: "Grapxor gıda ambalajını nasıl üretir?",
+          a: "Chat veya brief ile ihtiyacı netleştirirsiniz; Grapxor dieline + vektör yüzey üretir. Rastgele bir görsel modeli değil, baskıya yönelik bir tasarım motorudur.",
         },
         {
           q: "Gıda için yasal metinler stüdyoda otomatik mi yazılır?",
@@ -490,8 +490,8 @@ serviceName: "Bıçak çizimi",
           a: "Ürün formuna göre değişir. Kararsızsanız etiket mi kutu mu rehberini ve ilgili hizmet sayfalarını kullanın; gerekirse ikisini aynı marka sisteminde ilerletin.",
         },
         {
-          q: "Paxolab bir görsel üretim modeli mi?",
-          a: "Hayır. Paxolab bir ambalaj tasarım motorudur: brief → dieline + vektör artwork. Pazarlama sitesi açıklar; tasarım stüdyoda yapılır.",
+          q: "Grapxor bir görsel üretim modeli mi?",
+          a: "Hayır. Grapxor bir ambalaj tasarım motorudur: brief → dieline + vektör artwork. Pazarlama sitesi açıklar; tasarım stüdyoda yapılır.",
         },
       ],
       serviceName: "Gıda ambalaj tasarımı",
@@ -502,11 +502,11 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "Serum ve krem kutusu tasarımı",
         description:
-          "Serum ve krem kutusu tasarımını Paxolab stüdyosunda brief’ten vektöre taşıyın. FORMA dieline üzerinde baskıya yönelik yüzey üretir.",
+          "Serum ve krem kutusu tasarımını Grapxor stüdyosunda brief’ten vektöre taşıyın. Grapxor dieline üzerinde baskıya yönelik yüzey üretir.",
       },
       hero: {
         title: "Serum ve krem kutusu tasarımı",
-        lead: "Serum ve krem SKU’ları için sade hiyerarşili kutu yüzeyi. Brief’i Paxolab stüdyosunda dieline + vektöre taşıyın — Paxolab bir tasarım motorudur, görsel model değil.",
+        lead: "Serum ve krem SKU’ları için sade hiyerarşili kutu yüzeyi. Brief’i Grapxor stüdyosunda dieline + vektöre taşıyın — Grapxor bir tasarım motorudur, görsel model değil.",
       },
       sections: [
         {
@@ -523,7 +523,7 @@ serviceName: "Bıçak çizimi",
         },
         {
           title: "Brief’ten vektöre",
-          body: "Sohbet veya brief ile başlayın; FORMA dieline üzerinde vektör artwork üretir. Pazarlama sitesi bilgilendirir — tasarım stüdyoda açılır. Sorular: merhaba@paxolab.com.",
+          body: "Sohbet veya brief ile başlayın; Grapxor dieline üzerinde vektör artwork üretir. Pazarlama sitesi bilgilendirir — tasarım stüdyoda açılır. Sorular: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -539,8 +539,8 @@ serviceName: "Bıçak çizimi",
           a: "Bu hub her iki ürün tipini kapsar; serum ve krem için ayrı bölümler vardır. Genel kozmetik ihtiyaçları için kozmetik ambalaj sayfasını da kullanın.",
         },
         {
-          q: "Paxolab görsel mi üretir?",
-          a: "Hayır. Paxolab brief’ten dieline + vektör artwork üreten bir tasarım motorudur; image-gen modeli değildir. İş stüdyoda açılır.",
+          q: "Grapxor görsel mi üretir?",
+          a: "Hayır. Grapxor brief’ten dieline + vektör artwork üreten bir tasarım motorudur; image-gen modeli değildir. İş stüdyoda açılır.",
         },
         {
           q: "İçerik listesi (INCI) otomatik mi eklenir?",
@@ -563,19 +563,19 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "AI ambalaj tasarımı nedir?",
         description:
-          "AI ambalaj tasarımı nedir? Paxolab bir vektör tasarım motorudur: brief’ten dieline + artwork — görsel üretim modeli değil.",
+          "AI ambalaj tasarımı nedir? Grapxor bir vektör tasarım motorudur: brief’ten dieline + artwork — görsel üretim modeli değil.",
       },
       hero: {
         title: "AI ambalaj tasarımı nedir?",
-        lead: "“AI ambalaj” çoğu zaman görsel üretimle karıştırılır. Paxolab’da, chat ve brief’ten dieline + vektör artwork üreten bir tasarım motorudur — image-gen modeli değil.",
+        lead: "“AI ambalaj” çoğu zaman görsel üretimle karıştırılır. Grapxor, chat ve brief’ten dieline + vektör artwork üreten bir tasarım motorudur — image-gen modeli değil.",
       },
       sections: [
         {
           title: "Görsel model ile vektör motor farkı",
-          body: "Görsel modeller stilize piksel görüntü üretir. Paxolab ise ambalaj panelleri ve dieline üzerinde baskıya yönelik vektör yüzey üretir. Bu ayrım matbaaya giden dosya kalitesini belirler.",
+          body: "Görsel modeller stilize piksel görüntü üretir. Grapxor ise ambalaj panelleri ve dieline üzerinde baskıya yönelik vektör yüzey üretir. Bu ayrım matbaaya giden dosya kalitesini belirler.",
         },
         {
-          title: "Paxolab akışı",
+          title: "Grapxor akışı",
           body: "Sohbet veya brief ile ihtiyacı netleştirirsiniz; stüdyo dieline + artwork üretir ve revizyonu orada sürdürürsünüz. Bu pazarlama sitesi bilgilendirir — asıl iş stüdyoda açılır.",
         },
         {
@@ -585,7 +585,7 @@ serviceName: "Bıçak çizimi",
       ],
       related: [
         { href: "/ai-vs-grafik-ajans-ambalaj", label: "AI vs grafik ajans" },
-        { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+        { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
         { href: "/ai-ambalaj-mitleri", label: "AI ambalaj mitleri" },
         { href: "/nasil-calisir", label: "Nasıl çalışır?" },
         { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
@@ -593,7 +593,7 @@ serviceName: "Bıçak çizimi",
       faqs: [
         {
           q: "AI ambalaj tasarımı görsel üretim midir?",
-          a: "Çoğu araçta öyle sanılır. Paxolab’da vektör tasarım motorudur: sohbet veya brief → dieline + artwork. Image-gen modeli değildir.",
+          a: "Çoğu araçta öyle sanılır. Grapxor bir vektör tasarım motorudur: sohbet veya brief → dieline + artwork. Image-gen modeli değildir.",
         },
         {
           q: "Chat ile mi çalışıyor?",
@@ -609,7 +609,7 @@ serviceName: "Bıçak çizimi",
         },
         {
           q: "Ücretsiz midir?",
-          a: "Kredi kullanımı fiyatlandırma sayfasında anlatılır. Güncel paketler için stüdyoya bakın; sorular için merhaba@paxolab.com.",
+          a: "Kredi kullanımı fiyatlandırma sayfasında anlatılır. Güncel paketler için stüdyoya bakın; sorular için merhaba@grapxor.com.",
         },
       ],
       serviceName: "AI ambalaj tasarımı nedir",
@@ -620,11 +620,11 @@ serviceName: "Bıçak çizimi",
       meta: {
         title: "Baskıya hazır dieline",
         description:
-          "Baskıya hazır dieline ve SVG odaklı export. Paxolab ile brief’ten vektör yüzeye; bıçak çizimi sayfasının üretim tamamlayıcısı.",
+          "Baskıya hazır dieline ve SVG odaklı export. Grapxor ile brief’ten vektör yüzeye; bıçak çizimi sayfasının üretim tamamlayıcısı.",
       },
       hero: {
         title: "Baskıya hazır dieline",
-        lead: "Dieline’i yalnızca kavram olarak değil, vektör export ve preflight bilinciyle ele alın. Paxolab brief’ten dieline + vektör artwork üretir — görsel model değil, tasarım motoru.",
+        lead: "Dieline’i yalnızca kavram olarak değil, vektör export ve preflight bilinciyle ele alın. Grapxor brief’ten dieline + vektör artwork üretir — görsel model değil, tasarım motoru.",
       },
       sections: [
         {
@@ -637,11 +637,11 @@ serviceName: "Bıçak çizimi",
         },
         {
           title: "Bıçak çizimi sayfasıyla ilişki",
-          body: "Kavram ve yapı için bıçak çizimi (/bicki-cizimi) sayfamıza bakın. Bu sayfa export / preflight odağını tamamlar; aynı içeriğin kopyası değildir. Üretim Paxolab stüdyosunda başlar.",
+          body: "Kavram ve yapı için bıçak çizimi (/bicki-cizimi) sayfamıza bakın. Bu sayfa export / preflight odağını tamamlar; aynı içeriğin kopyası değildir. Üretim Grapxor stüdyosunda başlar.",
         },
         {
           title: "Yüksek seviye kontrol başlıkları",
-          body: "Güvenli alan, kesim-grafik ayrımı ve metin okunaklılığını matbaaya sormadan önce gözden geçirin. Güncel export seçenekleri için stüdyoyu açın veya merhaba@paxolab.com yazın.",
+          body: "Güvenli alan, kesim-grafik ayrımı ve metin okunaklılığını matbaaya sormadan önce gözden geçirin. Güncel export seçenekleri için stüdyoyu açın veya merhaba@grapxor.com yazın.",
         },
       ],
       related: [
@@ -658,15 +658,15 @@ serviceName: "Bıçak çizimi",
         },
         {
           q: "Çıktı SVG mi olur?",
-          a: "Paxolab vektör odaklı üretim yapar; export ayrıntıları stüdyo sürümüne göre değişebilir. Güncel formatlar için stüdyoyu açın veya merhaba@paxolab.com yazın.",
+          a: "Grapxor vektör odaklı üretim yapar; export ayrıntıları stüdyo sürümüne göre değişebilir. Güncel formatlar için stüdyoyu açın veya merhaba@grapxor.com yazın.",
         },
         {
-          q: "Preflight’ı Paxolab mı yapar?",
+          q: "Preflight’ı Grapxor mı yapar?",
           a: "Stüdyo baskıya yönelik yüzey ve dieline uyumu için tasarlanmıştır. Nihai matbaa preflight’ı ve malzeme onayı üretim partnerinizle doğrulanmalıdır.",
         },
         {
-          q: "Paxolab görsel mi çiziyor?",
-          a: "Hayır. Paxolab brief’ten dieline + vektör artwork üreten bir tasarım motorudur; image-gen modeli değildir.",
+          q: "Grapxor görsel mi çiziyor?",
+          a: "Hayır. Grapxor brief’ten dieline + vektör artwork üreten bir tasarım motorudur; image-gen modeli değildir.",
         },
         {
           q: "Baskıya hazır ne demek?",
@@ -679,7 +679,7 @@ serviceName: "Bıçak çizimi",
         steps: [
         { name: 'Dieline ihtiyacını tanımlayın', text: 'Kesim, kat, yapışkan hatları üretim dilidir.' },
         { name: 'Brief ve ölçüyü girin', text: 'Stüdyoda formu ve mm değerlerini netleştirin.' },
-        { name: 'Üretimi alın', text: 'FORMA panelli vektör yüzey üretir.' },
+        { name: 'Üretimi alın', text: 'Grapxor panelli vektör yüzey üretir.' },
         { name: 'Preflight ve export', text: 'Kontrol listesini geçip SVG/vektör alın.' },
         { name: 'Matbaa onayı', text: 'Nihai onay sizde/matbaada; abartılı garanti yok.' },
       ],
@@ -692,11 +692,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Etiket mi kutu mu? Karar rehberi",
         description:
-          "Etiket mi kutu mu emin değil misiniz? Paxolab’da iki modu karşılaştırın; brief’ten dieline + vektöre Paxolab ile ilerleyin.",
+          "Etiket mi kutu mu emin değil misiniz? Grapxor’da iki modu karşılaştırın; brief’ten dieline + vektöre Grapxor ile ilerleyin.",
       },
       hero: {
         title: "Etiket mi, kutu mu?",
-        lead: "Ürün formu ve satış anı seçimi belirler. Paxolab’da etiket ve kutu ayrı modlardır; gerekirse aynı marka sisteminde birlikte ilerlersiniz. Paxolab brief’ten vektör üretir — görsel model değil.",
+        lead: "Ürün formu ve satış anı seçimi belirler. Grapxor’da etiket ve kutu ayrı modlardır; gerekirse aynı marka sisteminde birlikte ilerlersiniz. Grapxor brief’ten vektör üretir — görsel model değil.",
       },
       sections: [
         {
@@ -713,7 +713,7 @@ serviceName: "Baskıya hazır dieline",
         },
         {
           title: "Stüdyoda netleştirin",
-          body: "Chat veya brief ile formu ve hedefi yazın; FORMA dieline + vektör artwork üretir. Pazarlama sitesi bilgilendirir — iş stüdyoda açılır. Sorular: merhaba@paxolab.com.",
+          body: "Chat veya brief ile formu ve hedefi yazın; Grapxor dieline + vektör artwork üretir. Pazarlama sitesi bilgilendirir — iş stüdyoda açılır. Sorular: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -737,12 +737,12 @@ serviceName: "Baskıya hazır dieline",
           a: "Katlanır kutu ve benzeri yapılarda dieline / bıçak çizimi merkezidir. Etiketlerde biçim ve kesim farklıdır; yine de baskıya uygun vektör düzen önemlidir.",
         },
         {
-          q: "Paxolab hangisini otomatik seçer?",
-          a: "Siz brief’te ürün formunu ve hedefi netleştirirsiniz. Paxolab görsel model değil; verdiğiniz brief’e göre dieline + vektör artwork üreten tasarım motorudur.",
+          q: "Grapxor hangisini otomatik seçer?",
+          a: "Siz brief’te ürün formunu ve hedefi netleştirirsiniz. Grapxor görsel model değil; verdiğiniz brief’e göre dieline + vektör artwork üreten tasarım motorudur.",
         },
         {
           q: "Kararsızsam nereye bakayım?",
-          a: "Bu sayfadaki ölçütleri kullanın, ardından etiket veya kutu sayfasına geçin. Hâlâ net değilse merhaba@paxolab.com yazın veya stüdyoda sohbetle ilerleyin.",
+          a: "Bu sayfadaki ölçütleri kullanın, ardından etiket veya kutu sayfasına geçin. Hâlâ net değilse merhaba@grapxor.com yazın veya stüdyoda sohbetle ilerleyin.",
         },
       ],
       serviceName: "Etiket mi kutu mu",
@@ -753,11 +753,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Private label gıda kutusu brief’i",
         description:
-          "Private label gıda kutusu brief’inde ölçü, panel, yasal alan ve marka kitini netleştirin. FORMA ile brief’ten dieline + vektöre.",
+          "Private label gıda kutusu brief’inde ölçü, panel, yasal alan ve marka kitini netleştirin. Grapxor ile brief’ten dieline + vektöre.",
       },
       hero: {
         title: "Private label gıda kutusu brief’i",
-        lead: "Matbaaya gitmeden önce ürün adı, net miktar, SKU, ölçü ve panel rezervlerini brief’te toplayın. Paxolab’da FORMA brief’ten dieline + vektör yüzey üretir — görsel model değil, tasarım motoru.",
+        lead: "Matbaaya gitmeden önce ürün adı, net miktar, SKU, ölçü ve panel rezervlerini brief’te toplayın. Grapxor brief’ten dieline + vektör yüzey üretir — görsel model değil, tasarım motoru.",
       },
       sections: [
         {
@@ -773,8 +773,8 @@ serviceName: "Baskıya hazır dieline",
           body: "Zorunlu bilgi alanları için panel rezervi bırakın. Metin doğruluğu markanın ve danışmanın sorumluluğundadır; stüdyo okunaklı alan düzenine yardımcı olur.",
         },
         {
-          title: "Marka kiti ve FORMA akışı",
-          body: "Logo, renk ve tipografi notlarını brief’e bağlayın. Akış chat → brief → dieline + vektör artwork. Pazarlama sitesi bilgilendirir; üretim stüdyoda açılır. Sorular: merhaba@paxolab.com.",
+          title: "Marka kiti ve Grapxor akışı",
+          body: "Logo, renk ve tipografi notlarını brief’e bağlayın. Akış chat → brief → dieline + vektör artwork. Pazarlama sitesi bilgilendirir; üretim stüdyoda açılır. Sorular: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -790,7 +790,7 @@ serviceName: "Baskıya hazır dieline",
           a: "Evet — en/boy/yükseklik veya dieline referansı yoksa yüzey panellere oturmaz. Bilmiyorsanız matbaa/kalıp ölçüsünü brief’e not edin.",
         },
         {
-          q: "FORMA brief’i benim yerime doldurur mu?",
+          q: "Grapxor brief’i benim yerime doldurur mu?",
           a: "Chat ile ihtiyacı netleştirmenize yardım eder; ürün yasal metinleri ve marka kararları sizindir. Çıktı dieline + vektör yüzeydir.",
         },
         {
@@ -806,11 +806,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Gıda etiket zorunlu bilgi alanları",
         description:
-          "Gıda etiketinde tipik zorunlu bilgi alanları için tasarım checklist’i. Hukuki tavsiye değil; FORMA alan düzeni üretir.",
+          "Gıda etiketinde tipik zorunlu bilgi alanları için tasarım checklist’i. Hukuki tavsiye değil; Grapxor alan düzeni üretir.",
       },
       hero: {
         title: "Gıda etiket zorunlu bilgi alanları",
-        lead: "Etiket yüzeyinde hangi alanların yer bulması gerektiğini tasarım diliyle çerçeveleyin. Bu sayfa hukuki tavsiye değildir — FORMA panel düzeni ve vektör yüzey üretir; metin doğruluğu sizde kalır.",
+        lead: "Etiket yüzeyinde hangi alanların yer bulması gerektiğini tasarım diliyle çerçeveleyin. Bu sayfa hukuki tavsiye değildir — Grapxor panel düzeni ve vektör yüzey üretir; metin doğruluğu sizde kalır.",
       },
       sections: [
         {
@@ -826,8 +826,8 @@ serviceName: "Baskıya hazır dieline",
           body: "Küçük etiketlerde zorunlu alanlar önce gelir. Sığmazsa arka panel, kutu veya ek etikete taşımayı brief’te belirtin.",
         },
         {
-          title: "Panel rezervi ve FORMA",
-          body: "FORMA alan bırakmanıza ve baskıya yönelik vektör yüzey üretmeye yardımcı olur; içeriği siz onaylarsınız. Stüdyoyu açın veya merhaba@paxolab.com yazın.",
+          title: "Panel rezervi ve Grapxor",
+          body: "Grapxor alan bırakmanıza ve baskıya yönelik vektör yüzey üretmeye yardımcı olur; içeriği siz onaylarsınız. Stüdyoyu açın veya merhaba@grapxor.com yazın.",
         },
       ],
       related: [
@@ -839,7 +839,7 @@ serviceName: "Baskıya hazır dieline",
       ],
       faqs: [
         {
-          q: "Paxolab yasal metinleri otomatik yazar mı?",
+          q: "Grapxor yasal metinleri otomatik yazar mı?",
           a: "Hayır. Stüdyo panel ve okunaklılık için alan bırakmanıza yardımcı olur; içerik doğruluğu sizde ve danışmanınızdadır.",
         },
         {
@@ -859,11 +859,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Atıştırmalık: kutu mu, poşet mi?",
         description:
-          "Atıştırmalık ambalajında kutu ve poşet karar kriterleri: raf, koruma, marka algısı. FORMA ile brief’ten vektöre.",
+          "Atıştırmalık ambalajında kutu ve poşet karar kriterleri: raf, koruma, marka algısı. Grapxor ile brief’ten vektöre.",
       },
       hero: {
         title: "Atıştırmalık ambalaj: kutu mu, poşet mi?",
-        lead: "Raf duruşu, koruma, doldurma hattı ve marka algısı formatı belirler. Paxolab’da seçimi brief’e yazın; FORMA yapı + vektör yüzey üretir — image-gen değil.",
+        lead: "Raf duruşu, koruma, doldurma hattı ve marka algısı formatı belirler. Grapxor’da seçimi brief’e yazın; Grapxor yapı + vektör yüzey üretir — image-gen değil.",
       },
       sections: [
         {
@@ -880,7 +880,7 @@ serviceName: "Baskıya hazır dieline",
         },
         {
           title: "Brief’e formatı yazmak",
-          body: "Formatı, ölçüyü ve baskı yöntemini net yazın. FORMA her yüzey için dieline + vektör mantığıyla ilerler. Stüdyo CTA · merhaba@paxolab.com.",
+          body: "Formatı, ölçüyü ve baskı yöntemini net yazın. Grapxor her yüzey için dieline + vektör mantığıyla ilerler. Stüdyo CTA · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -896,8 +896,8 @@ serviceName: "Baskıya hazır dieline",
           a: "Raf ve marka diline bağlıdır. Katlanır kutu genelde hediye/set algısı verir; poşet hızlı tüketim ve bariyer için güçlü olabilir.",
         },
         {
-          q: "İç poşet + dış kutu Paxolab’da tek projede mi?",
-          a: "Brief’te iki yüzeyi net ayırın. FORMA her yüzey için dieline + vektör mantığıyla ilerler; marka sistemini tutarlı tutun.",
+          q: "İç poşet + dış kutu Grapxor’da tek projede mi?",
+          a: "Brief’te iki yüzeyi net ayırın. Grapxor her yüzey için dieline + vektör mantığıyla ilerler; marka sistemini tutarlı tutun.",
         },
         {
           q: "Poşet için de dieline var mı?",
@@ -912,11 +912,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Serum kutusu ölçü brief’i",
         description:
-          "Serum şişesine oturan kutu için ölçü brief’i: tolerans, paneller, dropper notları. FORMA ile dieline + vektör.",
+          "Serum şişesine oturan kutu için ölçü brief’i: tolerans, paneller, dropper notları. Grapxor ile dieline + vektör.",
       },
       hero: {
         title: "Serum kutusu ölçü brief’i",
-        lead: "Şişe ölçüleri ile kutu iç boşluğunu toleransla düşünün. Paxolab’da brief’e panel listesini yazın; FORMA dieline + vektör yüzey üretir — uydurma “her serum X mm” tablosu yoktur.",
+        lead: "Şişe ölçüleri ile kutu iç boşluğunu toleransla düşünün. Grapxor’da brief’e panel listesini yazın; Grapxor dieline + vektör yüzey üretir — uydurma “her serum X mm” tablosu yoktur.",
       },
       sections: [
         {
@@ -932,8 +932,8 @@ serviceName: "Baskıya hazır dieline",
           body: "Hacim (ml), kabaca boyut, marka dili ve regülasyon alanlarını yazın. Ölçü yoksa tahmini yapı risklidir — kalıp kesinleşince dieline’ı güncelleyin.",
         },
         {
-          title: "FORMA’da dieline + yüzey",
-          body: "FORMA vektör tasarım motorudur. Kozmetik, kutu ve bıçak çizimi sayfalarıyla köprüleyin. Stüdyo · merhaba@paxolab.com.",
+          title: "Grapxor’da dieline + yüzey",
+          body: "Grapxor vektör tasarım motorudur. Kozmetik, kutu ve bıçak çizimi sayfalarıyla köprüleyin. Stüdyo · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -949,7 +949,7 @@ serviceName: "Baskıya hazır dieline",
           a: "Cap dahil yükseklik, gövde çapı/genişlik ve en kritik çıkıntıyı not edin. Mümkünse fiziksel numune veya teknik çizim brief’e eklenir.",
         },
         {
-          q: "Ölçü yoksa FORMA kutu üretir mi?",
+          q: "Ölçü yoksa Grapxor kutu üretir mi?",
           a: "Tahmini yapı ile ilerlemek risklidir. En azından hedef hacim (ml) ve kabaca boyut verin; kalıp kesinleşince dieline’ı güncelleyin.",
         },
         {
@@ -965,11 +965,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Krem kavanoz etiketi tasarımı",
         description:
-          "Krem kavanoz etiketi: eğri yüzey, wrap/spot, INCI hiyerarşisi. FORMA ile baskıya yönelik vektör yüzey.",
+          "Krem kavanoz etiketi: eğri yüzey, wrap/spot, INCI hiyerarşisi. Grapxor ile baskıya yönelik vektör yüzey.",
       },
       hero: {
         title: "Krem kavanoz etiketi tasarımı",
-        lead: "Kavanoz geometrisinde wrap veya spot etiket seçin; içerik/INCI alanlarını hiyerarşiyle yerleştirin. FORMA image-gen değil — baskıya yönelik vektör yüzey üretir.",
+        lead: "Kavanoz geometrisinde wrap veya spot etiket seçin; içerik/INCI alanlarını hiyerarşiyle yerleştirin. Grapxor image-gen değil — baskıya yönelik vektör yüzey üretir.",
       },
       sections: [
         {
@@ -985,8 +985,8 @@ serviceName: "Baskıya hazır dieline",
           body: "Kapak üstü veya alt etiket senaryolarını brief’te belirtin. E-ticaret ve hediye setlerinde dış kutu sık eklenir — etiket mi kutu mu rehberine bakın.",
         },
         {
-          title: "FORMA ile vektör yüzey",
-          body: "Etiket tasarımı ve serum/krem hub’ı ile aynı marka dilinde ilerleyin. Stüdyo · merhaba@paxolab.com.",
+          title: "Grapxor ile vektör yüzey",
+          body: "Etiket tasarımı ve serum/krem hub’ı ile aynı marka dilinde ilerleyin. Stüdyo · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1006,7 +1006,7 @@ serviceName: "Baskıya hazır dieline",
           a: "Kanal ve marka diline bağlı. E-ticaret ve hediye setlerinde dış kutu sık eklenir — karar sayfasına bakın.",
         },
         {
-          q: "FORMA kavanoz 3D’si mi üretir?",
+          q: "Grapxor kavanoz 3D’si mi üretir?",
           a: "Odak baskıya yönelik vektör yüzey ve yapı dilidir; pazarlama sitesi bilgilendirir, tasarım stüdyoda yapılır.",
         },
       ],
@@ -1018,11 +1018,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "Skincare set kutusu tasarımı",
         description:
-          "Skincare set kutusu: çoklu SKU, insert, hediye ve unboxing. FORMA ile brief’ten dieline + artwork.",
+          "Skincare set kutusu: çoklu SKU, insert, hediye ve unboxing. Grapxor ile brief’ten dieline + artwork.",
       },
       hero: {
         title: "Skincare set kutusu tasarımı",
-        lead: "Çoklu ürünü tek marka yüzeyinde toplayın. Set içeriği, insert ihtiyacı ve dış panel metinlerini brief’e yazın; FORMA dieline + vektör üretir.",
+        lead: "Çoklu ürünü tek marka yüzeyinde toplayın. Set içeriği, insert ihtiyacı ve dış panel metinlerini brief’e yazın; Grapxor dieline + vektör üretir.",
       },
       sections: [
         {
@@ -1038,8 +1038,8 @@ serviceName: "Baskıya hazır dieline",
           body: "Dış yüzey hediye algısı ve açılış deneyimini taşıyabilir. E-ticaret odaklıysa dayanıklılığı ayrı spoke ile birlikte düşünün.",
         },
         {
-          title: "Brief → FORMA",
-          body: "Kozmetik hub, kutu ve bıçak çizimi sayfalarıyla köprüleyin. Stüdyo · merhaba@paxolab.com.",
+          title: "Brief → Grapxor",
+          body: "Kozmetik hub, kutu ve bıçak çizimi sayfalarıyla köprüleyin. Stüdyo · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1071,11 +1071,11 @@ serviceName: "Baskıya hazır dieline",
       meta: {
         title: "AI ambalaj mı, grafik ajans mı?",
         description:
-          "AI ambalaj ile grafik ajansı ne zaman? FORMA vektör motoru vs image-gen; dürüst sınırlar, hibrit senaryolar.",
+          "AI ambalaj ile grafik ajansı ne zaman? Grapxor vektör motoru vs image-gen; dürüst sınırlar, hibrit senaryolar.",
       },
       hero: {
         title: "AI ambalaj mı, grafik ajans mı?",
-        lead: "Hız, dieline/yapı, marka stratejisi ve revizyon ekseninde karşılaştırın. Paxolab ajansın yerini alan sihir iddiası taşımaz; FORMA brief’ten baskıya yönelik vektör yüzey üretir.",
+        lead: "Hız, dieline/yapı, marka stratejisi ve revizyon ekseninde karşılaştırın. Grapxor ajansın yerini alan sihir iddiası taşımaz; Grapxor brief’ten baskıya yönelik vektör yüzey üretir.",
       },
       sections: [
         {
@@ -1083,32 +1083,32 @@ serviceName: "Baskıya hazır dieline",
           body: "Hız, yapı/dieline, marka stratejisi ve revizyon döngüsünü aynı çerçevede tartın. “Her zaman daha ucuz/hızlı” kesin iddiası yoktur.",
         },
         {
-          title: "Image-gen vs FORMA",
-          body: "Image-gen stilize piksel üretir. FORMA Midjourney/DALL·E değildir; ambalaj panelleri ve dieline üzerinde vektör tasarım motorudur.",
+          title: "Image-gen vs Grapxor",
+          body: "Image-gen stilize piksel üretir. Grapxor Midjourney/DALL·E değildir; ambalaj panelleri ve dieline üzerinde vektör tasarım motorudur.",
         },
         {
-          title: "Ajansın ve Paxolab’ın güçleri",
-          body: "Ajans strateji, kampanya ve kompleks sistemlerde güçlüdür. Paxolab brief → baskıya yönelik yüzey stüdyo motorunda güçlüdür. Hibrit kullanım sık görülür.",
+          title: "Ajansın ve Grapxor’un güçleri",
+          body: "Ajans strateji, kampanya ve kompleks sistemlerde güçlüdür. Grapxor brief → baskıya yönelik yüzey stüdyo motorunda güçlüdür. Hibrit kullanım sık görülür.",
         },
         {
           title: "Hibrit senaryolar",
-          body: "Ajans marka dilini kurar; FORMA dieline + vektör yüzeyi üretir — veya tersi. Parent hub ve mitler spoke’u ayrımı netleştirir. merhaba@paxolab.com.",
+          body: "Ajans marka dilini kurar; Grapxor dieline + vektör yüzeyi üretir — veya tersi. Parent hub ve mitler spoke’u ayrımı netleştirir. merhaba@grapxor.com.",
         },
       ],
       related: [
         { href: "/ai-ambalaj-tasarimi", label: "AI ambalaj tasarımı" },
-        { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+        { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
         { href: "/ai-ambalaj-mitleri", label: "AI ambalaj mitleri" },
         { href: "/ambalaj-tasarimi", label: "Ambalaj tasarımı" },
         { href: "/nasil-calisir", label: "Nasıl çalışır?" },
       ],
       faqs: [
         {
-          q: "Paxolab bir ajansın yerini alır mı?",
+          q: "Grapxor bir ajansın yerini alır mı?",
           a: "Hayır iddiası yok. Ambalaj brief’inden vektör yüzeye giden stüdyo motorudur; geniş marka stratejisi için ajans hâlâ gerekebilir.",
         },
         {
-          q: "Ajans çıktısını FORMA’ya aktarabilir miyim?",
+          q: "Ajans çıktısını Grapxor’a aktarabilir miyim?",
           a: "Marka kiti ve ölçüleri brief’e taşıyabilirsiniz. Amaç baskıya yönelik yapı + yüzey üretmektir.",
         },
         {
@@ -1119,21 +1119,21 @@ serviceName: "Baskıya hazır dieline",
       serviceName: "AI vs grafik ajans ambalaj",
       serviceType: "AiVsDesignAgencyPackaging",
     },
-    "forma-vektor-motoru-nasil-calisir": {
-      slug: "forma-vektor-motoru-nasil-calisir",
+    "grapxor-vektor-motoru-nasil-calisir": {
+      slug: "grapxor-vektor-motoru-nasil-calisir",
       meta: {
-        title: "FORMA vektör motoru nasıl çalışır?",
+        title: "Grapxor vektör motoru nasıl çalışır?",
         description:
-          "FORMA vektör motoru: chat → brief → dieline + artwork. Image-gen değil; Paxolab stüdyo tasarım motoru.",
+          "Grapxor vektör motoru: chat → brief → dieline + artwork. Image-gen değil; Grapxor stüdyo tasarım motoru.",
       },
       hero: {
-        title: "FORMA vektör motoru nasıl çalışır?",
-        lead: "FORMA, brief’ten dieline + vektör artwork üreten bir ambalaj tasarım motorudur — görsel üretim modeli değil. Pazarlama sitesi bilgilendirir; stüdyo tasarlar.",
+        title: "Grapxor vektör motoru nasıl çalışır?",
+        lead: "Grapxor, brief’ten dieline + vektör artwork üreten bir ambalaj tasarım motorudur — görsel üretim modeli değil. Pazarlama sitesi bilgilendirir; stüdyo tasarlar.",
       },
       sections: [
         {
           title: "Vektör motor vs görsel model",
-          body: "Görsel modeller stilize piksel üretir. FORMA panelli yüzey ve dieline dilinde baskıya yönelik vektör üretir.",
+          body: "Görsel modeller stilize piksel üretir. Grapxor panelli yüzey ve dieline dilinde baskıya yönelik vektör üretir.",
         },
         {
           title: "Akış: chat → brief → dieline + artwork",
@@ -1145,7 +1145,7 @@ serviceName: "Baskıya hazır dieline",
         },
         {
           title: "Sonraki adım: preflight",
-          body: "Baskıya hazır dieline hub’ı ve preflight checklist ile matbaa onayına hazırlanın. merhaba@paxolab.com.",
+          body: "Baskıya hazır dieline hub’ı ve preflight checklist ile matbaa onayına hazırlanın. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1157,7 +1157,7 @@ serviceName: "Baskıya hazır dieline",
       ],
       faqs: [
         {
-          q: "FORMA bir image generator mı?",
+          q: "Grapxor bir image generator mı?",
           a: "Hayır. Brief’ten dieline + vektör artwork üreten bir ambalaj tasarım motorudur.",
         },
         {
@@ -1170,17 +1170,17 @@ serviceName: "Baskıya hazır dieline",
         },
       ],
             howto: {
-        name: 'FORMA vektör motoru nasıl kullanılır?',
+        name: 'Grapxor vektör motoru nasıl kullanılır?',
         description: 'Chat ve brief’ten dieline üzerinde vektör artwork’e giden akış.',
         steps: [
         { name: 'Brief’i netleştirin', text: 'Ürün tipi, ölçü, marka notları; sohbet yardımcı olur.' },
         { name: 'Şablon / dieline seçin', text: 'Yapı panelleri üretim dilinde kurulur.' },
-        { name: 'FORMA üretimi', text: 'Nihai baskı yüzeyi vektör motordur; rastgele görsel model değil.' },
+        { name: 'Grapxor üretimi', text: 'Nihai baskı yüzeyi vektör motordur; rastgele görsel model değil.' },
         { name: 'Revize edin', text: 'Metin ve yerleşimi iterasyonlarla sıkılaştırın.' },
         { name: 'Export / stüdyo devamı', text: 'Krediler ve paketler stüdyo içindedir.' },
       ],
       },
-serviceName: "FORMA vektör motoru nasıl çalışır",
+serviceName: "Grapxor vektör motoru nasıl çalışır",
       serviceType: "FormaVectorEngineExplainer",
     },
     "ai-ambalaj-mitleri": {
@@ -1188,11 +1188,11 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
       meta: {
         title: "AI ambalaj mitleri",
         description:
-          "AI ambalaj mitleri: görsel ≠ matbaa, dieline şart, yasal metin otomatik değil. Paxolab + FORMA gerçekçi beklenti.",
+          "AI ambalaj mitleri: görsel ≠ matbaa, dieline şart, yasal metin otomatik değil. Grapxor gerçekçi beklenti.",
       },
       hero: {
         title: "AI ambalaj mitleri",
-        lead: "Doğru bilinen yanlışları kısa “gerçek” cevaplarıyla ayıklayın. Paxolab FORMA’yı vektör tasarım motoru olarak konumlandırır — marketing açıklar, stüdyo üretir.",
+        lead: "Doğru bilinen yanlışları kısa “gerçek” cevaplarıyla ayıklayın. Grapxor kendini vektör tasarım motoru olarak konumlandırır — marketing açıklar, stüdyo üretir.",
       },
       sections: [
         {
@@ -1209,12 +1209,12 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
         },
         {
           title: "Mit: Ajans / tasarımcı tamamen biter",
-          body: "Gerçek: Geniş strateji ve kampanya için ajans hâlâ gerekebilir. FORMA ambalaj brief → vektör yüzeye odaklanır. merhaba@paxolab.com.",
+          body: "Gerçek: Geniş strateji ve kampanya için ajans hâlâ gerekebilir. Grapxor ambalaj brief → vektör yüzeye odaklanır. merhaba@grapxor.com.",
         },
       ],
       related: [
         { href: "/ai-ambalaj-tasarimi", label: "AI ambalaj tasarımı" },
-        { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+        { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
         { href: "/ai-vs-grafik-ajans-ambalaj", label: "AI vs grafik ajans" },
         { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
         { href: "/sss", label: "SSS" },
@@ -1225,12 +1225,12 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
           a: "Hayır. Görsel model çıktısı ile dieline + vektör yüzey farklıdır. Baskı öncesi preflight gerekir.",
         },
         {
-          q: "Paxolab bu mitleri nasıl ele alıyor?",
-          a: "FORMA’yı vektör tasarım motoru olarak konumlandırır; marketing site açıklar, stüdyo üretir.",
+          q: "Grapxor bu mitleri nasıl ele alıyor?",
+          a: "Grapxor kendini vektör tasarım motoru olarak konumlandırır; marketing site açıklar, stüdyo üretir.",
         },
         {
           q: "Mitleri okuduktan sonra ne yapmalıyım?",
-          a: "Parent hub’ı ve “FORMA nasıl çalışır?” spoke’unu okuyun; ardından stüdyoda brief ile deneyin.",
+          a: "Parent hub’ı ve “Grapxor nasıl çalışır?” spoke’unu okuyun; ardından stüdyoda brief ile deneyin.",
         },
       ],
       serviceName: "AI ambalaj mitleri",
@@ -1245,7 +1245,7 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
       },
       hero: {
         title: "SVG dieline matbaaya nasıl verilir?",
-        lead: "Export ve iletişim checklist’i — “SVG her matbaada sorunsuz” iddiası yoktur. FORMA baskıya yönelik vektör/dieline üretir; dosyayı siz iletir ve preflight’tan geçirirsiniz.",
+        lead: "Export ve iletişim checklist’i — “SVG her matbaada sorunsuz” iddiası yoktur. Grapxor baskıya yönelik vektör/dieline üretir; dosyayı siz iletir ve preflight’tan geçirirsiniz.",
       },
       sections: [
         {
@@ -1262,7 +1262,7 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
         },
         {
           title: "Matbaaya 5 soru ve sonraki adım",
-          body: "Tercih format, renk profili, bleed, malzeme ve proof sürecini sorun. Paxolab çıktısından sonra dosyayı siz iletirsiniz. merhaba@paxolab.com.",
+          body: "Tercih format, renk profili, bleed, malzeme ve proof sürecini sorun. Grapxor çıktısından sonra dosyayı siz iletirsiniz. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1278,7 +1278,7 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
           a: "Genelde hayır. Artwork, ölçü birimi, kesim/crease ayrımı ve malzeme notları da gerekir; matbaanın tercih formatını sorun.",
         },
         {
-          q: "FORMA doğrudan matbaa hesabına mı yükler?",
+          q: "Grapxor doğrudan matbaa hesabına mı yükler?",
           a: "Hayır. Stüdyo baskıya yönelik vektör/dieline üretir; dosyayı siz matbaaya iletir ve preflight’tan geçirirsiniz.",
         },
         {
@@ -1288,10 +1288,10 @@ serviceName: "FORMA vektör motoru nasıl çalışır",
       ],
             howto: {
         name: 'SVG dieline dosyasını matbaaya hazırlama',
-        description: 'Paxolab/FORMA çıktısını matbaaya iletmeden önce kontrol edin. Nihai matbaa onayı sizde ve matbaadadır.',
+        description: 'Grapxor çıktısını matbaaya iletmeden önce kontrol edin. Nihai matbaa onayı sizde ve matbaadadır.',
         steps: [
         { name: 'Ölçü ve formu netleştirin', text: 'Kutu tipi ve mm ölçülerini brief’e yazın; dieline panellere oturur.' },
-        { name: 'Stüdyoda üretin', text: 'FORMA vektör yüzey ve dieline mantığıyla üretir; image-gen değildir.' },
+        { name: 'Stüdyoda üretin', text: 'Grapxor vektör yüzey ve dieline mantığıyla üretir; image-gen değildir.' },
         { name: 'Preflight’ı okuyun', text: 'Uyarıları giderin; tutarsız panel/ölçü maliyet yaratır.' },
         { name: 'SVG/vektör export alın', text: 'Dosyayı matbaanın istediği formatta paketleyin.' },
         { name: 'Matbaa ile doğrulayın', text: 'Kesim, kat, malzeme ve renk profili onayı matbaada tamamlanır.' },
@@ -1325,8 +1325,8 @@ serviceName: "SVG dieline matbaaya nasıl verilir",
           body: "Ön / arka / yan / flap panellerini tanıyın. Grain ve yapıştırma kulağı yüksek seviyede brief notudur.",
         },
         {
-          title: "Brief’te tuck-end (FORMA)",
-          body: "Kutu tipini brief’te belirtin; motor dieline + vektör yüzey mantığıyla çalışır. Kesin kalıp matbaa ile doğrulanır. merhaba@paxolab.com.",
+          title: "Brief’te tuck-end (Grapxor)",
+          body: "Kutu tipini brief’te belirtin; motor dieline + vektör yüzey mantığıyla çalışır. Kesin kalıp matbaa ile doğrulanır. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1346,7 +1346,7 @@ serviceName: "SVG dieline matbaaya nasıl verilir",
           a: "Artwork panellerin basılacak yüzüne oturur; kesim çizgisi ve bleed’i karıştırmayın. Preflight checklist’e bakın.",
         },
         {
-          q: "FORMA tuck-end mi üretir?",
+          q: "Grapxor tuck-end mi üretir?",
           a: "Brief’te kutu tipini belirtirsiniz; motor dieline + vektör yüzey mantığıyla çalışır. Kesin kalıp matbaa ile doğrulanır.",
         },
       ],
@@ -1373,7 +1373,7 @@ serviceName: "Tuck-end dieline okuma",
       },
       hero: {
         title: "Ambalaj preflight checklist",
-        lead: "Maliyetli hataları önlemek için yapı ve artwork kontrollerini tarayın. Checklist başlangıçtır; matbaa onayı şarttır. FORMA doğru yapı/yüzey üretir — otomatik “preflight geçer” iddiası yoktur.",
+        lead: "Maliyetli hataları önlemek için yapı ve artwork kontrollerini tarayın. Checklist başlangıçtır; matbaa onayı şarttır. Grapxor doğru yapı/yüzey üretir — otomatik “preflight geçer” iddiası yoktur.",
       },
       sections: [
         {
@@ -1389,8 +1389,8 @@ serviceName: "Tuck-end dieline okuma",
           body: "Font, overprint notu ve varsa raster çözünürlüğünü gözden geçirin. Renk profili/spot’u matbaaya sorun — evrensel profil vaadi yok.",
         },
         {
-          title: "Paxolab sonrası sizin adımlarınız",
-          body: "Stüdyo çıktısından sonra checklist + matbaa preflight. merhaba@paxolab.com.",
+          title: "Grapxor sonrası sizin adımlarınız",
+          body: "Stüdyo çıktısından sonra checklist + matbaa preflight. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1403,20 +1403,20 @@ serviceName: "Tuck-end dieline okuma",
       faqs: [
         {
           q: "Preflight’ı kim yapar?",
-          a: "Siz + matbaa. Paxolab baskıya yönelik vektör/dieline üretir; nihai preflight matbaa standartlarına göre yapılır.",
+          a: "Siz + matbaa. Grapxor baskıya yönelik vektör/dieline üretir; nihai preflight matbaa standartlarına göre yapılır.",
         },
         {
           q: "Checklist’te renk profili var mı?",
           a: "Evet, soru olarak: matbaanın istediği profil/spot’u sorun. Tek bir evrensel profil vaadi yok.",
         },
         {
-          q: "FORMA preflight’ı otomatik geçer mi?",
+          q: "Grapxor preflight’ı otomatik geçer mi?",
           a: "Hayır iddiası yok. Amaç doğru yapı ve yüzey; siz checklist ve matbaa ile doğrularsınız.",
         },
       ],
             howto: {
         name: 'Ambalaj preflight kontrol listesi',
-        description: 'Baskıya geçmeden önce dieline ve yüzey kontrolü. Paxolab dürüst kapılarla uyarır; garanti yerine kontrol listesi.',
+        description: 'Baskıya geçmeden önce dieline ve yüzey kontrolü. Grapxor dürüst kapılarla uyarır; garanti yerine kontrol listesi.',
         steps: [
         { name: 'Ölçüleri doğrulayın', text: 'En/boy/yükseklik veya dieline referansı brief ile uyumlu mu?' },
         { name: 'Panel metinlerini kontrol edin', text: 'Marka, ürün, zorunlu alanlar doğru panellerde mi?' },
@@ -1433,7 +1433,7 @@ serviceName: "Ambalaj preflight checklist",
       meta: {
         title: "Etiket ve kutu ne zaman birlikte?",
         description:
-          "Etiket ve kutu ne zaman birlikte? Şişe+dış kutu, set, hediye senaryoları. FORMA ile paralel yüzeyler.",
+          "Etiket ve kutu ne zaman birlikte? Şişe+dış kutu, set, hediye senaryoları. Grapxor ile paralel yüzeyler.",
       },
       hero: {
         title: "Etiket ve kutu ne zaman birlikte?",
@@ -1453,8 +1453,8 @@ serviceName: "Ambalaj preflight checklist",
           body: "Aynı dil, farklı paneller. Brief’te iki yüzeyi ayrı satırlarda yazın; etiket ve kutu sayfalarına bakın.",
         },
         {
-          title: "FORMA ile paralel yüzeyler",
-          body: "FORMA her yüzey için dieline/vektör mantığıyla ilerler. Parent karar hub’ı ile başlayın. merhaba@paxolab.com.",
+          title: "Grapxor ile paralel yüzeyler",
+          body: "Grapxor her yüzey için dieline/vektör mantığıyla ilerler. Parent karar hub’ı ile başlayın. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1474,8 +1474,8 @@ serviceName: "Ambalaj preflight checklist",
           a: "Kesin rakam yok; iki üretim kalemi demektir. Fiyatlandırma sayfasına bakın, matbaadan teklif alın.",
         },
         {
-          q: "Paxolab ikisini aynı marka sisteminde üretebilir mi?",
-          a: "Brief’te her yüzeyi ayırın. FORMA her biri için dieline/vektör mantığıyla ilerler.",
+          q: "Grapxor ikisini aynı marka sisteminde üretebilir mi?",
+          a: "Brief’te her yüzeyi ayırın. Grapxor her biri için dieline/vektör mantığıyla ilerler.",
         },
       ],
       serviceName: "Etiket ve kutu ne zaman birlikte",
@@ -1486,11 +1486,11 @@ serviceName: "Ambalaj preflight checklist",
       meta: {
         title: "E-ticaret kutusu tasarımı",
         description:
-          "E-ticaret kutusu: unboxing, koruma, raf vs kargo. FORMA ile brief’ten dieline + vektör; kargo testi yok.",
+          "E-ticaret kutusu: unboxing, koruma, raf vs kargo. Grapxor ile brief’ten dieline + vektör; kargo testi yok.",
       },
       hero: {
         title: "E-ticaret kutusu tasarımı",
-        lead: "DTC / online satışta unboxing ve korumayı birlikte düşünün. FORMA yapı + vektör üretir; drop/kargo testleri sizde / lojistik partnerinizde — “hasarı %0’a indirir” iddiası yoktur.",
+        lead: "DTC / online satışta unboxing ve korumayı birlikte düşünün. Grapxor yapı + vektör üretir; drop/kargo testleri sizde / lojistik partnerinizde — “hasarı %0’a indirir” iddiası yoktur.",
       },
       sections: [
         {
@@ -1506,8 +1506,8 @@ serviceName: "Ambalaj preflight checklist",
           body: "Boşluk ve kırılgan ürün notlarını yazın. Ürün etiketi ile dış kutu ilişkisini etiket/kutu karar hub’ında netleştirin.",
         },
         {
-          title: "Brief → FORMA",
-          body: "Kutu tasarımı, bıçak çizimi ve baskıya hazır sayfalarla köprüleyin. Stüdyo · merhaba@paxolab.com.",
+          title: "Brief → Grapxor",
+          body: "Kutu tasarımı, bıçak çizimi ve baskıya hazır sayfalarla köprüleyin. Stüdyo · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1527,7 +1527,7 @@ serviceName: "Ambalaj preflight checklist",
           a: "Bazı SKU’larda evet. Marka deneyimi istiyorsanız özel kutu veya sleeve düşünün — karar hub’ına bakın.",
         },
         {
-          q: "FORMA kargo testi yapar mı?",
+          q: "Grapxor kargo testi yapar mı?",
           a: "Hayır. Tasarım motoru yapı + vektör üretir; drop/kargo testleri sizde / lojistik partnerinizde.",
         },
       ],
@@ -1539,11 +1539,11 @@ serviceName: "Ambalaj preflight checklist",
       meta: {
         title: "Şişe wrap etiket tasarımı",
         description:
-          "Şişe wrap etiket: ölçü, overlap, bindirme ve yüzey düzeni. FORMA ile baskıya yönelik vektör; malzeme garantisi yok.",
+          "Şişe wrap etiket: ölçü, overlap, bindirme ve yüzey düzeni. Grapxor ile baskıya yönelik vektör; malzeme garantisi yok.",
       },
       hero: {
         title: "Şişe wrap etiket tasarımı",
-        lead: "Wrap ile front/back farkını bilin; çap × yükseklikten açık etiket boyutu ve overlap hesaplayın. FORMA baskıya yönelik vektör üretir — “her şişeye otomatik wrap” iddiası yoktur.",
+        lead: "Wrap ile front/back farkını bilin; çap × yükseklikten açık etiket boyutu ve overlap hesaplayın. Grapxor baskıya yönelik vektör üretir — “her şişeye otomatik wrap” iddiası yoktur.",
       },
       sections: [
         {
@@ -1560,7 +1560,7 @@ serviceName: "Ambalaj preflight checklist",
         },
         {
           title: "Wrap + dış kutu",
-          body: "Bilgi sığmazsa ikinci etiket veya dış kutu panelleri kullanın — “ikisi birden” spoke’una bakın. merhaba@paxolab.com.",
+          body: "Bilgi sığmazsa ikinci etiket veya dış kutu panelleri kullanın — “ikisi birden” spoke’una bakın. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1580,7 +1580,7 @@ serviceName: "Ambalaj preflight checklist",
           a: "Tipografi hiyerarşisi, ikinci etiket veya dış kutu panelleri kullanın — “ikisi birden” spoke’una bakın.",
         },
         {
-          q: "FORMA şişe 360° mock’u mu verir?",
+          q: "Grapxor şişe 360° mock’u mu verir?",
           a: "Odak baskıya yönelik vektör yüzeydir. Pazarlama sitesi bilgilendirir; üretim stüdyoda, fiziksel doğrulama matbaada.",
         },
       ],
@@ -1590,12 +1590,12 @@ serviceName: "Ambalaj preflight checklist",
   },
   howItWorks: {
     meta: {
-      title: "Paxolab stüdyosu nasıl çalışır?",
+      title: "Grapxor stüdyosu nasıl çalışır?",
       description:
-        "Paxolab stüdyosu: brief, üretim, revizyon ve kredi kullanımı. Adım adım iş akışı.",
+        "Grapxor stüdyosu: brief, üretim, revizyon ve kredi kullanımı. Adım adım iş akışı.",
     },
     title: "Nasıl çalışır?",
-    lead: "Paxolab pazarlama sitesi bilgilendirir; asıl tasarım işi stüdyoda yapılır. Aşağıdaki akış tipik bir oturumu özetler.",
+    lead: "Grapxor pazarlama sitesi bilgilendirir; asıl tasarım işi stüdyoda yapılır. Aşağıdaki akış tipik bir oturumu özetler.",
     steps: [
       {
         n: "01",
@@ -1625,7 +1625,7 @@ serviceName: "Ambalaj preflight checklist",
     meta: {
       title: "Ambalaj ve etiket tasarım örnekleri",
       description:
-        "Paxolab gösterim amaçlı ambalaj ve etiket senaryoları. Gerçek projeler stüdyoda üretilir; rastgele görsel model değildir.",
+        "Grapxor gösterim amaçlı ambalaj ve etiket senaryoları. Gerçek projeler stüdyoda üretilir; rastgele görsel model değildir.",
     },
     title: "Örnekler",
     lead: "Aşağıdakiler gösterim amaçlı senaryolardır — gerçek müşteri işi değildir. Her kart ilgili hub veya spoke’a bağlanır; asıl üretim stüdyoda brief’inizle yapılır.",
@@ -1634,7 +1634,7 @@ serviceName: "Ambalaj preflight checklist",
       {
         title: "Serum kutusu — mat yüzey",
         category: "Kozmetik",
-        text: "Tek ürün tuck-end kutusu; ön panelde ürün adı ve hacim, sade tipografi. FORMA vektör yüzey üretir.",
+        text: "Tek ürün tuck-end kutusu; ön panelde ürün adı ve hacim, sade tipografi. Grapxor vektör yüzey üretir.",
         href: "/serum-krem-kutusu-tasarimi",
       },
       {
@@ -1684,9 +1684,9 @@ serviceName: "Ambalaj preflight checklist",
 
   pricing: {
     meta: {
-      title: "Paxolab kredi paketleri ve fiyatlar",
+      title: "Grapxor kredi paketleri ve fiyatlar",
       description:
-        "Paxolab kredi paketleri: 50, 150 ve 400 kredi. Satın alma stüdyo faturalamasından yapılır.",
+        "Grapxor kredi paketleri: 50, 150 ve 400 kredi. Satın alma stüdyo faturalamasından yapılır.",
     },
     title: "Fiyatlandırma",
     lead: "Tasarım üretimi ve revizyonlar kredi ile ölçülür. Paketler stüdyo içi faturalamaya bağlıdır; güncel ödeme stüdyoda tamamlanır.",
@@ -1727,16 +1727,16 @@ serviceName: "Ambalaj preflight checklist",
 
   faq: {
     meta: {
-      title: "Paxolab SSS: stüdyo, kredi, dieline",
+      title: "Grapxor SSS: stüdyo, kredi, dieline",
       description:
-        "Paxolab, kredi, dieline ve stüdyo kullanımı hakkında SSS.",
+        "Grapxor, kredi, dieline ve stüdyo kullanımı hakkında SSS.",
     },
     title: "Sıkça sorulan sorular",
-    lead: "Paxolab, stüdyo ve krediler hakkında kısa yanıtlar.",
+    lead: "Grapxor, stüdyo ve krediler hakkında kısa yanıtlar.",
     items: [
       {
-        q: "Paxolab nedir?",
-        a: "Paxolab tek üründür: ambalaj tasarım stüdyosu ve tasarım motoru aynı isim altında. Bu pazarlama sitesi bilgilendirir; üretim stüdyoda yapılır.",
+        q: "Grapxor nedir?",
+        a: "Grapxor tek üründür: ambalaj tasarım stüdyosu ve tasarım motoru aynı isim altında. Bu pazarlama sitesi bilgilendirir; üretim stüdyoda yapılır.",
       },
       {
         q: "Çıktı gerçekten baskıya uygun mu?",
@@ -1763,8 +1763,8 @@ serviceName: "Ambalaj preflight checklist",
 
   contact: {
     meta: {
-      title: "Paxolab ile iletişime geçin",
-      description: "Paxolab ile iletişime geçin. Destek ve iş birliği için e-posta formu.",
+      title: "Grapxor ile iletişime geçin",
+      description: "Grapxor ile iletişime geçin. Destek ve iş birliği için e-posta formu.",
     },
     title: "İletişim",
     lead: "Ürün, ortaklık veya destek için yazın. Form backend gerektirmez; e-posta istemciniz açılır.",
@@ -1783,15 +1783,15 @@ serviceName: "Ambalaj preflight checklist",
   legal: {
     privacy: {
       meta: {
-        title: "Paxolab gizlilik politikası",
-        description: "Paxolab gizlilik politikası özeti.",
+        title: "Grapxor gizlilik politikası",
+        description: "Grapxor gizlilik politikası özeti.",
       },
       title: "Gizlilik politikası",
       updated: "Son güncelleme: Eylül 2026",
       sections: [
         {
           title: "Kapsam",
-          body: "Bu metin Paxolab pazarlama sitesi için kısa bir özetdir. Stüdyo hesabı ve ödeme işlemleri ayrı gizlilik / KVKK metinlerine tabi olabilir.",
+          body: "Bu metin Grapxor pazarlama sitesi için kısa bir özetdir. Stüdyo hesabı ve ödeme işlemleri ayrı gizlilik / KVKK metinlerine tabi olabilir.",
         },
         {
           title: "Toplanan veriler",
@@ -1799,21 +1799,21 @@ serviceName: "Ambalaj preflight checklist",
         },
         {
           title: "İletişim",
-          body: "Gizlilik talepleri için merhaba@paxolab.com adresine yazın.",
+          body: "Gizlilik talepleri için merhaba@grapxor.com adresine yazın.",
         },
       ],
     },
     kvkk: {
       meta: {
         title: "KVKK aydınlatma metni",
-        description: "Paxolab KVKK aydınlatma metni özeti.",
+        description: "Grapxor KVKK aydınlatma metni özeti.",
       },
       title: "KVKK aydınlatma metni",
       updated: "Son güncelleme: Eylül 2026",
       sections: [
         {
           title: "Veri sorumlusu",
-          body: "Paxolab markası altında işletilen pazarlama sitesi. İletişim: merhaba@paxolab.com.",
+          body: "Grapxor markası altında işletilen pazarlama sitesi. İletişim: merhaba@grapxor.com.",
         },
         {
           title: "İşleme amacı",
@@ -1827,8 +1827,8 @@ serviceName: "Ambalaj preflight checklist",
     },
     terms: {
       meta: {
-        title: "Paxolab kullanım koşulları",
-        description: "Paxolab site kullanım koşulları özeti.",
+        title: "Grapxor kullanım koşulları",
+        description: "Grapxor site kullanım koşulları özeti.",
       },
       title: "Kullanım koşulları",
       updated: "Son güncelleme: Eylül 2026",

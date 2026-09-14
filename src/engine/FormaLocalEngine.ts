@@ -5,7 +5,7 @@ import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
 import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor, varyPalette } from './artwork/languages'
-import { paletteFromBrief } from './artwork/briefPalette'
+import { paletteFromBrief, ensureAccentContrast } from './artwork/briefPalette'
 import { composeBlankFace } from './artwork/composeBlankFace'
 import { defaultIngredientClaims, resolveProductLine, sampleCopy } from './artwork/copy'
 import { resolveDesignSystem, resolveSector } from './designSystem'
@@ -121,11 +121,13 @@ export class FormaLocalEngine implements EnginePort {
       overrides.titleScale = 1.1
     }
 
-    const palette = varyPalette(
-      blankCanvas
-        ? (blankFace?.palette ?? paletteFromBrief(brief, style, overrides.premium))
-        : paletteFor(brief, brief.styleType || 'classic', overrides.premium),
-      variationIndex,
+    const palette = ensureAccentContrast(
+      varyPalette(
+        blankCanvas
+          ? (blankFace?.palette ?? paletteFromBrief(brief, style, overrides.premium))
+          : paletteFor(brief, brief.styleType || 'classic', overrides.premium),
+        variationIndex,
+      ),
     )
     const layout = {
       widthMm: dieline.dimensions.L,

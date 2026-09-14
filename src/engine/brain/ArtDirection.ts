@@ -80,7 +80,7 @@ export function attachArtDirection(ctx: ArtCtx): {
       chrome: recipe?.chrome ?? 'full',
       antiRepetition: { seed, forbidLastFamilies: lastFamilies() },
     },
-    visualConcept: visualConceptFor(ctx.style, ctx.sector, family),
+    visualConcept: visualConceptFor(ctx.style, ctx.sector, family, ctx.brief.subProduct),
     heroGraphic: {
       family,
       placement: family === 'none' ? 'none' : 'above-lockup',

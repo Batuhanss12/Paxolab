@@ -2,12 +2,12 @@ import { getContent } from "@/content";
 import { pageMetadata } from "@/lib/seo";
 import { ServicePageView } from "@/components/ServicePage";
 
-const data = getContent("en").services["how-forma-vector-engine-works"];
+const data = getContent("en").services["how-grapxor-vector-engine-works"];
 
 export const metadata = pageMetadata({
   title: data.meta.title,
   description: data.meta.description,
-  path: "/en/how-forma-vector-engine-works",
+  path: "/en/how-grapxor-vector-engine-works",
   locale: "en",
 });
 

@@ -118,7 +118,7 @@ function patchParentRelated(filePath, locale) {
       ],
       "ai-ambalaj-tasarimi": [
         { href: "/ai-vs-grafik-ajans-ambalaj", label: "AI vs grafik ajans" },
-        { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+        { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
         { href: "/ai-ambalaj-mitleri", label: "AI ambalaj mitleri" },
         { href: "/nasil-calisir", label: "Nasıl çalışır?" },
         { href: "/baskiya-hazir-dieline", label: "Baskıya hazır dieline" },
@@ -155,7 +155,7 @@ function patchParentRelated(filePath, locale) {
       ],
       "what-is-ai-packaging-design": [
         { href: "/en/ai-vs-design-agency-packaging", label: "AI vs design agency" },
-        { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+        { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
         { href: "/en/ai-packaging-myths", label: "AI packaging myths" },
         { href: "/en/how-it-works", label: "How it works" },
         { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
@@ -202,14 +202,14 @@ function patchNav(filePath, locale) {
       ? [
           { href: "/private-label-gida-kutusu-brief", label: "Private label gıda brief" },
           { href: "/serum-kutusu-olcu-brief", label: "Serum ölçü brief" },
-          { href: "/forma-vektor-motoru-nasil-calisir", label: "FORMA nasıl çalışır?" },
+          { href: "/grapxor-vektor-motoru-nasil-calisir", label: "Grapxor nasıl çalışır?" },
           { href: "/ambalaj-preflight-checklist", label: "Preflight checklist" },
           { href: "/e-ticaret-kutusu-tasarimi", label: "E-ticaret kutusu" },
         ]
       : [
           { href: "/en/private-label-food-box-brief", label: "Private-label food brief" },
           { href: "/en/serum-box-size-brief", label: "Serum size brief" },
-          { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+          { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
           { href: "/en/packaging-preflight-checklist", label: "Preflight checklist" },
           { href: "/en/ecommerce-box-design", label: "Ecommerce box" },
         ];

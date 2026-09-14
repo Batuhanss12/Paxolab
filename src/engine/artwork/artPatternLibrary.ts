@@ -35,6 +35,8 @@ export type ArtPatternEntry = {
   skipReason?: string
   viewBox?: string
   bytes: number
+  /** Single-motif family sheet — skip weak-sheet atomizer gating. */
+  atomic?: boolean
 }
 
 export type ArtPatternLibraryFile = {

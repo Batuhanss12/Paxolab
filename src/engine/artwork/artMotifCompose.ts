@@ -18,6 +18,7 @@ import {
   slotKindToRegion,
   type SlotKind,
 } from './artDesignRegions'
+import { motifFamilyOf, motifSubfamilyOf } from './artMotifFamily'
 import { resolveMotifDesign } from './artMotifMeta'
 
 export type MotifRecipeId = 'luxury-frame' | 'stamp-field' | 'band-story' | 'corner-deco'
@@ -119,7 +120,7 @@ function pickForSlot(
   return ranked.slice(0, count)
 }
 
-function buildSlots(
+export function buildMotifSlots(
   recipe: MotifRecipeId,
   atoms: MotifAtom[],
   panel: Panel,
@@ -215,11 +216,13 @@ function buildSlots(
   return slots.slice(0, 5)
 }
 
-function paintSlots(slots: MotifSlot[], panel: Panel, p: Palette, recipe: MotifRecipeId): string {
+export function paintMotifSlots(slots: MotifSlot[], panel: Panel, p: Palette, recipe: MotifRecipeId): string {
   return slots
     .map((slot) => {
       const clip = slot.lockout && panel.id ? ` clip-path="url(#lockout-${panel.id})"` : ''
-      return `<image data-art="art-pattern-compose" data-motif-atom="${slot.atom.id}" data-motif-role="${slot.role}" data-library-recipe="${recipe}" x="${slot.box.x.toFixed(2)}" y="${slot.box.y.toFixed(2)}" width="${slot.box.w.toFixed(2)}" height="${slot.box.h.toFixed(2)}" href="${hrefOf(slot.atom.markup, p.accent)}" opacity="${slot.opacity}" preserveAspectRatio="${slot.par}"${clip} />`
+      const family = motifFamilyOf(slot.atom)
+      const sub = motifSubfamilyOf(slot.atom) ?? ''
+      return `<image data-art="art-pattern-compose" data-motif-atom="${slot.atom.id}" data-motif-role="${slot.role}" data-motif-family="${family}" data-motif-subfamily="${sub}" data-library-recipe="${recipe}" x="${slot.box.x.toFixed(2)}" y="${slot.box.y.toFixed(2)}" width="${slot.box.w.toFixed(2)}" height="${slot.box.h.toFixed(2)}" href="${hrefOf(slot.atom.markup, p.accent)}" opacity="${slot.opacity}" preserveAspectRatio="${slot.par}"${clip} />`
     })
     .join('')
 }
@@ -233,12 +236,12 @@ export function paintMotifRecipeFromAtoms(
   const empty: MotifRecipePaint = { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
   if (!atoms.length) return empty
   const recipe = opts.recipeId ?? resolveMotifRecipeId(atoms, opts.style, opts.seed ?? 0)
-  const slots = buildSlots(recipe, atoms, panel, opts.style, opts.seed ?? 0, opts)
+  const slots = buildMotifSlots(recipe, atoms, panel, opts.style, opts.seed ?? 0, opts)
   return {
     id: recipe,
     keepHero: true,
     slots,
-    markup: paintSlots(slots, panel, p, recipe),
+    markup: paintMotifSlots(slots, panel, p, recipe),
   }
 }
 

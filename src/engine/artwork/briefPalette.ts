@@ -18,6 +18,7 @@ const NAMED: Array<[RegExp, string]> = [
   [/g[uü]m[uü][sş]|silver/i, '#c5ccd6'],
   [/bordo|burgundy/i, '#6b1d2a'],
   [/kraft|eco/i, '#cbb892'],
+  [/zeytin|olive/i, '#3f4a32'],
 ]
 
 export function normalizeHex(raw: string): string {
@@ -87,6 +88,24 @@ export function colorFamilyOf(hexes: string[]): ColorFamily {
   return 'light'
 }
 
+export function accentContrastsGround(bg: string, accent: string, floor = 0.22): boolean {
+  return Math.abs(hexLuminance(bg) - hexLuminance(accent)) >= floor
+}
+
+export function ensureAccentContrast(p: Palette): Palette {
+  if (accentContrastsGround(p.bg, p.accent)) return p
+  const darkBg = hexLuminance(p.bg) < 0.45
+  const lifted = darkBg
+    ? hexLuminance(p.fg) >= 0.45
+      ? p.fg
+      : '#c9a227'
+    : hexLuminance(p.fg) <= 0.4
+      ? p.fg
+      : '#1a1a1a'
+  if (accentContrastsGround(p.bg, lifted)) return { ...p, accent: lifted }
+  return { ...p, accent: darkBg ? '#d8bc72' : '#1a1a1a' }
+}
+
 function tweakNeutrals(base: Palette, mood: StyleType): Palette {
   const prior = moodPrior(mood)
   if (prior.contrastBoost <= 0) return base
@@ -113,28 +132,32 @@ function paletteFromHexes(hexes: string[], mood: StyleType): Palette {
     (hexLuminance(light) > 0.62 && mood !== 'luxury')
   if (!preferLight && hexLuminance(dark) < 0.42) {
     const fg = hexLuminance(light) > 0.55 ? light : '#f6f0e4'
-    return tweakNeutrals(
-      {
-        bg: dark,
-        fg,
-        accent: hexLuminance(mid) > 0.2 ? mid : light,
-        muted: mixHex(dark, fg, 0.38),
-        paper: mixHex(dark, fg, 0.08),
-      },
-      mood,
+    return ensureAccentContrast(
+      tweakNeutrals(
+        {
+          bg: dark,
+          fg,
+          accent: hexLuminance(mid) > 0.2 ? mid : light,
+          muted: mixHex(dark, fg, 0.38),
+          paper: mixHex(dark, fg, 0.08),
+        },
+        mood,
+      ),
     )
   }
   const ink = hexLuminance(dark) < 0.55 ? dark : '#1a1a1a'
   const accent = mid !== light && mid !== dark ? mid : hexLuminance(dark) < 0.4 ? dark : ink
-  return tweakNeutrals(
-    {
-      bg: hexLuminance(light) > 0.55 ? light : '#f4f1ea',
-      fg: ink,
-      accent,
-      muted: mixHex(ink, light, 0.55),
-      paper: mixHex(light, ink, 0.06),
-    },
-    mood,
+  return ensureAccentContrast(
+    tweakNeutrals(
+      {
+        bg: hexLuminance(light) > 0.55 ? light : '#f4f1ea',
+        fg: ink,
+        accent,
+        muted: mixHex(ink, light, 0.55),
+        paper: mixHex(light, ink, 0.06),
+      },
+      mood,
+    ),
   )
 }
 
@@ -142,5 +165,5 @@ function paletteFromHexes(hexes: string[], mood: StyleType): Palette {
 export function paletteFromBrief(brief: DesignBrief, mood: StyleType, premium = false): Palette {
   const hexes = parseBriefColors(brief.colors)
   if (hexes.length) return paletteFromHexes(hexes, mood)
-  return tweakNeutrals(paletteFor(brief, mood, premium), mood)
+  return ensureAccentContrast(tweakNeutrals(paletteFor(brief, mood, premium), mood))
 }

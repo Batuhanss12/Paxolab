@@ -8,6 +8,7 @@ import { FormaLocalEngine } from '../FormaLocalEngine'
 import { isFormaSampleEan } from '../barcode'
 import { buildExportBundle } from './exportDoc'
 import { pressBleedMm, pressSafeMm } from './pressBoxes'
+import { buildDielinePdf, encodePdfBytes } from '../dieline/structure'
 
 export type PressProofRole = 'primary' | 'alternate'
 
@@ -154,7 +155,7 @@ export function buildPressProofPack(sku: PressProofSku): PressProofPack {
   const files: PressProofFile[] = [
     { name: `${slug}-dieline.svg`, data: bundle.dieline },
     { name: `${slug}-dieline.dxf`, data: bundle.dxf },
-    { name: `${slug}-dieline.pdf`, data: bundle.pdf },
+    { name: `${slug}-dieline.pdf`, data: encodePdfBytes(buildDielinePdf(spec.dieline, slug)) },
     { name: `${slug}-artwork.svg`, data: bundle.artwork },
     { name: `${slug}-combined.svg`, data: bundle.combined },
     { name: 'shop.json', data: JSON.stringify({ sku, shop }, null, 2) },

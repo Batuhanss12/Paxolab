@@ -40,9 +40,27 @@ export type ArtDirectionBlock = {
   antiRepetition: { seed: number; forbidLastFamilies: string[] }
 }
 
+export type MotifFamilyId =
+  | 'botanical'
+  | 'geometric-deco'
+  | 'heraldic'
+  | 'harvest'
+  | 'linear-tech'
+  | 'mineral-frame'
+  | 'quiet-line'
+  | 'ornate-stamp'
+
 export type VisualConceptBlock = {
   id: string
   tags: string[]
+  /** Human concept name, e.g. EARTHEN PREMIUM. */
+  label?: string
+  family?: MotifFamilyId
+  supportFamily?: MotifFamilyId
+  /** 0–1 decoration spend cap (weight × area × opacity × complexity). */
+  decorationBudget?: number
+  /** Preferred composition strategies; artwork layer reads these names. */
+  strategyBias?: string[]
 }
 
 export type HeroGraphicBlock = {

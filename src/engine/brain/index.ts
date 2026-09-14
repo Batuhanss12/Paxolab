@@ -6,6 +6,8 @@ export type {
   HeroFamily,
   PatternFamily,
   BackgroundTreatment,
+  MotifFamilyId,
+  VisualConceptBlock,
 } from './DesignPlan'
 export { planSummaryTr } from './DesignPlan'
 export { createPlan, planGraph, advisePlan } from './DesignDirector'
@@ -19,7 +21,7 @@ export { critiquePlan } from './CritiqueEngine'
 export type { CritiqueReport } from './CritiqueEngine'
 export { applyPlanToSystem } from './applyPlan'
 export { attachArtDirection, allowedHeroes, allowedPatterns, defaultPattern } from './ArtDirection'
-export { visualConceptFor } from './VisualConcept'
+export { visualConceptFor, decorationBudgetOf } from './VisualConcept'
 export { composeGrammar } from './CompositionGrammar'
 export { repairPlan } from './RepairPlanner'
 export { resetArtMemory, lastFamilies, lastForStyle, rememberArt } from './DesignMemory'

@@ -88,6 +88,7 @@ function techSlab(panel: Panel, p: Palette, xFrac = 0.5, yFrac = 0.148, kind?: H
 
 /** Render the kit hero markup for a given decor family. */
 export function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan, place?: HeroPlacement): string {
+  void plan
   const { decor, style } = system
   const scale = place?.scale ?? 1
   const xFrac = place?.xFrac ?? 0.5

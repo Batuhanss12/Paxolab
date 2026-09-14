@@ -2,12 +2,12 @@ import { getContent } from "@/content";
 import { pageMetadata } from "@/lib/seo";
 import { ServicePageView } from "@/components/ServicePage";
 
-const data = getContent("tr").services["forma-vektor-motoru-nasil-calisir"];
+const data = getContent("tr").services["grapxor-vektor-motoru-nasil-calisir"];
 
 export const metadata = pageMetadata({
   title: data.meta.title,
   description: data.meta.description,
-  path: "/forma-vektor-motoru-nasil-calisir",
+  path: "/grapxor-vektor-motoru-nasil-calisir",
   locale: "tr",
 });
 

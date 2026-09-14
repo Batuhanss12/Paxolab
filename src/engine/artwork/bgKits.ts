@@ -100,11 +100,13 @@ function meadowWash(panel: Panel, p: Palette, op: number, density: 0 | 1 | 2, sa
   const first = { n: 0 }
   let out = `<defs><clipPath id="meadow-band-${panel.id}"><rect x="${x}" y="${y}" width="${w}" height="${bandH}" /></clipPath></defs>`
   out += `<rect${attr(mark, clip, first)} x="${x}" y="${y}" width="${w}" height="${bandH * 0.42}" fill="${p.accent}" fill-opacity="${op * 0.35}" />`
-  const trees: [number, number][] = [
-    [0.16, 1],
-    [0.34, 0.78],
-    [0.62, 0.92],
-  ].slice(0, 2 + density)
+  const trees = (
+    [
+      [0.16, 1],
+      [0.34, 0.78],
+      [0.62, 0.92],
+    ] as [number, number][]
+  ).slice(0, 2 + density)
   trees.forEach(([fx, s]) => {
     const cx = x + w * fx
     const base = ridge + 1.2

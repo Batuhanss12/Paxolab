@@ -2,7 +2,7 @@
 
 import { API_URL, STUDIO_URL } from "./site";
 
-const STORAGE_KEY = "paxolab.site.auth.v1";
+const STORAGE_KEY = "grapxor.site.auth.v1";
 
 export type AuthUser = {
   id: string;

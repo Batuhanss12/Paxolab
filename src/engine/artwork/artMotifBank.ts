@@ -13,6 +13,8 @@ import {
 } from './artPatternLibrary'
 import { atomizeArtPattern, clearArtMotifAtomizerCache, isWeakSheet, type MotifAtom, type MotifRole } from './artMotifAtomizer'
 import { ensureMotifDesign } from './artMotifMeta'
+import { clearAssetCatalogCache } from './assetCatalog/catalog'
+import { clearFamilyAssetCache } from './assetCatalog/familyAssets'
 
 export const MOTIF_BANK_DIR = path.join(REPO_ROOT, 'assets', 'motif-bank')
 
@@ -37,6 +39,8 @@ let cached: MotifBankFile | null = null
 export function clearMotifBankCache(): void {
   cached = null
   clearArtMotifAtomizerCache()
+  clearFamilyAssetCache()
+  clearAssetCatalogCache()
 }
 
 export function writeMotifBank(

@@ -13,7 +13,7 @@ export function ContactForm() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") || "");
-    const subject = String(fd.get("subject") || "Paxolab");
+    const subject = String(fd.get("subject") || "Grapxor");
     const message = String(fd.get("message") || "");
     const body =
       locale === "en" ? `Name: ${name}\n\n${message}` : `Ad: ${name}\n\n${message}`;

@@ -66,6 +66,8 @@ export interface MotifDesignMetadata {
   /** ingest-derived filename role; never treated as confirmed */
   roleFromFilename?: MotifRole
   source?: 'explicit' | 'inferred' | 'filename' | 'default'
+  family?: import('../brain/DesignPlan').MotifFamilyId
+  subfamily?: string
 }
 
 export type MotifMetaHost = {

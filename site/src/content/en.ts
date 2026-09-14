@@ -4,10 +4,10 @@ import type { SiteContent } from "@/content/types";
 
 const content: SiteContent = {
   brand: {
-    name: "Paxolab",
+    name: "Grapxor",
     tagline: "Professional packaging and label design studio",
-    engine: "FORMA",
-    email: "merhaba@paxolab.com",
+    engine: "Grapxor",
+    email: "merhaba@grapxor.com",
   },
 
   nav: {
@@ -47,7 +47,7 @@ const content: SiteContent = {
       { href: "/en/faq", label: "FAQ" },
       { href: "/en/private-label-food-box-brief", label: "Private-label food brief" },
       { href: "/en/serum-box-size-brief", label: "Serum size brief" },
-      { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+      { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
       { href: "/en/packaging-preflight-checklist", label: "Preflight checklist" },
       { href: "/en/ecommerce-box-design", label: "Ecommerce box" },
       { href: "/en/contact", label: "Contact" },
@@ -56,7 +56,7 @@ const content: SiteContent = {
 
   footer: {
     blurb:
-      "Paxolab delivers print-ready packaging, box, and label design. Studio and design engine under one name — final output is vector.",
+      "Grapxor delivers print-ready packaging, box, and label design. Studio and design engine under one name — final output is vector.",
     product: "Product",
     company: "Company",
     legal: "Legal",
@@ -65,14 +65,14 @@ const content: SiteContent = {
       { href: "/en/terms", label: "Terms of use" },
     ],
     contactLabel: "Contact",
-    copyright: (y: number) => `© ${y} Paxolab. All rights reserved.`,
+    copyright: (y: number) => `© ${y} Grapxor. All rights reserved.`,
   },
 
   home: {
     meta: {
       title: "Packaging & label design studio",
       description:
-        "Design boxes, labels, and dielines with Paxolab. The design engine produces print-ready vector artwork. Open the studio and start.",
+        "Design boxes, labels, and dielines with Grapxor. The design engine produces print-ready vector artwork. Open the studio and start.",
     },
     hero: {
       eyebrow: "Design studio + engine",
@@ -80,7 +80,7 @@ const content: SiteContent = {
       lead: "Brief the studio — get print-ready box, label, and dieline vectors. Not an image generator — a design engine.",
       primaryCta: "Open studio",
       secondaryCta: "How it works",
-      askPlaceholder: "Ask Paxolab…",
+      askPlaceholder: "Ask Grapxor…",
       stageHint: "Dieline preview",
     },
     valueProps: [
@@ -124,7 +124,7 @@ const content: SiteContent = {
     ],
     ctaTitle: "Start producing in the studio",
     ctaLead:
-      "Write your brief and let FORMA produce a print-ready vector surface. Credits and packs live inside the studio.",
+      "Write your brief and let Grapxor produce a print-ready vector surface. Credits and packs live inside the studio.",
   },
 
   services: {
@@ -133,11 +133,11 @@ const content: SiteContent = {
       meta: {
         title: "Professional packaging design studio",
         description:
-          "Structure brand packaging with Paxolab: form, surface, and print prep in one studio. Vector output from the FORMA engine.",
+          "Structure brand packaging with Grapxor: form, surface, and print prep in one studio. Vector output from the Grapxor engine.",
       },
       hero: {
         title: "Packaging design",
-        lead: "Product protection, shelf presence, and print reality meet in one brief. Paxolab lets you advance both structure and face art in the studio.",
+        lead: "Product protection, shelf presence, and print reality meet in one brief. Grapxor lets you advance both structure and face art in the studio.",
       },
       sections: [
         {
@@ -161,8 +161,8 @@ const content: SiteContent = {
       ],
       faqs: [
         {
-          q: "How does FORMA produce packaging?",
-          a: "You clarify the need via chat or a brief; FORMA produces a vector surface on a dieline. It is a design engine, not an image-generation model. Real work opens in the studio.",
+          q: "How does Grapxor produce packaging?",
+          a: "You clarify the need via chat or a brief; Grapxor produces a vector surface on a dieline. It is a design engine, not an image-generation model. Real work opens in the studio.",
         },
         {
           q: "Is the output vector or an image?",
@@ -185,7 +185,7 @@ const content: SiteContent = {
       meta: {
         title: "Professional box design studio",
         description:
-          "Professional box design: structure, surface graphics, and dieline. Move print-ready inside the Paxolab studio.",
+          "Professional box design: structure, surface graphics, and dieline. Move print-ready inside the Grapxor studio.",
       },
       hero: {
         title: "Box design",
@@ -237,11 +237,11 @@ const content: SiteContent = {
       meta: {
         title: "Print-ready label design studio",
         description:
-          "Readable, print-ready label design for bottles and products. From brief to vector in the Paxolab studio.",
+          "Readable, print-ready label design for bottles and products. From brief to vector in the Grapxor studio.",
       },
       hero: {
         title: "Label design",
-        lead: "Hierarchy, legal copy space, and brand identity balance on a small surface. Keep labels orderly and producible with Paxolab.",
+        lead: "Hierarchy, legal copy space, and brand identity balance on a small surface. Keep labels orderly and producible with Grapxor.",
       },
       sections: [
         {
@@ -270,7 +270,7 @@ const content: SiteContent = {
         },
         {
           q: "Is the output print-tolerant?",
-          a: "The goal is a print-tolerant vector layout. Material and color approval happen with the printer. FORMA is a design engine, not an image model.",
+          a: "The goal is a print-tolerant vector layout. Material and color approval happen with the printer. Grapxor is a design engine, not an image model.",
         },
         {
           q: "Can I design a cosmetics bottle label?",
@@ -285,11 +285,11 @@ const content: SiteContent = {
       meta: {
         title: "Packaging dieline design guide",
         description:
-          "Packaging dielines: cut, fold, and glue lines. Production-minded structure with Paxolab.",
+          "Packaging dielines: cut, fold, and glue lines. Production-minded structure with Grapxor.",
       },
       hero: {
         title: "Dieline",
-        lead: "A dieline is the production language of packaging. The Paxolab studio advances design on that structure — a paneled surface, not a random image.",
+        lead: "A dieline is the production language of packaging. The Grapxor studio advances design on that structure — a paneled surface, not a random image.",
       },
       sections: [
         {
@@ -310,10 +310,10 @@ const content: SiteContent = {
       faqs: [
         {
           q: "What is a dieline?",
-          a: "A dieline is the production language of cut, fold, and glue lines. FORMA advances design on that structure — not a random image.",
+          a: "A dieline is the production language of cut, fold, and glue lines. Grapxor advances design on that structure — not a random image.",
         },
         {
-          q: "How does FORMA use the dieline?",
+          q: "How does Grapxor use the dieline?",
           a: "Share product type and dimensions in the brief; the engine produces a structure-aware vector surface. Tighten copy and graphics through revisions.",
         },
         {
@@ -326,7 +326,7 @@ const content: SiteContent = {
         },
       ],
       howto: {
-        name: 'Work with a dieline in Paxolab',
+        name: 'Work with a dieline in Grapxor',
         description: 'Dieline-focused studio flow for the concept hub.',
         steps: [
           { name: 'Choose the form', text: 'Box or label structure.' },
@@ -344,7 +344,7 @@ const content: SiteContent = {
       meta: {
         title: "Cosmetic packaging design",
         description:
-          "Cosmetic box and label design: shelf presence, brand voice, and print prep. Paxolab studio.",
+          "Cosmetic box and label design: shelf presence, brand voice, and print prep. Grapxor studio.",
       },
       hero: {
         title: "Cosmetic packaging design",
@@ -376,8 +376,8 @@ const content: SiteContent = {
           a: "On most cosmetics SKUs the bottle label and outer carton share one brand system. Use the label and box pages together when needed.",
         },
         {
-          q: "Does FORMA generate images?",
-          a: "No. FORMA is a vector design engine: brief → dieline + artwork. If you only need a moodboard image, other tools may fit better.",
+          q: "Does Grapxor generate images?",
+          a: "No. Grapxor is a vector design engine: brief → dieline + artwork. If you only need a moodboard image, other tools may fit better.",
         },
         {
           q: "Is the INCI list added automatically?",
@@ -392,11 +392,11 @@ const content: SiteContent = {
       meta: {
         title: "Perfume box design",
         description:
-          "Perfume carton and secondary packaging design. Structure, surface, and dieline together with Paxolab.",
+          "Perfume carton and secondary packaging design. Structure, surface, and dieline together with Grapxor.",
       },
       hero: {
         title: "Perfume box design",
-        lead: "A perfume box carries the brand on shelf and at the gift moment. Produce a balanced form-and-typography surface in the Paxolab studio.",
+        lead: "A perfume box carries the brand on shelf and at the gift moment. Produce a balanced form-and-typography surface in the Grapxor studio.",
       },
       sections: [
         {
@@ -425,7 +425,7 @@ const content: SiteContent = {
         },
         {
           q: "Is the output vector?",
-          a: "Yes. FORMA is a vector design engine, not an image model. Real work opens in the studio.",
+          a: "Yes. Grapxor is a vector design engine, not an image model. Real work opens in the studio.",
         },
         {
           q: "Where do I see pricing?",
@@ -440,16 +440,16 @@ const content: SiteContent = {
       meta: {
         title: "Food packaging design",
         description:
-          "Design food boxes and labels from brief to vector in the Paxolab studio. The engine produces print-ready surfaces — a design engine, not an image model.",
+          "Design food boxes and labels from brief to vector in the Grapxor studio. The engine produces print-ready surfaces — a design engine, not an image model.",
       },
       hero: {
         title: "Food packaging design",
-        lead: "Move food box and label surfaces from brief to vector. FORMA builds shelf-legible, print-oriented layouts — a design engine, not an image model.",
+        lead: "Move food box and label surfaces from brief to vector. Grapxor builds shelf-legible, print-oriented layouts — a design engine, not an image model.",
       },
       sections: [
         {
           title: "Shelf and legibility",
-          body: "Food packaging must make product name, net quantity, and key facts easy to scan. In the Paxolab studio you break the brief into panels and keep hierarchy calm.",
+          body: "Food packaging must make product name, net quantity, and key facts easy to scan. In the Grapxor studio you break the brief into panels and keep hierarchy calm.",
         },
         {
           title: "Box and label together",
@@ -457,11 +457,11 @@ const content: SiteContent = {
         },
         {
           title: "From brief to dieline + vector",
-          body: "The flow starts with chat or a brief; FORMA produces vector artwork on a dieline. The marketing site informs — real design work opens in the studio.",
+          body: "The flow starts with chat or a brief; Grapxor produces vector artwork on a dieline. The marketing site informs — real design work opens in the studio.",
         },
         {
           title: "Print readiness",
-          body: "The goal is a production-aware surface, not a random image. See the dieline and print-ready dieline pages for structure and export focus; questions: merhaba@paxolab.com.",
+          body: "The goal is a production-aware surface, not a random image. See the dieline and print-ready dieline pages for structure and export focus; questions: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -473,8 +473,8 @@ const content: SiteContent = {
       ],
       faqs: [
         {
-          q: "How does FORMA produce food packaging?",
-          a: "You clarify the need via chat or a brief; FORMA produces a dieline plus vector surface. It is a print-oriented design engine, not a random image model.",
+          q: "How does Grapxor produce food packaging?",
+          a: "You clarify the need via chat or a brief; Grapxor produces a dieline plus vector surface. It is a print-oriented design engine, not a random image model.",
         },
         {
           q: "Are legal food texts written automatically in the studio?",
@@ -489,8 +489,8 @@ const content: SiteContent = {
           a: "It depends on product form. If you are unsure, use the label-vs-box guide and the related service pages; you can run both in one brand system.",
         },
         {
-          q: "Is FORMA an image generator?",
-          a: "No. FORMA is a packaging design engine: brief → dieline + vector artwork. The marketing site explains; design work happens in the studio.",
+          q: "Is Grapxor an image generator?",
+          a: "No. Grapxor is a packaging design engine: brief → dieline + vector artwork. The marketing site explains; design work happens in the studio.",
         },
       ],
       serviceName: "Food packaging design",
@@ -501,11 +501,11 @@ const content: SiteContent = {
       meta: {
         title: "Serum and cream box design",
         description:
-          "Design serum and cream cartons from brief to vector in the Paxolab studio. The engine builds print-oriented surfaces on a dieline — not an image model.",
+          "Design serum and cream cartons from brief to vector in the Grapxor studio. The engine builds print-oriented surfaces on a dieline — not an image model.",
       },
       hero: {
         title: "Serum and cream box design",
-        lead: "Clean carton surfaces for serum and cream SKUs. Move your brief to dieline + vector in the Paxolab studio — a design engine, not an image model.",
+        lead: "Clean carton surfaces for serum and cream SKUs. Move your brief to dieline + vector in the Grapxor studio — a design engine, not an image model.",
       },
       sections: [
         {
@@ -522,7 +522,7 @@ const content: SiteContent = {
         },
         {
           title: "From brief to vector",
-          body: "Start with chat or a brief; FORMA produces vector artwork on a dieline. The marketing site informs — design opens in the studio. Questions: merhaba@paxolab.com.",
+          body: "Start with chat or a brief; Grapxor produces vector artwork on a dieline. The marketing site informs — design opens in the studio. Questions: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -538,8 +538,8 @@ const content: SiteContent = {
           a: "This hub covers both product types, with distinct serum and cream sections. Use the cosmetic packaging page for broader category needs.",
         },
         {
-          q: "Does FORMA generate images?",
-          a: "No. FORMA is a design engine that turns a brief into dieline + vector artwork — not an image-generation model. Work opens in the studio.",
+          q: "Does Grapxor generate images?",
+          a: "No. Grapxor is a design engine that turns a brief into dieline + vector artwork — not an image-generation model. Work opens in the studio.",
         },
         {
           q: "Is the INCI list added automatically?",
@@ -562,19 +562,19 @@ const content: SiteContent = {
       meta: {
         title: "What is AI packaging design?",
         description:
-          "What is AI packaging design? FORMA is a vector design engine: brief to dieline + artwork — not an image-generation model.",
+          "What is AI packaging design? Grapxor is a vector design engine: brief to dieline + artwork — not an image-generation model.",
       },
       hero: {
         title: "What is AI packaging design?",
-        lead: "“AI packaging” is often confused with image generation. At Paxolab, FORMA is a design engine that turns chat and briefs into dieline + vector artwork — not an image-gen model.",
+        lead: "“AI packaging” is often confused with image generation. Grapxor is a design engine that turns chat and briefs into dieline + vector artwork — not an image-gen model.",
       },
       sections: [
         {
           title: "Image model vs vector engine",
-          body: "Image models output stylized raster pictures. FORMA builds print-oriented vector surfaces on packaging panels and a dieline. That difference shapes what you can send toward production.",
+          body: "Image models output stylized raster pictures. Grapxor builds print-oriented vector surfaces on packaging panels and a dieline. That difference shapes what you can send toward production.",
         },
         {
-          title: "The FORMA flow",
+          title: "The Grapxor flow",
           body: "You clarify the need via chat or a brief; the studio produces dieline + artwork and you revise there. This marketing site informs — real work opens in the studio.",
         },
         {
@@ -584,7 +584,7 @@ const content: SiteContent = {
       ],
       related: [
         { href: "/en/ai-vs-design-agency-packaging", label: "AI vs design agency" },
-        { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+        { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
         { href: "/en/ai-packaging-myths", label: "AI packaging myths" },
         { href: "/en/how-it-works", label: "How it works" },
         { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
@@ -592,7 +592,7 @@ const content: SiteContent = {
       faqs: [
         {
           q: "Is AI packaging design the same as image generation?",
-          a: "Many tools treat it that way. At Paxolab, FORMA is a vector design engine: chat or brief → dieline + artwork. It is not an image-gen model.",
+          a: "Many tools treat it that way. Grapxor is a vector design engine: chat or brief → dieline + artwork. It is not an image-gen model.",
         },
         {
           q: "Does it work via chat?",
@@ -608,7 +608,7 @@ const content: SiteContent = {
         },
         {
           q: "Is it free?",
-          a: "Credit use is explained on the pricing page. See the studio for current packs; questions: merhaba@paxolab.com.",
+          a: "Credit use is explained on the pricing page. See the studio for current packs; questions: merhaba@grapxor.com.",
         },
       ],
       serviceName: "What is AI packaging design",
@@ -619,11 +619,11 @@ const content: SiteContent = {
       meta: {
         title: "Print-ready dieline",
         description:
-          "Print-ready dieline with an SVG-minded export focus. Paxolab: brief to vector surface — the production companion to our dieline page.",
+          "Print-ready dieline with an SVG-minded export focus. Grapxor: brief to vector surface — the production companion to our dieline page.",
       },
       hero: {
         title: "Print-ready dieline",
-        lead: "Treat the dieline as more than a concept: vector export and preflight awareness. FORMA turns briefs into dieline + vector artwork — a design engine, not an image model.",
+        lead: "Treat the dieline as more than a concept: vector export and preflight awareness. Grapxor turns briefs into dieline + vector artwork — a design engine, not an image model.",
       },
       sections: [
         {
@@ -636,11 +636,11 @@ const content: SiteContent = {
         },
         {
           title: "How this relates to the dieline page",
-          body: "See our dieline page (/en/dieline) for structure and concepts. This page complements it with export and preflight focus — it is not a duplicate. Production starts in the Paxolab studio.",
+          body: "See our dieline page (/en/dieline) for structure and concepts. This page complements it with export and preflight focus — it is not a duplicate. Production starts in the Grapxor studio.",
         },
         {
           title: "High-level checklist themes",
-          body: "Review safe area, cut-vs-art separation, and type legibility before you ask the printer. For current export options, open the studio or email merhaba@paxolab.com.",
+          body: "Review safe area, cut-vs-art separation, and type legibility before you ask the printer. For current export options, open the studio or email merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -657,15 +657,15 @@ const content: SiteContent = {
         },
         {
           q: "Is the output SVG?",
-          a: "FORMA produces vector-first work; export details can vary by studio version. Open the studio or email merhaba@paxolab.com for current formats.",
+          a: "Grapxor produces vector-first work; export details can vary by studio version. Open the studio or email merhaba@grapxor.com for current formats.",
         },
         {
-          q: "Does FORMA run preflight?",
+          q: "Does Grapxor run preflight?",
           a: "The studio is designed for print-oriented surfaces and dieline alignment. Final press preflight and material approval still happen with your production partner.",
         },
         {
-          q: "Is FORMA drawing pictures?",
-          a: "No. FORMA is a design engine that turns a brief into dieline + vector artwork — not an image-generation model.",
+          q: "Is Grapxor drawing pictures?",
+          a: "No. Grapxor is a design engine that turns a brief into dieline + vector artwork — not an image-generation model.",
         },
         {
           q: "What does print-ready mean here?",
@@ -678,7 +678,7 @@ const content: SiteContent = {
         steps: [
         { name: 'Define the dieline need', text: 'Cut, crease, glue lines are production language.' },
         { name: 'Enter brief and sizes', text: 'Clarify form and mm values in studio.' },
-        { name: 'Generate', text: 'FORMA outputs a paneled vector surface.' },
+        { name: 'Generate', text: 'Grapxor outputs a paneled vector surface.' },
         { name: 'Preflight and export', text: 'Pass checks, then take SVG/vector.' },
         { name: 'Printer approval', text: 'Final sign-off is with you/the printer.' },
       ],
@@ -691,11 +691,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Label vs box: how to choose",
         description:
-          "Not sure label vs box? Compare both Paxolab modes and move from brief to dieline + vector with Paxolab — a design engine, not an image model.",
+          "Not sure label vs box? Compare both Grapxor modes and move from brief to dieline + vector with Grapxor — a design engine, not an image model.",
       },
       hero: {
         title: "Label or box?",
-        lead: "Product form and the moment of sale drive the choice. Paxolab treats label and box as distinct modes — often used together in one brand system. FORMA produces vectors from your brief, not image-gen art.",
+        lead: "Product form and the moment of sale drive the choice. Grapxor treats label and box as distinct modes — often used together in one brand system. Grapxor produces vectors from your brief, not image-gen art.",
       },
       sections: [
         {
@@ -712,7 +712,7 @@ serviceName: "Print-ready dieline",
         },
         {
           title: "Clarify in the studio",
-          body: "Write form and goal via chat or brief; FORMA produces dieline + vector artwork. The marketing site informs — work opens in the studio. Questions: merhaba@paxolab.com.",
+          body: "Write form and goal via chat or brief; Grapxor produces dieline + vector artwork. The marketing site informs — work opens in the studio. Questions: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -736,12 +736,12 @@ serviceName: "Print-ready dieline",
           a: "For folding cartons and similar structures, the dieline is central. Labels use a different cut/shape, but a print-oriented vector layout still matters.",
         },
         {
-          q: "Does FORMA pick label or box automatically?",
-          a: "You clarify product form and goal in the brief. Paxolab is not an image model; it is a design engine that produces dieline + vector artwork from what you specify.",
+          q: "Does Grapxor pick label or box automatically?",
+          a: "You clarify product form and goal in the brief. Grapxor is not an image model; it is a design engine that produces dieline + vector artwork from what you specify.",
         },
         {
           q: "Where should I go if I am still unsure?",
-          a: "Use the criteria on this page, then open label design or box design. If it is still unclear, email merhaba@paxolab.com or continue in studio chat.",
+          a: "Use the criteria on this page, then open label design or box design. If it is still unclear, email merhaba@grapxor.com or continue in studio chat.",
         },
       ],
       serviceName: "Label vs box",
@@ -752,11 +752,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Private-label food box brief",
         description:
-          "Clarify size, panels, legal space, and brand kit in a private-label food box brief. FORMA: brief → dieline + vector.",
+          "Clarify size, panels, legal space, and brand kit in a private-label food box brief. Grapxor: brief → dieline + vector.",
       },
       hero: {
         title: "Private-label food box brief",
-        lead: "Before print, capture product name, net quantity, SKU, dimensions, and panel reserves in the brief. On Paxolab, FORMA turns brief into dieline + vector art — a design engine, not an image model.",
+        lead: "Before print, capture product name, net quantity, SKU, dimensions, and panel reserves in the brief. Grapxor turns brief into dieline + vector art — a design engine, not an image model.",
       },
       sections: [
         {
@@ -772,8 +772,8 @@ serviceName: "Print-ready dieline",
           body: "Reserve panels for mandatory info fields. Content accuracy is the brand’s and adviser’s responsibility; the studio helps with readable layout.",
         },
         {
-          title: "Brand kit and FORMA flow",
-          body: "Attach logo, color, and type notes to the brief. Flow: chat → brief → dieline + vector artwork. The marketing site informs; production opens in the studio. Questions: merhaba@paxolab.com.",
+          title: "Brand kit and Grapxor flow",
+          body: "Attach logo, color, and type notes to the brief. Flow: chat → brief → dieline + vector artwork. The marketing site informs; production opens in the studio. Questions: merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -789,7 +789,7 @@ serviceName: "Print-ready dieline",
           a: "Yes — without L/W/H or a dieline reference, artwork will not fit panels. If you do not know them yet, note printer/die size in the brief.",
         },
         {
-          q: "Does FORMA fill the brief for me?",
+          q: "Does Grapxor fill the brief for me?",
           a: "Chat helps clarify needs; legal copy and brand decisions stay yours. Output is dieline + vector surface.",
         },
         {
@@ -805,11 +805,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Mandatory food label info fields",
         description:
-          "A designer checklist for typical mandatory food-label fields. Not legal advice; FORMA helps with layout space.",
+          "A designer checklist for typical mandatory food-label fields. Not legal advice; Grapxor helps with layout space.",
       },
       hero: {
         title: "Mandatory food label info fields",
-        lead: "Frame which fields need space on the label surface in design language. This page is not legal advice — FORMA produces panel layout and vector art; you own content accuracy.",
+        lead: "Frame which fields need space on the label surface in design language. This page is not legal advice — Grapxor produces panel layout and vector art; you own content accuracy.",
       },
       sections: [
         {
@@ -825,8 +825,8 @@ serviceName: "Print-ready dieline",
           body: "On small labels, mandatory fields come first. If they do not fit, note moving content to a back panel, carton, or secondary label in the brief.",
         },
         {
-          title: "Panel reserve and FORMA",
-          body: "FORMA helps reserve space and produce print-oriented vector surfaces; you approve content. Open the studio or email merhaba@paxolab.com.",
+          title: "Panel reserve and Grapxor",
+          body: "Grapxor helps reserve space and produce print-oriented vector surfaces; you approve content. Open the studio or email merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -838,7 +838,7 @@ serviceName: "Print-ready dieline",
       ],
       faqs: [
         {
-          q: "Does Paxolab auto-write legal copy?",
+          q: "Does Grapxor auto-write legal copy?",
           a: "No. The studio helps reserve readable panel space; content accuracy stays with you and your adviser.",
         },
         {
@@ -858,11 +858,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Snack packaging: box or pouch?",
         description:
-          "Decision criteria for snack box vs pouch: shelf, protection, brand feel. FORMA: brief → vector surface.",
+          "Decision criteria for snack box vs pouch: shelf, protection, brand feel. Grapxor: brief → vector surface.",
       },
       hero: {
         title: "Snack packaging: box or pouch?",
-        lead: "Shelf stance, protection, filling line, and brand feel drive the format. Write the choice into the Paxolab brief; FORMA produces structure + vector surface — not image-gen.",
+        lead: "Shelf stance, protection, filling line, and brand feel drive the format. Write the choice into the Grapxor brief; Grapxor produces structure + vector surface — not image-gen.",
       },
       sections: [
         {
@@ -879,7 +879,7 @@ serviceName: "Print-ready dieline",
         },
         {
           title: "Write the format into the brief",
-          body: "State format, size, and print method clearly. FORMA advances each surface with dieline + vector logic. Studio CTA · merhaba@paxolab.com.",
+          body: "State format, size, and print method clearly. Grapxor advances each surface with dieline + vector logic. Studio CTA · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -895,8 +895,8 @@ serviceName: "Print-ready dieline",
           a: "It depends on shelf and brand language. Folding cartons often read as gift/set; pouches can be strong for fast consumption and barrier.",
         },
         {
-          q: "Inner pouch + outer carton in one Paxolab project?",
-          a: "Separate the two surfaces clearly in the brief. FORMA proceeds per surface with dieline + vector logic; keep one brand system.",
+          q: "Inner pouch + outer carton in one Grapxor project?",
+          a: "Separate the two surfaces clearly in the brief. Grapxor proceeds per surface with dieline + vector logic; keep one brand system.",
         },
         {
           q: "Do pouches have a dieline too?",
@@ -911,11 +911,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Serum box size brief",
         description:
-          "Size brief for a serum carton that fits the bottle: tolerance, panels, dropper notes. FORMA: dieline + vector.",
+          "Size brief for a serum carton that fits the bottle: tolerance, panels, dropper notes. Grapxor: dieline + vector.",
       },
       hero: {
         title: "Serum box size brief",
-        lead: "Think bottle dimensions versus inner clearance with tolerance. On Paxolab, list panels in the brief; FORMA produces dieline + vector — no invented “every serum is X mm” table.",
+        lead: "Think bottle dimensions versus inner clearance with tolerance. On Grapxor, list panels in the brief; Grapxor produces dieline + vector — no invented “every serum is X mm” table.",
       },
       sections: [
         {
@@ -931,8 +931,8 @@ serviceName: "Print-ready dieline",
           body: "Write volume (ml), rough size, brand language, and regulatory fields. Guessing structure without size is risky — update the dieline when the die is final.",
         },
         {
-          title: "Dieline + surface in FORMA",
-          body: "FORMA is a vector design engine. Bridge to cosmetic, box, and dieline pages. Studio · merhaba@paxolab.com.",
+          title: "Dieline + surface in Grapxor",
+          body: "Grapxor is a vector design engine. Bridge to cosmetic, box, and dieline pages. Studio · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -948,7 +948,7 @@ serviceName: "Print-ready dieline",
           a: "Note height including cap, body diameter/width, and the most critical protrusion. Add a physical sample or tech drawing to the brief when possible.",
         },
         {
-          q: "Can FORMA make a box without dimensions?",
+          q: "Can Grapxor make a box without dimensions?",
           a: "Guessing structure is risky. At least give target volume (ml) and rough size; update the dieline when the die is locked.",
         },
         {
@@ -964,11 +964,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Cream jar label design",
         description:
-          "Cream jar labels: curved surface, wrap/spot, INCI hierarchy. FORMA produces print-oriented vector art.",
+          "Cream jar labels: curved surface, wrap/spot, INCI hierarchy. Grapxor produces print-oriented vector art.",
       },
       hero: {
         title: "Cream jar label design",
-        lead: "Choose wrap or spot for jar geometry; place ingredients/INCI with hierarchy. FORMA is not image-gen — it produces print-oriented vector surfaces.",
+        lead: "Choose wrap or spot for jar geometry; place ingredients/INCI with hierarchy. Grapxor is not image-gen — it produces print-oriented vector surfaces.",
       },
       sections: [
         {
@@ -984,8 +984,8 @@ serviceName: "Print-ready dieline",
           body: "Note lid-top or base-label scenarios in the brief. Ecommerce and gift sets often add an outer carton — see label vs box.",
         },
         {
-          title: "Vector surface with FORMA",
-          body: "Keep one brand language with label design and the serum/cream hub. Studio · merhaba@paxolab.com.",
+          title: "Vector surface with Grapxor",
+          body: "Keep one brand language with label design and the serum/cream hub. Studio · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1005,7 +1005,7 @@ serviceName: "Print-ready dieline",
           a: "Depends on channel and brand language. Ecommerce and gift sets often add an outer carton — see the decision page.",
         },
         {
-          q: "Does FORMA produce a 3D jar?",
+          q: "Does Grapxor produce a 3D jar?",
           a: "Focus is print-oriented vector surface and structure language; the marketing site informs, design happens in the studio.",
         },
       ],
@@ -1017,11 +1017,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "Skincare set box design",
         description:
-          "Skincare set boxes: multi-SKU, inserts, gift and unboxing. FORMA: brief → dieline + artwork.",
+          "Skincare set boxes: multi-SKU, inserts, gift and unboxing. Grapxor: brief → dieline + artwork.",
       },
       hero: {
         title: "Skincare set box design",
-        lead: "Gather multiple products on one brand surface. Write set contents, insert needs, and outer panel copy into the brief; FORMA produces dieline + vector.",
+        lead: "Gather multiple products on one brand surface. Write set contents, insert needs, and outer panel copy into the brief; Grapxor produces dieline + vector.",
       },
       sections: [
         {
@@ -1037,8 +1037,8 @@ serviceName: "Print-ready dieline",
           body: "The outer face can carry gift feel and opening experience. For ecommerce, think durability alongside the related spoke.",
         },
         {
-          title: "Brief → FORMA",
-          body: "Bridge to the cosmetic hub, box design, and dieline pages. Studio · merhaba@paxolab.com.",
+          title: "Brief → Grapxor",
+          body: "Bridge to the cosmetic hub, box design, and dieline pages. Studio · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1070,11 +1070,11 @@ serviceName: "Print-ready dieline",
       meta: {
         title: "AI packaging vs design agency",
         description:
-          "When AI packaging vs a design agency? FORMA vector engine vs image-gen; honest limits and hybrid use.",
+          "When AI packaging vs a design agency? Grapxor vector engine vs image-gen; honest limits and hybrid use.",
       },
       hero: {
         title: "AI packaging or a design agency?",
-        lead: "Compare on speed, dieline/structure, brand strategy, and revision. Paxolab does not claim to replace agencies; FORMA produces print-oriented vector surfaces from a brief.",
+        lead: "Compare on speed, dieline/structure, brand strategy, and revision. Grapxor does not claim to replace agencies; Grapxor produces print-oriented vector surfaces from a brief.",
       },
       sections: [
         {
@@ -1082,32 +1082,32 @@ serviceName: "Print-ready dieline",
           body: "Weigh speed, structure/dieline, brand strategy, and revision in one frame. There is no hard “always cheaper/faster” claim.",
         },
         {
-          title: "Image-gen vs FORMA",
-          body: "Image-gen produces stylized pixels. FORMA is not Midjourney/DALL·E; it is a vector design engine on packaging panels and dielines.",
+          title: "Image-gen vs Grapxor",
+          body: "Image-gen produces stylized pixels. Grapxor is not Midjourney/DALL·E; it is a vector design engine on packaging panels and dielines.",
         },
         {
-          title: "Agency and Paxolab strengths",
-          body: "Agencies excel at strategy, campaigns, and complex systems. Paxolab excels at brief → print-oriented surface in a studio engine. Hybrid use is common.",
+          title: "Agency and Grapxor strengths",
+          body: "Agencies excel at strategy, campaigns, and complex systems. Grapxor excels at brief → print-oriented surface in a studio engine. Hybrid use is common.",
         },
         {
           title: "Hybrid scenarios",
-          body: "Agency sets brand language; FORMA produces dieline + vector — or the reverse. Parent hub and myths spoke clarify the split. merhaba@paxolab.com.",
+          body: "Agency sets brand language; Grapxor produces dieline + vector — or the reverse. Parent hub and myths spoke clarify the split. merhaba@grapxor.com.",
         },
       ],
       related: [
         { href: "/en/what-is-ai-packaging-design", label: "What is AI packaging?" },
-        { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+        { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
         { href: "/en/ai-packaging-myths", label: "AI packaging myths" },
         { href: "/en/packaging-design", label: "Packaging design" },
         { href: "/en/how-it-works", label: "How it works" },
       ],
       faqs: [
         {
-          q: "Does Paxolab replace an agency?",
+          q: "Does Grapxor replace an agency?",
           a: "No such claim. It is a studio engine from packaging brief to vector surface; broad brand strategy may still need an agency.",
         },
         {
-          q: "Can I bring agency output into FORMA?",
+          q: "Can I bring agency output into Grapxor?",
           a: "You can carry brand kit and sizes into the brief. The goal is print-oriented structure + surface.",
         },
         {
@@ -1118,21 +1118,21 @@ serviceName: "Print-ready dieline",
       serviceName: "AI vs design agency packaging",
       serviceType: "AiVsDesignAgencyPackaging",
     },
-    "how-forma-vector-engine-works": {
-      slug: "how-forma-vector-engine-works",
+    "how-grapxor-vector-engine-works": {
+      slug: "how-grapxor-vector-engine-works",
       meta: {
-        title: "How the FORMA vector engine works",
+        title: "How the Grapxor vector engine works",
         description:
-          "FORMA vector engine: chat → brief → dieline + artwork. Not image-gen; Paxolab studio design engine.",
+          "Grapxor vector engine: chat → brief → dieline + artwork. Not image-gen; Grapxor studio design engine.",
       },
       hero: {
-        title: "How the FORMA vector engine works",
-        lead: "FORMA is a packaging design engine that produces dieline + vector artwork from a brief — not an image model. The marketing site informs; the studio designs.",
+        title: "How the Grapxor vector engine works",
+        lead: "Grapxor is a packaging design engine that produces dieline + vector artwork from a brief — not an image model. The marketing site informs; the studio designs.",
       },
       sections: [
         {
           title: "Vector engine vs image model",
-          body: "Image models produce stylized pixels. FORMA produces print-oriented vectors in panel and dieline language.",
+          body: "Image models produce stylized pixels. Grapxor produces print-oriented vectors in panel and dieline language.",
         },
         {
           title: "Flow: chat → brief → dieline + artwork",
@@ -1144,7 +1144,7 @@ serviceName: "Print-ready dieline",
         },
         {
           title: "Next: preflight",
-          body: "Use the print-ready dieline hub and preflight checklist before printer approval. merhaba@paxolab.com.",
+          body: "Use the print-ready dieline hub and preflight checklist before printer approval. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1156,7 +1156,7 @@ serviceName: "Print-ready dieline",
       ],
       faqs: [
         {
-          q: "Is FORMA an image generator?",
+          q: "Is Grapxor an image generator?",
           a: "No. It is a packaging design engine that produces dieline + vector artwork from a brief.",
         },
         {
@@ -1169,17 +1169,17 @@ serviceName: "Print-ready dieline",
         },
       ],
             howto: {
-        name: 'How to use the FORMA vector engine',
+        name: 'How to use the Grapxor vector engine',
         description: 'From chat/brief to vector artwork on a dieline.',
         steps: [
         { name: 'Clarify the brief', text: 'Product type, sizes, brand notes; chat helps.' },
         { name: 'Pick template/dieline', text: 'Structure panels in production language.' },
-        { name: 'Run FORMA', text: 'Final print surface is a vector engine—not a random image model.' },
+        { name: 'Run Grapxor', text: 'Final print surface is a vector engine—not a random image model.' },
         { name: 'Revise', text: 'Tighten copy and layout through iterations.' },
         { name: 'Export / continue in studio', text: 'Credits and packs live in the studio.' },
       ],
       },
-serviceName: "How the FORMA vector engine works",
+serviceName: "How the Grapxor vector engine works",
       serviceType: "FormaVectorEngineExplainer",
     },
     "ai-packaging-myths": {
@@ -1187,11 +1187,11 @@ serviceName: "How the FORMA vector engine works",
       meta: {
         title: "AI packaging myths",
         description:
-          "AI packaging myths: pretty image ≠ print, dielines still matter, legal copy is not auto-correct. Paxolab + FORMA.",
+          "AI packaging myths: pretty image ≠ print, dielines still matter, legal copy is not auto-correct. Grapxor sets realistic expectations.",
       },
       hero: {
         title: "AI packaging myths",
-        lead: "Separate common misconceptions with short “reality” answers. Paxolab positions FORMA as a vector design engine — marketing explains, the studio produces.",
+        lead: "Separate common misconceptions with short “reality” answers. Grapxor positions itself as a vector design engine — marketing explains, the studio produces.",
       },
       sections: [
         {
@@ -1208,12 +1208,12 @@ serviceName: "How the FORMA vector engine works",
         },
         {
           title: "Myth: Agencies / designers disappear",
-          body: "Reality: Broad strategy and campaigns may still need an agency. Paxolab focuses on packaging brief → vector surface. merhaba@paxolab.com.",
+          body: "Reality: Broad strategy and campaigns may still need an agency. Grapxor focuses on packaging brief → vector surface. merhaba@grapxor.com.",
         },
       ],
       related: [
         { href: "/en/what-is-ai-packaging-design", label: "What is AI packaging?" },
-        { href: "/en/how-forma-vector-engine-works", label: "How FORMA works" },
+        { href: "/en/how-grapxor-vector-engine-works", label: "How Grapxor works" },
         { href: "/en/ai-vs-design-agency-packaging", label: "AI vs design agency" },
         { href: "/en/print-ready-dieline", label: "Print-ready dieline" },
         { href: "/en/faq", label: "FAQ" },
@@ -1224,12 +1224,12 @@ serviceName: "How the FORMA vector engine works",
           a: "No. Image-model output differs from dieline + vector surface. Preflight is required before print.",
         },
         {
-          q: "How does Paxolab handle these myths?",
-          a: "It positions FORMA as a vector design engine; the marketing site explains, the studio produces.",
+          q: "How does Grapxor handle these myths?",
+          a: "It positions Grapxor as a vector design engine; the marketing site explains, the studio produces.",
         },
         {
           q: "What should I do after reading the myths?",
-          a: "Read the parent hub and the “how FORMA works” spoke, then try a brief in the studio.",
+          a: "Read the parent hub and the “how Grapxor works” spoke, then try a brief in the studio.",
         },
       ],
       serviceName: "AI packaging myths",
@@ -1244,7 +1244,7 @@ serviceName: "How the FORMA vector engine works",
       },
       hero: {
         title: "How to send an SVG dieline to your printer",
-        lead: "An export and communication checklist — no claim that “SVG just works everywhere.” FORMA produces print-oriented vector/dieline; you send files and run preflight.",
+        lead: "An export and communication checklist — no claim that “SVG just works everywhere.” Grapxor produces print-oriented vector/dieline; you send files and run preflight.",
       },
       sections: [
         {
@@ -1261,7 +1261,7 @@ serviceName: "How the FORMA vector engine works",
         },
         {
           title: "Five printer questions and next step",
-          body: "Ask preferred format, color profile, bleed, material, and proof process. After Paxolab output, you send the files. merhaba@paxolab.com.",
+          body: "Ask preferred format, color profile, bleed, material, and proof process. After Grapxor output, you send the files. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1277,7 +1277,7 @@ serviceName: "How the FORMA vector engine works",
           a: "Usually no. Artwork, units, cut/crease separation, and material notes are also needed; ask the printer’s preferred format.",
         },
         {
-          q: "Does FORMA upload to the printer account?",
+          q: "Does Grapxor upload to the printer account?",
           a: "No. The studio produces print-oriented vector/dieline; you send files and run preflight.",
         },
         {
@@ -1287,10 +1287,10 @@ serviceName: "How the FORMA vector engine works",
       ],
             howto: {
         name: 'Prepare an SVG dieline for your printer',
-        description: 'Check Paxolab/FORMA output before sending to print. Final printer approval is yours and the printer’s.',
+        description: 'Check Grapxor output before sending to print. Final printer approval is yours and the printer’s.',
         steps: [
         { name: 'Lock size and structure', text: 'Put box type and mm sizes in the brief so panels fit the dieline.' },
-        { name: 'Generate in studio', text: 'FORMA builds a vector surface with dieline logic—not an image model.' },
+        { name: 'Generate in studio', text: 'Grapxor builds a vector surface with dieline logic—not an image model.' },
         { name: 'Read preflight', text: 'Fix warnings; bad panels/sizes cost money.' },
         { name: 'Export SVG/vector', text: 'Package the file the way your printer asks.' },
         { name: 'Confirm with the printer', text: 'Cut, crease, stock, and color profile are signed off there.' },
@@ -1324,8 +1324,8 @@ serviceName: "How to send an SVG dieline to printer",
           body: "Recognize front / back / side / flap panels. Grain and glue flap are high-level brief notes.",
         },
         {
-          title: "Specify tuck-end in the brief (FORMA)",
-          body: "Name the carton style in the brief; the engine works with dieline + vector surface logic. Final die is validated with the printer. merhaba@paxolab.com.",
+          title: "Specify tuck-end in the brief (Grapxor)",
+          body: "Name the carton style in the brief; the engine works with dieline + vector surface logic. Final die is validated with the printer. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1345,7 +1345,7 @@ serviceName: "How to send an SVG dieline to printer",
           a: "Artwork sits on printable panel faces; do not confuse it with cut lines and bleed. See the preflight checklist.",
         },
         {
-          q: "Does FORMA produce tuck-end?",
+          q: "Does Grapxor produce tuck-end?",
           a: "You specify carton style in the brief; the engine works with dieline + vector surface logic. Final die is validated with the printer.",
         },
       ],
@@ -1372,7 +1372,7 @@ serviceName: "Reading a tuck-end dieline",
       },
       hero: {
         title: "Packaging preflight checklist",
-        lead: "Scan structure and artwork checks to avoid costly errors. A checklist is a start; printer approval is required. FORMA aims at sound structure/surface — no “auto-pass preflight” claim.",
+        lead: "Scan structure and artwork checks to avoid costly errors. A checklist is a start; printer approval is required. Grapxor aims at sound structure/surface — no “auto-pass preflight” claim.",
       },
       sections: [
         {
@@ -1388,8 +1388,8 @@ serviceName: "Reading a tuck-end dieline",
           body: "Review fonts, overprint notes, and raster resolution if any. Ask the printer for profile/spot — no universal profile promise.",
         },
         {
-          title: "Your steps after Paxolab",
-          body: "After studio output: checklist + printer preflight. merhaba@paxolab.com.",
+          title: "Your steps after Grapxor",
+          body: "After studio output: checklist + printer preflight. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1402,14 +1402,14 @@ serviceName: "Reading a tuck-end dieline",
       faqs: [
         {
           q: "Who runs preflight?",
-          a: "You + the printer. FORMA produces print-oriented vector/dieline; final preflight follows printer standards.",
+          a: "You + the printer. Grapxor produces print-oriented vector/dieline; final preflight follows printer standards.",
         },
         {
           q: "Does the checklist include color profile?",
           a: "Yes, as a question: ask the printer’s required profile/spot. There is no single universal profile promise.",
         },
         {
-          q: "Does FORMA auto-pass preflight?",
+          q: "Does Grapxor auto-pass preflight?",
           a: "No such claim. Goal is sound structure and surface; you validate with checklist and printer.",
         },
       ],
@@ -1432,7 +1432,7 @@ serviceName: "Packaging preflight checklist",
       meta: {
         title: "When to use label and box together",
         description:
-          "When to use label and box together: bottle+carton, sets, gifts. Parallel surfaces with FORMA.",
+          "When to use label and box together: bottle+carton, sets, gifts. Parallel surfaces with Grapxor.",
       },
       hero: {
         title: "When to use label and box together",
@@ -1452,8 +1452,8 @@ serviceName: "Packaging preflight checklist",
           body: "Same language, different panels. Write both surfaces as separate brief lines; see label and box pages.",
         },
         {
-          title: "Parallel surfaces with FORMA",
-          body: "FORMA advances each surface with dieline/vector logic. Start from the parent decision hub. merhaba@paxolab.com.",
+          title: "Parallel surfaces with Grapxor",
+          body: "Grapxor advances each surface with dieline/vector logic. Start from the parent decision hub. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1473,8 +1473,8 @@ serviceName: "Packaging preflight checklist",
           a: "No fixed figure; it means two production items. See pricing and get a printer quote.",
         },
         {
-          q: "Can Paxolab produce both in one brand system?",
-          a: "Separate each surface in the brief. FORMA proceeds per surface with dieline/vector logic.",
+          q: "Can Grapxor produce both in one brand system?",
+          a: "Separate each surface in the brief. Grapxor proceeds per surface with dieline/vector logic.",
         },
       ],
       serviceName: "When to use label and box together",
@@ -1485,11 +1485,11 @@ serviceName: "Packaging preflight checklist",
       meta: {
         title: "Ecommerce box design",
         description:
-          "Ecommerce boxes: unboxing, protection, shelf vs ship. FORMA: brief → dieline + vector; no ship testing claim.",
+          "Ecommerce boxes: unboxing, protection, shelf vs ship. Grapxor: brief → dieline + vector; no ship testing claim.",
       },
       hero: {
         title: "Ecommerce box design",
-        lead: "For DTC / online sales, think unboxing and protection together. FORMA produces structure + vector; drop/ship tests stay with you / logistics — no “zero damage” claim.",
+        lead: "For DTC / online sales, think unboxing and protection together. Grapxor produces structure + vector; drop/ship tests stay with you / logistics — no “zero damage” claim.",
       },
       sections: [
         {
@@ -1505,8 +1505,8 @@ serviceName: "Packaging preflight checklist",
           body: "Note voids and fragile-product needs. Clarify label vs outer carton via the decision hub.",
         },
         {
-          title: "Brief → FORMA",
-          body: "Bridge to box design, dieline, and print-ready pages. Studio · merhaba@paxolab.com.",
+          title: "Brief → Grapxor",
+          body: "Bridge to box design, dieline, and print-ready pages. Studio · merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1526,7 +1526,7 @@ serviceName: "Packaging preflight checklist",
           a: "For some SKUs, yes. For brand experience, consider a custom carton or sleeve — see the decision hub.",
         },
         {
-          q: "Does FORMA run ship tests?",
+          q: "Does Grapxor run ship tests?",
           a: "No. The design engine produces structure + vector; drop/ship tests stay with you / logistics partners.",
         },
       ],
@@ -1538,11 +1538,11 @@ serviceName: "Packaging preflight checklist",
       meta: {
         title: "Bottle wrap label design",
         description:
-          "Bottle wrap labels: size, overlap, seam, and layout. FORMA print-oriented vector; no material guarantee.",
+          "Bottle wrap labels: size, overlap, seam, and layout. Grapxor print-oriented vector; no material guarantee.",
       },
       hero: {
         title: "Bottle wrap label design",
-        lead: "Know wrap vs front/back; derive open label size and overlap from diameter × height. FORMA produces print-oriented vector — no “auto wrap for every bottle” claim.",
+        lead: "Know wrap vs front/back; derive open label size and overlap from diameter × height. Grapxor produces print-oriented vector — no “auto wrap for every bottle” claim.",
       },
       sections: [
         {
@@ -1559,7 +1559,7 @@ serviceName: "Packaging preflight checklist",
         },
         {
           title: "Wrap + outer carton",
-          body: "If information does not fit, use a second label or carton panels — see the “both together” spoke. merhaba@paxolab.com.",
+          body: "If information does not fit, use a second label or carton panels — see the “both together” spoke. merhaba@grapxor.com.",
         },
       ],
       related: [
@@ -1579,7 +1579,7 @@ serviceName: "Packaging preflight checklist",
           a: "Use type hierarchy, a second label, or outer carton panels — see the “both together” spoke.",
         },
         {
-          q: "Does FORMA give a 360° bottle mock?",
+          q: "Does Grapxor give a 360° bottle mock?",
           a: "Focus is print-oriented vector surface. The marketing site informs; production is in studio, physical validation with the printer.",
         },
       ],
@@ -1589,12 +1589,12 @@ serviceName: "Packaging preflight checklist",
   },
   howItWorks: {
     meta: {
-      title: "How the Paxolab studio works",
+      title: "How the Grapxor studio works",
       description:
-        "Paxolab studio workflow: brief, generation, revision, and credits — step by step.",
+        "Grapxor studio workflow: brief, generation, revision, and credits — step by step.",
     },
     title: "How it works",
-    lead: "The Paxolab marketing site informs; real design work happens in the studio. The flow below summarizes a typical session.",
+    lead: "The Grapxor marketing site informs; real design work happens in the studio. The flow below summarizes a typical session.",
     steps: [
       {
         n: "01",
@@ -1624,7 +1624,7 @@ serviceName: "Packaging preflight checklist",
     meta: {
       title: "Packaging and label design examples",
       description:
-        "Illustrative Paxolab packaging and label scenarios. Real projects are made in the studio — not an image-generation model.",
+        "Illustrative Grapxor packaging and label scenarios. Real projects are made in the studio — not an image-generation model.",
     },
     title: "Examples",
     lead: "These are illustrative scenarios — not real client work. Each card links to a related hub or spoke; production happens in the studio from your brief.",
@@ -1633,7 +1633,7 @@ serviceName: "Packaging preflight checklist",
       {
         title: "Serum box — matte face",
         category: "Cosmetics",
-        text: "Single-SKU tuck-end carton; product name and volume on the front, calm typography. FORMA outputs vector surfaces.",
+        text: "Single-SKU tuck-end carton; product name and volume on the front, calm typography. Grapxor outputs vector surfaces.",
         href: "/en/serum-cream-box-design",
       },
       {
@@ -1683,9 +1683,9 @@ serviceName: "Packaging preflight checklist",
 
   pricing: {
     meta: {
-      title: "Paxolab credit packs and pricing",
+      title: "Grapxor credit packs and pricing",
       description:
-        "Paxolab credit packs: 50, 150, and 400 credits. Purchase completes via studio billing.",
+        "Grapxor credit packs: 50, 150, and 400 credits. Purchase completes via studio billing.",
     },
     title: "Pricing",
     lead: "Generation and revisions are metered in credits. Packs tie to in-studio billing; payment completes in the studio.",
@@ -1726,16 +1726,16 @@ serviceName: "Packaging preflight checklist",
 
   faq: {
     meta: {
-      title: "Paxolab FAQ: studio, credits, dielines",
+      title: "Grapxor FAQ: studio, credits, dielines",
       description:
-        "FAQ on Paxolab, credits, dielines, and studio use.",
+        "FAQ on Grapxor, credits, dielines, and studio use.",
     },
     title: "Frequently asked questions",
-    lead: "Short answers on Paxolab, the studio, and credits.",
+    lead: "Short answers on Grapxor, the studio, and credits.",
     items: [
       {
-        q: "What is Paxolab?",
-        a: "Paxolab is one product: a packaging design studio and design engine under a single name. This marketing site informs; production happens in the studio.",
+        q: "What is Grapxor?",
+        a: "Grapxor is one product: a packaging design studio and design engine under a single name. This marketing site informs; production happens in the studio.",
       },
       {
         q: "Is the output really print-ready?",
@@ -1762,8 +1762,8 @@ serviceName: "Packaging preflight checklist",
 
   contact: {
     meta: {
-      title: "Contact Paxolab studio",
-      description: "Get in touch with Paxolab. Email form for support and partnerships.",
+      title: "Contact Grapxor studio",
+      description: "Get in touch with Grapxor. Email form for support and partnerships.",
     },
     title: "Contact",
     lead: "Write about product, partnership, or support. No backend — your email client opens.",
@@ -1782,15 +1782,15 @@ serviceName: "Packaging preflight checklist",
   legal: {
     privacy: {
       meta: {
-        title: "Paxolab privacy policy",
-        description: "Paxolab privacy policy summary.",
+        title: "Grapxor privacy policy",
+        description: "Grapxor privacy policy summary.",
       },
       title: "Privacy policy",
       updated: "Last updated: September 2026",
       sections: [
         {
           title: "Scope",
-          body: "This is a short summary for the Paxolab marketing site. studio accounts and payments may be covered by separate privacy notices.",
+          body: "This is a short summary for the Grapxor marketing site. studio accounts and payments may be covered by separate privacy notices.",
         },
         {
           title: "Data we collect",
@@ -1798,14 +1798,14 @@ serviceName: "Packaging preflight checklist",
         },
         {
           title: "Contact",
-          body: "For privacy requests, email merhaba@paxolab.com.",
+          body: "For privacy requests, email merhaba@grapxor.com.",
         },
       ],
     },
     terms: {
       meta: {
-        title: "Paxolab terms of use",
-        description: "Paxolab site terms of use summary.",
+        title: "Grapxor terms of use",
+        description: "Grapxor site terms of use summary.",
       },
       title: "Terms of use",
       updated: "Last updated: September 2026",

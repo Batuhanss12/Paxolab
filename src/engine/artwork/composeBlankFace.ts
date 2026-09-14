@@ -36,7 +36,7 @@ export function blankLockup(
   if (mood === 'minimal') return 'air-rule'
   if (mood === 'modern') return sector === 'electronics' ? 'left-index' : 'left-index'
   if (sector === 'perfume' && (mood === 'luxury' || mood === 'classic')) return 'centered-crest'
-  if ((sector === 'food' || sector === 'beverage') && mood !== 'modern') return 'harvest-seal'
+  if ((sector === 'food' || sector === 'beverage') && (mood as MoodId) !== 'modern') return 'harvest-seal'
   if (mood === 'eco') return 'air-rule'
   if (mood === 'playful') return 'left-index'
   if (mood === 'classic') return 'serif-cartouche'
@@ -56,6 +56,7 @@ export function blankHeroFamily(sector: SectorId, mood: MoodId, keepHero: boolea
   if (!keepHero) return 'none'
   if (sector === 'perfume') return 'crest'
   if (sector === 'food' || sector === 'beverage') return 'harvest'
+  void mood
   return 'none'
 }
 
