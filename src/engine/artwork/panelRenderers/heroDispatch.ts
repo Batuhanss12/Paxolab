@@ -134,7 +134,9 @@ export function resolveFrontHeroPlacement(
 export function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
   const kitFamily = remapBannedHero(kitHeroFamily(system.decor), system.sector)
   const family = remapBannedHero(plan?.heroGraphic.family ?? kitFamily, system.sector)
-  if (kitGradeOmitsCrestGlyph(system.style) && (family === 'crest' || family === 'seal' || kitFamily === 'crest')) {
+  // Classic drops the floating crest/seal glyph. Harvest / botanical / tech still paint
+  // even when the style kit's default decor is crest/cartouche.
+  if (kitGradeOmitsCrestGlyph(system.style) && (family === 'crest' || family === 'seal')) {
     return ''
   }
   const useLib = family !== 'none' && family !== kitFamily

@@ -19,15 +19,11 @@ import {
   type SlotKind,
 } from './artDesignRegions'
 import { motifFamilyOf, motifSubfamilyOf } from './artMotifFamily'
-import { atomHasFamilyFile } from './assetCatalog/catalog'
 import { isRetiredOverlayId, rejectRetiredOverlayAtoms } from './assetCatalog/retiredOverlay'
 import { atomRegionAllowed, resolveMotifDesign } from './artMotifMeta'
+import { compareAssetPick } from './assetLanguage'
 import {
-  atomAvoided,
   atomLexiconHits,
-  atomMatchesAnyLanguage,
-  earliestUnusedLexiconIndex,
-  unusedLexiconHits,
   isDecorativeFrame,
   type VisualLanguage,
 } from './visualLanguage'
@@ -64,6 +60,7 @@ export type MotifPaintOpts = {
   motifLexicon?: string[]
   kitLexiconUsed?: string[]
   kitSuppliesFocal?: boolean
+  preferredRoles?: MotifRole[]
 }
 
 const FIELD_OP: Record<string, number> = {
@@ -141,27 +138,12 @@ function pickForSlot(
   const lexicon = opts.motifLexicon ?? []
   const avoid = opts.avoid ?? []
   const langs = opts.languages ?? []
+  const roles = opts.preferredRoles ?? []
   const usedTokens = [...(opts.kitLexiconUsed ?? []), ...used.flatMap((atom) => atomLexiconHits(atom, lexicon))]
-  if (!lexicon.length && !avoid.length && !langs.length) return ranked.slice(0, count)
+  if (!lexicon.length && !avoid.length && !langs.length && !roles.length) return ranked.slice(0, count)
+  const policy = { languages: langs, lexicon, avoid, roles }
   return [...ranked]
-    .sort((a, b) => {
-      const va = atomAvoided(a, avoid) ? 1 : 0
-      const vb = atomAvoided(b, avoid) ? 1 : 0
-      if (va !== vb) return va - vb
-      const novA = unusedLexiconHits(a, lexicon, usedTokens).length
-      const novB = unusedLexiconHits(b, lexicon, usedTokens).length
-      const fa = atomHasFamilyFile(a) ? 1 : 0
-      const fb = atomHasFamilyFile(b) ? 1 : 0
-      if (fa !== fb && (novA > 0 || novB > 0)) return fb - fa
-      if (novA !== novB) return novB - novA
-      const ia = earliestUnusedLexiconIndex(a, lexicon, usedTokens)
-      const ib = earliestUnusedLexiconIndex(b, lexicon, usedTokens)
-      if (ia !== ib) return ia - ib
-      const ga = atomMatchesAnyLanguage(a, langs) ? 1 : 0
-      const gb = atomMatchesAnyLanguage(b, langs) ? 1 : 0
-      if (ga !== gb) return gb - ga
-      return 0
-    })
+    .sort((a, b) => compareAssetPick(a, b, policy, usedTokens))
     .slice(0, count)
 }
 

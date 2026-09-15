@@ -4,8 +4,17 @@
  * selection (LockupId / flags), not lockup typography math.
  */
 import type { StyleType } from '../../types'
+import { languagesOfConcept } from '../artwork/visualLanguage'
+import { languageTreatmentFor } from '../artwork/languageTreatment'
 import type { HeroFamily, PatternFamily, VisualConceptBlock } from '../brain/DesignPlan'
 import type { LockupId, SectorId } from './types'
+
+function langsOf(concept: VisualConceptBlock | undefined, override?: readonly string[]): string[] {
+  return languagesOfConcept({
+    visualConcept: concept ?? { id: '', tags: [] },
+    visualLanguage: override?.length ? [...override] : undefined,
+  })
+}
 
 /**
  * Concept id → compatible LockupId.
@@ -51,11 +60,13 @@ export function goldBarForConcept(concept: VisualConceptBlock | undefined, style
 export function chromeForConcept(
   concept: VisualConceptBlock | undefined,
   recipeChrome: 'full' | 'quiet',
+  languages?: readonly string[],
 ): 'full' | 'quiet' {
   if (!concept) return recipeChrome
   const avoid = concept.avoid ?? []
-  const langs = concept.languages ?? []
-  if (concept.id === 'air-paper' || avoid.includes('heavy-frame') || langs.includes('quiet-line')) return 'quiet'
+  const langs = langsOf(concept, languages)
+  const treatment = languageTreatmentFor(langs)
+  if (concept.id === 'air-paper' || avoid.includes('heavy-frame') || treatment.chrome === 'quiet') return 'quiet'
   return recipeChrome
 }
 
@@ -63,6 +74,7 @@ export function shouldPaintSectorFrame(
   concept: VisualConceptBlock | undefined,
   style: StyleType,
   sector: SectorId,
+  languages?: readonly string[],
 ): boolean {
   const styleWants =
     style === 'luxury' ||
@@ -73,18 +85,23 @@ export function shouldPaintSectorFrame(
   if (!styleWants) return false
   if (!concept) return true
   const avoid = concept.avoid ?? []
-  const langs = concept.languages ?? []
+  const langs = langsOf(concept, languages)
+  const treatment = languageTreatmentFor(langs)
   if (avoid.includes('heavy-frame')) return false
-  if (langs.includes('quiet-line') || concept.id === 'air-paper') return false
-  if (langs.includes('linear') || concept.id === 'tech-glyph' || concept.id === 'signal-plaque') return false
+  if (treatment.chrome === 'quiet' || concept.id === 'air-paper') return false
+  if (treatment.blockCorners || concept.id === 'tech-glyph' || concept.id === 'signal-plaque') return false
   if (avoid.includes('generic-corners') && sector === 'electronics') return false
   return true
 }
 
-export function shouldPaintModernGrid(concept: VisualConceptBlock | undefined, style: StyleType): boolean {
+export function shouldPaintModernGrid(
+  concept: VisualConceptBlock | undefined,
+  style: StyleType,
+  languages?: readonly string[],
+): boolean {
   if (style !== 'modern') return false
   if (!concept) return true
-  if (concept.id === 'air-paper' || (concept.languages ?? []).includes('quiet-line')) return false
+  if (concept.id === 'air-paper' || languageTreatmentFor(langsOf(concept, languages)).chrome === 'quiet') return false
   return true
 }
 
@@ -93,9 +110,10 @@ export function shouldPaintLockupWindow(
   chrome: 'full' | 'quiet' | undefined,
   style: StyleType,
   grammar: 'box' | 'label',
+  languages?: readonly string[],
 ): boolean {
   if (chrome !== 'full' || grammar === 'label' || style === 'minimal') return false
-  return chromeForConcept(concept, chrome) === 'full'
+  return chromeForConcept(concept, chrome, languages) === 'full'
 }
 
 export function conceptForbidsPattern(concept: VisualConceptBlock | undefined): boolean {
@@ -144,12 +162,12 @@ export function kitSuppliesFocalLockup(lockup: LockupId, heroFamily?: HeroFamily
 }
 
 /**
- * Faz 2.15–2.16 — catalog-kit grade.
- * Overlay `<image>` clip-art stays off luxury / modern / minimal / classic.
- * Eco / playful still run motif search.
+ * Faz 2.15–2.17 — catalog-kit grade.
+ * Overlay `<image>` clip-art stays off luxury / modern / minimal / classic / eco.
+ * Playful still runs motif search (vintage-badge). Human-approved 15 Sep 2026; do not skip.
  */
 export function kitGradeSkipsOverlay(style: StyleType): boolean {
-  return style === 'luxury' || style === 'modern' || style === 'minimal' || style === 'classic'
+  return style === 'luxury' || style === 'modern' || style === 'minimal' || style === 'classic' || style === 'eco'
 }
 
 /** Classic lockup chrome already carries the grammar; the floating shield+bottle is clip-art. */

@@ -1,14 +1,20 @@
 /**
- * Visual language + lockup clearance helpers for Phase 2.1.
- * Binds to existing concept tags, family, role, subfamily — not a new vocabulary table.
+ * Visual language layer — dialect tokens (oval / heraldic / linear / …).
+ * Base SoT is LANGUAGES keyed by style × sector × subProduct.
+ * Character (air / restrained) may append quiet-line; cue / density / air are not modifiers.
+ * CONCEPTS.languages is a matching copy, not the lookup source.
  */
+import type { StyleType } from '../../types'
 import { axisGap } from '../designSystem/artBox'
+import type { SectorId } from '../designSystem/types'
 import { bboxIntersectionArea } from './artMotifGeom'
 import {
   resolveMotifDesign,
   type MotifMetaHost,
   type MotifRole,
 } from './artMotifMeta'
+import type { DesignIntentBlock, VisualIntent } from '../brain/DesignPlan'
+import { resolveSubProduct } from '../brain/vocabularyTable'
 
 export type VisualLanguage = 'oval' | 'organic' | 'geometric' | 'linear' | 'botanical' | 'heraldic' | 'art-deco' | 'quiet-line'
 
@@ -22,6 +28,66 @@ type SlotLike = {
 
 const LANGS: VisualLanguage[] = ['oval', 'organic', 'geometric', 'linear', 'botanical', 'heraldic', 'art-deco', 'quiet-line']
 
+/**
+ * VL-3 — base language SoT keyed by style × sector × subProduct.
+ * Values match CONCEPTS.languages (copy on the concept row, not the source).
+ * Character is a modifier in visualLanguageFor, not a lookup key.
+ */
+const LANGUAGES: Record<string, VisualLanguage[]> = {
+  'perfume:luxury': ['heraldic'],
+  'perfume:classic': ['heraldic'],
+  'perfume:eco': ['botanical', 'quiet-line'],
+  'cream:luxury': ['oval', 'quiet-line'],
+  'serum:luxury': ['quiet-line', 'oval'],
+  'food:oil:luxury': ['botanical', 'organic'],
+  'food:oil:classic': ['botanical', 'organic'],
+  'food:oil:eco': ['botanical', 'organic'],
+  'food:luxury': ['botanical', 'organic'],
+  'food:eco': ['botanical', 'organic'],
+  'electronics:luxury': ['linear', 'geometric'],
+  'electronics:modern': ['linear', 'geometric'],
+  'eco:any': ['botanical', 'organic'],
+  'playful:any': ['organic', 'geometric'],
+  'modern:any': ['linear'],
+  'minimal:any': ['quiet-line'],
+  'classic:any': ['heraldic', 'art-deco'],
+  'luxury:any': ['geometric', 'quiet-line'],
+}
+
+function languagesForStyleSector(style: StyleType, sector: SectorId, subProduct?: string): VisualLanguage[] {
+  const sub = subProduct ? resolveSubProduct(sector, `${subProduct} ${sector}`) : undefined
+  const row =
+    (sub ? LANGUAGES[`${sector}:${sub}:${style}`] : undefined) ??
+    LANGUAGES[`${sector}:${style}`] ??
+    LANGUAGES[`${style}:any`] ??
+    LANGUAGES['minimal:any']
+  return asLanguages(row)
+}
+
+/** Base dialect from costume identity. Does not read character, cue, density, or air. */
+export function baseVisualLanguageFor(style: StyleType, sector: SectorId, subProduct?: string): VisualLanguage[] {
+  return languagesForStyleSector(style, sector, subProduct)
+}
+
+function withQuietLine(langs: VisualLanguage[]): VisualLanguage[] {
+  if (langs.includes('quiet-line')) return langs
+  return [...langs, 'quiet-line']
+}
+
+/**
+ * VL-5b — single authority for quiet-line append.
+ * air / restrained may add quiet-line; elegant / warm / graphic / high-contrast do not.
+ * Cue is not a modifier (already folded into character by resolveDirectedStyle).
+ */
+export function applyCharacterLanguageModifier(
+  base: readonly string[],
+  character: VisualIntent,
+): VisualLanguage[] {
+  const langs = asLanguages(base)
+  if (character === 'air' || character === 'restrained') return withQuietLine(langs)
+  return langs
+}
+
 type ConceptPlan = {
   visualConcept: {
     id?: string
@@ -32,6 +98,7 @@ type ConceptPlan = {
     motifLexicon?: string[]
   }
   visualIntent?: string
+  visualLanguage?: VisualLanguage[] | string[]
 }
 
 function inferLanguage(plan: ConceptPlan): VisualLanguage | undefined {
@@ -49,14 +116,44 @@ function inferLanguage(plan: ConceptPlan): VisualLanguage | undefined {
   return family && LANGS.includes(family as VisualLanguage) ? (family as VisualLanguage) : undefined
 }
 
-/** Concept row wins; regex family/id is fallback only. */
-export function languagesOfConcept(plan: ConceptPlan): VisualLanguage[] {
-  const declared = (plan.visualConcept.languages ?? []).filter((item): item is VisualLanguage =>
-    LANGS.includes(item as VisualLanguage),
-  )
+function asLanguages(raw?: readonly string[]): VisualLanguage[] {
+  return (raw ?? []).filter((item): item is VisualLanguage => LANGS.includes(item as VisualLanguage))
+}
+
+/** Concept row wins; regex family/id is fallback only. Does not read the plan carrier. */
+export function languagesFromConcept(plan: ConceptPlan): VisualLanguage[] {
+  const declared = asLanguages(plan.visualConcept.languages)
   if (declared.length) return declared
   const fallback = inferLanguage(plan)
   return fallback ? [fallback] : []
+}
+
+/** Plan carrier wins when set; otherwise concept row / inferLanguage. */
+export function languagesOfConcept(plan: ConceptPlan): VisualLanguage[] {
+  const carried = asLanguages(plan.visualLanguage)
+  if (carried.length) return carried
+  return languagesFromConcept(plan)
+}
+
+/**
+ * VL-5b — base(style × sector × sub) then character modifier.
+ * Does not read CONCEPTS, cue, density, negativeSpace, or metallic.
+ */
+export function visualLanguageFor(
+  intent: DesignIntentBlock,
+  sector: SectorId,
+  subProduct?: string,
+): VisualLanguage[] {
+  void intent.density
+  void intent.negativeSpace
+  void intent.metallic
+  void intent.restrainExtras
+  void intent.cue
+  void intent.surface
+  void intent.positioning
+  void intent.hierarchyPolicy
+  const base = baseVisualLanguageFor(intent.style, sector, subProduct)
+  return applyCharacterLanguageModifier(base, intent.character)
 }
 
 export function visualLanguageOfConcept(plan: ConceptPlan): VisualLanguage | undefined {
@@ -142,12 +239,26 @@ export function atomAvoided(atom: MotifMetaHost & { id?: string; sheetId?: strin
 
 export function preferredRolesForLanguage(language?: VisualLanguage): MotifRole[] {
   if (language === 'oval') return ['stamp', 'accent']
+  if (language === 'organic') return ['stamp', 'ornament']
+  if (language === 'geometric') return ['stamp', 'accent']
   if (language === 'botanical') return ['corner', 'accent', 'band']
   if (language === 'heraldic') return ['stamp', 'corner', 'frame']
   if (language === 'quiet-line') return ['corner', 'accent', 'frame']
   if (language === 'linear') return ['band', 'divider', 'accent']
   if (language === 'art-deco') return ['frame', 'corner', 'stamp']
   return []
+}
+
+/** Union of preferred roles across the full language vector, first token first. */
+export function preferredRolesForLanguages(langs?: readonly string[]): MotifRole[] {
+  const out: MotifRole[] = []
+  for (const lang of langs ?? []) {
+    if (!LANGS.includes(lang as VisualLanguage)) continue
+    for (const role of preferredRolesForLanguage(lang as VisualLanguage)) {
+      if (!out.includes(role)) out.push(role)
+    }
+  }
+  return out
 }
 
 export function atomVisualLanguages(atom: MotifMetaHost & { id?: string; sheetId?: string }): VisualLanguage[] {

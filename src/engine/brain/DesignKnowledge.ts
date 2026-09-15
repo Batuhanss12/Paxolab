@@ -65,3 +65,22 @@ export function principlesFor(style: string, surface: string): PrincipleId[] {
   else base.push('legal-belongs-back', 'one-motif-family')
   return base
 }
+
+/** Existing critic/score topics only. Does not invent checks or change thresholds. */
+const TOPIC_TO_PRINCIPLE: Record<string, PrincipleId> = {
+  hierarchy: 'hierarchy-brand-first',
+  hierarchyStrength: 'hierarchy-brand-first',
+  lockup: 'lockup-is-sacred',
+  lockupClearance: 'lockup-is-sacred',
+  sectorBlind: 'sector-blind-front',
+  crossSectorBleed: 'sector-blind-front',
+  honesty: 'marks-not-on-hero',
+  density: 'negative-space-is-luxury',
+  densityFront: 'negative-space-is-luxury',
+  restraint: 'negative-space-is-luxury',
+  styleLeakage: 'one-motif-family',
+}
+
+export function principleForCriticTopic(topic: string): PrincipleId | undefined {
+  return TOPIC_TO_PRINCIPLE[topic]
+}

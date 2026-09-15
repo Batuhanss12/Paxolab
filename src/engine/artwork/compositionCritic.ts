@@ -9,7 +9,8 @@ import type { MotifSlot } from './artMotifCompose'
 import { atomFitsConceptFamily, motifFamilyOf } from './artMotifFamily'
 import { atomRegionAllowed, visualWeightOf } from './artMotifMeta'
 import type { CompositionScore, CompositionTargets } from './compositionStrategy'
-import { atomAvoided, avoidOf, conceptFidelityOf, lockupOverlapVerdict } from './visualLanguage'
+import { assetLanguageFor, atomForbidden, conceptFidelityForAssets, roleFitOf } from './assetLanguage'
+import { lockupOverlapVerdict } from './visualLanguage'
 
 export type CandidateCritiqueStatus = 'KEEP' | 'MODIFY' | 'REJECT'
 
@@ -50,11 +51,10 @@ export function critiqueCandidate(input: {
   const issues: CandidateCritiqueIssue[] = []
   const scoreAdjustments: { topic: string; delta: number }[] = []
   let reject = false
-  const wanted = input.plan?.visualConcept.family
+  const assets = input.plan ? assetLanguageFor(input.plan) : undefined
+  const wanted = assets?.family
   if (wanted && input.slots.length) {
-    const bad = input.slots.filter(
-      (s) => !atomFitsConceptFamily(s.atom, wanted, input.plan?.visualConcept.supportFamily),
-    )
+    const bad = input.slots.filter((s) => !atomFitsConceptFamily(s.atom, wanted, assets?.supportFamily))
     if (bad.length) {
       issues.push({
         topic: 'family',
@@ -93,6 +93,8 @@ export function critiqueCandidate(input: {
     issues.push({ topic: 'DECORATION_OVERLOAD', note: 'Dekor marka/ürün hiyerarşisini eziyor.' })
     scoreAdjustments.push({ topic: 'hierarchy', delta: -22 })
   }
+  // Density-score < 40 is distance from target (sparse or dense). It is not overload.
+  // Faz 2.15 critic: do not MODIFY family-exact under-budget candidates on that score.
 
   if (input.score.whitespace + 18 < input.targets.whitespaceTarget * 100) {
     issues.push({ topic: 'whitespace', note: 'Negatif alan hedefinin altında.' })
@@ -104,18 +106,25 @@ export function critiqueCandidate(input: {
     scoreAdjustments.push({ topic: 'styleConsistency', delta: -16 })
   }
 
-  if (input.score.decorationDensity < 40 && input.targets.densityTarget <= 0.28) {
-    issues.push({ topic: 'DECORATION_OVERLOAD', note: 'Dekor yoğunluğu brief için fazla.' })
-    scoreAdjustments.push({ topic: 'decorationDensity', delta: -10 })
-  }
-
-  if (input.plan) {
-    const avoided = input.slots.filter((s) => atomAvoided(s.atom, avoidOf(input.plan!)))
+  if (assets) {
+    const avoided = input.slots.filter((s) => atomForbidden(s.atom, assets))
     if (avoided.length) {
       issues.push({ topic: 'AVOID_VIOLATION', note: 'Concept’in kaçındığı motif dili kullanıldı.' })
       scoreAdjustments.push({ topic: 'conceptFidelity', delta: -12 })
+      // Forbidden/avoid stays MODIFY. REJECT would drop overlay winners (freeze).
     }
-    const fidelity = input.score.conceptFidelity ?? conceptFidelityOf(input.slots, input.plan)
+    const preferred = input.targets.preferredMotifRoles ?? assets.preferred.roles
+    if (preferred.length && input.slots.length) {
+      const roleFit = roleFitOf(input.slots, preferred)
+      if (roleFit < 50) {
+        issues.push({
+          topic: 'ROLE_MISMATCH',
+          note: 'Yerleşen motif rolleri Asset Language tercih edilen rollere uymuyor.',
+        })
+        scoreAdjustments.push({ topic: 'assetCompatibility', delta: roleFit === 0 ? -18 : -10 })
+      }
+    }
+    const fidelity = input.score.conceptFidelity ?? conceptFidelityForAssets(input.slots, assets)
     if (input.targets.visualLanguage && fidelity < 42) {
       issues.push({ topic: 'CONCEPT_MISMATCH', note: 'Görsel dil concept ile zayıf örtüşüyor.' })
       scoreAdjustments.push({ topic: 'conceptFidelity', delta: -22 })

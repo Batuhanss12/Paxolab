@@ -1,6 +1,7 @@
 import { densityCap } from './CompositionGrammar'
 import type { DesignScorecard } from './DesignScore'
 import type { DesignPlan } from './DesignPlan'
+import { principleForCriticTopic, type PrincipleId } from './DesignKnowledge'
 import { detectCrossSectorBleed, lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
 import { CRITIQUE_THRESHOLDS } from './scoreConfig'
 
@@ -8,6 +9,7 @@ export type CritiqueHint = {
   action: 'KEEP' | 'MODIFY'
   topic: string
   note: string
+  principle?: PrincipleId
 }
 
 export type CritiqueReport = {
@@ -105,8 +107,14 @@ export function critiquePlan(plan: DesignPlan, scorecard: DesignScorecard, faceM
     (plan.sector === 'serum' && (plan.patternSystem.family === 'contour' || plan.patternSystem.family === 'ornament'))
   return {
     verdict: needsRepair ? 'modify' : 'keep',
-    hints,
+    hints: hints.map((hint) => labelHint(plan, hint)),
     scorecard,
     needsRepair,
   }
+}
+
+function labelHint(plan: DesignPlan, hint: CritiqueHint): CritiqueHint {
+  const principle = principleForCriticTopic(hint.topic)
+  if (principle && plan.principles.includes(principle)) return { ...hint, principle }
+  return hint
 }

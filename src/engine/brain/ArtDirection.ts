@@ -10,6 +10,7 @@ import { lastFamilies } from './DesignMemory'
 import { studioRecipe } from './VariationRecipes'
 import type { VocabularyRow } from './SectorVisualVocabulary'
 import { chromeForConcept } from '../designSystem/conceptKitAlignment'
+import { languagesFromConcept, visualLanguageFor } from '../artwork/visualLanguage'
 import { visualConceptFor } from './VisualConcept'
 import { defaultBackground } from './artDirectionAllowed'
 import { pickHero, pickPattern, pickPrimitives, patternOpacity } from './artDirectionPickers'
@@ -25,6 +26,8 @@ import type {
   IllustrationBlock,
   PatternBlock,
   PrimitiveId,
+  DesignIntentBlock,
+  ConceptLanguageId,
 } from './DesignPlan'
 
 export type ArtCtx = {
@@ -40,9 +43,11 @@ export type ArtCtx = {
   variationIndex?: number
   vocab?: VocabularyRow
   forceHero?: HeroFamily
+  designIntent?: DesignIntentBlock
+  visualLanguage?: ConceptLanguageId[]
 }
 
-export { allowedHeroes, allowedPatterns, defaultPattern, defaultBackground, heroFromDecor } from './artDirectionAllowed'
+export { allowedHeroes, allowedPatterns, defaultPattern, defaultBackground, heroFromDecor, heroFitsLanguage, patternFitsLanguage } from './artDirectionAllowed'
 export { pickPrimitives } from './artDirectionPickers'
 
 export function seedFrom(brief: DesignBrief, style: StyleType, templateId?: string): number {
@@ -58,6 +63,7 @@ export function seedFrom(brief: DesignBrief, style: StyleType, templateId?: stri
 export function attachArtDirection(ctx: ArtCtx): {
   artDirection: ArtDirectionBlock
   visualConcept: ReturnType<typeof visualConceptFor>
+  visualLanguage: ConceptLanguageId[]
   heroGraphic: HeroGraphicBlock
   illustrationSystem: IllustrationBlock
   patternSystem: PatternBlock
@@ -66,23 +72,35 @@ export function attachArtDirection(ctx: ArtCtx): {
   crop: CropBlock
 } {
   const seed = seedFrom(ctx.brief, ctx.style, ctx.templateId) + (ctx.variationIndex ?? 0) * 17
-  const family = pickHero(ctx)
-  const pattern = pickPattern(ctx)
+  const langs = ctx.designIntent
+    ? visualLanguageFor(ctx.designIntent, ctx.sector, ctx.brief.subProduct)
+    : ctx.visualLanguage
+  const directed: ArtCtx = { ...ctx, visualLanguage: langs }
+  const family = pickHero(directed)
+  const pattern = pickPattern(directed)
   const sideIntentional = ctx.surface === 'box' && (ctx.style === 'luxury' || ctx.style === 'modern' || ctx.style === 'eco')
-  const primitives: PrimitiveId[] = pickPrimitives(ctx)
+  const primitives: PrimitiveId[] = pickPrimitives(directed)
   const density: Density = ctx.cue === 'force-overload' ? 'dense' : ctx.density
   const recipe = !ctx.restrainExtras ? studioRecipe(ctx.variationIndex ?? 0) : null
   const cropOpen = ctx.restrainExtras || density === 'sparse' || recipe?.crop === 'open'
-  const visualConcept = visualConceptFor(ctx.style, ctx.sector, family, ctx.brief.subProduct)
+  const picked = visualConceptFor(ctx.style, ctx.sector, family, ctx.brief.subProduct, ctx.designIntent)
+  const visualLanguage = langs ?? languagesFromConcept({ visualConcept: picked })
+  const extraAvoid = (ctx.brief.avoidMotifs ?? []).map((token) => token.trim()).filter(Boolean)
+  const visualConcept = {
+    ...picked,
+    languages: visualLanguage,
+    avoid: extraAvoid.length ? [...new Set([...(picked.avoid ?? []), ...extraAvoid])] : picked.avoid,
+  }
 
   return {
     artDirection: {
       vocabulary: visualConcept.id,
       crop: cropOpen ? 'open' : 'tight',
-      chrome: chromeForConcept(visualConcept, recipe?.chrome ?? 'full'),
+      chrome: chromeForConcept(visualConcept, recipe?.chrome ?? 'full', visualLanguage),
       antiRepetition: { seed, forbidLastFamilies: lastFamilies() },
     },
     visualConcept,
+    visualLanguage,
     heroGraphic: {
       family,
       placement: family === 'none' ? 'none' : 'above-lockup',

@@ -1,30 +1,18 @@
 /**
- * Conversation ask data — ASK prompt tables + sequence + nextMissing logic.
- * Extracted from conversation.ts to isolate prompt data from the state machine.
+ * Conversation ask data — critical follow-ups only (CHAT-1).
+ * Barcode / manufacturer / SKU / volume are sample defaults, not a gauntlet.
  */
 import type { AwaitingKey, DesignBrief } from '../types'
-import {
-  acceptedAddressDefault,
-  acceptedBarcodeDefault,
-  acceptedDimsDefault,
-  acceptedManufacturerDefault,
-  acceptedProductSkip,
-  acceptedVolumeDefault,
-  hasUserAddress,
-  hasUserBarcode,
-  hasUserDims,
-  hasUserManufacturer,
-  hasUserVolume,
-} from './fields'
+import { acceptedDimsDefault, hasUserDims } from './fields'
 
 const ASK: Partial<Record<AwaitingKey, string>> = {
-  packagingMode: 'Kutu mu tasarlıyoruz, yoksa etiket mi?',
-  sector: 'Sektör nedir — kozmetik, gıda, elektronik?',
+  packagingMode: 'Kutu mu tasarlıyoruz, etiket mi, yoksa ikisi birden mi?',
+  sector: 'Ürün nedir — kozmetik, gıda, kahve, elektronik?',
   brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
   productName: 'Ürün hattı veya SKU adı nedir? Marka adı değil — örneğin Noir. Yoksa “örnek” yazın; lockup’ta yalnız marka kalır.',
   volume: 'Hacim nedir — örneğin 50 ml? Bilmiyorsanız “örnek” yazın; Girdiler’de varsayılan diye işaretlerim.',
   dimensionsMm:
-    'Ölçüler nedir (L×W×H mm)? Yazmazsanız şablon varsayılanını kullanırım — “şablon” yazmanız yeterli.',
+    'Ölçüler nedir (L×W×H mm)? Bilmiyorsan “şablon” yaz; sektörün standart kutusunu kullanırım.',
   barcode:
     'Barkod / GTIN nedir? Yazmazsanız örnek bir barkod çizerim — Girdiler’de örnek diye işaretlenir, gerçek GS1 değildir.',
   manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
@@ -39,49 +27,40 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
 const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
   productName: 'Ön etiket hattı nedir (markadan farklı — örn. Noir)? Yoksa “örnek” yazın.',
   volume: 'Ön yüzde hacim yazılsın mı — örneğin 50 ml? “örnek” veya “yok” yazabilirsiniz.',
-  dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazmanız yeterli.',
+  dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazman yeterli.',
 }
 
-const ASK_BOX: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-  'barcode',
-  'manufacturerName',
-  'manufacturerAddress',
-]
+/** Ask only what still blocks a first design. Production samples fill the rest. */
+const ASK_CRITICAL: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'dimensionsMm']
 
-const ASK_LABEL_SEQ: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-]
+function dimensionsAsk(brief: DesignBrief): string {
+  if (brief.packagingMode === 'label') return ASK_LABEL.dimensionsMm as string
+  const blob = `${brief.subProduct} ${brief.sector} ${brief.productName}`.toLocaleLowerCase('tr')
+  if (/serum/.test(blob)) {
+    return 'Standart bir serum kutusu ölçüsü kullanayım mı, yoksa L×W×H mm verir misin? “şablon” dersen sektör varsayılanına geçerim.'
+  }
+  if (/kahve|coffee/.test(blob)) {
+    return 'Kahve kutusu için standart ölçü kullanayım mı, yoksa L×W×H mm verir misin? “şablon” yazman yeterli.'
+  }
+  if (/parfüm|parfum|perfume/.test(blob)) {
+    return 'Parfüm kutusu için standart bir ölçü kullanayım mı, yoksa L×W×H mm verir misin? “şablon” yazman yeterli.'
+  }
+  return ASK.dimensionsMm as string
+}
 
 export function askCopy(brief: DesignBrief, key: AwaitingKey): string {
+  if (key === 'dimensionsMm') return dimensionsAsk(brief)
   if (brief.packagingMode === 'label' && ASK_LABEL[key]) return ASK_LABEL[key] as string
   return ASK[key] ?? ''
 }
 
 export function nextMissing(brief: DesignBrief): AwaitingKey | null {
-  const sequence = brief.packagingMode === 'label' ? ASK_LABEL_SEQ : ASK_BOX
-  for (const key of sequence) {
+  for (const key of ASK_CRITICAL) {
     if (key === 'packagingMode' && !brief.packagingMode) return key
     if (key === 'sector' && !brief.sector.trim()) return key
     if (key === 'brandName' && !brief.brandName.trim()) return key
-    if (key === 'productName' && !brief.productName.trim() && !acceptedProductSkip(brief)) return key
-    if (key === 'volume' && !hasUserVolume(brief) && !acceptedVolumeDefault(brief)) return key
     if (key === 'dimensionsMm' && !hasUserDims(brief) && !acceptedDimsDefault(brief)) return key
-    if (key === 'barcode' && !hasUserBarcode(brief) && !acceptedBarcodeDefault(brief)) return key
-    if (key === 'manufacturerName' && !hasUserManufacturer(brief) && !acceptedManufacturerDefault(brief)) return key
-    if (key === 'manufacturerAddress' && !hasUserAddress(brief) && !acceptedAddressDefault(brief)) return key
   }
   if (!brief.templateId) return 'templateId'
-  if (!brief.copyLocale) return 'copyLocale'
   return null
 }

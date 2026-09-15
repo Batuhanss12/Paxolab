@@ -4,7 +4,12 @@ import { IconArrowUp, IconPaperclip } from './Icons'
 import { AuthPanel } from './AuthPanel'
 import type { AuthUser } from '../api/client'
 
-const CHIPS = ['Kozmetik kutusu', 'Gıda ambalajı', 'Elektronik kutusu', 'Etiket'] as const
+const CHIPS = [
+  { label: 'Kutu', text: 'Kutu' },
+  { label: 'Etiket', text: 'Etiket' },
+  { label: 'Kutu + Etiket', text: 'Kutu + Etiket' },
+  { label: 'Henüz emin değilim', text: 'Henüz emin değilim' },
+] as const
 
 type LandingProps = {
   prompt: string
@@ -57,13 +62,13 @@ export function Landing({
         <p className="eyebrow">Talk → Engine → Edit → Print</p>
         <h1 className="landing__title">Ne tasarlamak istiyorsunuz?</h1>
         <p className="landing__sub">
-          AI ile konuş → Grapxor tasarım motoru üretir. Nihai baskı vektördür, görsel üretim değil.
+          Ne tasarlamak istediğini anlat. İstersen birkaç seçenekten de başlayabilirsin.
         </p>
 
         <div className="composer composer--hero">
           <textarea
             className="composer__input"
-            placeholder="Örn. Lumina Night Serum için siyah-altın kozmetik kutusu, 80×40×120 mm"
+            placeholder="Bir parfüm kutusu yapmak istiyorum… Marka, ürün, renk ve duruş — yazman yeterli."
             value={prompt}
             onChange={(e) => onPrompt(e.target.value)}
             onKeyDown={onKey}
@@ -115,10 +120,11 @@ export function Landing({
           </div>
         </div>
 
+        <p className="chips__hint">İstersen bir yüzey seç — zorunlu değil</p>
         <div className="chips">
           {CHIPS.map((chip) => (
-            <button key={chip} type="button" className="chip" onClick={() => onSend(chip)}>
-              {chip}
+            <button key={chip.label} type="button" className="chip" onClick={() => onSend(chip.text)}>
+              {chip.label}
             </button>
           ))}
         </div>

@@ -26,7 +26,7 @@ import {
   syncSessionToCloud,
 } from './projectStore'
 import { getActiveProjectId, loadProject, saveProject } from './storage'
-import { initDesignMemory } from './engine/brain/DesignMemory'
+import { initDecisionLog, initDesignMemory } from './engine/brain'
 import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
@@ -100,6 +100,7 @@ export default function App() {
   // Initialize persistent design memory + load active project from IndexedDB.
   useEffect(() => {
     initDesignMemory()
+    initDecisionLog()
     const activeId = getActiveProjectId()
     if (!activeId) return
     void loadProject(activeId)
@@ -231,7 +232,7 @@ export default function App() {
 
   const runGenerate = useCallback((
     nextBrief: DesignBrief,
-    result?: { overridePatch?: ReturnType<typeof runConversation>['overridePatch']; copyPatch?: ReturnType<typeof runConversation>['copyPatch'] },
+    result?: Partial<Pick<ReturnType<typeof runConversation>, 'overridePatch' | 'copyPatch' | 'feedback'>>,
   ) => {
     dispatch({ type: 'generation.start' })
     const attemptId = uid()
@@ -281,6 +282,7 @@ export default function App() {
           copyPatch: result?.copyPatch,
           llmCopy,
           logoHref: logo?.dataUrl,
+          feedback: result?.feedback,
         })
         designRef.current = next
         briefRef.current = next.brief

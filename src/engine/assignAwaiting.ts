@@ -6,7 +6,7 @@ import type { AwaitingKey, DesignBrief } from '../types'
 import { parseCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
 import { SKIP_UTTERANCE } from './extractRules'
-import { isGenericProductName } from './extractHelpers'
+import { isGenericProductName, isPaletteName, looksLikeName, looksLikeSector } from './extractHelpers'
 
 export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Partial<DesignBrief> {
   if (!awaiting || awaiting === 'templateId') return {}
@@ -51,7 +51,8 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
     return {}
   }
   if (awaiting === 'packagingMode') {
-    return { packagingMode: /etiket|label/i.test(cleaned) ? 'label' : 'box' }
+    if (/etiket|label/i.test(cleaned) && !/kutu|box/i.test(cleaned)) return { packagingMode: 'label' }
+    return { packagingMode: 'box' }
   }
   if (awaiting === 'styleType') {
     const style = parseStyle(cleaned)
@@ -59,6 +60,17 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
   }
   if (awaiting === 'copyLocale') {
     return { copyLocale: parseCopyLocale(cleaned) ?? (/en|eng|english|ingiliz/i.test(cleaned) ? 'en' : 'tr') }
+  }
+  if (awaiting === 'sector') {
+    if (looksLikeSector(cleaned) && cleaned.split(/\s+/).length <= 2) return { sector: cleaned }
+    return {}
+  }
+  if (awaiting === 'brandName') {
+    const words = cleaned.split(/\s+/).filter(Boolean)
+    if (words.length <= 3 && looksLikeName(cleaned) && !isGenericProductName(cleaned) && !isPaletteName(cleaned)) {
+      return { brandName: cleaned }
+    }
+    return {}
   }
   return { [awaiting]: cleaned } as Partial<DesignBrief>
 }

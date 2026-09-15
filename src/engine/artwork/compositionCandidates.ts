@@ -7,9 +7,8 @@ import type { DesignPlan } from '../brain/DesignPlan'
 import { computeGeometryMetrics } from '../brain/geometryMetrics'
 import { densityCap } from '../brain/CompositionGrammar'
 import { decorationBudgetOf } from '../brain/VisualConcept'
-import { seedTieBreak, visualWeightOf, resolveMotifDesign, atomRegionAllowed, resolvedMotifRole, type MotifRegionId } from './artMotifMeta'
+import { seedTieBreak, visualWeightOf, resolveMotifDesign, atomRegionAllowed, type MotifRegionId } from './artMotifMeta'
 import { atomFitsConceptFamily, familiesCompatible, motifFamilyOf, motifSubfamilyOf, selectFamilyPool } from './artMotifFamily'
-import { atomHasFamilyFile } from './assetCatalog/catalog'
 import { rejectRetiredOverlayAtoms } from './assetCatalog/retiredOverlay'
 import type { AssetMode } from './assetCatalog/types'
 import { familyMatchLevel } from './assetCatalog/familyMatrix'
@@ -48,20 +47,21 @@ import {
   type CompositionTargets,
 } from './compositionStrategy'
 import {
-  atomAvoided,
   atomLexiconHits,
   atomMatchesAnyLanguage,
-  avoidOf,
-  earliestUnusedLexiconIndex,
   unusedLexiconHits,
   poolHasUnusedLexicon,
-  conceptFidelityOf,
-  languagesOfConcept,
-  lexiconOf,
   lockupOverlapVerdict,
-  preferredRolesForLanguage,
-  visualLanguageOfConcept,
 } from './visualLanguage'
+import { languageTreatmentFor } from './languageTreatment'
+import {
+  assetCompatibilityOf,
+  assetLanguageFor,
+  compareAssetPick,
+  conceptFidelityForAssets,
+  constrainAssetPool,
+  customSlotCap,
+} from './assetLanguage'
 
 export type PlacementCandidate = {
   regionId: string
@@ -202,21 +202,22 @@ export function applyDecorationBudget(slots: MotifSlot[], panel: Panel, budget: 
 function shouldCraftFill(plan: DesignPlan): boolean {
   const id = plan.visualConcept.id
   if (!id || id === 'lux') return false
-  return Boolean(plan.visualConcept.family || (plan.visualConcept.languages ?? []).length)
+  const assets = assetLanguageFor(plan)
+  return Boolean(assets.family || assets.languages.length)
 }
 
 /** Target spend floor inside the concept budget. Does not raise the cap. */
 export function craftFillFloor(plan: DesignPlan, budget: number): number {
   const cap = Math.max(0.12, budget)
   const id = plan.visualConcept.id
-  const langs = languagesOfConcept(plan)
+  const assets = assetLanguageFor(plan)
+  const treatment = languageTreatmentFor(assets.languages)
   if (id === 'air-paper') return Math.min(cap, cap * 0.55)
   if (id === 'capsule-field') return Math.min(cap, cap * 0.72)
-  if (langs.includes('linear')) return Math.min(cap, cap * 0.7)
+  if (treatment.mayGrowFill) return Math.min(cap, cap * 0.7)
   if (id === 'soft-oval') return Math.min(cap, cap * 0.62)
   if (id === 'nocturne-crest' || id === 'heraldic-crest') return Math.min(cap, cap * 0.58)
-  if (langs.includes('quiet-line')) return Math.min(cap, cap * 0.55)
-  return Math.min(cap, cap * 0.62)
+  return Math.min(cap, cap * treatment.craftFillMul)
 }
 
 function growBox(box: MotifSlot['box'], factor: number, panel: Panel): MotifSlot['box'] {
@@ -258,10 +259,10 @@ export function fillDecorationBudget(
     }
   }
 
-  const langs = languagesOfConcept(plan)
+  const assets = assetLanguageFor(plan)
   const mayGrow =
     opts.kitSuppliesFocal ||
-    langs.includes('linear') ||
+    languageTreatmentFor(assets.languages).mayGrowFill ||
     plan.visualConcept.id === 'soft-oval' ||
     plan.visualConcept.id === 'earthen-premium'
   if (!mayGrow) return next
@@ -291,23 +292,20 @@ export function fillDecorationBudget(
 }
 
 function atomsForConcept(atoms: MotifAtom[], plan: DesignPlan): MotifAtom[] {
-  return selectFamilyPool(
-    rejectRetiredOverlayAtoms(atoms),
-    plan.visualConcept.family,
-    plan.visualConcept.supportFamily,
-    plan.visualConcept.id,
-  ).atoms
+  return constrainAssetPool(rejectRetiredOverlayAtoms(atoms), assetLanguageFor(plan))
 }
 
 export function slotsPassFamilyConstraint(slots: MotifSlot[], plan: DesignPlan): boolean {
-  if (!plan.visualConcept.family) return true
-  return slots.every((s) => atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily))
+  const assets = assetLanguageFor(plan)
+  if (!assets.family) return true
+  return slots.every((s) => atomFitsConceptFamily(s.atom, assets.family, assets.supportFamily))
 }
 
 function familyConsistencyOf(slots: MotifSlot[], plan: DesignPlan): number {
-  if (!plan.visualConcept.family) return 70
+  const assets = assetLanguageFor(plan)
+  if (!assets.family) return 70
   if (!slots.length) return 80
-  const levels = slots.map((s) => familyMatchLevel(motifFamilyOf(s.atom), plan.visualConcept.family, plan.visualConcept.supportFamily))
+  const levels = slots.map((s) => familyMatchLevel(motifFamilyOf(s.atom), assets.family, assets.supportFamily))
   if (levels.some((l) => l === 'NONE')) return 0
   if (levels.every((l) => l === 'EXACT')) return 100
   return 50
@@ -325,8 +323,8 @@ function constrainAtomScale(
   let maxScale = Math.min(meta.maxScale ?? 1.8, range.max)
   let minScale = Math.min(maxScale, Math.max(meta.minScale ?? 0.35, range.min))
   if (plan) {
-    const langs = languagesOfConcept(plan)
-    if (langs.includes('linear') && (strategy === 'asymmetric-editorial' || strategy === 'minimal-accent')) {
+    const treatment = languageTreatmentFor(assetLanguageFor(plan).languages)
+    if (treatment.motifScale === 'bold' && (strategy === 'asymmetric-editorial' || strategy === 'minimal-accent')) {
       minScale = Math.min(maxScale, Math.max(minScale, 0.7))
       maxScale = Math.max(maxScale, 1.16)
     }
@@ -422,6 +420,8 @@ function layoutCustomSlots(
   opts: MotifPaintOpts,
 ): MotifSlot[] {
   const style = opts.style
+  const assets = assetLanguageFor(plan)
+  const slotCap = customSlotCap(assets)
   const seed = opts.seed ?? 0
   const sector = opts.sector
   const map = buildDesignRegionMap({
@@ -446,7 +446,7 @@ function layoutCustomSlots(
   ])
   const slots: MotifSlot[] = []
   const push = (atom: MotifAtom | undefined, kind: SlotKind, opacity: number, lockout: boolean, role: MotifSlot['role']) => {
-    if (!atom || slots.some((s) => s.atom.id === atom.id) || slots.length >= 5) return
+    if (!atom || slots.some((s) => s.atom.id === atom.id) || slots.length >= slotCap) return
     const placed = resolveDesignRegion({
       panel,
       kind,
@@ -461,37 +461,15 @@ function layoutCustomSlots(
     const op = Math.min(meta.maxOpacity ?? 0.95, Math.max(0.28, meta.minOpacity ?? 0.28, opacity))
     slots.push({ atom, box: placed.rect, opacity: op, par: 'xMidYMid meet', lockout, role })
   }
-  const usedTokens = () => [...(opts.kitLexiconUsed ?? []), ...slots.flatMap((s) => atomLexiconHits(s.atom, lexiconOf(plan)))]
+  const usedTokens = () => [...(opts.kitLexiconUsed ?? []), ...slots.flatMap((s) => atomLexiconHits(s.atom, assets.lexicon))]
   const pick = (pool: MotifAtom[], kind: SlotKind, n: number, salt: number) => {
     const region = slotKindToRegion(kind)
     const allowed = pool.filter((a) => atomRegionAllowed(a, region) && !slots.some((s) => s.atom.id === a.id))
-    const languages = languagesOfConcept(plan)
-    const lexicon = lexiconOf(plan)
-    const avoid = avoidOf(plan)
     const used = usedTokens()
     const ranked = rankAtomsForRegion(allowed, region, seed + salt, style, sector)
-    const roles = preferredRolesForLanguage(languages[0])
     return [...ranked].sort((a, b) => {
-      const va = atomAvoided(a, avoid) ? 1 : 0
-      const vb = atomAvoided(b, avoid) ? 1 : 0
-      if (va !== vb) return va - vb
-      const novA = unusedLexiconHits(a, lexicon, used).length
-      const novB = unusedLexiconHits(b, lexicon, used).length
-      const fa = atomHasFamilyFile(a) ? 1 : 0
-      const fb = atomHasFamilyFile(b) ? 1 : 0
-      if (fa !== fb && (novA > 0 || novB > 0)) return fb - fa
-      if (novA !== novB) return novB - novA
-      const ia = earliestUnusedLexiconIndex(a, lexicon, used)
-      const ib = earliestUnusedLexiconIndex(b, lexicon, used)
-      if (ia !== ib) return ia - ib
-      const ha = atomMatchesAnyLanguage(a, languages) ? 1 : 0
-      const hb = atomMatchesAnyLanguage(b, languages) ? 1 : 0
-      if (ha !== hb) return hb - ha
-      if (roles.length) {
-        const ra = roles.includes(resolvedMotifRole(a)) ? 1 : 0
-        const rb = roles.includes(resolvedMotifRole(b)) ? 1 : 0
-        if (ra !== rb) return rb - ra
-      }
+      const asset = compareAssetPick(a, b, assets, used)
+      if (asset !== 0) return asset
       const ca = compositionRoleFit(a, strategy)
       const cb = compositionRoleFit(b, strategy)
       if (ca !== cb) return cb - ca
@@ -508,7 +486,8 @@ function layoutCustomSlots(
   }
 
   const heroX = plan.composition.heroZone.x ?? 0.5
-  const canCompanion = (pool: MotifAtom[]) => poolHasUnusedLexicon(pool, lexiconOf(plan), usedTokens())
+  const canCompanion = (pool: MotifAtom[]) =>
+    slotCap > 1 && poolHasUnusedLexicon(pool, assets.lexicon, usedTokens())
   if (strategy === 'minimal-accent') {
     const kind: SlotKind = heroX >= 0.55 ? 'nw' : 'ne'
     tryPush(stamps, kind, 1, 0.72, false, 'accent')
@@ -516,7 +495,7 @@ function layoutCustomSlots(
     const kinds: SlotKind[] = heroX >= 0.5 ? ['nw', 'sw'] : ['ne', 'se']
     tryPush(stamps, kinds[0], 2, 0.76, false, 'corner')
     if (canCompanion(stamps)) tryPush(stamps, kinds[1], 3, 0.7, true, 'stamp')
-    if (decorationBudgetOf(plan) >= 0.32) {
+    if (slotCap > 1 && decorationBudgetOf(plan) >= 0.32) {
       const bands = uniqueAtoms([
         ...atoms.filter((a) => atomMatchesRole(a, 'band')),
         ...atoms.filter((a) => atomMatchesRole(a, 'accent')),
@@ -532,7 +511,7 @@ function layoutCustomSlots(
     const support: SlotKind = heroX >= 0.5 ? 'nw' : 'ne'
     const supportOp = opts.kitSuppliesFocal ? 0.84 : 0.7
     if (canCompanion(stamps) || opts.kitSuppliesFocal) tryPush(stamps, support, 4, supportOp, false, 'corner')
-    if (opts.kitSuppliesFocal && decorationBudgetOf(plan) >= 0.24) {
+    if (slotCap > 1 && opts.kitSuppliesFocal && decorationBudgetOf(plan) >= 0.24) {
       const bands = uniqueAtoms([
         ...atoms.filter((a) => atomMatchesRole(a, 'band')),
         ...atoms.filter((a) => atomMatchesRole(a, 'accent')),
@@ -541,7 +520,7 @@ function layoutCustomSlots(
       ])
       const otherTop: SlotKind = support === 'nw' ? 'ne' : 'nw'
       const unused = (pool: MotifAtom[]) =>
-        pool.filter((atom) => unusedLexiconHits(atom, lexiconOf(plan), usedTokens()).length > 0)
+        pool.filter((atom) => unusedLexiconHits(atom, assets.lexicon, usedTokens()).length > 0)
       if (canCompanion(stamps)) tryPush(unused(stamps), otherTop, 8, 0.78, false, 'corner')
       if (canCompanion(bands)) tryPush(unused(bands), 'band-bottom', 7, 0.74, true, 'accent')
     }
@@ -640,6 +619,7 @@ export function scoreCompositionSlots(
   targets: CompositionTargets,
   markup?: string,
 ): CompositionScore {
+  const assets = assetLanguageFor(plan)
   const occ = occupancyRatio(panel, opts, slots)
   const negative = 1 - occ
   const centroid = weightedCentroid(panel, opts, slots)
@@ -674,15 +654,14 @@ export function scoreCompositionSlots(
     let n = 0
     for (let i = 0; i < slots.length; i++) {
       for (let j = i + 1; j < slots.length; j++) {
-        pair += pairStyleScore(slots[i].atom, slots[j].atom, targets.motifLexicon ?? lexiconOf(plan))
+        pair += pairStyleScore(slots[i].atom, slots[j].atom, targets.motifLexicon ?? assets.lexicon)
         n += 1
       }
     }
     styleConsistency = n ? pair / n : 70
   } else if (slots[0]) {
     const tags = resolveMotifDesign(slots[0].atom).styleTags ?? []
-    const botanicalConcept =
-      plan.visualConcept.family === 'botanical' || plan.visualConcept.family === 'harvest'
+    const botanicalConcept = assets.family === 'botanical' || assets.family === 'harvest'
     if (
       plan.style === 'luxury' &&
       !botanicalConcept &&
@@ -694,16 +673,17 @@ export function scoreCompositionSlots(
       styleConsistency = botanicalConcept ? Math.max(styleConsistency, 84) : 38
     }
   }
-  if (plan.visualConcept.family && slots.length) {
-    const fit = slots.filter((s) => atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily)).length
+  if (assets.family && slots.length) {
+    const fit = slots.filter((s) => atomFitsConceptFamily(s.atom, assets.family, assets.supportFamily)).length
     if (fit / slots.length < 0.5) styleConsistency = Math.min(styleConsistency, 34)
     else if (fit === slots.length) styleConsistency = Math.min(100, styleConsistency + 8)
   }
   const decorationDensity = clampScore(100 - Math.abs(densityRatio - targets.densityTarget) * 280 - Math.max(0, slots.length - cap) * 8)
   const familyConsistency = familyConsistencyOf(slots, plan)
-  let assetCompatibility = styleConsistency
-  if (slots.length >= 2) assetCompatibility = styleConsistency
+  const preferredRoles = targets.preferredMotifRoles ?? assets.preferred.roles
+  let assetCompatibility = assetCompatibilityOf(slots, assets, preferredRoles)
   if (familyConsistency <= 0) assetCompatibility = Math.min(assetCompatibility, 8)
+  const conceptFidelity = clampScore(conceptFidelityForAssets(slots, assets, opts.kitLexiconUsed))
   const alignment = slots.length ? 86 : 50
   const roles = new Set(slots.map((s) => s.role))
   const sheets = new Set(slots.map((s) => s.atom.sheetId))
@@ -723,7 +703,6 @@ export function scoreCompositionSlots(
   const productionSafety = collision < 20 ? 10 : slots.length ? 88 : 40
   const geo = markup ? computeGeometryMetrics(markup, panel) : undefined
   const geoBalance = geo ? clampScore(geo.balance * 100) : balance
-  const conceptFidelity = clampScore(conceptFidelityOf(slots, plan, opts.kitLexiconUsed))
 
   const parts = {
     hierarchy,
@@ -820,6 +799,7 @@ export function generateCompositionCandidates(input: {
 }): CompositionCandidate[] {
   void input.palette
   const { panel, plan, opts } = input
+  const assets = assetLanguageFor(plan)
   const atoms = atomsForConcept(input.atoms, plan)
   if (!atoms.length) return []
   const budget = decorationBudgetOf(plan)
@@ -831,7 +811,7 @@ export function generateCompositionCandidates(input: {
     const filled = fillDecorationBudget(raw, panel, budget, plan, opts)
     const slots = repairCompositionSlots(
       applyDecorationBudget(filled, panel, budget).filter((s) =>
-        atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily),
+        atomFitsConceptFamily(s.atom, assets.family, assets.supportFamily),
       ),
       panel,
       opts,
@@ -883,8 +863,9 @@ export function selectMotifComposition(input: {
 }): { markup: string; recipeId: MotifRecipeId; slots: MotifSlot[]; winner?: CompositionCandidate } {
   const started = Date.now()
   const { panel, palette, plan, opts } = input
-  const scoped = selectFamilyPool(input.atoms, plan.visualConcept.family, plan.visualConcept.supportFamily, plan.visualConcept.id)
-  const atoms = scoped.atoms
+  const assets = assetLanguageFor(plan)
+  const scoped = selectFamilyPool(input.atoms, assets.family, assets.supportFamily, assets.conceptId)
+  const atoms = constrainAssetPool(scoped.atoms, assets)
   if (!atoms.length) {
     lastDebug = {
       concept: {
@@ -907,7 +888,7 @@ export function selectMotifComposition(input: {
 
   if (input.forcedRecipe) {
     const paintedSlots = buildMotifSlots(input.forcedRecipe, atoms, panel, opts.style, opts.seed ?? 0, opts).filter((s) =>
-      atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily),
+      atomFitsConceptFamily(s.atom, assets.family, assets.supportFamily),
     )
     if (!paintedSlots.length) {
       lastDebug = {
@@ -1022,7 +1003,7 @@ export function selectMotifComposition(input: {
     if (winner && slotsPassFamilyConstraint(winner.slots, plan) && winner.critique?.status !== 'REJECT') break
     const used = new Set((winner?.slots ?? top.flatMap((c) => c.slots)).map((s) => s.atom.id))
     const rest = pool.filter((a) => !used.has(a.id))
-    const langs = languagesOfConcept(plan)
+    const langs = assets.languages
     const better = langs.length ? rest.filter((a) => atomMatchesAnyLanguage(a, langs)) : []
     pool = better.length ? better : rest
     winner = undefined
@@ -1055,10 +1036,10 @@ export function selectMotifComposition(input: {
       hardConstraint: hardPass ? 'PASS' : 'FAILURE',
       styleConsistency: winner?.postScore?.styleConsistency ?? winner?.preScore?.styleConsistency,
       conceptFidelity: winner?.postScore?.conceptFidelity ?? winner?.preScore?.conceptFidelity,
-      visualLanguage: visualLanguageOfConcept(plan),
-      languages: languagesOfConcept(plan),
-      avoid: avoidOf(plan),
-      motifLexicon: lexiconOf(plan),
+      visualLanguage: assets.languages[0],
+      languages: assets.languages,
+      avoid: assets.avoid,
+      motifLexicon: assets.lexicon,
       roles: winner?.slots.map((s) => s.role),
       regions: winner?.slots.map((s) => slotRegionId(s, panel)),
       critic: winner?.critique?.status ?? (fallbackMode === 'typography-only' ? 'KEEP' : 'REJECT'),

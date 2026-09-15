@@ -76,7 +76,7 @@ export function Chat({
         <textarea
           ref={areaRef}
           className="composer__input"
-          placeholder="Stil çipi veya “eco’ya geç”, “logoyu büyüt”, “daha premium”…"
+          placeholder="Ürünü ve duruşu anlat, ya da ölçü ver…"
           value={prompt}
           onChange={(e) => onPrompt(e.target.value)}
           onKeyDown={onKey}

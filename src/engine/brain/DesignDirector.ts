@@ -1,4 +1,5 @@
-import type { DesignBrief, FormaTemplate, StyleType } from '../../types'
+import type { DesignBrief, FormaTemplate, PackagingMode, StyleType } from '../../types'
+import type { Density, SectorId } from '../designSystem/types'
 import { resolveSector, sectorBlob } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
 import { attachArtDirection } from './ArtDirection'
@@ -7,7 +8,16 @@ import { rememberArt } from './DesignMemory'
 import { allowedDecorFor, sectorRisks, styleRule } from './DesignRules'
 import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
-import type { DesignPlan, DirectorCue, NegativeSpace, BackgroundTreatment } from './DesignPlan'
+import type {
+  BackgroundTreatment,
+  DesignIntentBlock,
+  DesignPlan,
+  DirectorCue,
+  MetallicRole,
+  NegativeSpace,
+  Positioning,
+  VisualIntent,
+} from './DesignPlan'
 import { planSummaryTr } from './DesignPlan'
 import { studioRecipe } from './VariationRecipes'
 import { lookupVocabulary, resolveSubProduct } from './SectorVisualVocabulary'
@@ -40,17 +50,21 @@ function tightenSpace(space: NegativeSpace): NegativeSpace {
   return 'high'
 }
 
-/** Rules + graph. No SVG. LLM is not consulted. */
-export function createPlan(input: DirectorInput): DesignPlan {
-  const style = input.style || (input.brief.styleType as StyleType) || 'luxury'
-  const cue = asCue(input.cue)
-  const sector = resolveSector(input.brief)
-  const surface = input.brief.packagingMode === 'label' || input.template?.packagingMode === 'label' ? 'label' : 'box'
+/** Cue-resolved costume from existing styleRule fields. No new lookup tables. */
+export function resolveDirectedStyle(
+  style: StyleType,
+  cue: DirectorCue,
+  prev?: DesignPlan,
+): {
+  density: Density
+  negativeSpace: NegativeSpace
+  visualIntent: VisualIntent
+  metallic: MetallicRole
+  restrainExtras: boolean
+  positioning: Positioning
+} {
   const rule = styleRule(style)
-  const prev = input.prev
   const base = prev && prev.style === style ? prev : null
-  const variationIndex = Math.max(0, Math.floor(input.variationIndex ?? prev?.variationIndex ?? 0))
-
   let density = base?.decor.density ?? rule.density
   let negativeSpace = base?.composition.negativeSpace ?? rule.negativeSpace
   let visualIntent = base?.visualIntent ?? rule.visualIntent
@@ -85,6 +99,46 @@ export function createPlan(input: DirectorInput): DesignPlan {
     negativeSpace = 'low'
   }
 
+  return { density, negativeSpace, visualIntent, metallic, restrainExtras, positioning: rule.positioning }
+}
+
+/** Deterministic intent metadata from style/sector/cue/surface. Does not pick concepts or assets. */
+export function buildDesignIntent(input: {
+  style: StyleType
+  sector: SectorId
+  cue: DirectorCue
+  surface: PackagingMode
+  prev?: DesignPlan
+}): DesignIntentBlock {
+  const directed = resolveDirectedStyle(input.style, input.cue, input.prev)
+  return {
+    style: input.style,
+    character: directed.visualIntent,
+    positioning: directed.positioning,
+    density: directed.density,
+    negativeSpace: directed.negativeSpace,
+    metallic: directed.metallic,
+    restrainExtras: directed.restrainExtras,
+    hierarchyPolicy: 'brand',
+    sector: input.sector,
+    surface: input.surface,
+    cue: input.cue,
+  }
+}
+
+/** Rules + graph. No SVG. LLM is not consulted. */
+export function createPlan(input: DirectorInput): DesignPlan {
+  const style = input.style || (input.brief.styleType as StyleType) || 'luxury'
+  const cue = asCue(input.cue)
+  const sector = resolveSector(input.brief)
+  const surface = input.brief.packagingMode === 'label' || input.template?.packagingMode === 'label' ? 'label' : 'box'
+  const rule = styleRule(style)
+  const prev = input.prev
+  const base = prev && prev.style === style ? prev : null
+  const variationIndex = Math.max(0, Math.floor(input.variationIndex ?? prev?.variationIndex ?? 0))
+  const directed = resolveDirectedStyle(style, cue, prev)
+  const { density, negativeSpace, visualIntent, metallic, restrainExtras } = directed
+
   const blob = sectorBlob(input.brief)
   const subProduct = resolveSubProduct(sector, blob)
   const vocab = lookupVocabulary(sector, subProduct)
@@ -92,6 +146,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
   const allowed = allowedDecorFor(style, sector)
   const recipe = resolveMarkRecipe(sector, surface, input.brief)
   const label = surface === 'label'
+  const designIntent = buildDesignIntent({ style, sector, cue, surface, prev })
 
   const plan: DesignPlan = {
     sector,
@@ -136,6 +191,7 @@ export function createPlan(input: DirectorInput): DesignPlan {
       variationIndex,
       vocab,
       forceHero: input.forceHero,
+      designIntent,
     }),
     decor: {
       density,
@@ -162,6 +218,8 @@ export function createPlan(input: DirectorInput): DesignPlan {
     },
     risks: sectorRisks(sector),
     summaryTr: '',
+    principles: principlesFor(style, surface),
+    designIntent,
   }
   const studio = !input.blankCanvas && !restrainExtras ? studioRecipe(variationIndex) : null
   if (studio) {
@@ -188,7 +246,6 @@ export function createPlan(input: DirectorInput): DesignPlan {
   }
   plan.summaryTr = planSummaryTr(plan)
   rememberArt(style, { hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })
-  void principlesFor(style, surface)
   return plan
 }
 

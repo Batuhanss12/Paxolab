@@ -1,85 +1,51 @@
 import type { Attachment, AwaitingKey, DesignBrief, EngineResult } from '../types'
+import { pickTemplate } from './catalog/catalog'
 import { applyExtraction, sameName } from './extract'
+import { askCopy, nextMissing } from './conversationAsk'
 import {
-  acceptedAddressDefault,
-  acceptedBarcodeDefault,
-  acceptedDimsDefault,
-  acceptedManufacturerDefault,
-  acceptedProductSkip,
-  acceptedVolumeDefault,
-  briefSummary,
-  hasUserAddress,
-  hasUserBarcode,
-  hasUserDims,
-  hasUserManufacturer,
-  hasUserVolume,
-  isCoreReady,
-} from './fields'
+  cueOverridePatch,
+  directionBriefing,
+  isDualDeliverable,
+  understandUtterance,
+  wantsCompanionLabel,
+} from './conversationUnderstand'
+import { briefSummary, isCoreReady, mergeBrief } from './fields'
+import { parseFeedback } from './iterate/feedbackParser'
 import { isIteration, parseIntent } from './iterate/parseIntent'
 
-const ASK: Partial<Record<AwaitingKey, string>> = {
-  packagingMode: 'Kutu mu tasarlıyoruz, yoksa etiket mi?',
-  sector: 'Sektör nedir — kozmetik, gıda, elektronik?',
-  brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
-  productName: 'Ürün hattı veya SKU adı nedir? Marka adı değil — örneğin Noir. Yoksa “örnek” yazın; lockup’ta yalnız marka kalır.',
-  volume: 'Hacim nedir — örneğin 50 ml? Bilmiyorsanız “örnek” yazın; Girdiler’de varsayılan diye işaretlerim.',
-  dimensionsMm:
-    'Ölçüler nedir (L×W×H mm)? Yazmazsanız şablon varsayılanını kullanırım — “şablon” yazmanız yeterli.',
-  barcode:
-    'Barkod / GTIN nedir? Yazmazsanız örnek bir barkod çizerim — Girdiler’de örnek diye işaretlenir, gerçek GS1 değildir.',
-  manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
-  manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
-  styleType: 'Soldaki stil çiplerinden seçin: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik.',
-  templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
+export { askCopy, nextMissing } from './conversationAsk'
+
+function withUnderstanding(brief: DesignBrief, text: string, attachments: Attachment[]): DesignBrief {
+  const understanding = understandUtterance(text, brief, attachments)
+  return mergeBrief(brief, understanding.patch)
 }
 
-const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
-  productName: 'Ön etiket hattı nedir (markadan farklı — örn. Noir)? Yoksa “örnek” yazın.',
-  volume: 'Ön yüzde hacim yazılsın mı — örneğin 50 ml? “örnek” veya “yok” yazabilirsiniz.',
-  dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazmanız yeterli.',
-}
-
-const ASK_BOX: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-  'barcode',
-  'manufacturerName',
-  'manufacturerAddress',
-]
-
-const ASK_LABEL_SEQ: AwaitingKey[] = [
-  'packagingMode',
-  'sector',
-  'brandName',
-  'productName',
-  'volume',
-  'dimensionsMm',
-]
-
-function askCopy(brief: DesignBrief, key: AwaitingKey): string {
-  if (brief.packagingMode === 'label' && ASK_LABEL[key]) return ASK_LABEL[key] as string
-  return ASK[key] ?? ''
-}
-
-export function nextMissing(brief: DesignBrief): AwaitingKey | null {
-  const sequence = brief.packagingMode === 'label' ? ASK_LABEL_SEQ : ASK_BOX
-  for (const key of sequence) {
-    if (key === 'packagingMode' && !brief.packagingMode) return key
-    if (key === 'sector' && !brief.sector.trim()) return key
-    if (key === 'brandName' && !brief.brandName.trim()) return key
-    if (key === 'productName' && !brief.productName.trim() && !acceptedProductSkip(brief)) return key
-    if (key === 'volume' && !hasUserVolume(brief) && !acceptedVolumeDefault(brief)) return key
-    if (key === 'dimensionsMm' && !hasUserDims(brief) && !acceptedDimsDefault(brief)) return key
-    if (key === 'barcode' && !hasUserBarcode(brief) && !acceptedBarcodeDefault(brief)) return key
-    if (key === 'manufacturerName' && !hasUserManufacturer(brief) && !acceptedManufacturerDefault(brief)) return key
-    if (key === 'manufacturerAddress' && !hasUserAddress(brief) && !acceptedAddressDefault(brief)) return key
+function generateResult(brief: DesignBrief, ack?: string, text = ''): EngineResult {
+  const tmpl = pickTemplate(brief)
+  const next = {
+    ...brief,
+    templateId: tmpl.id,
+    packagingMode: brief.packagingMode || tmpl.packagingMode,
   }
-  if (!brief.templateId) return 'templateId'
-  return null
+  const briefing = (ack ?? '').trim() || directionBriefing(next)
+  const dual =
+    isDualDeliverable(next) && next.packagingMode !== 'label'
+      ? ' Kutu ve etiket istedin; önce kutuyu çiziyorum. Etiket için “etiketi de üret” yaz.'
+      : ''
+  return {
+    brief: next,
+    awaiting: null,
+    replies: [
+      `${briefing}${dual} Grapxor motoru dieline ve vektör yüzeyi aynı anda çıkaracak.`,
+      'Yönü konuşarak iterasyon: “daha premium”, “logoyu büyüt”, “etiketi de üret”.',
+    ],
+    shouldGenerate: true,
+    showTemplates: false,
+    overridePatch: cueOverridePatch(next),
+    copyPatch: {},
+    note: 'generate',
+    feedback: parseFeedback(text),
+  }
 }
 
 export function runConversation(input: {
@@ -90,6 +56,11 @@ export function runConversation(input: {
   hasDesign: boolean
 }): EngineResult {
   const text = input.text.trim()
+
+  if (input.hasDesign && wantsCompanionLabel(text) && input.brief.packagingMode !== 'label') {
+    const labelBrief = { ...input.brief, packagingMode: 'label' as const, templateId: '' }
+    return generateResult(labelBrief, `${directionBriefing(labelBrief)} Şişe etiketini kuruyorum.`, text)
+  }
 
   if (input.hasDesign && isIteration(text)) {
     const parsed = parseIntent(text, input.brief.styleType)
@@ -102,10 +73,12 @@ export function runConversation(input: {
       overridePatch: parsed.overridePatch,
       copyPatch: parsed.copyPatch,
       note: parsed.note,
+      feedback: parseFeedback(text),
     }
   }
 
-  const brief = applyExtraction(input.brief, text, input.attachments, input.awaiting)
+  const extracted = applyExtraction(input.brief, text, input.attachments, input.awaiting)
+  const brief = withUnderstanding(extracted, text, input.attachments)
 
   const ready = isCoreReady(brief)
   const missing = nextMissing(brief)
@@ -129,9 +102,10 @@ export function runConversation(input: {
         replies: [ack ? `${ack}. Yüzeyi bu brief ile yeniliyorum.` : 'Yüzeyi güncelledim.'],
         shouldGenerate: true,
         showTemplates: false,
-        overridePatch: {},
+        overridePatch: cueOverridePatch(brief),
         copyPatch: {},
         note: 'update',
+        feedback: parseFeedback(text),
       }
     }
     return {
@@ -163,43 +137,18 @@ export function runConversation(input: {
       replies,
       shouldGenerate: false,
       showTemplates: false,
-      overridePatch: {},
+      overridePatch: cueOverridePatch(brief),
       copyPatch: {},
       note: 'ask',
     }
   }
 
-  if (ready && brief.templateId) {
-    replies.push(
-      `${ack || 'Brief yeterli.'} Grapxor tasarım motorunu çalıştırıyorum — dieline, vektör artwork ve üretim kapısı aynı anda çıkacak.`,
-    )
-    replies.push('Stil çiplerinden duruşu değiştirin veya yazın: “luxury yap”, “eco’ya geç”, “logoyu büyüt”, “daha premium”.')
-    return {
-      brief,
-      awaiting: null,
-      replies,
-      shouldGenerate: true,
-      showTemplates: false,
-      overridePatch: {},
-      copyPatch: {},
-      note: 'generate',
-    }
+  if (ready && (brief.templateId || missing === 'templateId' || missing === null)) {
+    return generateResult(brief, undefined, text)
   }
 
   if (ready && !brief.templateId) {
-    replies.push(
-      `${ack ? `${ack}. ` : ''}Sektöre uygun şablonları sağda açtım. Kart seçin; ölçüleri düzenleyebilir, dieline’ı canlı görebilirsiniz.`,
-    )
-    return {
-      brief,
-      awaiting: 'templateId',
-      replies,
-      shouldGenerate: false,
-      showTemplates: true,
-      overridePatch: {},
-      copyPatch: {},
-      note: 'templates',
-    }
+    return generateResult(brief, undefined, text)
   }
 
   replies.push(askCopy(brief, 'packagingMode'))
@@ -217,6 +166,12 @@ export function runConversation(input: {
 
 export function openingReply(text: string): string {
   const t = text.toLowerCase()
+  if (/henüz\s*emin|emin değilim/i.test(t)) {
+    return 'Anlatman yeterli. Kutu, etiket, ürün, marka, renk — nasıl durmasını istediğini yaz.'
+  }
+  if (/kutu\s*\+|kutu.+(etiket|label)|(etiket|label).+kutu/i.test(t)) {
+    return 'Kutu ve etiket. Önce kutuyu kuracağım. Markanın adı nedir?'
+  }
   if (/etiket/.test(t)) return 'Etiket — en dar yüzey. Marka adı nedir?'
   if (/gıda/.test(t)) return 'Gıda ambalajı. Markanın adı nedir?'
   if (/elektronik/.test(t)) return 'Elektronik kutusu. Markanın adı nedir?'

@@ -1,13 +1,16 @@
 /**
  * Visual concept layer — the product's idea, not a layout recipe.
  * Style/sector/sub-product → concept (family, budget, strategy bias).
+ * Languages on the row are a copy of visualLanguageFor.
+ * visualConceptFor may retie a mismatched row only inside that language allow-list.
  * Does not paint SVG. Composition + motif match consume this block.
  */
 import type { StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
 import { resolveSubProduct } from './vocabularyTable'
 import { moodPrior } from './moodPriors'
-import type { DesignPlan, HeroFamily, MotifFamilyId, VisualConceptBlock } from './DesignPlan'
+import type { DesignIntentBlock, DesignPlan, HeroFamily, MotifFamilyId, VisualConceptBlock } from './DesignPlan'
+import { visualLanguageFor } from '../artwork/visualLanguage'
 
 type ConceptRow = VisualConceptBlock
 
@@ -245,19 +248,75 @@ export function conceptRowById(id?: string): VisualConceptBlock | undefined {
   return Object.values(CONCEPTS).find((row) => row.id === id)
 }
 
+/** Style×sector CONCEPTS row. No hero tag, no intent. Language is visualLanguageFor, not this row. */
+export function conceptRowFor(style: StyleType, sector: SectorId, subProduct?: string): VisualConceptBlock {
+  const sub = subProduct ? resolveSubProduct(sector, `${subProduct} ${sector}`) : undefined
+  return (
+    (sub ? CONCEPTS[`${sector}:${sub}:${style}`] : undefined) ??
+    CONCEPTS[`${sector}:${style}`] ??
+    CONCEPTS[`${style}:any`] ??
+    CONCEPTS['minimal:any']
+  )
+}
+
+function languageKey(langs?: readonly string[]): string {
+  return [...(langs ?? [])].map((item) => item.toLowerCase()).sort().join('|')
+}
+
+function languagesMatch(row: ConceptRow, allowed: readonly string[]): boolean {
+  if (!allowed.length) return true
+  const got = row.languages ?? []
+  if (!got.length) return true
+  return languageKey(got) === languageKey(allowed)
+}
+
+/**
+ * Keep the style×sector row when its languages match the allow-list.
+ * On mismatch, pick another CONCEPTS row with the same languages — never a different dialect.
+ * Character reaches this only via visualLanguageFor (quiet-line append). Density is unused.
+ */
+function conceptInLanguage(
+  keyed: ConceptRow,
+  allowed: readonly string[],
+  style: StyleType,
+  sector: SectorId,
+  subProduct: string | undefined,
+  intentStyle: StyleType,
+): ConceptRow {
+  if (languagesMatch(keyed, allowed)) return keyed
+  const matches = Object.entries(CONCEPTS).filter(([, row]) => languagesMatch(row, allowed))
+  if (!matches.length) return keyed
+  const sub = subProduct ? resolveSubProduct(sector, `${subProduct} ${sector}`) : undefined
+  const prefer = [
+    sub ? `${sector}:${sub}:${intentStyle}` : '',
+    `${sector}:${intentStyle}`,
+    sub ? `${sector}:${sub}:${style}` : '',
+    `${sector}:${style}`,
+    `${intentStyle}:any`,
+    `${style}:any`,
+  ].filter(Boolean)
+  for (const key of prefer) {
+    const hit = matches.find(([k]) => k === key)
+    if (hit) return hit[1]
+  }
+  const sectorHit = matches.find(([k]) => k === `${sector}:${intentStyle}` || k.startsWith(`${sector}:`))
+  if (sectorHit) return sectorHit[1]
+  return matches[0][1]
+}
+
 export function visualConceptFor(
   style: StyleType,
   sector: SectorId,
   hero: HeroFamily,
   subProduct?: string,
+  intent?: DesignIntentBlock,
 ): VisualConceptBlock {
-  const sub = subProduct ? resolveSubProduct(sector, `${subProduct} ${sector}`) : undefined
-  const keyed =
-    (sub ? CONCEPTS[`${sector}:${sub}:${style}`] : undefined) ??
-    CONCEPTS[`${sector}:${style}`] ??
-    CONCEPTS[`${style}:any`] ??
-    CONCEPTS['minimal:any']
-  return withHero(keyed, hero)
+  const keyed = conceptRowFor(style, sector, subProduct)
+  if (!intent) return withHero(keyed, hero)
+  void intent.density
+  void intent.negativeSpace
+  const allowed = visualLanguageFor(intent, sector, subProduct)
+  return withHero(conceptInLanguage(keyed, allowed, style, sector, subProduct, intent.style), hero)
 }
 
 export function decorationBudgetOf(plan: DesignPlan): number {

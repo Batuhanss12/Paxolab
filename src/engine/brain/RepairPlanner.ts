@@ -2,7 +2,7 @@ import { allowedHeroes } from './ArtDirection'
 import { lookupVocabulary, resolveSubProduct, vocabSafeBackground, vocabSafeHero, vocabSafePattern } from './SectorVisualVocabulary'
 import { densityCap } from './CompositionGrammar'
 import type { CritiqueReport } from './CritiqueEngine'
-import { planSummaryTr, type DesignPlan, type HeroFamily, type PrimitiveId } from './DesignPlan'
+import { mirrorDesignIntent, planSummaryTr, type DesignPlan, type HeroFamily, type PrimitiveId } from './DesignPlan'
 
 const QUIET_PRIMS: PrimitiveId[] = ['rule', 'tick']
 
@@ -16,6 +16,7 @@ export function repairPlan(plan: DesignPlan, report: CritiqueReport): DesignPlan
 
   let next: DesignPlan = {
     ...plan,
+    visualLanguage: [...plan.visualLanguage],
     decor: { ...plan.decor },
     composition: { ...plan.composition },
     heroGraphic: { ...plan.heroGraphic },
@@ -54,7 +55,7 @@ export function repairPlan(plan: DesignPlan, report: CritiqueReport): DesignPlan
   }
 
   if (topicFailed(report, 'repetitionPenalty') || topicFailed(report, 'repetition')) {
-    const allowed = allowedHeroes(next.style, next.sector)
+    const allowed = allowedHeroes(next.style, next.sector, undefined, next.visualLanguage)
     const current = next.heroGraphic.family
     const swap = allowed.find((family) => family !== current) as HeroFamily | undefined
     if (swap) next.heroGraphic.family = swap
@@ -91,6 +92,7 @@ export function repairPlan(plan: DesignPlan, report: CritiqueReport): DesignPlan
     }
   }
 
+  next.designIntent = mirrorDesignIntent(next)
   next.summaryTr = planSummaryTr(next)
   return next
 }

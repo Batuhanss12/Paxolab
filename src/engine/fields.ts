@@ -1,4 +1,4 @@
-import type { AwaitingKey, DesignBrief, DimensionsMm, StyleType } from '../types'
+import type { AwaitingKey, DesignBrief, DimensionsMm, PackagingMode, StyleType } from '../types'
 import { styleLabel } from './styles'
 
 export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
@@ -72,6 +72,16 @@ export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): Desi
     }
     if (typeof value === 'boolean') {
       ;(next as Record<string, unknown>)[key] = value
+      continue
+    }
+    if (key === 'avoidMotifs' && Array.isArray(value)) {
+      const extra = value.map((token) => String(token).trim()).filter(Boolean)
+      next.avoidMotifs = [...new Set([...(next.avoidMotifs ?? []), ...extra])]
+      continue
+    }
+    if (key === 'deliverables' && Array.isArray(value)) {
+      const extra = value.filter((mode): mode is PackagingMode => mode === 'box' || mode === 'label')
+      next.deliverables = [...new Set([...(next.deliverables ?? []), ...extra])]
       continue
     }
     if (typeof value === 'string' && value.trim()) {
@@ -190,14 +200,24 @@ export function filledEntries(
   return rows
 }
 
+export function avoidsClassicStyle(text: string): boolean {
+  const t = text.toLocaleLowerCase('tr')
+  return /klasik\s*(görünmesin|olmasın|durmasın)|çok\s*klasik|overly\s*classic|not\s*(too\s*)?classic|klasik\s*değil/i.test(
+    t,
+  )
+}
+
 export function parseStyle(text: string): StyleType | '' {
   const t = text.toLocaleLowerCase('tr')
+  const skipClassic = avoidsClassicStyle(text)
   if (/lüks|luxury|premium|şık|altın\s*çerçeve/.test(t)) return 'luxury'
   if (/minimal|sade/.test(t)) return 'minimal'
+  if (/editorial|editöryal|editoryal|contemporary|çağdaş/.test(t)) return 'modern'
   if (/eco|organik|doğal/.test(t)) return 'eco'
   if (/playful|eğlenc|renkli/.test(t)) return 'playful'
-  if (/klasik|classic/.test(t)) return 'classic'
+  if (!skipClassic && /klasik|classic/.test(t)) return 'classic'
   if (/modern/.test(t)) return 'modern'
+  if (skipClassic) return 'modern'
   return ''
 }
 

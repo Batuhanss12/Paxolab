@@ -13,6 +13,7 @@ export type ModeRule = { re: RegExp; mode: PackagingMode; sector?: string; sub?:
 export type SectorRule = { re: RegExp; sector: string; sub?: string }
 
 export const MODE_RULES: ModeRule[] = [
+  { re: /kutu\s*(ve|ile|\+)\s*(şişe\s*)?(etiket|label)|(etiket|label)\s*(ve|ile|\+)\s*kutu/i, mode: 'box' },
   { re: /kozmetik\s*kutusu|parfüm\s*kut/i, mode: 'box', sector: 'kozmetik', sub: 'parfüm' },
   { re: /gıda\s*ambalaj|gıda\s*kut/i, mode: 'box', sector: 'gıda' },
   { re: /elektronik\s*kut|kulaklık/i, mode: 'box', sector: 'elektronik', sub: 'kulaklık' },
@@ -30,6 +31,7 @@ export const SECTOR_RULES: SectorRule[] = [
   { re: /kozmetik|cilt\s*bakım/i, sector: 'kozmetik' },
   { re: /zeytinyağ|yağ\b/i, sector: 'gıda', sub: 'yağ' },
   { re: /atıştırmalık|çikolata|kurabiye/i, sector: 'gıda', sub: 'atıştırmalık' },
+  { re: /kahve|coffee|espresso/i, sector: 'gıda', sub: 'kahve' },
   { re: /gıda|reçel|bal|çay/i, sector: 'gıda' },
   { re: /içecek|beverage|meyve suyu|soda|gazoz|kombucha|şarap|bira/i, sector: 'içecek' },
   { re: /ilaç|pharma|eczane|takviye|supplement|vitamin|probiyotik|mineral/i, sector: 'sağlık', sub: 'takviye' },
@@ -48,12 +50,12 @@ export const PALETTE_TOKEN =
 
 /** Sector noun detection — used to validate extracted sector strings. */
 export const SECTOR_NOUN_RE =
-  /kozmetik|gıda|içecek|sağlık|takviye|bebek|elektronik|parfüm|parfum|perfume|krem|serum|yağ|temizlik|food|beverage|health|baby|cosmetic|tech/i
+  /kozmetik|gıda|içecek|sağlık|takviye|bebek|elektronik|parfüm|parfum|perfume|krem|serum|yağ|temizlik|kahve|coffee|food|beverage|health|baby|cosmetic|tech/i
 
 /** Generic product name tokens — not valid SKU names. */
 export const GENERIC_PRODUCT_RE =
-  /^(parfüm|parfum|perfume|krem|cream|serum|içecek|beverage|takviye|supplement|bebek|baby|etiket|kutu|kutusu|ambalaj|kozmetik|gıda|sağlık|şişe|wrap|label)$/i
+  /^(parfüm|parfum|perfume|krem|cream|serum|içecek|beverage|takviye|supplement|bebek|baby|etiket|kutu|kutusu|ambalaj|kozmetik|gıda|sağlık|şişe|kahve|coffee|wrap|label)$/i
 
 /** Stop words for brand/product name extraction. */
 export const NAME_STOP_RE =
-  /^(için|bir|ve|ile|adı|adın|adını|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum)$/i
+  /^(için|bir|ve|ile|adı|adın|adını|olsun|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum|yeni|istiyorum|biraz|çok|henüz|emin|değilim|yapmak|çıktı|doğal|içerikli|yüz|tonlarında|editorial|contemporary|special|series|kahve|coffee)$/i

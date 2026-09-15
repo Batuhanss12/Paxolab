@@ -58,7 +58,7 @@ function requiredHero(ctx: ArtCtx, allowed: HeroFamily[]): HeroFamily | null {
 
 export function pickHero(ctx: ArtCtx): HeroFamily {
   if (ctx.forceHero === 'none') return 'none'
-  const allowed = allowedHeroes(ctx.style, ctx.sector, ctx.vocab)
+  const allowed = allowedHeroes(ctx.style, ctx.sector, ctx.vocab, ctx.visualLanguage)
   if (ctx.forceHero === 'seal') return remapBannedHero('seal', ctx.sector)
   if (ctx.forceHero && allowed.includes(ctx.forceHero)) return ctx.forceHero
   const preferred = allowed[0] ?? 'none'
@@ -74,7 +74,7 @@ export function pickHero(ctx: ArtCtx): HeroFamily {
     return remapBannedHero(ctx.prev.heroGraphic.family, ctx.sector)
   }
   if (index <= 0) {
-    const concept = visualConceptFor(ctx.style, ctx.sector, 'none', ctx.brief.subProduct)
+    const concept = visualConceptFor(ctx.style, ctx.sector, 'none', ctx.brief.subProduct, ctx.designIntent)
     const prefer = preferHeroForConcept(concept)
     if (prefer && allowed.includes(prefer)) return remapBannedHero(prefer, ctx.sector)
     const needed = requiredHero(ctx, allowed)
@@ -88,11 +88,11 @@ export function pickHero(ctx: ArtCtx): HeroFamily {
 }
 
 export function pickPattern(ctx: ArtCtx): PatternFamily {
-  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct)
+  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct, ctx.designIntent)
   const index = ctx.variationIndex ?? 0
   if (conceptForbidsPattern(concept) && index <= 0) return 'none'
   const blocked = densePatternFamiliesBlocked(concept)
-  const allowedRaw = allowedPatterns(ctx.style, ctx.vocab, ctx.sector).filter((p) => !blocked.includes(p))
+  const allowedRaw = allowedPatterns(ctx.style, ctx.vocab, ctx.sector, ctx.visualLanguage).filter((p) => !blocked.includes(p))
   const allowed = allowedRaw.length ? allowedRaw : (['stripe', 'none'] as PatternFamily[])
   const preferred = defaultPattern(ctx.style, ctx.sector)
   const safePreferred = allowed.includes(preferred) ? preferred : (allowed.find((p) => p !== 'none') ?? allowed[0] ?? 'none')
@@ -120,7 +120,7 @@ export function pickPattern(ctx: ArtCtx): PatternFamily {
 }
 
 function coerceFilledPattern(ctx: ArtCtx, picked: PatternFamily, allowed: PatternFamily[]): PatternFamily {
-  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct)
+  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct, ctx.designIntent)
   if (conceptForbidsPattern(concept) && (ctx.variationIndex ?? 0) <= 0) return 'none'
   const blocked = densePatternFamiliesBlocked(concept)
   if (blocked.includes(picked)) {

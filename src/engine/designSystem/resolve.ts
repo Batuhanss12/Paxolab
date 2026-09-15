@@ -2,6 +2,8 @@ import type { DesignBrief, StructureId, StyleType } from '../../types'
 import { styleProfile } from '../artwork/languages'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
 import { resolveCopyLocale } from '../copyLocale'
+import { buildDesignIntent } from '../brain/DesignDirector'
+import type { DirectorCue } from '../brain/DesignPlan'
 import { visualConceptFor } from '../brain/VisualConcept'
 import { goldBarForConcept } from './conceptKitAlignment'
 import { categoryFor, pickDecor, pickLockup, typeScaleFor } from './kits'
@@ -74,6 +76,8 @@ function markSet(sector: DesignSystem['sector']): MarkSet {
 
 export type ResolveDesignOpts = {
   blankCanvas?: boolean
+  /** Director cue for language/concept first pass. applyPlanToSystem still wins lockup. */
+  cue?: DirectorCue
 }
 
 export function resolveDesignSystem(
@@ -89,7 +93,13 @@ export function resolveDesignSystem(
   const wrap = structureId === 'wrap-label' || /wrap/i.test(brief.templateId)
   const blank = !!opts?.blankCanvas
   const blankFace = blank ? composeBlankFace(brief, sector, { grammar, wrap }) : null
-  const concept = visualConceptFor(style, sector, 'none', brief.subProduct)
+  const intent = buildDesignIntent({
+    style,
+    sector,
+    cue: opts?.cue ?? 'none',
+    surface: surfaceMode,
+  })
+  const concept = visualConceptFor(style, sector, 'none', brief.subProduct, intent)
   const lockup = blankFace?.finish.lockup ?? pickLockup(style, sector, grammar, wrap, concept)
   const sw = styleProfile(style)
   const goldBar = blankFace

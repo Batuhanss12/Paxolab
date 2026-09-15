@@ -14,6 +14,7 @@ import {
 import { lockupOwnsRule } from './lockupChrome'
 import type { DesignSystem } from '../../designSystem/types'
 import { paintPrimitives } from '../illustrationPrimitives'
+import { strokeWidthForLanguage } from '../languageTreatment'
 import { lockupWindow, type SafeRect } from '../motifs'
 import { paintPatternFamily, wrapPattern } from '../patternFamilies'
 import { labelDecor, sectorFrame } from './shared'
@@ -39,25 +40,27 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
 
   if (grammar === 'label') {
     out += labelDecor(panel, system, p, plan?.visualConcept)
-    if (shouldPaintModernGrid(plan?.visualConcept, style)) {
+    if (shouldPaintModernGrid(plan?.visualConcept, style, plan?.visualLanguage)) {
       const { x, y, w, h } = panel
+      const gridSw = strokeWidthForLanguage(0.16, plan?.visualLanguage)
       for (let i = 1; i < 3; i++) {
         const gx = x + (w / 3) * i
-        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="0.16" data-art="modern-grid" />`
+        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="${gridSw}" data-art="modern-grid" />`
       }
     }
     out += paintPlanHero(panel, system, p, plan, ctx)
   } else {
     const sector = system.sector
-    if (shouldPaintSectorFrame(plan?.visualConcept, style, sector)) {
+    if (shouldPaintSectorFrame(plan?.visualConcept, style, sector, plan?.visualLanguage)) {
       out += sectorFrame(panel, p, sector, style)
     }
-    if (shouldPaintModernGrid(plan?.visualConcept, style)) {
+    if (shouldPaintModernGrid(plan?.visualConcept, style, plan?.visualLanguage)) {
       const { x, y, w, h } = panel
       const cols = 3
+      const gridSw = strokeWidthForLanguage(0.16, plan?.visualLanguage)
       for (let i = 1; i < cols; i++) {
         const gx = x + (w / cols) * i
-        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="0.16" data-art="modern-grid" />`
+        out += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="${p.accent}" stroke-opacity="0.14" stroke-width="${gridSw}" data-art="modern-grid" />`
       }
     }
     out += paintPlanHero(panel, system, p, plan, ctx)
@@ -85,7 +88,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
   }
 
   if (
-    shouldPaintLockupWindow(plan?.visualConcept, plan?.artDirection.chrome, style, grammar) &&
+    shouldPaintLockupWindow(plan?.visualConcept, plan?.artDirection.chrome, style, grammar, plan?.visualLanguage) &&
     safe &&
     !lockupOwnsRule(system.lockup)
   ) {
@@ -101,7 +104,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
     if (prims.length) {
       const filtered =
         system.decor === 'leaf' || system.decor === 'olive' ? prims.filter((id) => id !== 'leaf') : prims
-      if (filtered.length) out += paintPrimitives(panel, p, filtered, 0.22, safe)
+      if (filtered.length) out += paintPrimitives(panel, p, filtered, strokeWidthForLanguage(0.22, plan?.visualLanguage), safe)
     }
   }
 

@@ -1,6 +1,7 @@
 /**
- * Writes Faz 2.15 sample designs to a Desktop folder.
- * Label wrap/stack own lockup chrome; box lockup math and catalog families stay.
+ * Writes Faz 2.18 sample designs to a Desktop folder.
+ * Full catalog kit (29 JOBS) plus blank kit-painter faces.
+ * Overlay only on playful. Label wrap/stack own lockup chrome.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -131,22 +132,7 @@ const BLANK: Sample[] = [
   },
 ]
 
-const KIT_SLUGS = [
-  '01-parfum-tuck-luxury',
-  '03-krem-tuck-luxury',
-  '04-serum-tuck-minimal',
-  '08-zeytinyagi-tuck-luxury',
-  '09-cikolata-tray-playful',
-  '10-kurabiye-tray-classic',
-  '05-parfum-wrap-luxury',
-  '07-serum-wrap-minimal',
-  '11-bal-label-classic',
-  '12-recel-label-eco',
-  '14-kulaklik-tuck-modern',
-  '20-temizlik-tuck-minimal',
-  '21-krem-eco-monstera',
-  '27-krem-modern-zebra',
-]
+const KIT_SLUGS = JOBS.map((j) => j.slug)
 
 function xmlFront(svg: string): string {
   return svg.startsWith('<?xml') ? svg : `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`
@@ -191,12 +177,12 @@ async function main() {
     hasSearch: boolean
   }[] = []
   const lines = [
-    'FORMA — FAZ 2.15 örnek üretim (kit-grade / Visual Concept)',
+    'FORMA — FAZ 2.18 örnek üretim (kit-grade / Visual Concept)',
     `tarih: 2026-09-15`,
     `klasör: ${OUT}`,
     '',
-    '01-blank-canvas  → kit painter + concept lockup; luxury/modern/minimal overlay yok',
-    '02-katalog-kit   → aynı painter; overlay yalnız classic/eco/playful',
+    '01-blank-canvas  → kit painter + concept lockup; overlay yalnız playful',
+    '02-katalog-kit   → aynı painter; overlay yalnız playful',
     '',
   ]
 

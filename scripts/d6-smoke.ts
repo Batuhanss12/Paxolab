@@ -198,7 +198,7 @@ const volumeAsk = nextMissing(
     packagingMode: 'box',
   }),
 )
-assert(volumeAsk === 'volume', `P0 volume ask dead: ${volumeAsk}`)
+assert(volumeAsk === 'dimensionsMm', `P0 dimensions ask dead: ${volumeAsk}`)
 
 const branded = extractFields('Marka: Aurelia', [])
 assert(branded.brandName === 'Aurelia', `labeled brand ${branded.brandName}`)
@@ -216,17 +216,17 @@ const brandOnly = runConversation({
 })
 assert(brandOnly.brief.brandName === 'Aurelia', 'brand not stored')
 assert(!brandOnly.brief.productName, `chat copied brand into product ${brandOnly.brief.productName}`)
-assert(brandOnly.awaiting === 'productName', `expected product ask, got ${brandOnly.awaiting}`)
+assert(brandOnly.awaiting === 'dimensionsMm', `expected dimensions ask, got ${brandOnly.awaiting}`)
 
 const echo = runConversation({
   text: 'Aurelia',
   attachments: [],
   brief: brandOnly.brief,
-  awaiting: 'productName',
+  awaiting: 'dimensionsMm',
   hasDesign: false,
 })
 assert(!echo.brief.productName, `echoed brand became product ${echo.brief.productName}`)
-assert(echo.awaiting === 'productName', 'accepted brand as product line')
+assert(echo.awaiting === 'dimensionsMm', 'accepted brand as dimensions')
 
 const labelAsk = runConversation({
   text: 'Aurelia için parfüm etiketi',
@@ -256,8 +256,8 @@ const asked = runConversation({
   awaiting: null,
   hasDesign: false,
 })
-assert(!asked.shouldGenerate, 'chat generated without volume / line name')
-assert(asked.awaiting === 'productName' || asked.awaiting === 'volume' || asked.replies.some((r) => /hacim|ml|hattı|ürün/i.test(r)), 'chat skipped product/volume ask')
+assert(!asked.shouldGenerate, 'chat generated without dimensions')
+assert(asked.awaiting === 'dimensionsMm' || asked.replies.some((r) => /ölçü|şablon|mm/i.test(r)), 'chat skipped dimensions ask')
 
 if (fails) {
   console.error(`D6 smoke failed (${fails})`)

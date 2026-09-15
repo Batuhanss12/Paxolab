@@ -76,13 +76,14 @@ export const SECTORS: SectorKeywordDef[] = [
   },
   {
     id: 'food',
-    keywords: ['gıda', 'yağ', 'çay', 'atıştırmalık', 'reçel', 'bal', 'çikolata', 'zeytin', 'sızma'],
+    keywords: ['gıda', 'yağ', 'çay', 'atıştırmalık', 'reçel', 'bal', 'çikolata', 'zeytin', 'sızma', 'kahve', 'coffee'],
     defaultSubProduct: 'food-generic',
     subProducts: [
       { id: 'honey', keywords: ['bal', 'honey'] },
       { id: 'oil', keywords: ['yağ', 'zeytin', 'oil', 'sızma'] },
       { id: 'snack', keywords: ['atıştırmalık', 'çikolata', 'snack'] },
       { id: 'bakery', keywords: ['kurabiye', 'ekmek', 'bak'] },
+      { id: 'coffee', keywords: ['kahve', 'coffee', 'espresso'] },
       { id: 'beverage', keywords: ['çay', 'içecek', 'meyve suyu', 'beverage'] },
       { id: 'food-generic', keywords: ['gıda', 'reçel'] },
     ],

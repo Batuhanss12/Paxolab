@@ -1,5 +1,6 @@
 import type { PackagingMode, StyleType } from '../../types'
 import type { DecorFamily, Density, SectorId } from '../designSystem/types'
+import type { PrincipleId } from './DesignKnowledge'
 
 export type Positioning = 'luxury' | 'premium' | 'mass' | 'technical' | 'natural' | 'playful'
 export type VisualIntent = 'elegant' | 'restrained' | 'high-contrast' | 'air' | 'warm' | 'graphic'
@@ -65,7 +66,7 @@ export type VisualConceptBlock = {
   decorationBudget?: number
   /** Preferred composition strategies; artwork layer reads these names. */
   strategyBias?: string[]
-  /** Motif-path art direction. Not a second vocabulary table. */
+  /** Motif-path copy of plan.visualLanguage. Not the language source. */
   languages?: ConceptLanguageId[]
   /** Tokens: heavy-frame, ornate-seal, dense-pattern, sharp-corner, generic-ticks. */
   avoid?: string[]
@@ -171,6 +172,42 @@ export type DesignPlan = {
   }
   risks: string[]
   summaryTr: string
+  principles: PrincipleId[]
+  designIntent: DesignIntentBlock
+  /** From visualLanguageFor: LANGUAGES[style×sector×sub] then air/restrained quiet-line. Concept.languages is a copy. */
+  visualLanguage: ConceptLanguageId[]
+}
+
+/** Mirror current plan fields onto the carrier after repair. Does not pick art. */
+export function mirrorDesignIntent(plan: DesignPlan): DesignIntentBlock {
+  return {
+    style: plan.style,
+    character: plan.visualIntent,
+    positioning: plan.positioning,
+    density: plan.decor.density,
+    negativeSpace: plan.composition.negativeSpace,
+    metallic: plan.color.metallic,
+    restrainExtras: plan.decor.restrainExtras,
+    hierarchyPolicy: 'brand',
+    sector: plan.sector,
+    surface: plan.surface,
+    cue: plan.cue,
+  }
+}
+
+/** Brief/style/cue snapshot. Reuses existing styleRule vocabulary; not CompositionTargets. */
+export type DesignIntentBlock = {
+  style: StyleType
+  character: VisualIntent
+  positioning: Positioning
+  density: Density
+  negativeSpace: NegativeSpace
+  metallic: MetallicRole
+  restrainExtras: boolean
+  hierarchyPolicy: 'brand'
+  sector: SectorId
+  surface: PackagingMode
+  cue: DirectorCue
 }
 
 export function planSummaryTr(plan: DesignPlan): string {

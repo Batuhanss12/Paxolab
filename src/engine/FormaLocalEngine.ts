@@ -1,5 +1,5 @@
 import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
-import { applyPlanToSystem, createPlan, critiquePlan, repairPlan, scoreDesign } from './brain'
+import { applyPlanToSystem, captureGenerateDecision, createPlan, critiquePlan, repairPlan, scoreDesign } from './brain'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
@@ -111,7 +111,7 @@ export class FormaLocalEngine implements EnginePort {
       template,
       style,
       prev: styleChanged ? undefined : input.prev?.designPlan,
-      cue: overrides.directorCue,
+      cue: overrides.directorCue || brief.directorCue,
       variationIndex,
       forceHero: blankCanvas ? (overrides.heroFamily ?? blankFace?.finish.heroFamily) : overrides.heroFamily,
       blankCanvas,
@@ -182,6 +182,19 @@ export class FormaLocalEngine implements EnginePort {
       throw new Error(`Invalid design document: ${validation.issues.map((issue) => issue.code).join(', ')}`)
     }
     const artwork = artworkFromDocument(document)
+    const revision = (input.prev?.revision ?? 0) + 1
+    captureGenerateDecision({
+      designId: id,
+      revision,
+      brief,
+      plan: pack.plan,
+      critique: pack.critique,
+      preflight: pack.preflight,
+      prev: input.prev,
+      overridePatch: input.overridePatch,
+      copyPatch: input.copyPatch,
+      feedback: input.feedback,
+    })
 
     return {
       id,
@@ -192,7 +205,7 @@ export class FormaLocalEngine implements EnginePort {
       copy,
       overrides,
       generatedAt,
-      revision: (input.prev?.revision ?? 0) + 1,
+      revision,
       templateId: template.id,
       structureId: template.structureId,
       dieline,

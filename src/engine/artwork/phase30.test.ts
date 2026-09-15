@@ -188,10 +188,9 @@ describe('Phase 30 catalog gaps (Faz 2.13)', () => {
     expect(markupFamilyGate(face(grove), grove.designPlan!).ok).toBe(true)
 
     const kraft = kitOf('12-recel-label-eco')
-    const kraftSearch = lastCompositionSearch()
     expect(kraft.designPlan?.visualConcept.id).toBe('harvest-kraft')
-    expect(kraftSearch?.concept?.winnerFamily).toBe('harvest')
-    expect((kraftSearch?.concept?.winnerAssetId ?? '').toLowerCase()).toMatch(/harvest|grain|press|wreath/)
+    expect(lastCompositionSearch()).toBeUndefined()
+    expect(face(kraft)).not.toContain('data-art="art-pattern-compose"')
 
     const foilBrief = { ...briefFrom(jobOf('20-temizlik-tuck-minimal')), styleType: 'luxury' as StyleType }
     const foil = new FormaLocalEngine().generate({

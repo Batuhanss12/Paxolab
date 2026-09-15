@@ -1,4 +1,5 @@
 import type { DesignBrief, DesignOverrides, DesignSpec } from '../types'
+import type { StructuredFeedback } from './brain/DesignDecisionLog'
 import { FormaLocalEngine } from './FormaLocalEngine'
 import { FormaMockEngine } from './FormaMockEngine'
 import type { LlmCopy } from './llm/copyLlm'
@@ -11,6 +12,8 @@ export type GenerateInput = {
   /** LLM-generated copy — used when copyPatch doesn't override a field. */
   llmCopy?: LlmCopy | null
   logoHref?: string
+  /** FAZ 5 — classified revision talk. Does not select art. */
+  feedback?: StructuredFeedback[]
 }
 
 export interface EnginePort {

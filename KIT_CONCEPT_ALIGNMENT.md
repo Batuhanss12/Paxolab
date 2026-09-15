@@ -140,7 +140,7 @@ Kanıt: `05-parfum-wrap-luxury`, `07-serum-wrap-minimal`, `06-krem-wrap-modern`,
 
 İnsan bakışı: `FORMA-Faz2-Ornekler/02-katalog-kit` (stil-kit painter, overlay atom yok) kabul edilebilir; `FORMA-Faz25-Ornekler/01-blank-canvas` (overlay-first clip-art) değil. Modern / luxury / minimal özellikle kit yüzü.
 
-Stüdyo artık `blankCanvas: false` (katalog kit yolu). Blank generate de kit painter kullanır: arka plan, `frontDecor`, concept lockup remap. Overlay `<image>` clip-art **luxury / modern / minimal / classic** yüzünde boyanmaz. Eco / playful motif araması durur.
+Stüdyo artık `blankCanvas: false` (katalog kit yolu). Blank generate de kit painter kullanır: arka plan, `frontDecor`, concept lockup remap. Overlay `<image>` clip-art **luxury / modern / minimal / classic / eco** yüzünde boyanmaz. Playful motif araması durur.
 
 `centered-crest` chrome’dan marka üstü yay (`crestArc`) çıktı — dual bar + elmas tick kaldı. Lockup Y, family −1000, L-pack, bütçe tavanı durur.
 
@@ -149,7 +149,13 @@ Stüdyo artık `blankCanvas: false` (katalog kit yolu). Blank generate de kit pa
 | Luxury / modern / minimal kit | Motif overlay + kit chrome | Kit chrome + native hero; overlay yok |
 | Blank (aynı stiller) | Boş zemin + overlay stamp | Kit painter; overlay yok |
 | Playful kit-09 | vintage-badge overlay | Held |
-| Classic / eco overlay | Aile dosyası | Held (MODIFY critic hâlâ açık) |
+| Classic / eco overlay | Aile dosyası | 2.16 / 2.17 kit-grade skip (overlay yok) |
+
+**İsim çakışması:** 2.14 kapanışında planlanan 2.15 *critic* (kit-10/11/12/21 + grove-press MODIFY kökleri) bu dilim değildi. O kök `DECORATION_OVERLOAD` false-positive’dı; 2.15 critic aşağıda.
+
+## Faz 2.15 critic (asıl plan)
+
+Faz25 galerideki MODIFY kazananları family FAILURE, overlap veya region değildi. `critiqueCandidate` `decorationDensity < 40 && densityTarget <= 0.28` ise `DECORATION_OVERLOAD` yazıyordu. Skor hedeften sapma; spend çoğu zaman bütçenin altındaydı. Cümle kaldırıldı. Gerçek ağırlık kontrolü durur: `decoWeight >= 0.72 && decorationLevel < 0.5`. Bütçe tavanı ve lockup Y oynatılmaz. Overlay kit-grade stillerde kapalı kalır.
 
 ## Faz 2.16 classic critic
 
@@ -159,5 +165,26 @@ Klasik parfüm yüzünde iki clip-art üst üste biniyordu: `paintCrest` kalkan+
 - Classic `crest` / `cartouche` kit glyph boyanmaz — lockup chrome (centered-crest bar / serif-cartouche) kalır.
 - `double-line-corner` retired. Flacon / perfume-bottle path’leri boş.
 - Luxury crest kalkanı durur; içindeki şişe/kapak yok. Lockup Y, family −1000, L-pack, bütçe tavanı durur.
+
+## Faz 2.17 eco critic
+
+Classic 2.16’dan sonra açık delik eco overlay’di: kit-21 monstera hero + leaf overlay istif; kit-12 harvest-grain-leaf etiket damgası.
+
+- Overlay skip eco’ya uzadı. Native kit hero (monstera / harvest / leaf) ve lockup chrome durur.
+- Playful kit-09 vintage-badge overlay held.
+- Lockup Y, family −1000, L-pack, bütçe tavanı durur.
+
+## Faz 2.18 classic food native harvest
+
+2.16 crest-omit `kitFamily === 'crest'` iken *bütün* classic hero’yu kesiyordu. Classic gıda (kurabiye / kiler / bal) planı `harvest` seçer; kalkan+şişe değil. Native `paintHeroGraphic('harvest')` geri geldi. Classic parfüm (`heraldic-crest`) hâlâ glyph’siz — sadece `centered-crest` chrome. Overlay, flacon, `double-line-corner` kapalı.
+
+## İnsan onayı (15 Eyl 2026)
+
+Faz25 `02-katalog-kit` bakışı:
+
+- **02 kolonya** — `centered-crest` chrome, glyph yok. Onay. Şişe/kalkan geri gelmez.
+- **Playful 09 / 24 / 25 / 26** — `vintage-badge` overlay KEEP. Onay. 2.19 kit-grade overlay skip açılmaz.
+
+Faz 2 görsel hat burada kilitlenir. Faz 3 yalnız açık cümle ile (öğrenme / LLM planner).
 
 

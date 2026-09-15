@@ -111,6 +111,21 @@ function stubPlan(over: Partial<DesignPlan> = {}): DesignPlan {
     },
     risks: [],
     summaryTr: '',
+    principles: ['hierarchy-brand-first', 'lockup-is-sacred', 'sector-blind-front', 'marks-not-on-hero'],
+    visualLanguage: [],
+    designIntent: {
+      style: 'luxury',
+      character: 'elegant',
+      positioning: 'luxury',
+      density: 'sparse',
+      negativeSpace: 'high',
+      metallic: 'foil',
+      restrainExtras: true,
+      hierarchyPolicy: 'brand',
+      sector: 'perfume',
+      surface: 'box',
+      cue: 'none',
+    },
   }
   return {
     ...base,
@@ -276,7 +291,7 @@ describe('Phase 17 composition candidates', () => {
 
   it('TEST 5: art deco brief penalizes botanical mismatch', () => {
     const panel = frontPanel()
-    const plan = stubPlan()
+    const plan = stubPlan({ visualLanguage: ['art-deco'] })
     const targets = compositionTargets(plan)
     const decoA = stubAtom({
       id: 'deco-a',

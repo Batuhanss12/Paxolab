@@ -1,6 +1,7 @@
 import type { DesignSpec } from '../../types'
 import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
+import { noteDownload, noteExport } from '../brain/OutcomeTracker'
 import { renderStructureDoc } from '../dieline/renderDielineSvg'
 import { buildDielineDxf } from './dxf'
 import { artworkFromDocument } from '../document'
@@ -91,6 +92,7 @@ export function downloadSvg(spec: DesignSpec): boolean {
   const svg = buildCombinedSvg(spec)
   if (!svg) return false
   triggerDownload(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `${spec.copy.brand || 'forma'}-combined.svg`)
+  noteDownload(spec.id)
   return true
 }
 
@@ -98,6 +100,7 @@ export function downloadDxf(spec: DesignSpec): boolean {
   if (!spec.preflight.exportOk) return false
   const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
   triggerDownload(new Blob([buildDielineDxf(spec.dieline)], { type: 'application/dxf;charset=utf-8' }), `${slug}-dieline.dxf`)
+  noteDownload(spec.id)
   return true
 }
 
@@ -112,6 +115,7 @@ export function downloadZip(spec: DesignSpec): boolean {
     { name: `${slug}-dieline.dxf`, data: bundle.dxf },
   ])
   triggerDownload(blob, `${slug}-forma.zip`)
+  noteExport(spec.id)
   return true
 }
 
@@ -126,6 +130,7 @@ export function printPdf(spec: DesignSpec): boolean {
   win.document.close()
   win.focus()
   win.print()
+  noteDownload(spec.id)
   return true
 }
 

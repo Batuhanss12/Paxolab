@@ -1,4 +1,5 @@
 import type { DesignRating } from '../types'
+import { noteRating } from './brain/OutcomeTracker'
 
 const KEY = 'forma.ratings'
 
@@ -17,6 +18,7 @@ export function saveRating(rating: Omit<DesignRating, 'at'>): void {
   const all = loadRatings().filter((r) => r.designId !== rating.designId)
   all.unshift({ ...rating, at: Date.now() })
   localStorage.setItem(KEY, JSON.stringify(all.slice(0, 80)))
+  noteRating(rating.designId, rating.stars, rating.tags)
 }
 
 export function getRating(designId: string): DesignRating | undefined {

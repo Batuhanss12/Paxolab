@@ -8,6 +8,7 @@ import type { DesignBrief, DesignOverrides, DesignSpec, Palette, Panel } from '.
 import type { DesignPlan } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
 import { kitGradeSkipsOverlay, kitLexiconUsedByKit, kitSuppliesFocalLockup } from '../../designSystem/conceptKitAlignment'
+import { assetLanguageFor } from '../assetLanguage'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
 import { expandKitSafe, kitLevel } from '../bgKits'
 import { paintArtPatternOverlay } from '../artPatternLibrary'
@@ -75,6 +76,7 @@ export function renderFrontPanel(
   const heroCtx = { copy, overrides, ingredientClaims: brief.ingredientClaims ?? '' }
   const heroPlace = resolveFrontHeroPlacement(panel, system, designPlan, heroCtx)
   const heroBox = heroPlace && !heroPlace.omitted && heroPlace.box.w > 0 ? heroPlace.box : undefined
+  const assets = designPlan ? assetLanguageFor(designPlan) : undefined
   const motifOpts: MotifPaintOpts = {
     safe,
     style: system.style,
@@ -83,9 +85,10 @@ export function renderFrontPanel(
     heroBox,
     goldBar: system.goldBar,
     sector: system.sector,
-    languages: designPlan?.visualConcept.languages,
-    avoid: designPlan?.visualConcept.avoid,
-    motifLexicon: designPlan?.visualConcept.motifLexicon,
+    languages: assets?.languages,
+    avoid: assets?.avoid,
+    motifLexicon: assets?.lexicon,
+    preferredRoles: assets?.preferred.roles,
     kitLexiconUsed: designPlan
       ? kitLexiconUsedByKit(designPlan.visualConcept, system.lockup, designPlan.heroGraphic.family)
       : undefined,
@@ -143,12 +146,12 @@ export function renderFrontPanel(
         sector: system.sector,
         colors: brief.colors,
         seed: designPlan.variationIndex ?? 0,
-        family: designPlan.visualConcept.family,
-        supportFamily: designPlan.visualConcept.supportFamily,
+        family: assets?.family ?? designPlan.visualConcept.family,
+        supportFamily: assets?.supportFamily ?? designPlan.visualConcept.supportFamily,
         conceptId: designPlan.visualConcept.id,
-        languages: designPlan.visualConcept.languages,
-        avoid: designPlan.visualConcept.avoid,
-        motifLexicon: designPlan.visualConcept.motifLexicon,
+        languages: assets?.languages,
+        avoid: assets?.avoid,
+        motifLexicon: assets?.lexicon,
       })
       const picked = selectMotifComposition({
         panel,

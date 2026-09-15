@@ -145,7 +145,8 @@ describe('Phase 31 label lockup chrome (Faz 2.14)', () => {
     expect(eco.system.lockup).toBe('label-stack')
     expect(rnd(eco.layout.brandY)).toBe(LOCKUP_MATH[PROOF.stackEco].brandY)
     expect(eco.spec.designPlan?.visualConcept.id).toBe('harvest-kraft')
-    expect(lastCompositionSearch()?.concept?.winnerFamily).toBe('harvest')
+    expect(lastCompositionSearch()).toBeUndefined()
+    expect(eco.svg).not.toContain('data-art="art-pattern-compose"')
   })
 
   it('holds 2.11 box Y stack and 2.7 linear lock', { timeout: 40000 }, () => {

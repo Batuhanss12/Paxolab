@@ -14,14 +14,9 @@ import { decorationBudgetOf } from '../brain/VisualConcept'
 import { moodPrior } from '../brain/moodPriors'
 import type { MotifRecipeId } from './artMotifCompose'
 import type { MotifRole } from './artMotifMeta'
-import {
-  avoidOf,
-  languagesOfConcept,
-  lexiconOf,
-  preferredRolesForLanguage,
-  visualLanguageOfConcept,
-  type VisualLanguage,
-} from './visualLanguage'
+import { assetLanguageFor } from './assetLanguage'
+import { languageTreatmentFor } from './languageTreatment'
+import type { VisualLanguage } from './visualLanguage'
 
 export type CompositionStrategy =
   | 'framed-content'
@@ -46,11 +41,9 @@ export type CompositionTargets = {
   languages?: VisualLanguage[]
   avoid?: string[]
   motifLexicon?: string[]
+  /** Asset Language preferred roles — score + critic axis (MODIFY, never REJECT). */
   preferredMotifRoles?: MotifRole[]
 }
-
-/** Design-intent layer for Phase 2. Not a second DesignPlan contract. */
-export type DesignIntent = CompositionTargets
 
 /** Custom (non-stock-recipe) strategies clamp atom scale to this range. */
 export const CUSTOM_STRATEGY_SCALE: Partial<Record<CompositionStrategy, { min: number; max: number }>> = {
@@ -122,13 +115,18 @@ export function strategyForRecipe(recipe: MotifRecipeId): CompositionStrategy {
   return 'pattern-field'
 }
 
+function airOf(plan: DesignPlan) {
+  return plan.designIntent?.negativeSpace ?? plan.composition.negativeSpace
+}
+
 export function compositionTargets(plan: DesignPlan, style?: StyleType | string): CompositionTargets {
   const mood = (style || plan.style) as StyleType
   const prior = moodPrior(mood)
   const intent = plan.composition.intent
-  const highAir = plan.composition.negativeSpace === 'high' || prior.fieldSparse >= 0.7 || plan.visualIntent === 'air'
+  const space = airOf(plan)
+  const highAir = space === 'high' || prior.fieldSparse >= 0.7 || plan.visualIntent === 'air'
   const whitespaceTarget =
-    plan.composition.negativeSpace === 'high' ? 0.74 : highAir ? 0.66 : plan.composition.negativeSpace === 'low' ? 0.36 : 0.52
+    space === 'high' ? 0.74 : highAir ? 0.66 : space === 'low' ? 0.36 : 0.52
   const symmetric =
     intent === 'symmetric' || intent === 'grid' || intent === 'floating' || intent === 'full-bleed'
   const densityTarget =
@@ -146,15 +144,16 @@ export function compositionTargets(plan: DesignPlan, style?: StyleType | string)
         ? 'asymmetric-editorial'
         : 'top-bottom-balance'))
 
-  const languages = languagesOfConcept(plan)
-  const language = visualLanguageOfConcept(plan)
+  const assets = assetLanguageFor(plan)
+  const languages = assets.languages
+  const language = languages[0]
+  const treatment = languageTreatmentFor(languages)
   const budget = decorationBudgetOf(plan)
-  const avoid = avoidOf(plan)
-  const airConcept =
-    languages.includes('quiet-line') || languages.includes('oval') || (plan.visualConcept.tags ?? []).includes('air')
+  const avoid = assets.avoid
+  const airConcept = treatment.airBias || (plan.visualConcept.tags ?? []).includes('air')
   const airWhitespace = airConcept ? Math.min(0.82, whitespaceTarget + 0.06) : whitespaceTarget
   const familyFrame =
-    plan.visualConcept.family === 'botanical' || plan.visualConcept.family === 'quiet-line'
+    assets.family === 'botanical' || assets.family === 'quiet-line'
       ? 0.28
       : mood === 'luxury' || mood === 'classic'
         ? 0.75
@@ -165,7 +164,7 @@ export function compositionTargets(plan: DesignPlan, style?: StyleType | string)
     whitespaceTarget: airWhitespace,
     symmetryTarget: symmetric ? 0.88 : intent === 'offset' ? 0.4 : 0.28,
     decorationLevel: budget,
-    focalStrength: plan.heroGraphic.family === 'none' ? 0.45 : 0.78,
+    focalStrength: assets.heroFamily === 'none' ? 0.45 : 0.78,
     balanceTarget: symmetric ? 0.82 : 0.42,
     compositionBias,
     framePreference: avoid.includes('heavy-frame') ? Math.min(familyFrame, 0.22) : familyFrame,
@@ -173,8 +172,8 @@ export function compositionTargets(plan: DesignPlan, style?: StyleType | string)
     visualLanguage: language,
     languages,
     avoid,
-    motifLexicon: lexiconOf(plan),
-    preferredMotifRoles: preferredRolesForLanguage(language),
+    motifLexicon: assets.lexicon,
+    preferredMotifRoles: assets.preferred.roles,
   }
 }
 
@@ -193,6 +192,7 @@ function asStrategy(raw?: string): CompositionStrategy | undefined {
 }
 
 export function allowedStrategies(plan: DesignPlan): CompositionStrategy[] {
+  const assets = assetLanguageFor(plan)
   const style = plan.style
   const intent = plan.composition.intent
   const sparse =
@@ -200,7 +200,7 @@ export function allowedStrategies(plan: DesignPlan): CompositionStrategy[] {
     plan.decor.restrainExtras ||
     moodPrior(style).fieldSparse >= 0.65 ||
     decorationBudgetOf(plan) <= 0.28
-  const hasHero = plan.heroGraphic.family !== 'none'
+  const hasHero = assets.heroFamily !== 'none'
   const editorial = intent === 'asymmetric' || intent === 'editorial' || intent === 'diagonal' || intent === 'offset'
   const out: CompositionStrategy[] = []
   const add = (s: CompositionStrategy) => {
@@ -214,12 +214,12 @@ export function allowedStrategies(plan: DesignPlan): CompositionStrategy[] {
 
   if (style === 'luxury' || style === 'classic') {
     add('framed-content')
-    if (plan.visualConcept.family !== 'botanical' && plan.visualConcept.family !== 'harvest') add('balanced-corners')
+    if (assets.family !== 'botanical' && assets.family !== 'harvest') add('balanced-corners')
     add('minimal-accent')
     if (hasHero) add('hero-with-support')
-    if (editorial || plan.visualConcept.family === 'botanical') add('asymmetric-editorial')
+    if (editorial || assets.family === 'botanical') add('asymmetric-editorial')
     else if (!sparse) add('top-bottom-balance')
-    if (!sparse && plan.visualConcept.family !== 'botanical') add('pattern-field')
+    if (!sparse && assets.family !== 'botanical') add('pattern-field')
   } else if (style === 'minimal') {
     add('minimal-accent')
     add('balanced-corners')
@@ -240,14 +240,7 @@ export function allowedStrategies(plan: DesignPlan): CompositionStrategy[] {
     if (hasHero) add('hero-with-support')
   }
 
-  const avoid = plan.visualConcept.avoid ?? []
-  const langs = languagesOfConcept(plan)
-  const blocked = new Set<CompositionStrategy>()
-  if (avoid.includes('heavy-frame')) blocked.add('framed-content')
-  if (avoid.includes('dense-pattern')) blocked.add('pattern-field')
-  if (avoid.includes('generic-corners') || avoid.includes('sharp-corner') || langs.includes('linear')) {
-    blocked.add('balanced-corners')
-  }
+  const blocked = new Set<CompositionStrategy>(assets.forbidden.strategies)
   const filtered = out.filter((strategy) => !blocked.has(strategy))
   for (const fallback of ['minimal-accent', 'hero-with-support', 'asymmetric-editorial', 'top-bottom-balance'] as CompositionStrategy[]) {
     if (filtered.length >= 3) break

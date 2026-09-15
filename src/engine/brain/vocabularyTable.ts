@@ -10,7 +10,7 @@ import type { BackgroundTreatment, HeroFamily, PatternFamily, PrimitiveId } from
 
 export type SubProductId =
   | 'parfum' | 'cologne' | 'serum' | 'cream'
-  | 'honey' | 'oil' | 'snack' | 'bakery' | 'beverage' | 'food-generic'
+  | 'honey' | 'oil' | 'snack' | 'bakery' | 'beverage' | 'coffee' | 'food-generic'
   | 'audio' | 'cable' | 'elec-generic'
   | 'beverage' | 'health' | 'baby'
   | 'gift' | 'cleaning' | 'generic'

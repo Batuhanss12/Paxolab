@@ -77,6 +77,18 @@ export type DesignBrief = {
   scentNotes?: string
   /** Primary copy locale. Missing → resolve as `tr`. Do not store on ArtworkModel.language. */
   copyLocale?: CopyLocale
+  /**
+   * Conversation-mapped director cue (luxury-tighten, open-air, …).
+   * Not a visualLanguage key. createPlan reads it via overrides / brief fallback.
+   */
+  directorCue?: string
+  /**
+   * Motif avoid tokens from conversation (heavy-frame, generic-corners, …).
+   * Catalog briefs omit this; createPlan unions onto visualConcept.avoid.
+   */
+  avoidMotifs?: string[]
+  /** Requested surfaces from conversation. Catalog omits this. Engine paints one at a time. */
+  deliverables?: PackagingMode[]
 }
 
 export type BriefFieldKey = keyof DesignBrief
@@ -255,6 +267,7 @@ export type EngineResult = {
   note: string
   designPlan?: import('./engine/brain/DesignPlan').DesignPlan
   critiqueNotes?: string[]
+  feedback?: import('./engine/brain/DesignDecisionLog').StructuredFeedback[]
 }
 
 export type DesignRating = {

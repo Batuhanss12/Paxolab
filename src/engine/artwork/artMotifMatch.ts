@@ -11,19 +11,13 @@ import { isWeakSheet, type MotifAtom } from './artMotifAtomizer'
 import { moodPrior, type MoodId } from '../brain/moodPriors'
 import { resolveMotifDesign, resolvedMotifRole, seedTieBreak, visualWeightOf } from './artMotifMeta'
 import { conceptRowById } from '../brain/VisualConcept'
-import { atomFitsConceptFamily, motifFamilyOf, selectFamilyPool } from './artMotifFamily'
+import { motifFamilyOf, selectFamilyPool } from './artMotifFamily'
 import { loadAtomicFamilyAtoms } from './assetCatalog/familyAssets'
 import { lookupAssetRecordForAtom } from './assetCatalog/catalog'
 import { isRetiredOverlayAtom, isRetiredOverlayId } from './assetCatalog/retiredOverlay'
 import type { AssetMode } from './assetCatalog/types'
-import {
-  atomAvoided,
-  atomLexiconHit,
-  atomMatchesAnyLanguage,
-  atomVisualLanguages,
-  languagesOfConcept,
-  visualLanguageOfConcept,
-} from './visualLanguage'
+import { assetLanguageFor, atomForbidden, atomLanguageAllowed, atomPreferredLexicon, constrainAssetPool, type AssetLanguage } from './assetLanguage'
+import { atomVisualLanguages } from './visualLanguage'
 
 export type MotifMatchQuery = {
   mood: MoodId | StyleType | ''
@@ -147,6 +141,22 @@ function colorAlign(family: ColorFamily, vocab: ColorFamily | 'ornate' | 'geomet
   return 1
 }
 
+function assetsFromQuery(query: MotifMatchQuery): AssetLanguage {
+  const row = conceptRowById(query.conceptId)
+  return assetLanguageFor({
+    visualConcept: {
+      id: query.conceptId ?? '',
+      family: query.family,
+      supportFamily: query.supportFamily,
+      tags: row?.tags ?? [],
+      languages: query.languages ?? row?.languages,
+      avoid: query.avoid ?? row?.avoid,
+      motifLexicon: query.motifLexicon ?? row?.motifLexicon,
+    },
+    visualLanguage: query.languages,
+  })
+}
+
 export function scoreAtom(
   atom: MotifAtom,
   query: MotifMatchQuery,
@@ -192,31 +202,21 @@ export function scoreAtom(
   if (mood === 'minimal' && (role === 'corner' || role === 'stamp' || role === 'accent')) score += 2
   if (mood === 'modern' && (role === 'band' || role === 'divider')) score += 2
   if (mood === 'eco' && atom.tags.some((t) => /eco|botanic|leaf/.test(t))) score += 3
-  if (query.family) {
+  const assets = assetsFromQuery(query)
+  if (assets.family) {
     const fam = motifFamilyOf(atom)
-    if (fam === query.family) score += 100
-    else if (query.supportFamily && fam === query.supportFamily) score += 50
-    else if (atomFitsConceptFamily(atom, query.family, query.supportFamily)) score += 50
+    if (fam === assets.family) score += 100
+    else if (assets.supportFamily && fam === assets.supportFamily) score += 50
+    else if (assets.allowed.families.includes(fam)) score += 50
     else score -= 1000
   }
   const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
   if (query.conceptId && rec?.conceptCompatibility.includes(query.conceptId)) score += 8
-  const row = conceptRowById(query.conceptId)
-  const planLike = {
-    visualConcept: {
-      id: query.conceptId ?? '',
-      family: query.family,
-      tags: row?.tags ?? [],
-      languages: query.languages ?? row?.languages,
-      avoid: query.avoid ?? row?.avoid,
-      motifLexicon: query.motifLexicon ?? row?.motifLexicon,
-    },
-  }
-  const langs = languagesOfConcept(planLike)
-  const lang = visualLanguageOfConcept(planLike)
-  if (langs.length && atomMatchesAnyLanguage(atom, langs)) score += 10
-  if (atomLexiconHit(atom, planLike.visualConcept.motifLexicon ?? [])) score += 10
-  if (atomAvoided(atom, planLike.visualConcept.avoid ?? [])) score -= 7
+  const langs = assets.languages
+  const lang = langs[0]
+  if (langs.length && atomLanguageAllowed(atom, assets)) score += 10
+  if (atomPreferredLexicon(atom, assets)) score += 10
+  if (atomForbidden(atom, assets)) score -= 7
   if (lang === 'oval' && atomVisualLanguages(atom).includes('oval')) score += 8
   if (lang === 'oval' && /ticks|corner-mark/.test(`${atom.id} ${atom.sourceName} ${atom.tags.join(' ')}`.toLowerCase()) && !atomVisualLanguages(atom).includes('oval')) {
     score -= 6
@@ -302,17 +302,19 @@ export function matchMotifs(query: MotifMatchQuery): MotifMatchResult {
   }
   if (!pool.length) return empty
 
+  const assets = assetsFromQuery(query)
   const scoped = selectFamilyPool(
     pool.map((row) => row.atom),
-    query.family,
-    query.supportFamily,
-    query.conceptId,
+    assets.family,
+    assets.supportFamily,
+    assets.conceptId,
   )
-  if (query.family && !scoped.atoms.length) {
+  if (assets.family && !scoped.atoms.length) {
     return { ...empty, matchLevel: 'NONE', fallbackMode: 'typography-only' }
   }
-  const allowedIds = new Set(scoped.atoms.map((a) => a.id))
-  const filtered = query.family ? pool.filter((row) => allowedIds.has(row.atom.id)) : pool
+  const constrained = constrainAssetPool(scoped.atoms, assets)
+  const allowedIds = new Set(constrained.map((a) => a.id))
+  const filtered = assets.family ? pool.filter((row) => allowedIds.has(row.atom.id)) : pool
 
   const seed = query.seed ?? 0
   const scored = filtered

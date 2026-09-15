@@ -15,13 +15,71 @@ function dropRetiredHeroes(list: HeroFamily[]): HeroFamily[] {
   return next.length ? next : ['none']
 }
 
-export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
+function hasLang(langs: readonly string[], ...ids: string[]): boolean {
+  return ids.some((id) => langs.includes(id))
+}
+
+/** Conservative dialect fit. Empty allow-list is a no-op. Unknown heroes stay allowed. */
+export function heroFitsLanguage(hero: HeroFamily, langs?: readonly string[]): boolean {
+  if (!langs?.length) return true
+  if (hero === 'none' || hero === 'line-scene') return true
+  if (hero === 'crest') return hasLang(langs, 'heraldic', 'art-deco')
+  if (hero === 'tech') return hasLang(langs, 'linear', 'geometric')
+  if (hero === 'harvest') return hasLang(langs, 'botanical', 'organic', 'heraldic', 'art-deco', 'geometric')
+  if (hero === 'botanical' || hero === 'monstera' || hero === 'palm') {
+    return hasLang(langs, 'botanical', 'organic', 'oval', 'quiet-line')
+  }
+  if (hero === 'emblem') return hasLang(langs, 'organic', 'geometric', 'linear', 'oval', 'heraldic')
+  if (hero === 'oval') return hasLang(langs, 'oval', 'quiet-line')
+  return true
+}
+
+function intersectLanguage(list: HeroFamily[], langs?: readonly string[]): HeroFamily[] {
+  if (!langs?.length) return list
+  const fitted = list.filter((hero) => heroFitsLanguage(hero, langs))
+  return fitted.length ? fitted : list
+}
+
+/** Conservative dialect fit. Empty allow-list is a no-op. Unknown patterns stay allowed. */
+export function patternFitsLanguage(pattern: PatternFamily, langs?: readonly string[]): boolean {
+  if (!langs?.length) return true
+  if (pattern === 'none') return true
+  if (pattern === 'stripe') return hasLang(langs, 'linear', 'geometric', 'quiet-line', 'heraldic', 'art-deco', 'oval')
+  if (pattern === 'lattice') return hasLang(langs, 'linear', 'geometric', 'oval')
+  if (pattern === 'dotgrid') return hasLang(langs, 'linear', 'geometric')
+  if (pattern === 'hexagon') return hasLang(langs, 'linear', 'geometric', 'quiet-line')
+  if (pattern === 'contour') return hasLang(langs, 'heraldic', 'art-deco', 'oval', 'botanical', 'organic', 'geometric')
+  if (pattern === 'ornament') return hasLang(langs, 'heraldic', 'art-deco', 'botanical', 'organic')
+  if (pattern === 'grain') {
+    return hasLang(langs, 'botanical', 'organic', 'oval', 'quiet-line', 'heraldic', 'art-deco', 'geometric', 'linear')
+  }
+  if (pattern === 'weave') return hasLang(langs, 'botanical', 'organic', 'heraldic', 'art-deco')
+  if (pattern === 'capsule') return hasLang(langs, 'organic', 'geometric')
+  if (pattern === 'wave') return hasLang(langs, 'organic', 'geometric', 'quiet-line')
+  return true
+}
+
+function intersectPatternLanguage(list: PatternFamily[], langs?: readonly string[]): PatternFamily[] {
+  if (!langs?.length) return list
+  const fitted = list.filter((pattern) => patternFitsLanguage(pattern, langs))
+  return fitted.length ? fitted : list
+}
+
+export function allowedHeroes(
+  style: StyleType,
+  sector: SectorId,
+  vocab?: VocabularyRow,
+  langs?: readonly string[],
+): HeroFamily[] {
   // P2-A: minimal unlocks ONE quiet hero per sector (not luxury crests, just micro signals).
   if (style === 'minimal') {
-    if (sector === 'cream' || sector === 'serum' || sector === 'baby') return dropRetiredHeroes(['line-scene', 'oval'])
-    if (sector === 'electronics') return dropRetiredHeroes(withoutSeal(['none', 'tech'], sector))
-    // cleaning, food, perfume, generic: stay none — rely on sector bg accent
-    return ['none']
+    if (sector === 'cream' || sector === 'serum' || sector === 'baby') {
+      return intersectLanguage(dropRetiredHeroes(['line-scene', 'oval']), langs)
+    }
+    if (sector === 'electronics') {
+      return intersectLanguage(dropRetiredHeroes(withoutSeal(['none', 'tech'], sector)), langs)
+    }
+    return intersectLanguage(['none'], langs)
   }
   const preferred = styleHeroes(style, sector)
   if (vocab) {
@@ -29,13 +87,18 @@ export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: Vocabu
     if (safe.length) {
       const head = preferred.filter((h) => h !== 'none' && h !== 'seal' && safe.includes(h))
       const tail = safe.filter((h) => !head.includes(h))
-      return dropRetiredHeroes(withoutSeal(head.length ? [...head, ...tail] : safe, sector))
+      return intersectLanguage(dropRetiredHeroes(withoutSeal(head.length ? [...head, ...tail] : safe, sector)), langs)
     }
   }
-  return dropRetiredHeroes(withoutSeal(preferred, sector))
+  return intersectLanguage(dropRetiredHeroes(withoutSeal(preferred, sector)), langs)
 }
 
-export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?: SectorId): PatternFamily[] {
+export function allowedPatterns(
+  style: StyleType,
+  vocab?: VocabularyRow,
+  sector?: SectorId,
+  langs?: readonly string[],
+): PatternFamily[] {
   const leak = styleForbiddenPatterns(style, sector ?? vocab?.sectorId ?? 'generic')
   // Sector-aware pattern enrichment: technical sectors get grids, organic sectors get weaves/waves.
   const sectorBoost: PatternFamily[] =
@@ -71,12 +134,12 @@ export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?
     const head = styleSafe.filter((p) => safe.includes(p))
     if (head.length) {
       const mergedSafe = [...head, ...safe.filter((p) => !head.includes(p))]
-      return fillRequired(style, sector, mergedSafe)
+      return intersectPatternLanguage(fillRequired(style, sector, mergedSafe), langs)
     }
-    if (styleSafe.length) return fillRequired(style, sector, styleSafe)
-    if (safe.length) return fillRequired(style, sector, safe)
+    if (styleSafe.length) return intersectPatternLanguage(fillRequired(style, sector, styleSafe), langs)
+    if (safe.length) return intersectPatternLanguage(fillRequired(style, sector, safe), langs)
   }
-  return fillRequired(style, sector, styleSafe)
+  return intersectPatternLanguage(fillRequired(style, sector, styleSafe), langs)
 }
 
 function fillRequired(style: StyleType, sector: SectorId | undefined, list: PatternFamily[]): PatternFamily[] {
