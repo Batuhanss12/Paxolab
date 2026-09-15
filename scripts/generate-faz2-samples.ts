@@ -1,7 +1,7 @@
 /**
- * Writes Faz 2.5 sample designs to a Desktop folder.
+ * Writes Faz 2.8 sample designs to a Desktop folder.
  * Blank-canvas faces: visual concept → family/budget → candidate search.
- * Kit faces keep catalog chrome and run the same family match/gate.
+ * Kit faces read the same VisualConcept for lockup/chrome/frame, then motif overlay.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -185,8 +185,8 @@ async function main() {
     hasSearch: boolean
   }[] = []
   const lines = [
-    'FORMA — FAZ 2.5 örnek üretim (Visual Concept / Art Direction)',
-    `tarih: 2026-09-14`,
+    'FORMA — FAZ 2.8 örnek üretim (Visual Concept / kit alignment)',
+    `tarih: 2026-09-15`,
     `klasör: ${OUT}`,
     '',
     '01-blank-canvas  → concept → family/budget → 3–5 strateji → winner paint',
@@ -248,6 +248,14 @@ async function main() {
     const fallback = search?.concept?.fallbackMode ?? '—'
     const styleConsistency =
       typeof search?.concept?.styleConsistency === 'number' ? String(Math.round(search.concept.styleConsistency)) : '—'
+    const fidelity =
+      typeof search?.concept?.conceptFidelity === 'number' ? String(Math.round(search.concept.conceptFidelity)) : '—'
+    const lang = search?.concept?.visualLanguage ?? '—'
+    const langs = (search?.concept?.languages ?? []).join(',') || '—'
+    const avoid = (search?.concept?.avoid ?? []).join(',') || '—'
+    const lexicon = (search?.concept?.motifLexicon ?? []).join(',') || '—'
+    const roles = (search?.concept?.roles ?? []).join(',') || '—'
+    const regions = (search?.concept?.regions ?? []).join(',') || '—'
     const critic = search?.concept?.critic ?? '—'
     const hardConstraint = search?.concept?.hardConstraint ?? '—'
     const compatibility =
@@ -266,6 +274,13 @@ async function main() {
       `sub:${subfamily}`,
       `fallback:${fallback}`,
       `style:${styleConsistency}`,
+      `lang:${lang}`,
+      `langs:${langs}`,
+      `avoid:${avoid}`,
+      `lex:${lexicon}`,
+      `fidelity:${fidelity}`,
+      `roles:${roles}`,
+      `regions:${regions}`,
       `critic:${critic}`,
       `gate:${hardConstraint}`,
       `atoms:${atoms}`,
@@ -313,7 +328,7 @@ async function main() {
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>FORMA FAZ 2.5 örnekler</title>
+  <title>FORMA FAZ 2.8 örnekler</title>
   <style>
     body { font-family: Georgia, serif; margin: 0; background: #111; color: #f4efe6; }
     header { padding: 28px 32px 12px; }
@@ -330,8 +345,8 @@ async function main() {
 </head>
 <body>
   <header>
-    <h1>FORMA — FAZ 2.5 örnekler</h1>
-    <p>Blank-canvas ve katalog kit: visual concept → asset family → decoration budget → aday araması. Kit yüzleri mevcut chrome’u korur.</p>
+    <h1>FORMA — FAZ 2.8 örnekler</h1>
+    <p>Blank-canvas ve katalog kit: visual concept → lockup/chrome/motif aynı SoT. Kit yüzü style costume değil, concept dilini izler.</p>
   </header>
   <section>
     <h2>Blank canvas · aday araması</h2>

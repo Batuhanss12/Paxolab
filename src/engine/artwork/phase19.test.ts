@@ -145,6 +145,7 @@ describe('Phase 19 family hard constraints', () => {
         familyConsistency: 0,
         decorationDensity: 90,
         assetCompatibility: 90,
+        conceptFidelity: 90,
         alignment: 90,
         rhythm: 90,
         collisionSafety: 90,

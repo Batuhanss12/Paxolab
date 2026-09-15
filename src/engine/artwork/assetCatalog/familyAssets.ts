@@ -25,17 +25,23 @@ function placementHintOf(rec: CanonicalAssetRecord): PlacementHint {
   return 'field'
 }
 
-function preferredRegionsOf(rec: CanonicalAssetRecord): MotifRegionId[] {
+function regionsFromPlacement(list: string[] | undefined): MotifRegionId[] {
   const out: MotifRegionId[] = []
-  for (const p of rec.preferredPlacement) {
+  for (const p of list ?? []) {
     if (p === 'nw' || p === 'ne' || p === 'sw' || p === 'se' || p === 'top' || p === 'bottom' || p === 'left' || p === 'right' || p === 'center' || p === 'field') {
       out.push(p)
     }
     if (p === 'corner') out.push('nw', 'ne', 'sw', 'se')
     if (p === 'side') out.push('left', 'right')
     if (p === 'band') out.push('top', 'bottom')
+    if (p === 'stamp' || p === 'hero-stamp') out.push('top', 'center')
+    if (p === 'frame') out.push('field')
   }
   return [...new Set(out)]
+}
+
+function preferredRegionsOf(rec: CanonicalAssetRecord): MotifRegionId[] {
+  return regionsFromPlacement(rec.preferredPlacement)
 }
 
 function compatibleStylesOf(rec: CanonicalAssetRecord): string[] {
@@ -100,6 +106,8 @@ export function atomFromCanonicalRecord(rec: CanonicalAssetRecord, markup: strin
       compatibleStyles: compatibleStylesOf(rec),
       styleTags: rec.family === 'botanical' ? [...rec.style, 'botanic', 'eco'] : rec.style,
       preferredRegions: preferredRegionsOf(rec),
+      allowedRegions: rec.allowedPlacement?.length ? regionsFromPlacement(rec.allowedPlacement) : undefined,
+      forbiddenRegions: rec.forbiddenPlacement?.length ? regionsFromPlacement(rec.forbiddenPlacement) : undefined,
       source: 'explicit',
       minOpacity: 0.42,
       maxOpacity: 0.88,

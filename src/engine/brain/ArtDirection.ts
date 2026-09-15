@@ -9,6 +9,7 @@ import type { Density, SectorId } from '../designSystem/types'
 import { lastFamilies } from './DesignMemory'
 import { studioRecipe } from './VariationRecipes'
 import type { VocabularyRow } from './SectorVisualVocabulary'
+import { chromeForConcept } from '../designSystem/conceptKitAlignment'
 import { visualConceptFor } from './VisualConcept'
 import { defaultBackground } from './artDirectionAllowed'
 import { pickHero, pickPattern, pickPrimitives, patternOpacity } from './artDirectionPickers'
@@ -72,15 +73,16 @@ export function attachArtDirection(ctx: ArtCtx): {
   const density: Density = ctx.cue === 'force-overload' ? 'dense' : ctx.density
   const recipe = !ctx.restrainExtras ? studioRecipe(ctx.variationIndex ?? 0) : null
   const cropOpen = ctx.restrainExtras || density === 'sparse' || recipe?.crop === 'open'
+  const visualConcept = visualConceptFor(ctx.style, ctx.sector, family, ctx.brief.subProduct)
 
   return {
     artDirection: {
-      vocabulary: `${ctx.sector}/${ctx.style}`,
+      vocabulary: visualConcept.id,
       crop: cropOpen ? 'open' : 'tight',
-      chrome: recipe?.chrome ?? 'full',
+      chrome: chromeForConcept(visualConcept, recipe?.chrome ?? 'full'),
       antiRepetition: { seed, forbidLastFamilies: lastFamilies() },
     },
-    visualConcept: visualConceptFor(ctx.style, ctx.sector, family, ctx.brief.subProduct),
+    visualConcept,
     heroGraphic: {
       family,
       placement: family === 'none' ? 'none' : 'above-lockup',

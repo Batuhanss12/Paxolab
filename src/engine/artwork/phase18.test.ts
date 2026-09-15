@@ -85,6 +85,9 @@ describe('Phase 18 visual concept / art direction', () => {
     expect(concept.decorationBudget).toBeCloseTo(0.42)
     expect(concept.strategyBias).toContain('asymmetric-editorial')
     expect(concept.strategyBias?.[0]).not.toBe('balanced-corners')
+    expect(concept.languages).toEqual(['botanical', 'organic'])
+    expect(concept.avoid).toContain('heavy-frame')
+    expect(concept.motifLexicon).toEqual(expect.arrayContaining(['olive-branch', 'botanical-corner', 'botanical-accent']))
   })
 
   it('createPlan for TERRA GROVE carries the concept into the design plan', () => {
@@ -101,6 +104,7 @@ describe('Phase 18 visual concept / art direction', () => {
     expect(strategies[0]).toBe('asymmetric-editorial')
     expect(strategies).toContain('hero-with-support')
     expect(strategies).not.toContain('pattern-field')
+    expect(strategies).not.toContain('framed-content')
   })
 
   it('zeytin altın is olive + gold, not gold-on-gold', () => {

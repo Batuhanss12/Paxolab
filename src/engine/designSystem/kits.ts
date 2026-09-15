@@ -1,4 +1,6 @@
 import type { CopyLocale, StyleType } from '../../types'
+import type { VisualConceptBlock } from '../brain/DesignPlan'
+import { lockupForConcept } from './conceptKitAlignment'
 import type { DecorFamily, LockupId, SectorId, TypeScale } from './types'
 
 export function categoryFor(sector: SectorId, blob: string, locale: CopyLocale = 'tr'): string {
@@ -32,8 +34,7 @@ export function categoryFor(sector: SectorId, blob: string, locale: CopyLocale =
   return ''
 }
 
-export function pickLockup(style: StyleType, sector: SectorId, grammar: 'box' | 'label', wrap: boolean): LockupId {
-  if (grammar === 'label') return wrap ? 'label-wrap' : 'label-stack'
+function pickLockupByStyle(style: StyleType, sector: SectorId): LockupId {
   if (sector === 'cleaning') return style === 'classic' ? 'serif-cartouche' : 'left-index'
   if (style === 'luxury') {
     if (sector === 'food' || sector === 'beverage') return 'harvest-seal'
@@ -49,6 +50,17 @@ export function pickLockup(style: StyleType, sector: SectorId, grammar: 'box' | 
   if (sector === 'electronics') return 'metal-plaque'
   if (sector === 'cream' || sector === 'serum' || sector === 'health' || sector === 'baby') return 'soft-oval'
   return 'serif-cartouche'
+}
+
+export function pickLockup(
+  style: StyleType,
+  sector: SectorId,
+  grammar: 'box' | 'label',
+  wrap: boolean,
+  concept?: VisualConceptBlock,
+): LockupId {
+  if (grammar === 'label') return wrap ? 'label-wrap' : 'label-stack'
+  return lockupForConcept(concept, pickLockupByStyle(style, sector))
 }
 
 export function pickDecor(style: StyleType, sector: SectorId, lockup: LockupId): DecorFamily {
@@ -282,10 +294,10 @@ export function typeScaleFor(style: StyleType, grammar: 'box' | 'label', wrap = 
 }
 
 export const STYLE_KITS: Record<StyleType, LockupId[]> = {
-  luxury: ['centered-crest', 'harvest-seal', 'metal-plaque', 'label-wrap', 'label-stack'],
+  luxury: ['centered-crest', 'harvest-seal', 'soft-oval', 'metal-plaque', 'label-wrap', 'label-stack'],
   modern: ['left-index', 'tech-grid', 'label-wrap', 'label-stack'],
   minimal: ['air-rule', 'label-wrap', 'label-stack'],
   eco: ['stamp-center', 'label-wrap', 'label-stack'],
   playful: ['badge-capsule', 'label-wrap', 'label-stack'],
-  classic: ['serif-cartouche', 'label-wrap', 'label-stack'],
+  classic: ['centered-crest', 'serif-cartouche', 'label-wrap', 'label-stack'],
 }

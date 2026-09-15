@@ -2,6 +2,8 @@ import type { DesignBrief, StructureId, StyleType } from '../../types'
 import { styleProfile } from '../artwork/languages'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
 import { resolveCopyLocale } from '../copyLocale'
+import { visualConceptFor } from '../brain/VisualConcept'
+import { goldBarForConcept } from './conceptKitAlignment'
 import { categoryFor, pickDecor, pickLockup, typeScaleFor } from './kits'
 import { resolveSector, sectorBlob } from './sector'
 import type { DesignSystem, LegalBlockDef, MarkSet, SurfaceMode } from './types'
@@ -87,11 +89,12 @@ export function resolveDesignSystem(
   const wrap = structureId === 'wrap-label' || /wrap/i.test(brief.templateId)
   const blank = !!opts?.blankCanvas
   const blankFace = blank ? composeBlankFace(brief, sector, { grammar, wrap }) : null
-  const lockup = blankFace?.finish.lockup ?? pickLockup(style, sector, grammar, wrap)
+  const concept = visualConceptFor(style, sector, 'none', brief.subProduct)
+  const lockup = blankFace?.finish.lockup ?? pickLockup(style, sector, grammar, wrap, concept)
   const sw = styleProfile(style)
   const goldBar = blankFace
     ? blankFace.finish.goldBar
-    : sw.goldBar && grammar === 'box' && style === 'luxury'
+    : goldBarForConcept(concept, sw.goldBar && grammar === 'box' && style === 'luxury')
 
   return {
     key: `${surfaceMode}:${sector}:${style}:${lockup}${blank ? ':blank' : ''}`,

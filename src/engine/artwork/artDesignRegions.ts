@@ -16,6 +16,7 @@ import {
   type MotifMetaHost,
   type MotifRegionId,
   type MotifRole,
+  atomRegionAllowed,
   resolveMotifDesign,
   resolvedMotifRole,
   seedTieBreak,
@@ -306,6 +307,9 @@ export function resolveDesignRegion(input: {
   const regionId = slotKindToRegion(input.kind)
   const fallback = slotBox(input.panel, input.kind, input.safe)
   const region = input.map ? regionById(input.map, regionId) : undefined
+  if (input.atom && !atomRegionAllowed(input.atom, regionId)) {
+    return { rect: fallback, regionId, region, scale: 1, rejected: true, reason: 'region-forbidden' }
+  }
   let base = fallback
   if (region && region.available && region.rect.w > 0.4 && region.rect.h > 0.4) {
     if (input.kind === 'nw' || input.kind === 'ne' || input.kind === 'sw' || input.kind === 'se' || input.kind === 'stamp' || input.kind === 'hero-stamp') {
@@ -371,6 +375,8 @@ export function scoreAtomForRegion(
 ): number {
   const meta = resolveMotifDesign(atom)
   const role = resolvedMotifRole(atom)
+  if (meta.forbiddenRegions?.includes(regionId)) return -1000
+  if (meta.allowedRegions?.length && !meta.allowedRegions.includes(regionId)) return -80
   if (meta.avoidRegions?.includes(regionId as MotifAvoidRegion)) return -80
   if (regionId === 'center' && (role === 'corner' || meta.avoidRegions?.includes('center'))) return -24
   let score = 0

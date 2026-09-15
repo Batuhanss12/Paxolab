@@ -10,10 +10,19 @@ import { atomsForEntry } from './artMotifBank'
 import { isWeakSheet, type MotifAtom } from './artMotifAtomizer'
 import { moodPrior, type MoodId } from '../brain/moodPriors'
 import { resolveMotifDesign, resolvedMotifRole, seedTieBreak, visualWeightOf } from './artMotifMeta'
+import { conceptRowById } from '../brain/VisualConcept'
 import { atomFitsConceptFamily, motifFamilyOf, selectFamilyPool } from './artMotifFamily'
 import { loadAtomicFamilyAtoms } from './assetCatalog/familyAssets'
 import { lookupAssetRecordForAtom } from './assetCatalog/catalog'
 import type { AssetMode } from './assetCatalog/types'
+import {
+  atomAvoided,
+  atomLexiconHit,
+  atomMatchesAnyLanguage,
+  atomVisualLanguages,
+  languagesOfConcept,
+  visualLanguageOfConcept,
+} from './visualLanguage'
 
 export type MotifMatchQuery = {
   mood: MoodId | StyleType | ''
@@ -25,6 +34,9 @@ export type MotifMatchQuery = {
   family?: import('../brain/DesignPlan').MotifFamilyId
   supportFamily?: import('../brain/DesignPlan').MotifFamilyId
   conceptId?: string
+  languages?: import('../brain/DesignPlan').ConceptLanguageId[]
+  avoid?: string[]
+  motifLexicon?: string[]
 }
 
 export type MotifMatchResult = {
@@ -188,6 +200,26 @@ export function scoreAtom(
   }
   const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
   if (query.conceptId && rec?.conceptCompatibility.includes(query.conceptId)) score += 8
+  const row = conceptRowById(query.conceptId)
+  const planLike = {
+    visualConcept: {
+      id: query.conceptId ?? '',
+      family: query.family,
+      tags: row?.tags ?? [],
+      languages: query.languages ?? row?.languages,
+      avoid: query.avoid ?? row?.avoid,
+      motifLexicon: query.motifLexicon ?? row?.motifLexicon,
+    },
+  }
+  const langs = languagesOfConcept(planLike)
+  const lang = visualLanguageOfConcept(planLike)
+  if (langs.length && atomMatchesAnyLanguage(atom, langs)) score += 10
+  if (atomLexiconHit(atom, planLike.visualConcept.motifLexicon ?? [])) score += 10
+  if (atomAvoided(atom, planLike.visualConcept.avoid ?? [])) score -= 7
+  if (lang === 'oval' && atomVisualLanguages(atom).includes('oval')) score += 8
+  if (lang === 'oval' && /ticks|corner-mark/.test(`${atom.id} ${atom.sourceName} ${atom.tags.join(' ')}`.toLowerCase()) && !atomVisualLanguages(atom).includes('oval')) {
+    score -= 6
+  }
   if (rec?.file) score += 12
   if (rec?.complexity != null && rec.complexity <= 0.28) score += 1
   if (rec?.family === 'quiet-line' && rec.role === 'field-fill') score -= 6

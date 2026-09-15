@@ -7,7 +7,7 @@ import type { DesignPlan } from '../brain/DesignPlan'
 import { computeGeometryMetrics } from '../brain/geometryMetrics'
 import { densityCap } from '../brain/CompositionGrammar'
 import { decorationBudgetOf } from '../brain/VisualConcept'
-import { seedTieBreak, visualWeightOf, resolveMotifDesign } from './artMotifMeta'
+import { seedTieBreak, visualWeightOf, resolveMotifDesign, atomRegionAllowed, resolvedMotifRole, type MotifRegionId } from './artMotifMeta'
 import { atomFitsConceptFamily, familiesCompatible, motifFamilyOf, motifSubfamilyOf, selectFamilyPool } from './artMotifFamily'
 import type { AssetMode } from './assetCatalog/types'
 import { familyMatchLevel } from './assetCatalog/familyMatrix'
@@ -45,6 +45,21 @@ import {
   type CompositionStrategy,
   type CompositionTargets,
 } from './compositionStrategy'
+import {
+  atomAvoided,
+  atomLexiconHits,
+  atomMatchesAnyLanguage,
+  avoidOf,
+  earliestUnusedLexiconIndex,
+  unusedLexiconHits,
+  poolHasUnusedLexicon,
+  conceptFidelityOf,
+  languagesOfConcept,
+  lexiconOf,
+  lockupOverlapVerdict,
+  preferredRolesForLanguage,
+  visualLanguageOfConcept,
+} from './visualLanguage'
 
 export type PlacementCandidate = {
   regionId: string
@@ -94,6 +109,13 @@ export type CompositionSearchDebug = {
     fallbackMode?: AssetMode
     hardConstraint?: 'PASS' | 'FAILURE'
     styleConsistency?: number
+    conceptFidelity?: number
+    visualLanguage?: string
+    languages?: string[]
+    avoid?: string[]
+    motifLexicon?: string[]
+    roles?: string[]
+    regions?: string[]
     critic?: string
   }
   reviewStatus?: 'PASS' | 'NEEDS_REVIEW'
@@ -124,15 +146,36 @@ function uniqueAtoms(list: MotifAtom[]): MotifAtom[] {
   })
 }
 
+function clamp01(n: number): number {
+  if (n < 0) return 0
+  if (n > 1) return 1
+  return n
+}
+
+function complexity01(atom: MotifAtom): number {
+  const raw = resolveMotifDesign(atom).complexity ?? atom.complexity ?? 0
+  return clamp01(raw > 1.5 ? raw / 100 : raw)
+}
+
 export function decorationSpendOf(slots: MotifSlot[], panel: Panel): number {
   return slots.reduce((n, s) => {
     const meta = resolveMotifDesign(s.atom)
     const area = (s.box.w * s.box.h) / Math.max(1, panel.w * panel.h)
-    const occupied = meta.occupiedAreaRatio ?? area
-    const complexity = (meta.complexity ?? s.atom.complexity) / 100
-    const cost = visualWeightOf(s.atom) * s.opacity * (0.35 + occupied * 0.8 + complexity * 0.25)
+    const occupied = clamp01(meta.occupiedAreaRatio ?? area)
+    const cost = clamp01(visualWeightOf(s.atom)) * s.opacity * (0.35 + occupied * 0.8 + complexity01(s.atom) * 0.25)
     return n + cost
   }, 0)
+}
+
+function fitSlotToBudget(slot: MotifSlot, panel: Panel, remaining: number): MotifSlot | undefined {
+  const minOp = Math.max(0.28, resolveMotifDesign(slot.atom).minOpacity ?? 0.28)
+  let opacity = slot.opacity
+  while (opacity >= minOp - 1e-6) {
+    const fitted = { ...slot, opacity }
+    if (decorationSpendOf([fitted], panel) <= remaining + 0.03) return fitted
+    opacity = Math.round((opacity - 0.08) * 100) / 100
+  }
+  return undefined
 }
 
 export function applyDecorationBudget(slots: MotifSlot[], panel: Panel, budget: number): MotifSlot[] {
@@ -143,16 +186,15 @@ export function applyDecorationBudget(slots: MotifSlot[], panel: Panel, budget: 
     const ib = visualWeightOf(b.atom) * (b.role === 'frame' ? 1.15 : b.role === 'corner' ? 1 : 0.85)
     return ib - ia
   })
-  const kept = new Set<string>()
+  const fittedById = new Map<string, MotifSlot>()
   let spend = 0
   for (const slot of ranked) {
-    const next = decorationSpendOf([slot], panel)
-    if (kept.size && spend + next > cap + 0.03) continue
-    kept.add(slot.atom.id)
-    spend += next
+    const fitted = fitSlotToBudget(slot, panel, cap - spend)
+    if (!fitted) continue
+    fittedById.set(slot.atom.id, fitted)
+    spend += decorationSpendOf([fitted], panel)
   }
-  if (!kept.size) kept.add(ranked[0].atom.id)
-  return slots.filter((s) => kept.has(s.atom.id))
+  return slots.map((s) => fittedById.get(s.atom.id)).filter((s): s is MotifSlot => Boolean(s))
 }
 
 function atomsForConcept(atoms: MotifAtom[], plan: DesignPlan): MotifAtom[] {
@@ -193,6 +235,66 @@ export function compositionLayoutFingerprint(strategy: CompositionStrategy, slot
     .sort()
     .join('+')
   return `${strategy}|${kinds}`
+}
+
+function slotRegionId(slot: MotifSlot, panel: Panel): MotifRegionId {
+  const cx = (slot.box.x + slot.box.w / 2 - panel.x) / Math.max(1, panel.w)
+  const cy = (slot.box.y + slot.box.h / 2 - panel.y) / Math.max(1, panel.h)
+  if (slot.role === 'frame' || (slot.box.w > panel.w * 0.7 && slot.box.h > panel.h * 0.7)) return 'field'
+  if (cy < 0.38) return cx < 0.38 ? 'nw' : cx > 0.62 ? 'ne' : 'top'
+  if (cy > 0.62) return cx < 0.38 ? 'sw' : cx > 0.62 ? 'se' : 'bottom'
+  return cx < 0.38 ? 'left' : cx > 0.62 ? 'right' : 'center'
+}
+
+function shrinkAwayFromLockup(
+  box: { x: number; y: number; w: number; h: number },
+  lockup: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number } {
+  const scale = 0.72
+  const w = box.w * scale
+  const h = box.h * scale
+  const cx = box.x + box.w / 2
+  const cy = box.y + box.h / 2
+  const lx = lockup.x + lockup.w / 2
+  const ly = lockup.y + lockup.h / 2
+  let dx = cx - lx
+  let dy = cy - ly
+  const len = Math.hypot(dx, dy) || 1
+  dx = (dx / len) * 1.8
+  dy = (dy / len) * 1.8
+  return { x: box.x + (box.w - w) / 2 + dx, y: box.y + (box.h - h) / 2 + dy, w, h }
+}
+
+function repairCompositionSlots(slots: MotifSlot[], panel: Panel, opts: MotifPaintOpts): MotifSlot[] {
+  const lockup = opts.lockup
+  const out: MotifSlot[] = []
+  for (const slot of slots) {
+    if (!atomRegionAllowed(slot.atom, slotRegionId(slot, panel))) continue
+    if (!lockup || lockup.w <= 0) {
+      out.push(slot)
+      continue
+    }
+    const first = lockupOverlapVerdict(slot, lockup)
+    if (first.verdict === 'ok') {
+      out.push(slot)
+      continue
+    }
+    if (first.verdict === 'reject') continue
+    const shrunk = { ...slot, box: shrinkAwayFromLockup(slot.box, lockup) }
+    const second = lockupOverlapVerdict(shrunk, lockup)
+    if (second.verdict === 'ok') out.push(shrunk)
+  }
+  return out
+}
+
+function compositionRoleFit(atom: MotifAtom, strategy: CompositionStrategy): number {
+  const roles = resolveMotifDesign(atom).compositionRoles ?? []
+  if (strategy === 'hero-with-support' && (roles.includes('anchor') || roles.includes('focal-support'))) return 1
+  if (strategy === 'asymmetric-editorial' && (roles.includes('focal-support') || roles.includes('anchor'))) return 1
+  if (strategy === 'balanced-corners' && roles.includes('corner-decoration')) return 1
+  if (strategy === 'framed-content' && roles.includes('frame-accent')) return 1
+  if (strategy === 'minimal-accent' && (roles.includes('focal-support') || roles.includes('texture'))) return 1
+  return 0
 }
 
 function layoutCustomSlots(
@@ -242,19 +344,58 @@ function layoutCustomSlots(
     const op = Math.min(meta.maxOpacity ?? 0.95, Math.max(0.28, meta.minOpacity ?? 0.28, opacity))
     slots.push({ atom, box: placed.rect, opacity: op, par: 'xMidYMid meet', lockout, role })
   }
-  const pick = (pool: MotifAtom[], kind: SlotKind, n: number, salt: number) =>
-    rankAtomsForRegion(pool, slotKindToRegion(kind), seed + salt, style, sector).slice(0, n)
+  const usedTokens = () => [...(opts.kitLexiconUsed ?? []), ...slots.flatMap((s) => atomLexiconHits(s.atom, lexiconOf(plan)))]
+  const pick = (pool: MotifAtom[], kind: SlotKind, n: number, salt: number) => {
+    const region = slotKindToRegion(kind)
+    const allowed = pool.filter((a) => atomRegionAllowed(a, region) && !slots.some((s) => s.atom.id === a.id))
+    const languages = languagesOfConcept(plan)
+    const lexicon = lexiconOf(plan)
+    const avoid = avoidOf(plan)
+    const used = usedTokens()
+    const ranked = rankAtomsForRegion(allowed, region, seed + salt, style, sector)
+    const roles = preferredRolesForLanguage(languages[0])
+    return [...ranked].sort((a, b) => {
+      const va = atomAvoided(a, avoid) ? 1 : 0
+      const vb = atomAvoided(b, avoid) ? 1 : 0
+      if (va !== vb) return va - vb
+      const novA = unusedLexiconHits(a, lexicon, used).length
+      const novB = unusedLexiconHits(b, lexicon, used).length
+      if (novA !== novB) return novB - novA
+      const ia = earliestUnusedLexiconIndex(a, lexicon, used)
+      const ib = earliestUnusedLexiconIndex(b, lexicon, used)
+      if (ia !== ib) return ia - ib
+      const ha = atomMatchesAnyLanguage(a, languages) ? 1 : 0
+      const hb = atomMatchesAnyLanguage(b, languages) ? 1 : 0
+      if (ha !== hb) return hb - ha
+      if (roles.length) {
+        const ra = roles.includes(resolvedMotifRole(a)) ? 1 : 0
+        const rb = roles.includes(resolvedMotifRole(b)) ? 1 : 0
+        if (ra !== rb) return rb - ra
+      }
+      const ca = compositionRoleFit(a, strategy)
+      const cb = compositionRoleFit(b, strategy)
+      if (ca !== cb) return cb - ca
+      return 0
+    }).slice(0, n)
+  }
   const ranged = (atom: MotifAtom | undefined) => (atom ? constrainAtomScale(atom, strategy) : undefined)
+  const tryPush = (pool: MotifAtom[], kind: SlotKind, salt: number, opacity: number, lockout: boolean, role: MotifSlot['role']) => {
+    for (const atom of pick(pool, kind, 8, salt)) {
+      const before = slots.length
+      push(ranged(atom), kind, opacity, lockout, role)
+      if (slots.length > before) return
+    }
+  }
 
   const heroX = plan.composition.heroZone.x ?? 0.5
+  const canCompanion = (pool: MotifAtom[]) => poolHasUnusedLexicon(pool, lexiconOf(plan), usedTokens())
   if (strategy === 'minimal-accent') {
     const kind: SlotKind = heroX >= 0.55 ? 'nw' : 'ne'
-    push(ranged(pick(stamps, kind, 1, 1)[0]), kind, 0.72, false, 'accent')
+    tryPush(stamps, kind, 1, 0.72, false, 'accent')
   } else if (strategy === 'asymmetric-editorial') {
     const kinds: SlotKind[] = heroX >= 0.5 ? ['nw', 'sw'] : ['ne', 'se']
-    const pair = pick(stamps, kinds[0], 2, 2)
-    push(ranged(pair[0]), kinds[0], 0.76, false, 'corner')
-    push(ranged(pair[1]), kinds[1], 0.7, true, 'stamp')
+    tryPush(stamps, kinds[0], 2, 0.76, false, 'corner')
+    if (canCompanion(stamps)) tryPush(stamps, kinds[1], 3, 0.7, true, 'stamp')
     if (decorationBudgetOf(plan) >= 0.32) {
       const bands = uniqueAtoms([
         ...atoms.filter((a) => atomMatchesRole(a, 'band')),
@@ -262,13 +403,14 @@ function layoutCustomSlots(
         ...atoms.filter((a) => atomMatchesRole(a, 'divider')),
         ...stamps,
       ])
-      const bottom = pick(bands, 'band-bottom', 4, 6).find((a) => !slots.some((s) => s.atom.id === a.id))
-      push(ranged(bottom), 'band-bottom', 0.64, true, 'accent')
+      if (canCompanion(bands)) tryPush(bands, 'band-bottom', 6, 0.64, true, 'accent')
     }
   } else if (strategy === 'hero-with-support') {
-    push(ranged(pick(stamps, 'hero-stamp', 1, 3)[0]), 'hero-stamp', 0.8, false, 'stamp')
+    if (!opts.kitSuppliesFocal) {
+      tryPush(stamps, 'hero-stamp', 3, 0.8, false, 'stamp')
+    }
     const support: SlotKind = heroX >= 0.5 ? 'nw' : 'ne'
-    push(ranged(pick(stamps, support, 1, 4)[0]), support, 0.7, false, 'corner')
+    if (canCompanion(stamps) || opts.kitSuppliesFocal) tryPush(stamps, support, 4, 0.7, false, 'corner')
   }
   return slots
 }
@@ -325,7 +467,7 @@ function weightedCentroid(
   return { x, y, balance }
 }
 
-function pairStyleScore(a: MotifAtom, b: MotifAtom): number {
+function pairStyleScore(a: MotifAtom, b: MotifAtom, lexicon: string[] = []): number {
   const da = resolveMotifDesign(a)
   const db = resolveMotifDesign(b)
   const tagsA = new Set([...(da.styleTags ?? []), ...a.tags])
@@ -345,6 +487,12 @@ function pairStyleScore(a: MotifAtom, b: MotifAtom): number {
   if (da.compatibleStyles?.length && db.compatibleStyles?.length) {
     const hit = da.compatibleStyles.some((s) => db.compatibleStyles!.includes(s))
     score += hit ? 12 : -22
+  }
+  if (lexicon.length) {
+    const hitsA = atomLexiconHits(a, lexicon)
+    const hitsB = atomLexiconHits(b, lexicon)
+    const distinct = new Set([...hitsA, ...hitsB])
+    if (hitsA.length && hitsB.length && distinct.size >= 2) score += 8
   }
   return clampScore(score)
 }
@@ -373,7 +521,9 @@ export function scoreCompositionSlots(
 
   let collision = 100
   for (const slot of slots) {
-    if (slot.role !== 'frame' && opts.lockup && boxesCollide(slot.box, opts.lockup, 0.35)) collision = Math.min(collision, 8)
+    const lock = lockupOverlapVerdict(slot, opts.lockup)
+    if (lock.verdict === 'reject') collision = Math.min(collision, 8)
+    else if (lock.verdict === 'modify') collision = Math.min(collision, 48)
     if (opts.heroBox && opts.heroBox.w > 0 && boxesCollide(slot.box, opts.heroBox, 0.35)) collision = Math.min(collision, 12)
   }
 
@@ -390,7 +540,7 @@ export function scoreCompositionSlots(
     let n = 0
     for (let i = 0; i < slots.length; i++) {
       for (let j = i + 1; j < slots.length; j++) {
-        pair += pairStyleScore(slots[i].atom, slots[j].atom)
+        pair += pairStyleScore(slots[i].atom, slots[j].atom, targets.motifLexicon ?? lexiconOf(plan))
         n += 1
       }
     }
@@ -439,6 +589,7 @@ export function scoreCompositionSlots(
   const productionSafety = collision < 20 ? 10 : slots.length ? 88 : 40
   const geo = markup ? computeGeometryMetrics(markup, panel) : undefined
   const geoBalance = geo ? clampScore(geo.balance * 100) : balance
+  const conceptFidelity = clampScore(conceptFidelityOf(slots, plan))
 
   const parts = {
     hierarchy,
@@ -448,6 +599,7 @@ export function scoreCompositionSlots(
     familyConsistency: clampScore(familyConsistency),
     decorationDensity: decorationDensityAdj,
     assetCompatibility: clampScore(assetCompatibility),
+    conceptFidelity,
     alignment,
     rhythm,
     collisionSafety: collision,
@@ -455,6 +607,8 @@ export function scoreCompositionSlots(
   }
   let total = weightedTotal(parts)
   if (targets.whitespaceTarget >= 0.6 && airGap > 0.15) total = clampScore(total - 16 - airGap * 20)
+  if (strategy === targets.compositionBias) total = clampScore(total + 2.4)
+  if (strategy === 'framed-content') total = clampScore(total - Math.round((1 - targets.framePreference) * 10))
   return { ...parts, total }
 }
 
@@ -540,10 +694,15 @@ export function generateCompositionCandidates(input: {
   const out: CompositionCandidate[] = []
   for (const strategy of strategies) {
     const raw = buildCandidateSlots(strategy, atoms, panel, plan, opts)
-    const slots = applyDecorationBudget(raw, panel, budget).filter((s) =>
-      atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily),
+    const slots = repairCompositionSlots(
+      applyDecorationBudget(raw, panel, budget).filter((s) =>
+        atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily),
+      ),
+      panel,
+      opts,
     )
     if (!slots.length) continue
+    if (strategy === 'framed-content' && !slots.some((s) => s.role === 'frame')) continue
     if (!slotsPassFamilyConstraint(slots, plan)) continue
     const fp = compositionLayoutFingerprint(strategy, slots, panel)
     if (seen.has(fp)) continue
@@ -570,6 +729,7 @@ function emptyScore(): CompositionScore {
     familyConsistency: 0,
     decorationDensity: 0,
     assetCompatibility: 0,
+    conceptFidelity: 0,
     alignment: 0,
     rhythm: 0,
     collisionSafety: 0,
@@ -695,6 +855,7 @@ export function selectMotifComposition(input: {
         score: c.preScore,
         regions,
         plan,
+        panel,
       })
       c.preScore = applyAdjustments(c.preScore, c.critique)
     }
@@ -718,13 +879,17 @@ export function selectMotifComposition(input: {
         score: c.postScore,
         regions,
         plan,
+        panel,
       })
       c.postScore = applyAdjustments(c.postScore, c.critique)
     }
     winner = chooseCompositionWinner(top, opts.seed ?? 0, plan)
     if (winner && slotsPassFamilyConstraint(winner.slots, plan) && winner.critique?.status !== 'REJECT') break
     const used = new Set((winner?.slots ?? top.flatMap((c) => c.slots)).map((s) => s.atom.id))
-    pool = pool.filter((a) => !used.has(a.id))
+    const rest = pool.filter((a) => !used.has(a.id))
+    const langs = languagesOfConcept(plan)
+    const better = langs.length ? rest.filter((a) => atomMatchesAnyLanguage(a, langs)) : []
+    pool = better.length ? better : rest
     winner = undefined
     retry += 1
     if (!pool.length) break
@@ -754,6 +919,13 @@ export function selectMotifComposition(input: {
       fallbackMode,
       hardConstraint: hardPass ? 'PASS' : 'FAILURE',
       styleConsistency: winner?.postScore?.styleConsistency ?? winner?.preScore?.styleConsistency,
+      conceptFidelity: winner?.postScore?.conceptFidelity ?? winner?.preScore?.conceptFidelity,
+      visualLanguage: visualLanguageOfConcept(plan),
+      languages: languagesOfConcept(plan),
+      avoid: avoidOf(plan),
+      motifLexicon: lexiconOf(plan),
+      roles: winner?.slots.map((s) => s.role),
+      regions: winner?.slots.map((s) => slotRegionId(s, panel)),
       critic: winner?.critique?.status ?? (fallbackMode === 'typography-only' ? 'KEEP' : 'REJECT'),
     },
     reviewStatus: hardPass ? 'PASS' : 'NEEDS_REVIEW',

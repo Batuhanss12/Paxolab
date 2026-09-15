@@ -1,8 +1,10 @@
+import { goldBarForConcept, lockupForConcept } from '../designSystem/conceptKitAlignment'
+import { pickDecor } from '../designSystem/kits'
 import type { DesignSystem } from '../designSystem/types'
 import type { DesignPlan } from './DesignPlan'
 import { studioRecipe } from './VariationRecipes'
 
-/** Thin adapter: plan refines the resolved kit. Does not pick a new lockup family. */
+/** Thin adapter: plan refines kit inputs. Does not rewrite lockup typography math. */
 export function applyPlanToSystem(system: DesignSystem, plan: DesignPlan): DesignSystem {
   const tighten = plan.decor.restrainExtras
   const vary = plan.variationIndex > 0
@@ -11,8 +13,18 @@ export function applyPlanToSystem(system: DesignSystem, plan: DesignPlan): Desig
   const recipe = studioRecipe(plan.variationIndex)
   const typeScale = recipe?.typeScale ?? 1
   const trackingScale = recipe?.trackingScale ?? 1
+  const lockup =
+    system.blankCanvas || system.grammar === 'label'
+      ? system.lockup
+      : lockupForConcept(plan.visualConcept, system.lockup)
+  const decor =
+    lockup === system.lockup ? system.decor : pickDecor(system.style, system.sector, lockup)
+  const goldBar = system.blankCanvas ? system.goldBar : goldBarForConcept(plan.visualConcept, system.goldBar)
   return {
     ...system,
+    lockup,
+    decor,
+    goldBar,
     density: plan.decor.density,
     align: system.wrapSeam ? 'left' : plan.composition.lockup,
     type: {

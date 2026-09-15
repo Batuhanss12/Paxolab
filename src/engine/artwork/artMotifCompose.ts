@@ -19,7 +19,16 @@ import {
   type SlotKind,
 } from './artDesignRegions'
 import { motifFamilyOf, motifSubfamilyOf } from './artMotifFamily'
-import { resolveMotifDesign } from './artMotifMeta'
+import { atomRegionAllowed, resolveMotifDesign } from './artMotifMeta'
+import {
+  atomAvoided,
+  atomLexiconHits,
+  atomMatchesAnyLanguage,
+  earliestUnusedLexiconIndex,
+  unusedLexiconHits,
+  isDecorativeFrame,
+  type VisualLanguage,
+} from './visualLanguage'
 
 export type MotifRecipeId = 'luxury-frame' | 'stamp-field' | 'band-story' | 'corner-deco'
 
@@ -48,6 +57,11 @@ export type MotifPaintOpts = {
   heroBox?: SafeRect
   goldBar?: boolean
   sector?: string
+  languages?: VisualLanguage[]
+  avoid?: string[]
+  motifLexicon?: string[]
+  kitLexiconUsed?: string[]
+  kitSuppliesFocal?: boolean
 }
 
 const FIELD_OP: Record<string, number> = {
@@ -114,10 +128,36 @@ function pickForSlot(
   style: string | undefined,
   sector: string | undefined,
   count: number,
+  opts: MotifPaintOpts = {},
+  used: MotifAtom[] = [],
 ): MotifAtom[] {
-  const ranked = rankAtomsForRegion(atoms, slotKindToRegion(kind), seed, style, sector)
-  if (!ranked.length) return pick(atoms, seed, count)
-  return ranked.slice(0, count)
+  const region = slotKindToRegion(kind)
+  const usedIds = new Set(used.map((a) => a.id))
+  const allowed = atoms.filter((a) => atomRegionAllowed(a, region) && !usedIds.has(a.id))
+  if (!allowed.length) return []
+  const ranked = rankAtomsForRegion(allowed, region, seed, style, sector)
+  const lexicon = opts.motifLexicon ?? []
+  const avoid = opts.avoid ?? []
+  const langs = opts.languages ?? []
+  const usedTokens = [...(opts.kitLexiconUsed ?? []), ...used.flatMap((atom) => atomLexiconHits(atom, lexicon))]
+  if (!lexicon.length && !avoid.length && !langs.length) return ranked.slice(0, count)
+  return [...ranked]
+    .sort((a, b) => {
+      const va = atomAvoided(a, avoid) ? 1 : 0
+      const vb = atomAvoided(b, avoid) ? 1 : 0
+      if (va !== vb) return va - vb
+      const novA = unusedLexiconHits(a, lexicon, usedTokens).length
+      const novB = unusedLexiconHits(b, lexicon, usedTokens).length
+      if (novA !== novB) return novB - novA
+      const ia = earliestUnusedLexiconIndex(a, lexicon, usedTokens)
+      const ib = earliestUnusedLexiconIndex(b, lexicon, usedTokens)
+      if (ia !== ib) return ia - ib
+      const ga = atomMatchesAnyLanguage(a, langs) ? 1 : 0
+      const gb = atomMatchesAnyLanguage(b, langs) ? 1 : 0
+      if (ga !== gb) return gb - ga
+      return 0
+    })
+    .slice(0, count)
 }
 
 export function buildMotifSlots(
@@ -140,7 +180,7 @@ export function buildMotifSlots(
   }
   const corners = unique([...byRole(atoms, 'corner'), ...stamps])
   const bands = unique([...byRole(atoms, 'band'), ...stamps])
-  const frames = unique([...byRole(atoms, 'frame'), ...byRole(atoms, 'field-fill'), ...stamps])
+  const frames = unique([...byRole(atoms, 'frame'), ...byRole(atoms, 'field-fill')])
   const map = buildDesignRegionMap({
     panel,
     lockup: opts.lockup ?? opts.safe,
@@ -170,7 +210,7 @@ export function buildMotifSlots(
         ...slots.map((s) => ({ id: `slot-${s.atom.id}`, rect: s.box, kind: 'decoration' as const, gap: 0.6 })),
       ],
       safe: opts.safe,
-      allowLockupOverlap: kind === 'frame',
+      allowLockupOverlap: kind === 'frame' && isDecorativeFrame(atom, 'frame'),
     })
     if (placed.rejected || placed.rect.w < 0.4 || placed.rect.h < 0.4) return
     const meta = resolveMotifDesign(atom)
@@ -178,31 +218,31 @@ export function buildMotifSlots(
     slots.push({ atom, box: placed.rect, opacity: op, par: 'xMidYMid meet', lockout, role })
   }
 
+  const placed = () => slots.map((s) => s.atom)
   if (recipe === 'luxury-frame') {
-    push(pickForSlot(frames, 'frame', seed, style, sector, 1)[0], 'frame', 0.42, true, 'frame')
-    const pair = pickForSlot(corners, 'nw', seed + 1, style, sector, 2)
-    push(pair[0], 'nw', 0.78, false, 'corner')
-    push(pair[1], 'ne', 0.78, false, 'corner')
+    push(pickForSlot(frames, 'frame', seed, style, sector, 1, opts, placed())[0], 'frame', 0.42, true, 'frame')
+    push(pickForSlot(corners, 'nw', seed + 1, style, sector, 1, opts, placed())[0], 'nw', 0.78, false, 'corner')
+    push(pickForSlot(corners, 'ne', seed + 2, style, sector, 1, opts, placed())[0], 'ne', 0.78, false, 'corner')
     if (slots.length < 2) {
-      const extra = pickForSlot(unique(stamps), 'nw', seed + 2, style, sector, 2)
-      push(extra[0], 'nw', 0.74, false, 'stamp')
-      push(extra[1], 'ne', 0.74, false, 'stamp')
+      push(pickForSlot(unique(stamps), 'nw', seed + 3, style, sector, 1, opts, placed())[0], 'nw', 0.74, false, 'stamp')
+      push(pickForSlot(unique(stamps), 'ne', seed + 4, style, sector, 1, opts, placed())[0], 'ne', 0.74, false, 'stamp')
     }
   } else if (recipe === 'corner-deco') {
-    const pair = pickForSlot(corners, 'nw', seed, style, sector, 2)
-    push(pair[0], 'nw', 0.8, false, 'corner')
-    push(pair[1], 'ne', 0.8, false, 'corner')
-    const third = pickForSlot(unique(stamps), 'sw', seed + 4, style, sector, 1)[0]
-    if (third && slots.length < 3) push(third, 'sw', 0.62, true, 'stamp')
+    push(pickForSlot(corners, 'nw', seed, style, sector, 1, opts, placed())[0], 'nw', 0.8, false, 'corner')
+    push(pickForSlot(corners, 'ne', seed + 1, style, sector, 1, opts, placed())[0], 'ne', 0.8, false, 'corner')
+    if (slots.length < 3) {
+      push(pickForSlot(unique(stamps), 'sw', seed + 4, style, sector, 1, opts, placed())[0], 'sw', 0.62, true, 'stamp')
+    }
   } else if (recipe === 'band-story') {
-    push(pickForSlot(bands, 'band-top', seed, style, sector, 1)[0], 'band-top', 0.62, true, 'band')
-    const extra = pickForSlot(unique(stamps), 'sw', seed + 3, style, sector, 2)
-    push(extra[0], 'sw', 0.7, true, 'stamp')
-    push(extra[1], 'se', 0.7, true, 'stamp')
+    push(pickForSlot(bands, 'band-top', seed, style, sector, 1, opts, placed())[0], 'band-top', 0.62, true, 'band')
+    push(pickForSlot(unique(stamps), 'sw', seed + 3, style, sector, 1, opts, placed())[0], 'sw', 0.7, true, 'stamp')
+    push(pickForSlot(unique(stamps), 'se', seed + 4, style, sector, 1, opts, placed())[0], 'se', 0.7, true, 'stamp')
   } else {
-    const chosen = pickForSlot(unique(stamps), 'nw', seed, style, sector, Math.min(4, Math.max(2, atoms.length)))
     const kinds: SlotKind[] = ['nw', 'ne', 'sw', 'hero-stamp']
-    chosen.forEach((atom, i) => push(atom, kinds[i] ?? 'se', i === 2 ? fieldOp + 0.28 : 0.72, true, 'stamp'))
+    for (let i = 0; i < Math.min(4, Math.max(2, atoms.length)); i++) {
+      const atom = pickForSlot(unique(stamps), kinds[i] ?? 'se', seed + i, style, sector, 1, opts, placed())[0]
+      push(atom, kinds[i] ?? 'se', i === 2 ? fieldOp + 0.28 : 0.72, true, 'stamp')
+    }
   }
 
   if (!slots.length && atoms[0]) push(atoms[0], 'hero-stamp', 0.8, false, 'stamp')

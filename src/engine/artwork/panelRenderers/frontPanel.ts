@@ -7,6 +7,7 @@
 import type { DesignBrief, DesignOverrides, DesignSpec, Palette, Panel } from '../../../types'
 import type { DesignPlan } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
+import { kitLexiconUsedByKit, kitSuppliesFocalLockup } from '../../designSystem/conceptKitAlignment'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
 import { expandKitSafe, kitLevel } from '../bgKits'
 import { paintArtPatternOverlay } from '../artPatternLibrary'
@@ -82,6 +83,13 @@ export function renderFrontPanel(
     heroBox,
     goldBar: system.goldBar,
     sector: system.sector,
+    languages: designPlan?.visualConcept.languages,
+    avoid: designPlan?.visualConcept.avoid,
+    motifLexicon: designPlan?.visualConcept.motifLexicon,
+    kitLexiconUsed: !blank && designPlan
+      ? kitLexiconUsedByKit(designPlan.visualConcept, system.lockup, designPlan.heroGraphic.family)
+      : undefined,
+    kitSuppliesFocal: !blank && kitSuppliesFocalLockup(system.lockup, designPlan?.heroGraphic.family),
   }
   if (blank) {
     const match = matchMotifs({
@@ -93,6 +101,9 @@ export function renderFrontPanel(
       family: designPlan?.visualConcept.family,
       supportFamily: designPlan?.visualConcept.supportFamily,
       conceptId: designPlan?.visualConcept.id,
+      languages: designPlan?.visualConcept.languages,
+      avoid: designPlan?.visualConcept.avoid,
+      motifLexicon: designPlan?.visualConcept.motifLexicon,
     })
     if (designPlan) {
       const picked = selectMotifComposition({
@@ -166,6 +177,9 @@ export function renderFrontPanel(
         family: designPlan.visualConcept.family,
         supportFamily: designPlan.visualConcept.supportFamily,
         conceptId: designPlan.visualConcept.id,
+        languages: designPlan.visualConcept.languages,
+        avoid: designPlan.visualConcept.avoid,
+        motifLexicon: designPlan.visualConcept.motifLexicon,
       })
       const picked = selectMotifComposition({
         panel,

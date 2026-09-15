@@ -2,7 +2,20 @@ export type { DesignSystem, SectorId, LockupId, DecorFamily, TypeScale, TypeRole
 export { resolveDesignSystem } from './resolve'
 export { resolveSector } from './sector'
 export { evaluateDesignGates, isKraftLike } from './gates'
-export { STYLE_KITS, categoryFor, typeScaleFor } from './kits'
+export { STYLE_KITS, categoryFor, typeScaleFor, pickLockup, pickDecor } from './kits'
+export {
+  CONCEPT_LOCKUP_TABLE,
+  lockupForConcept,
+  goldBarForConcept,
+  chromeForConcept,
+  shouldPaintSectorFrame,
+  shouldPaintModernGrid,
+  shouldPaintLockupWindow,
+  conceptForbidsPattern,
+  preferHeroForConcept,
+  kitSuppliesFocalLockup,
+  kitLexiconUsedByKit,
+} from './conceptKitAlignment'
 export {
   layoutFrontLockup,
   smallCapsText,

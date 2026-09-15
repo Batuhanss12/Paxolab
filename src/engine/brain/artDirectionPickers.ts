@@ -3,6 +3,12 @@
  * Extracted from ArtDirection.ts to isolate selection logic from allowed-list computation.
  */
 import type { StyleType } from '../../types'
+import {
+  conceptForbidsPattern,
+  densePatternFamiliesBlocked,
+  preferHeroForConcept,
+  preferPatternForConcept,
+} from '../designSystem/conceptKitAlignment'
 import type { Density } from '../designSystem/types'
 import { lastForStyle } from './DesignMemory'
 import { pickAllowed, studioRecipe } from './VariationRecipes'
@@ -10,6 +16,7 @@ import { vocabHeroRequired } from './SectorVisualVocabulary'
 import { allowedHeroes, allowedPatterns, defaultPattern } from './artDirectionAllowed'
 import type { ArtCtx } from './ArtDirection'
 import { remapBannedHero, type HeroFamily, type PatternFamily, type PrimitiveId } from './DesignPlan'
+import { visualConceptFor } from './VisualConcept'
 
 const OVERLOAD_PRIMS: PrimitiveId[] = ['leaf', 'grain', 'diamond', 'wave', 'arc', 'dot', 'tick']
 
@@ -67,6 +74,9 @@ export function pickHero(ctx: ArtCtx): HeroFamily {
     return remapBannedHero(ctx.prev.heroGraphic.family, ctx.sector)
   }
   if (index <= 0) {
+    const concept = visualConceptFor(ctx.style, ctx.sector, 'none', ctx.brief.subProduct)
+    const prefer = preferHeroForConcept(concept)
+    if (prefer && allowed.includes(prefer)) return remapBannedHero(prefer, ctx.sector)
     const needed = requiredHero(ctx, allowed)
     return remapBannedHero(needed ?? preferred, ctx.sector)
   }
@@ -78,10 +88,14 @@ export function pickHero(ctx: ArtCtx): HeroFamily {
 }
 
 export function pickPattern(ctx: ArtCtx): PatternFamily {
-  const allowed = allowedPatterns(ctx.style, ctx.vocab, ctx.sector)
-  const preferred = defaultPattern(ctx.style, ctx.sector)
-  const safePreferred = allowed.includes(preferred) ? preferred : (allowed[0] ?? 'none')
+  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct)
   const index = ctx.variationIndex ?? 0
+  if (conceptForbidsPattern(concept) && index <= 0) return 'none'
+  const blocked = densePatternFamiliesBlocked(concept)
+  const allowedRaw = allowedPatterns(ctx.style, ctx.vocab, ctx.sector).filter((p) => !blocked.includes(p))
+  const allowed = allowedRaw.length ? allowedRaw : (['stripe', 'none'] as PatternFamily[])
+  const preferred = defaultPattern(ctx.style, ctx.sector)
+  const safePreferred = allowed.includes(preferred) ? preferred : (allowed.find((p) => p !== 'none') ?? allowed[0] ?? 'none')
   const indexChanged = index !== (ctx.prev?.variationIndex ?? 0)
   const keepCue =
     ctx.cue === 'luxury-tighten' ||
@@ -92,7 +106,10 @@ export function pickPattern(ctx: ArtCtx): PatternFamily {
   if (keepCue && !indexChanged && ctx.prev?.patternSystem.family && allowed.includes(ctx.prev.patternSystem.family)) {
     return ctx.prev.patternSystem.family
   }
-  if (index <= 0) return coerceFilledPattern(ctx, safePreferred, allowed)
+  if (index <= 0) {
+    if (preferPatternForConcept(concept) === 'none') return 'none'
+    return coerceFilledPattern(ctx, safePreferred, allowed)
+  }
   const recipe = studioRecipe(index)
   if (recipe) return coerceFilledPattern(ctx, pickAllowed(allowed, recipe.pattern, index), allowed)
   return coerceFilledPattern(
@@ -103,8 +120,14 @@ export function pickPattern(ctx: ArtCtx): PatternFamily {
 }
 
 function coerceFilledPattern(ctx: ArtCtx, picked: PatternFamily, allowed: PatternFamily[]): PatternFamily {
+  const concept = visualConceptFor(ctx.style, ctx.sector, ctx.forceHero && ctx.forceHero !== 'seal' ? ctx.forceHero : 'none', ctx.brief.subProduct)
+  if (conceptForbidsPattern(concept) && (ctx.variationIndex ?? 0) <= 0) return 'none'
+  const blocked = densePatternFamiliesBlocked(concept)
+  if (blocked.includes(picked)) {
+    return allowed.find((p) => p !== 'none' && !blocked.includes(p)) ?? 'none'
+  }
   if (picked !== 'none' || ctx.style === 'minimal') return picked
-  return allowed.find((p) => p !== 'none') ?? defaultPattern(ctx.style, ctx.sector)
+  return allowed.find((p) => p !== 'none' && !blocked.includes(p)) ?? 'none'
 }
 
 export function patternOpacity(style: StyleType, density: Density, restrain: boolean): number {

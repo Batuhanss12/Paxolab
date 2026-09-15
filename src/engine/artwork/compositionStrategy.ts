@@ -13,6 +13,15 @@ import type { DesignPlan } from '../brain/DesignPlan'
 import { decorationBudgetOf } from '../brain/VisualConcept'
 import { moodPrior } from '../brain/moodPriors'
 import type { MotifRecipeId } from './artMotifCompose'
+import type { MotifRole } from './artMotifMeta'
+import {
+  avoidOf,
+  languagesOfConcept,
+  lexiconOf,
+  preferredRolesForLanguage,
+  visualLanguageOfConcept,
+  type VisualLanguage,
+} from './visualLanguage'
 
 export type CompositionStrategy =
   | 'framed-content'
@@ -33,6 +42,11 @@ export type CompositionTargets = {
   compositionBias: CompositionStrategy
   framePreference: number
   ornamentPreference: number
+  visualLanguage?: VisualLanguage
+  languages?: VisualLanguage[]
+  avoid?: string[]
+  motifLexicon?: string[]
+  preferredMotifRoles?: MotifRole[]
 }
 
 /** Design-intent layer for Phase 2. Not a second DesignPlan contract. */
@@ -53,6 +67,7 @@ export type CompositionScore = {
   familyConsistency: number
   decorationDensity: number
   assetCompatibility: number
+  conceptFidelity: number
   alignment: number
   rhythm: number
   collisionSafety: number
@@ -66,9 +81,10 @@ export const COMPOSITION_SCORE_WEIGHTS: Record<keyof Omit<CompositionScore, 'tot
   balance: 0.12,
   whitespace: 0.12,
   styleConsistency: 0.1,
-  familyConsistency: 0.16,
+  familyConsistency: 0.14,
   decorationDensity: 0.08,
-  assetCompatibility: 0.08,
+  assetCompatibility: 0.06,
+  conceptFidelity: 0.08,
   alignment: 0.06,
   rhythm: 0.05,
   collisionSafety: 0.04,
@@ -85,6 +101,7 @@ const RECIPE_OF: Record<CompositionStrategy, MotifRecipeId> = {
   'hero-with-support': 'stamp-field',
 }
 
+/** Paint-geometry label only. Strategy identity/scoring is independent of this map. */
 export function recipeForStrategy(strategy: CompositionStrategy): MotifRecipeId {
   return RECIPE_OF[strategy]
 }
@@ -129,23 +146,35 @@ export function compositionTargets(plan: DesignPlan, style?: StyleType | string)
         ? 'asymmetric-editorial'
         : 'top-bottom-balance'))
 
+  const languages = languagesOfConcept(plan)
+  const language = visualLanguageOfConcept(plan)
   const budget = decorationBudgetOf(plan)
+  const avoid = avoidOf(plan)
+  const airConcept =
+    languages.includes('quiet-line') || languages.includes('oval') || (plan.visualConcept.tags ?? []).includes('air')
+  const airWhitespace = airConcept ? Math.min(0.82, whitespaceTarget + 0.06) : whitespaceTarget
+  const familyFrame =
+    plan.visualConcept.family === 'botanical' || plan.visualConcept.family === 'quiet-line'
+      ? 0.28
+      : mood === 'luxury' || mood === 'classic'
+        ? 0.75
+        : 0.25
 
   return {
     densityTarget: Math.min(densityTarget, Math.max(0.16, budget * 0.7)),
-    whitespaceTarget,
+    whitespaceTarget: airWhitespace,
     symmetryTarget: symmetric ? 0.88 : intent === 'offset' ? 0.4 : 0.28,
     decorationLevel: budget,
     focalStrength: plan.heroGraphic.family === 'none' ? 0.45 : 0.78,
     balanceTarget: symmetric ? 0.82 : 0.42,
     compositionBias,
-    framePreference:
-      plan.visualConcept.family === 'botanical' || plan.visualConcept.family === 'quiet-line'
-        ? 0.28
-        : mood === 'luxury' || mood === 'classic'
-          ? 0.75
-          : 0.25,
+    framePreference: avoid.includes('heavy-frame') ? Math.min(familyFrame, 0.22) : familyFrame,
     ornamentPreference: budget,
+    visualLanguage: language,
+    languages,
+    avoid,
+    motifLexicon: lexiconOf(plan),
+    preferredMotifRoles: preferredRolesForLanguage(language),
   }
 }
 
@@ -211,14 +240,20 @@ export function allowedStrategies(plan: DesignPlan): CompositionStrategy[] {
     if (hasHero) add('hero-with-support')
   }
 
-  while (out.length < 3) {
-    for (const fallback of ['balanced-corners', 'minimal-accent', 'framed-content'] as CompositionStrategy[]) {
-      add(fallback)
-      if (out.length >= 3) break
-    }
-    break
+  const avoid = plan.visualConcept.avoid ?? []
+  const langs = languagesOfConcept(plan)
+  const blocked = new Set<CompositionStrategy>()
+  if (avoid.includes('heavy-frame')) blocked.add('framed-content')
+  if (avoid.includes('dense-pattern')) blocked.add('pattern-field')
+  if (avoid.includes('generic-corners') || avoid.includes('sharp-corner') || langs.includes('linear')) {
+    blocked.add('balanced-corners')
   }
-  return out.slice(0, 5)
+  const filtered = out.filter((strategy) => !blocked.has(strategy))
+  for (const fallback of ['minimal-accent', 'hero-with-support', 'asymmetric-editorial', 'top-bottom-balance'] as CompositionStrategy[]) {
+    if (filtered.length >= 3) break
+    if (!blocked.has(fallback) && !filtered.includes(fallback)) filtered.push(fallback)
+  }
+  return filtered.slice(0, 5)
 }
 
 export function weightedTotal(score: Omit<CompositionScore, 'total'>): number {

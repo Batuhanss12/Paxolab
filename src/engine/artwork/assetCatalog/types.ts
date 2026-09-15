@@ -13,6 +13,8 @@ export type CanonicalAssetRecord = {
   complexity: number
   visualWeight: number
   preferredPlacement: string[]
+  allowedPlacement?: string[]
+  forbiddenPlacement?: string[]
   allowedColors: string[]
   role?: MotifRole
   /** Path relative to assets/motif-families. Missing = metadata-only (existing library sheet). */

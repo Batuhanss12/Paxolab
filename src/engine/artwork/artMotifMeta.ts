@@ -51,6 +51,8 @@ export interface MotifDesignMetadata {
   symmetry?: MotifSymmetry
   orientation?: MotifOrientation
   preferredRegions?: MotifRegionId[]
+  allowedRegions?: MotifRegionId[]
+  forbiddenRegions?: MotifRegionId[]
   avoidRegions?: MotifAvoidRegion[]
   minScale?: number
   maxScale?: number
@@ -140,6 +142,14 @@ export function round2(n: number): number {
 
 export function resolvedMotifRole(atom: MotifMetaHost): MotifRole {
   return atom.roleConfirmed ?? atom.design?.role ?? atom.roleGuess
+}
+
+/** ALLOWED/FORBIDDEN are hard; preferred is only a ranking hint. */
+export function atomRegionAllowed(atom: MotifMetaHost, regionId: MotifRegionId): boolean {
+  const meta = resolveMotifDesign(atom)
+  if (meta.forbiddenRegions?.includes(regionId)) return false
+  if (meta.allowedRegions?.length && !meta.allowedRegions.includes(regionId)) return false
+  return true
 }
 
 /** explicit field-by-field override of inferred/defaults. Empty arrays still win. */

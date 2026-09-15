@@ -6,6 +6,11 @@
  */
 import type { Palette, Panel } from '../../../types'
 import type { DesignPlan } from '../../brain/DesignPlan'
+import {
+  shouldPaintLockupWindow,
+  shouldPaintModernGrid,
+  shouldPaintSectorFrame,
+} from '../../designSystem/conceptKitAlignment'
 import type { DesignSystem } from '../../designSystem/types'
 import { paintPrimitives } from '../illustrationPrimitives'
 import { lockupWindow, type SafeRect } from '../motifs'
@@ -32,8 +37,8 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
   const useLibrary = libPicks !== null
 
   if (grammar === 'label') {
-    out += labelDecor(panel, system, p)
-    if (style === 'modern') {
+    out += labelDecor(panel, system, p, plan?.visualConcept)
+    if (shouldPaintModernGrid(plan?.visualConcept, style)) {
       const { x, y, w, h } = panel
       for (let i = 1; i < 3; i++) {
         const gx = x + (w / 3) * i
@@ -43,16 +48,10 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
     out += paintPlanHero(panel, system, p, plan, ctx)
   } else {
     const sector = system.sector
-    if (style === 'luxury' || style === 'classic') {
+    if (shouldPaintSectorFrame(plan?.visualConcept, style, sector)) {
       out += sectorFrame(panel, p, sector, style)
-    } else if (style === 'modern') {
-      if (sector === 'electronics') out += sectorFrame(panel, p, sector, style)
-    } else if (style === 'eco' || style === 'playful') {
-      out += sectorFrame(panel, p, sector, style)
-    } else if (style === 'minimal') {
-      // P2-B: cosmetics use lockup hair; cleaning/food/electronics use sector bg. No extra top hairline.
     }
-    if (style === 'modern') {
+    if (shouldPaintModernGrid(plan?.visualConcept, style)) {
       const { x, y, w, h } = panel
       const cols = 3
       for (let i = 1; i < cols; i++) {
@@ -84,8 +83,7 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
     }
   }
 
-  // P2-B: forbid lockupWindow chrome=full on minimal (air intent).
-  if (plan?.artDirection.chrome === 'full' && safe && grammar !== 'label' && style !== 'minimal') {
+  if (shouldPaintLockupWindow(plan?.visualConcept, plan?.artDirection.chrome, style, grammar) && safe) {
     out += lockupWindow(safe, p.accent)
   }
 

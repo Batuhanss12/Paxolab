@@ -18,8 +18,11 @@ const CONCEPTS: Record<string, ConceptRow> = {
     family: 'heraldic',
     supportFamily: 'geometric-deco',
     decorationBudget: 0.28,
-    strategyBias: ['framed-content', 'hero-with-support', 'balanced-corners', 'minimal-accent'],
+    strategyBias: ['hero-with-support', 'minimal-accent', 'framed-content'],
     tags: ['night', 'foil-signal', 'one-hero', 'heraldic'],
+    languages: ['heraldic'],
+    avoid: ['dense-pattern', 'generic-ticks', 'generic-corners'],
+    motifLexicon: ['crest', 'ribbon', 'cartouche'],
   },
   'perfume:classic': {
     id: 'heraldic-crest',
@@ -27,8 +30,11 @@ const CONCEPTS: Record<string, ConceptRow> = {
     family: 'heraldic',
     supportFamily: 'mineral-frame',
     decorationBudget: 0.34,
-    strategyBias: ['framed-content', 'balanced-corners', 'hero-with-support'],
+    strategyBias: ['hero-with-support', 'framed-content', 'balanced-corners'],
     tags: ['crest', 'double-line', 'heritage'],
+    languages: ['heraldic'],
+    avoid: ['dense-pattern', 'generic-ticks'],
+    motifLexicon: ['crest', 'double-line', 'ribbon'],
   },
   'perfume:eco': {
     id: 'botanical-night',
@@ -38,6 +44,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.32,
     strategyBias: ['asymmetric-editorial', 'minimal-accent', 'hero-with-support'],
     tags: ['leaf', 'quiet-gold'],
+    languages: ['botanical', 'quiet-line'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['leaf', 'olive-branch'],
   },
   'cream:luxury': {
     id: 'soft-oval',
@@ -45,8 +54,11 @@ const CONCEPTS: Record<string, ConceptRow> = {
     family: 'quiet-line',
     supportFamily: 'heraldic',
     decorationBudget: 0.24,
-    strategyBias: ['minimal-accent', 'framed-content', 'hero-with-support'],
+    strategyBias: ['hero-with-support', 'minimal-accent', 'asymmetric-editorial'],
     tags: ['cream', 'oval', 'air'],
+    languages: ['oval', 'quiet-line'],
+    avoid: ['heavy-frame', 'sharp-corner', 'generic-ticks', 'dense-pattern'],
+    motifLexicon: ['soft-oval', 'oval', 'ring', 'capsule'],
   },
   'serum:luxury': {
     id: 'drop-concentrate',
@@ -56,6 +68,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.22,
     strategyBias: ['minimal-accent', 'asymmetric-editorial', 'hero-with-support'],
     tags: ['serum', 'drop'],
+    languages: ['quiet-line', 'oval'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['capsule', 'hairline', 'drop'],
   },
   'food:oil:luxury': {
     id: 'earthen-premium',
@@ -63,8 +78,11 @@ const CONCEPTS: Record<string, ConceptRow> = {
     family: 'botanical',
     supportFamily: 'harvest',
     decorationBudget: 0.42,
-    strategyBias: ['asymmetric-editorial', 'hero-with-support', 'framed-content', 'minimal-accent'],
+    strategyBias: ['asymmetric-editorial', 'hero-with-support', 'minimal-accent'],
     tags: ['botanical', 'olive', 'restrained-frame', 'editorial', 'warm-mineral', 'harvest'],
+    languages: ['botanical', 'organic'],
+    avoid: ['heavy-frame', 'ornate-seal', 'dense-pattern'],
+    motifLexicon: ['olive-branch', 'botanical-corner', 'botanical-accent'],
   },
   'food:oil:classic': {
     id: 'grove-press',
@@ -74,6 +92,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.4,
     strategyBias: ['hero-with-support', 'asymmetric-editorial', 'top-bottom-balance'],
     tags: ['wreath', 'press', 'olive'],
+    languages: ['botanical', 'organic'],
+    avoid: ['heavy-frame', 'dense-pattern'],
+    motifLexicon: ['wreath', 'olive', 'press'],
   },
   'food:oil:eco': {
     id: 'grove-kraft',
@@ -83,6 +104,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.38,
     strategyBias: ['asymmetric-editorial', 'minimal-accent', 'hero-with-support'],
     tags: ['leaf', 'kraft', 'grain'],
+    languages: ['botanical', 'organic'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['leaf', 'grain'],
   },
   'food:luxury': {
     id: 'harvest-press',
@@ -92,6 +116,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.4,
     strategyBias: ['hero-with-support', 'asymmetric-editorial', 'framed-content'],
     tags: ['wreath', 'press', 'net', 'harvest'],
+    languages: ['botanical', 'organic'],
+    avoid: ['ornate-seal', 'dense-pattern'],
+    motifLexicon: ['wreath', 'harvest', 'olive'],
   },
   'food:eco': {
     id: 'harvest-kraft',
@@ -101,6 +128,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.38,
     strategyBias: ['asymmetric-editorial', 'hero-with-support', 'minimal-accent'],
     tags: ['grain', 'leaf', 'press'],
+    languages: ['botanical', 'organic'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['grain', 'leaf', 'press'],
   },
   'electronics:luxury': {
     id: 'signal-plaque',
@@ -110,6 +140,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.2,
     strategyBias: ['minimal-accent', 'hero-with-support', 'asymmetric-editorial'],
     tags: ['plaque', 'spec', 'precision'],
+    languages: ['linear', 'geometric'],
+    avoid: ['heavy-frame', 'ornate-seal', 'botanical', 'generic-corners'],
+    motifLexicon: ['plaque', 'grid', 'glyph'],
   },
   'electronics:modern': {
     id: 'tech-glyph',
@@ -119,6 +152,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.22,
     strategyBias: ['asymmetric-editorial', 'top-bottom-balance', 'minimal-accent'],
     tags: ['grid', 'index', 'slate'],
+    languages: ['linear', 'geometric'],
+    avoid: ['heavy-frame', 'ornate-seal', 'botanical', 'generic-corners'],
+    motifLexicon: ['grid', 'glyph', 'pattern16', 'stripe', 'index'],
   },
   'eco:any': {
     id: 'kraft-botanical',
@@ -128,6 +164,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.36,
     strategyBias: ['asymmetric-editorial', 'minimal-accent', 'hero-with-support'],
     tags: ['grain', 'leaf', 'warm'],
+    languages: ['botanical', 'organic'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['leaf', 'grain'],
   },
   'playful:any': {
     id: 'capsule-field',
@@ -137,6 +176,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.48,
     strategyBias: ['pattern-field', 'top-bottom-balance', 'balanced-corners'],
     tags: ['badge', 'capsule', 'controlled'],
+    languages: ['organic', 'geometric'],
+    avoid: ['heavy-frame'],
+    motifLexicon: ['capsule', 'badge', 'vintage'],
   },
   'modern:any': {
     id: 'index-stripe',
@@ -146,6 +188,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.26,
     strategyBias: ['asymmetric-editorial', 'top-bottom-balance', 'minimal-accent'],
     tags: ['stripe', 'lattice', 'left'],
+    languages: ['linear'],
+    avoid: ['heavy-frame', 'ornate-seal'],
+    motifLexicon: ['stripe', 'lattice', 'index'],
   },
   'minimal:any': {
     id: 'air-paper',
@@ -154,6 +199,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.18,
     strategyBias: ['minimal-accent', 'asymmetric-editorial', 'hero-with-support'],
     tags: ['paper', 'rule', 'quiet'],
+    languages: ['quiet-line'],
+    avoid: ['heavy-frame', 'ornate-seal', 'dense-pattern'],
+    motifLexicon: ['hairline', 'quiet-rule', 'ticks'],
   },
   'classic:any': {
     id: 'heraldic-cartouche',
@@ -163,6 +211,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.36,
     strategyBias: ['framed-content', 'balanced-corners', 'hero-with-support'],
     tags: ['cartouche', 'ornament'],
+    languages: ['heraldic', 'art-deco'],
+    avoid: ['dense-pattern', 'generic-ticks'],
+    motifLexicon: ['cartouche', 'crest', 'ribbon'],
   },
   'luxury:any': {
     id: 'restrained-foil',
@@ -172,6 +223,9 @@ const CONCEPTS: Record<string, ConceptRow> = {
     decorationBudget: 0.3,
     strategyBias: ['framed-content', 'minimal-accent', 'hero-with-support'],
     tags: ['foil', 'air', 'one-hero'],
+    languages: ['geometric', 'quiet-line'],
+    avoid: ['dense-pattern', 'generic-ticks'],
+    motifLexicon: ['foil', 'frame', 'hairline'],
   },
 }
 
@@ -184,6 +238,11 @@ function clamp01(n: number): number {
 function withHero(row: ConceptRow, hero: HeroFamily): VisualConceptBlock {
   if (hero === 'none' || (row.tags ?? []).includes(hero)) return { ...row }
   return { ...row, tags: [...(row.tags ?? []), hero] }
+}
+
+export function conceptRowById(id?: string): VisualConceptBlock | undefined {
+  if (!id) return undefined
+  return Object.values(CONCEPTS).find((row) => row.id === id)
 }
 
 export function visualConceptFor(

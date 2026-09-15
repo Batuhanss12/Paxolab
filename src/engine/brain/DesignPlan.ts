@@ -50,6 +50,8 @@ export type MotifFamilyId =
   | 'quiet-line'
   | 'ornate-stamp'
 
+export type ConceptLanguageId = 'oval' | 'organic' | 'geometric' | 'linear' | 'botanical' | 'heraldic' | 'art-deco' | 'quiet-line'
+
 export type VisualConceptBlock = {
   id: string
   tags: string[]
@@ -61,6 +63,12 @@ export type VisualConceptBlock = {
   decorationBudget?: number
   /** Preferred composition strategies; artwork layer reads these names. */
   strategyBias?: string[]
+  /** Motif-path art direction. Not a second vocabulary table. */
+  languages?: ConceptLanguageId[]
+  /** Tokens: heavy-frame, ornate-seal, dense-pattern, sharp-corner, generic-ticks. */
+  avoid?: string[]
+  /** Preferred subfamily / atom-id tokens (olive-branch, crest, soft-oval…). */
+  motifLexicon?: string[]
 }
 
 export type HeroGraphicBlock = {

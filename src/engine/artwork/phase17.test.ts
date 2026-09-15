@@ -141,6 +141,7 @@ function fullScore(n: number): CompositionScore {
     familyConsistency: n,
     decorationDensity: n,
     assetCompatibility: n,
+    conceptFidelity: n,
     alignment: n,
     rhythm: n,
     collisionSafety: n,

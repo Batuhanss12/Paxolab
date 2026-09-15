@@ -3,6 +3,7 @@
  * Extracted from composeArtwork.ts to reduce monolith size.
  */
 import type { Palette, Panel } from '../../../types'
+import type { VisualConceptBlock } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
 import { diamondAt, lBrackets, type SafeRect } from '../motifs'
@@ -65,18 +66,20 @@ export function frames(panel: Panel, p: Palette, count: number, rounded: boolean
 
 /** Sector-specific frame: electronics uses corner brackets, food uses decorative corners. */
 export function sectorFrame(panel: Panel, p: Palette, sector: string, style: string): string {
+  let body = ''
   if (sector === 'electronics' && (style === 'modern' || style === 'minimal')) {
-    return lBrackets(panel, p.accent)
-  }
-  if ((sector === 'food' || sector === 'beverage') && (style === 'luxury' || style === 'classic')) {
+    body = lBrackets(panel, p.accent)
+  } else if ((sector === 'food' || sector === 'beverage') && (style === 'luxury' || style === 'classic')) {
     const inset = 2.3
     const d = diamondAt(panel.x + inset, panel.y + inset, p.accent, 0.6)
     const d2 = diamondAt(panel.x + panel.w - inset, panel.y + inset, p.accent, 0.6)
     const d3 = diamondAt(panel.x + inset, panel.y + panel.h - inset, p.accent, 0.6)
     const d4 = diamondAt(panel.x + panel.w - inset, panel.y + panel.h - inset, p.accent, 0.6)
-    return `${frames(panel, p, 1, false, false)}${d}${d2}${d3}${d4}`
+    body = `${frames(panel, p, 1, false, false)}${d}${d2}${d3}${d4}`
+  } else {
+    body = frames(panel, p, 1, style === 'eco' || style === 'playful', style === 'luxury')
   }
-  return frames(panel, p, 1, style === 'eco' || style === 'playful', style === 'luxury')
+  return body ? `<g data-art="sector-frame">${body}</g>` : ''
 }
 
 /** Modern style left stripe. */
@@ -107,10 +110,14 @@ export function flapGround(panel: Panel, p: Palette, luxuryTick: boolean, mark =
   return out
 }
 
-/** Label decor — frame or stripe depending on style. */
-export function labelDecor(panel: Panel, system: DesignSystem, p: Palette): string {
+/** Label decor — frame or stripe depending on style. Concept avoid wins over luxury costume. */
+export function labelDecor(panel: Panel, system: DesignSystem, p: Palette, concept?: VisualConceptBlock): string {
   const { style } = system
   if (system.wrapSeam && style !== 'modern') return ''
+  const avoid = concept?.avoid ?? []
+  if (concept?.id === 'air-paper' || avoid.includes('heavy-frame') || (concept?.languages ?? []).includes('quiet-line')) {
+    return ''
+  }
   if (style === 'luxury' || style === 'classic') return frames(panel, p, 1, false, false)
   if (style === 'playful' || style === 'eco') return frames(panel, p, 1, true)
   if (style === 'modern') return ''
