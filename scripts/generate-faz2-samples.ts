@@ -1,6 +1,6 @@
 /**
- * Writes Faz 2.12 sample designs to a Desktop folder.
- * Same VisualConcept SoT and lockup math; remaining box lockups own their chrome.
+ * Writes Faz 2.15 sample designs to a Desktop folder.
+ * Label wrap/stack own lockup chrome; box lockup math and catalog families stay.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -138,6 +138,10 @@ const KIT_SLUGS = [
   '08-zeytinyagi-tuck-luxury',
   '09-cikolata-tray-playful',
   '10-kurabiye-tray-classic',
+  '05-parfum-wrap-luxury',
+  '07-serum-wrap-minimal',
+  '11-bal-label-classic',
+  '12-recel-label-eco',
   '14-kulaklik-tuck-modern',
   '20-temizlik-tuck-minimal',
   '21-krem-eco-monstera',
@@ -187,12 +191,12 @@ async function main() {
     hasSearch: boolean
   }[] = []
   const lines = [
-    'FORMA — FAZ 2.12 örnek üretim (kalan kutu lockup kalemi / Visual Concept)',
+    'FORMA — FAZ 2.15 örnek üretim (kit-grade / Visual Concept)',
     `tarih: 2026-09-15`,
     `klasör: ${OUT}`,
     '',
-    '01-blank-canvas  → concept → family/budget → 3–5 strateji → winner paint',
-    '02-katalog-kit   → kit chrome + aynı family match/gate',
+    '01-blank-canvas  → kit painter + concept lockup; luxury/modern/minimal overlay yok',
+    '02-katalog-kit   → aynı painter; overlay yalnız classic/eco/playful',
     '',
   ]
 
@@ -215,6 +219,27 @@ async function main() {
       blank: false,
       brief: {
         ...briefFrom(JOBS.find((j) => j.slug === '14-kulaklik-tuck-modern') as Job),
+        styleType: 'luxury',
+        colors: '#1a0a0a #c9a227',
+      },
+    },
+    {
+      slug: 'kit-08-zeytinyagi-tuck-classic',
+      title: 'Zeytinyağı · classic · TERRA GROVE · grove-press',
+      folder: '02-katalog-kit',
+      blank: false,
+      brief: {
+        ...briefFrom(JOBS.find((j) => j.slug === '08-zeytinyagi-tuck-luxury') as Job),
+        styleType: 'classic',
+      },
+    },
+    {
+      slug: 'kit-20-temizlik-tuck-luxury',
+      title: 'Temizlik · luxury · PURE Surface · restrained-foil',
+      folder: '02-katalog-kit',
+      blank: false,
+      brief: {
+        ...briefFrom(JOBS.find((j) => j.slug === '20-temizlik-tuck-minimal') as Job),
         styleType: 'luxury',
         colors: '#1a0a0a #c9a227',
       },
@@ -341,7 +366,7 @@ async function main() {
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>FORMA FAZ 2.12 örnekler</title>
+  <title>FORMA FAZ 2.15 örnekler</title>
   <style>
     body { font-family: Georgia, serif; margin: 0; background: #111; color: #f4efe6; }
     header { padding: 28px 32px 12px; }
@@ -358,8 +383,8 @@ async function main() {
 </head>
 <body>
   <header>
-    <h1>FORMA — FAZ 2.12 örnekler</h1>
-    <p>Kalan kutu lockup kalemi: cartouche / plaque / stamp / left-index / capsule. Tip matematiği kilit. Heavy-frame / L-pack geri gelmez.</p>
+    <h1>FORMA — FAZ 2.15 örnekler</h1>
+    <p>Kit-grade: luxury/modern/minimal overlay yok. Blank kit painter. Crest yay yok.</p>
   </header>
   <section>
     <h2>Blank canvas · aday araması</h2>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="square">
+  <rect x="8" y="8" width="84" height="124"/>
+  <rect x="12" y="12" width="76" height="116" opacity="0.45"/>
+  <path d="M8 8 H18 M8 8 V18"/>
+  <path d="M92 8 H82 M92 8 V18"/>
+  <path d="M8 132 H18 M8 132 V122"/>
+  <path d="M92 132 H82 M92 132 V122"/>
+  <path d="M50 8 V14" opacity="0.6"/>
+  <path d="M50 132 V126" opacity="0.6"/>
+</svg>

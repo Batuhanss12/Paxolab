@@ -80,14 +80,12 @@ describe('Phase 29 remaining lockup chrome (Faz 2.12)', () => {
     delete process.env.FORMA_ART_PATTERN_LIBRARY
   })
 
-  it('owns chrome for the remaining box LockupIds; labels stay skipped', () => {
+  it('owns chrome for the remaining box LockupIds', () => {
     expect(lockupOwnsRule('serif-cartouche')).toBe(true)
     expect(lockupOwnsRule('metal-plaque')).toBe(true)
     expect(lockupOwnsRule('stamp-center')).toBe(true)
     expect(lockupOwnsRule('left-index')).toBe(true)
     expect(lockupOwnsRule('badge-capsule')).toBe(true)
-    expect(lockupOwnsRule('label-wrap')).toBe(false)
-    expect(lockupOwnsRule('label-stack')).toBe(false)
   })
 
   it('does not rematch 2.8 lockup ids for the remaining concepts', () => {

@@ -1,6 +1,7 @@
 /**
- * Faz 2.11–2.12 — LockupId chrome around the existing type stack.
+ * Faz 2.11–2.15 — LockupId chrome around the existing type stack.
  * Does not move brand/product/tagline. Typography math stays in lockupLayout.
+ * Label wrap/stack own grammar-native chrome; they are not remapped to box LockupIds.
  */
 import type { Palette, Panel } from '../../../types'
 import type { LockupLayout } from '../../designSystem/lockupLayout'
@@ -19,6 +20,8 @@ const CRAFTED: ReadonlySet<LockupId> = new Set([
   'stamp-center',
   'left-index',
   'badge-capsule',
+  'label-wrap',
+  'label-stack',
 ])
 
 export function lockupOwnsRule(lockup: LockupId): boolean {
@@ -70,13 +73,6 @@ function crestBar(cx: number, y: number, half: number, accent: string, left: boo
   `
 }
 
-function crestArc(cx: number, top: number, accent: string): string {
-  return `
-    <path d="M${n(cx - 9.2)} ${n(top + 1.4)} C${n(cx - 4)} ${n(top - 3.2)} ${n(cx + 4)} ${n(top - 3.2)} ${n(cx + 9.2)} ${n(top + 1.4)}" fill="none" stroke="${accent}" stroke-width="0.4" stroke-linecap="round" />
-    <path d="M${n(cx - 7.2)} ${n(top + 1.5)} C${n(cx - 3.2)} ${n(top - 1.6)} ${n(cx + 3.2)} ${n(top - 1.6)} ${n(cx + 7.2)} ${n(top + 1.5)}" fill="none" stroke="${accent}" stroke-opacity="0.55" stroke-width="0.22" />
-    <path d="M${n(cx)} ${n(top - 2.4)} L${n(cx + 1.05)} ${n(top - 0.55)} H${n(cx - 1.05)} Z" fill="${accent}" fill-opacity="0.9" />
-  `
-}
 
 function ovalRing(cx: number, top: number, bot: number, halfW: number, accent: string): string {
   const cy = (top + bot) / 2
@@ -181,6 +177,39 @@ function badgeCapsule(cx: number, top: number, bot: number, halfW: number, accen
   `
 }
 
+function seamLimit(panel: Panel): number {
+  return panel.x + panel.w - Math.max(12, panel.w * 0.16)
+}
+
+/** Left-reading wrap column. Stays off the SEAM reserve. Not an L-bracket pack. */
+function wrapColumn(cx: number, top: number, bot: number, y: number, half: number, ink: string, seamX: number): string {
+  const rail = cx - 2.7
+  const x2 = Math.min(cx + Math.max(11, half * 0.95), seamX - 1.6)
+  const x1 = cx
+  return `
+    <line x1="${n(rail)}" y1="${n(top)}" x2="${n(rail)}" y2="${n(bot)}" stroke="${ink}" stroke-width="0.28" />
+    <line x1="${n(rail - 1.55)}" y1="${n(top)}" x2="${n(rail)}" y2="${n(top)}" stroke="${ink}" stroke-width="0.22" />
+    <rect x="${n(rail - 0.85)}" y="${n(top - 0.85)}" width="1.7" height="1.7" fill="${ink}" fill-opacity="0.8" />
+    <line x1="${n(x1)}" y1="${n(y - 0.28)}" x2="${n(x2)}" y2="${n(y - 0.28)}" stroke="${ink}" stroke-width="0.26" />
+    <line x1="${n(x1)}" y1="${n(y + 0.32)}" x2="${n(x2)}" y2="${n(y + 0.32)}" stroke="${ink}" stroke-opacity="0.5" stroke-width="0.16" />
+    <line x1="${n(x2)}" y1="${n(y - 0.7)}" x2="${n(x2)}" y2="${n(y + 0.75)}" stroke="${ink}" stroke-width="0.2" />
+  `
+}
+
+/** Centered jar-stack rules. Not a box cartouche, crest, or kraft seal. */
+function stackColumn(cx: number, top: number, _bot: number, y: number, half: number, ink: string): string {
+  const x1 = cx - half
+  const x2 = cx + half
+  return `
+    <line x1="${n(x1)}" y1="${n(y - 0.28)}" x2="${n(x2)}" y2="${n(y - 0.28)}" stroke="${ink}" stroke-width="0.26" />
+    <line x1="${n(x1)}" y1="${n(y + 0.32)}" x2="${n(x2)}" y2="${n(y + 0.32)}" stroke="${ink}" stroke-opacity="0.5" stroke-width="0.16" />
+    <line x1="${n(x1)}" y1="${n(y - 0.75)}" x2="${n(x1)}" y2="${n(y + 0.8)}" stroke="${ink}" stroke-width="0.2" />
+    <line x1="${n(x2)}" y1="${n(y - 0.75)}" x2="${n(x2)}" y2="${n(y + 0.8)}" stroke="${ink}" stroke-width="0.2" />
+    <line x1="${n(cx - 3.2)}" y1="${n(top - 0.4)}" x2="${n(cx + 3.2)}" y2="${n(top - 0.4)}" stroke="${ink}" stroke-opacity="0.45" stroke-width="0.16" />
+    <line x1="${n(cx)}" y1="${n(top - 1.15)}" x2="${n(cx)}" y2="${n(top - 0.4)}" stroke="${ink}" stroke-width="0.2" />
+  `
+}
+
 function techPlaque(cx: number, top: number, bot: number, halfW: number, y: number, accent: string, left: boolean): string {
   const x1 = left ? cx : cx - halfW
   const x2 = cx + halfW
@@ -201,13 +230,13 @@ function techPlaque(cx: number, top: number, bot: number, halfW: number, y: numb
 
 /** Chrome sits behind type. Same LockupId, no layout mutation. */
 export function paintLockupChrome(layout: FrontLayout, panel: Panel, system: DesignSystem, p: Palette): string {
-  if (system.grammar === 'label') return ''
   const lockup = system.lockup
   if (!lockupOwnsRule(lockup)) return ''
   const left = layout.anchor === 'start'
   const { cx, top, bot, halfW } = column(layout, panel)
   const ruleY = layout.ruleY ?? layout.brandY + layout.brandSize * 0.22
   const half = left ? Math.min(panel.w * 0.38, halfW * 1.55) : halfW * 1.15
+  const ink = system.style === 'minimal' ? p.fg : p.accent
   let inner = ''
   if (lockup === 'harvest-seal') {
     inner = harvestRule(cx, ruleY, half, p.accent, left)
@@ -218,7 +247,7 @@ export function paintLockupChrome(layout: FrontLayout, panel: Panel, system: Des
       inner += harvestSprig(lx, mid, p.accent, false) + harvestSprig(rx, mid, p.accent, true)
     }
   } else if (lockup === 'centered-crest') {
-    inner = crestBar(cx, ruleY, half, p.accent, left) + crestArc(cx, top, p.accent)
+    inner = crestBar(cx, ruleY, half, p.accent, left)
   } else if (lockup === 'soft-oval') {
     inner = ovalRing(cx, top, bot, halfW, p.accent)
   } else if (lockup === 'air-rule') {
@@ -235,6 +264,10 @@ export function paintLockupChrome(layout: FrontLayout, panel: Panel, system: Des
     inner = leftRail(cx, top, bot, ruleY, half, p.accent, left)
   } else if (lockup === 'badge-capsule') {
     inner = badgeCapsule(cx, top, bot, halfW, p.accent, left, panel.w)
+  } else if (lockup === 'label-wrap') {
+    inner = wrapColumn(cx, top, bot, ruleY, half, ink, seamLimit(panel))
+  } else if (lockup === 'label-stack') {
+    inner = stackColumn(cx, top, bot, ruleY, Math.min(halfW * 1.05, panel.w * 0.22), ink)
   }
   return inner ? `<g data-lockup-chrome="${lockup}">${inner}</g>` : ''
 }

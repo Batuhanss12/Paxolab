@@ -399,12 +399,9 @@ describe('Phase 21 visual quality correction', () => {
       brief: briefFrom(jobOf('14-kulaklik-tuck-modern')),
       overridePatch: { blankCanvas: true, variationIndex: 0 },
     })
-    const search = lastCompositionSearch()
     expect(spec.designPlan?.visualConcept.family).toBe('linear-tech')
-    expect(search?.concept?.hardConstraint).not.toBe('FAILURE')
-    if (search?.concept?.winnerAssetId) {
-      expect(search.concept.familyMatch).not.toBe('NONE')
-    }
+    expect(face(spec)).toContain('data-lockup-chrome="tech-grid"')
+    expect(face(spec)).not.toContain('data-art="art-pattern-compose"')
     expect(markupFamilyGate(face(spec), spec.designPlan!).ok).toBe(true)
     expect(face(spec)).not.toMatch(/islamic-border/)
     expect(spec.preflight.exportOk).toBe(true)

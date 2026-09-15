@@ -14,6 +14,7 @@ import { conceptRowById } from '../brain/VisualConcept'
 import { atomFitsConceptFamily, motifFamilyOf, selectFamilyPool } from './artMotifFamily'
 import { loadAtomicFamilyAtoms } from './assetCatalog/familyAssets'
 import { lookupAssetRecordForAtom } from './assetCatalog/catalog'
+import { isRetiredOverlayAtom, isRetiredOverlayId } from './assetCatalog/retiredOverlay'
 import type { AssetMode } from './assetCatalog/types'
 import {
   atomAvoided,
@@ -248,18 +249,25 @@ function stampCatalogFamily(atom: MotifAtom): MotifAtom {
 }
 
 function collectAtoms(sheetId?: string): { atom: MotifAtom; vocab: SheetVocab }[] {
-  const entries = usableArtPatterns(loadArtPatternLibrary()).filter((e) => !SKIP_IDS.has(e.id) && (!sheetId || e.id === sheetId))
+  const entries = usableArtPatterns(loadArtPatternLibrary()).filter(
+    (e) => !SKIP_IDS.has(e.id) && !isRetiredOverlayId(e.id) && (!sheetId || e.id === sheetId),
+  )
   const out: { atom: MotifAtom; vocab: SheetVocab }[] = []
   for (const entry of entries) {
     if (entry.atomic) continue
     const atoms = atomsForEntry(entry)
     if (isWeakSheet(entry, atoms) || !atoms.length) continue
     const vocab = vocabFor(entry.id, entry.tags, entry.sourceName)
-    for (const atom of atoms) out.push({ atom: stampCatalogFamily(atom), vocab })
+    for (const atom of atoms) {
+      const stamped = stampCatalogFamily(atom)
+      if (isRetiredOverlayAtom(stamped)) continue
+      out.push({ atom: stamped, vocab })
+    }
   }
   if (!sheetId || loadAtomicFamilyAtoms().some((a) => a.sheetId === sheetId)) {
     for (const atom of loadAtomicFamilyAtoms()) {
       if (sheetId && atom.sheetId !== sheetId) continue
+      if (isRetiredOverlayAtom(atom)) continue
       const rec = lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)
       const vocab: SheetVocab = {
         moods: (rec?.style.filter((s) => /luxury|classic|minimal|modern|eco|playful/.test(s)) as MoodId[]) ?? ['luxury', 'eco', 'classic'],

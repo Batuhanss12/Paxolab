@@ -25,10 +25,6 @@ function face(spec: { artwork: { layers: { panelId: string; markup: string }[] }
   return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
 }
 
-function atomSheets(svg: string): string[] {
-  return [...svg.matchAll(/data-motif-atom="([^"]+)"/g)].map((m) => m[1].split('__')[0])
-}
-
 describe('Phase 20 family richness + kit path', () => {
   beforeEach(() => {
     resetArtMemory()
@@ -57,16 +53,9 @@ describe('Phase 20 family richness + kit path', () => {
     expect(spec.designPlan?.visualConcept.id).toBe('earthen-premium')
     expect(spec.designPlan?.visualConcept.family).toBe('botanical')
     expect(svg).not.toMatch(/islamic-border/)
-    expect(search?.winner).toBe('asymmetric-editorial')
-    expect(search?.concept?.familyMatch).toBe('EXACT')
-    expect(search?.concept?.winnerFamily).toBe('botanical')
-    expect(search?.concept?.hardConstraint).toBe('PASS')
-    expect(search?.concept?.critic).not.toBe('REJECT')
-    const spend = search?.concept?.spend ?? 0
-    expect(spend).toBeGreaterThanOrEqual(0.28)
-    expect(spend).toBeLessThanOrEqual(0.42)
-    expect(atomSheets(svg).length).toBeGreaterThanOrEqual(3)
-    expect(atomSheets(svg).every((id) => !/islamic/.test(id))).toBe(true)
+    expect(svg).toContain('data-lockup-chrome="harvest-seal"')
+    expect(svg).not.toContain('data-art="art-pattern-compose"')
+    expect(search).toBeUndefined()
     expect(markupFamilyGate(svg, spec.designPlan!).ok).toBe(true)
     expect(spec.preflight.exportOk).toBe(true)
   })
@@ -92,13 +81,9 @@ describe('Phase 20 family richness + kit path', () => {
     const budget = spec.designPlan?.visualConcept.decorationBudget ?? 0
     expect(spec.designPlan?.visualConcept.family).toBe('quiet-line')
     expect(budget).toBeGreaterThanOrEqual(0.18)
-    const sheets = atomSheets(face(spec))
-    const nonGrain = sheets.filter((id) => !/paper-grain/.test(id))
-    if (search?.concept?.fallbackMode === 'typography-only') {
-      expect(sheets).toEqual([])
-    } else {
-      expect(nonGrain.length).toBeGreaterThanOrEqual(1)
-    }
+    expect(face(spec)).toContain('data-lockup-chrome="air-rule"')
+    expect(face(spec)).not.toContain('data-art="art-pattern-compose"')
+    expect(search).toBeUndefined()
   })
 
   it('P20-C: oil kit uses the family pipeline without becoming blank-canvas', () => {
@@ -109,15 +94,12 @@ describe('Phase 20 family richness + kit path', () => {
     const svg = face(spec)
     const search = lastCompositionSearch()
     expect(svg).not.toContain('data-face="blank-canvas"')
-    expect(search).toBeTruthy()
-    expect(search?.concept?.family).toBe('botanical')
+    expect(svg).toContain('data-lockup-chrome="harvest-seal"')
+    expect(svg).not.toContain('data-art="art-pattern-compose"')
+    expect(search).toBeUndefined()
     expect(svg).not.toMatch(/islamic-border/)
     expect(markupFamilyGate(svg, spec.designPlan!).ok).toBe(true)
     expect(spec.preflight.exportOk).toBe(true)
-    if (search?.concept?.fallbackMode !== 'typography-only' && search?.concept?.winnerAssetId) {
-      expect(search.concept.winnerFamily).toBe('botanical')
-      expect(search.concept.familyMatch).not.toBe('NONE')
-    }
   })
 
   it('P20-D: single-swatch black brief lifts accent off the ground', () => {
@@ -148,20 +130,17 @@ describe('Phase 20 family richness + kit path', () => {
       supportFamily: 'geometric-deco',
       conceptId: 'nocturne-crest',
     })
-    expect(match.atoms.some((a) => /crest|ribbon|cartouche|double-line/.test(a.sheetId))).toBe(true)
+    expect(match.atoms.every((a) => !/crest-spot|ribbon-corner|cartouche-arc|double-line-corner/.test(a.sheetId))).toBe(true)
 
     const spec = new FormaLocalEngine().generate({
       brief: briefFrom(jobOf('01-parfum-tuck-luxury')),
       overridePatch: { blankCanvas: true, variationIndex: 0 },
     })
-    const search = lastCompositionSearch()
-    const asset = search?.concept?.winnerAssetId ?? ''
-    if (asset) {
-      expect(search?.concept?.winnerFamily).toBe('heraldic')
-      expect(asset).toMatch(/crest|ribbon|cartouche|double-line/)
-    }
     expect(spec.preflight.exportOk).toBe(true)
     expect(face(spec)).not.toMatch(/islamic-border/)
+    expect(face(spec)).toContain('data-lockup-chrome="centered-crest"')
+    expect(face(spec)).not.toContain('data-art="art-pattern-compose"')
+    expect(lastCompositionSearch()).toBeUndefined()
   })
 
   it('quiet-line and heraldic catalog files exist', () => {

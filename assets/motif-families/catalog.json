@@ -229,6 +229,51 @@
       "classified": true
     },
     {
+      "id": "harvest-olive-wreath",
+      "family": "harvest",
+      "subfamily": "wreath",
+      "style": ["organic", "premium", "editorial"],
+      "sectorCompatibility": ["food", "beverage", "cosmetics"],
+      "conceptCompatibility": ["grove-press", "harvest-press", "earthen-premium"],
+      "complexity": 0.36,
+      "visualWeight": 0.34,
+      "preferredPlacement": ["corner", "stamp"],
+      "allowedColors": ["monochrome", "gold", "dark-green"],
+      "role": "corner",
+      "file": "harvest/harvest-olive-wreath.svg",
+      "classified": true
+    },
+    {
+      "id": "harvest-press-stamp",
+      "family": "harvest",
+      "subfamily": "press",
+      "style": ["organic", "premium"],
+      "sectorCompatibility": ["food", "beverage", "cream"],
+      "conceptCompatibility": ["grove-press", "harvest-press", "harvest-kraft"],
+      "complexity": 0.3,
+      "visualWeight": 0.3,
+      "preferredPlacement": ["stamp", "hero-stamp"],
+      "allowedColors": ["monochrome", "gold"],
+      "role": "stamp",
+      "file": "harvest/harvest-press-stamp.svg",
+      "classified": true
+    },
+    {
+      "id": "harvest-grain-leaf",
+      "family": "harvest",
+      "subfamily": "grain",
+      "style": ["organic", "eco"],
+      "sectorCompatibility": ["food", "cosmetics", "cream"],
+      "conceptCompatibility": ["harvest-kraft", "grove-kraft", "kraft-botanical"],
+      "complexity": 0.32,
+      "visualWeight": 0.3,
+      "preferredPlacement": ["side", "corner", "bottom"],
+      "allowedColors": ["monochrome", "gold", "dark-green"],
+      "role": "accent",
+      "file": "harvest/harvest-grain-leaf.svg",
+      "classified": true
+    },
+    {
       "id": "paper-grain-accent",
       "family": "quiet-line",
       "subfamily": "organic-texture",
@@ -377,7 +422,8 @@
       "allowedColors": ["monochrome", "gold"],
       "role": "stamp",
       "file": "heraldic/crest-spot.svg",
-      "classified": true
+      "classified": true,
+      "retired": true
     },
     {
       "id": "ribbon-corner",
@@ -392,7 +438,8 @@
       "allowedColors": ["monochrome", "gold"],
       "role": "corner",
       "file": "heraldic/ribbon-corner.svg",
-      "classified": true
+      "classified": true,
+      "retired": true
     },
     {
       "id": "cartouche-arc",
@@ -407,7 +454,8 @@
       "allowedColors": ["monochrome", "gold"],
       "role": "band",
       "file": "heraldic/cartouche-arc.svg",
-      "classified": true
+      "classified": true,
+      "retired": true
     },
     {
       "id": "double-line-corner",
@@ -422,7 +470,8 @@
       "allowedColors": ["monochrome", "gold"],
       "role": "corner",
       "file": "heraldic/double-line-corner.svg",
-      "classified": true
+      "classified": true,
+      "retired": true
     },
     {
       "id": "islamic-border-new-2",
@@ -481,6 +530,36 @@
       "classified": true
     },
     {
+      "id": "deco-foil-corner",
+      "family": "geometric-deco",
+      "subfamily": "foil",
+      "style": ["artdeco", "geometric", "luxury"],
+      "sectorCompatibility": ["perfume", "cream", "electronics"],
+      "conceptCompatibility": ["restrained-foil", "nocturne-crest"],
+      "complexity": 0.28,
+      "visualWeight": 0.3,
+      "preferredPlacement": ["corner", "nw", "ne"],
+      "allowedColors": ["monochrome", "gold"],
+      "role": "corner",
+      "file": "geometric-deco/deco-foil-corner.svg",
+      "classified": true
+    },
+    {
+      "id": "deco-hairline-frame",
+      "family": "geometric-deco",
+      "subfamily": "frame",
+      "style": ["artdeco", "geometric", "minimal"],
+      "sectorCompatibility": ["perfume", "cream", "generic"],
+      "conceptCompatibility": ["restrained-foil"],
+      "complexity": 0.22,
+      "visualWeight": 0.22,
+      "preferredPlacement": ["frame", "field"],
+      "allowedColors": ["monochrome", "gold"],
+      "role": "frame",
+      "file": "geometric-deco/deco-hairline-frame.svg",
+      "classified": true
+    },
+    {
       "id": "588vintage",
       "family": "ornate-stamp",
       "subfamily": "vintage-ornament",
@@ -492,6 +571,21 @@
       "preferredPlacement": ["stamp", "field"],
       "allowedColors": ["monochrome", "gold"],
       "sheetId": "588vintage",
+      "classified": true
+    },
+    {
+      "id": "vintage-badge",
+      "family": "ornate-stamp",
+      "subfamily": "badge",
+      "style": ["vintage", "classic", "playful"],
+      "sectorCompatibility": ["food", "cream"],
+      "conceptCompatibility": ["capsule-field", "harvest-press"],
+      "complexity": 0.32,
+      "visualWeight": 0.32,
+      "preferredPlacement": ["stamp", "hero-stamp"],
+      "allowedColors": ["monochrome", "gold"],
+      "role": "stamp",
+      "file": "ornate-stamp/vintage-badge.svg",
       "classified": true
     },
     {
@@ -550,6 +644,21 @@
       "preferredPlacement": ["band"],
       "allowedColors": ["monochrome"],
       "sheetId": "2106-m04-i036-n002",
+      "classified": true
+    },
+    {
+      "id": "mineral-band-rule",
+      "family": "mineral-frame",
+      "subfamily": "band-rule",
+      "style": ["minimal", "classic", "geometric"],
+      "sectorCompatibility": ["serum", "cream", "generic", "perfume"],
+      "conceptCompatibility": ["heraldic-cartouche", "index-stripe", "air-paper"],
+      "complexity": 0.2,
+      "visualWeight": 0.2,
+      "preferredPlacement": ["band", "top", "bottom"],
+      "allowedColors": ["monochrome", "gold"],
+      "role": "band",
+      "file": "mineral-frame/mineral-band-rule.svg",
       "classified": true
     },
     {

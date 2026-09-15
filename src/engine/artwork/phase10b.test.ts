@@ -25,9 +25,12 @@ describe('Phase 10b ban empty seal', () => {
   it('remaps seal to sector fallbacks and strips it from allowlists', () => {
     expect(remapBannedHero('seal', 'perfume')).toBe('crest')
     expect(remapBannedHero('seal', 'food')).toBe('harvest')
-    expect(remapBannedHero('seal', 'cream')).toBe('oval')
+    expect(remapBannedHero('seal', 'cream')).toBe('none')
+    expect(remapBannedHero('oval', 'cream')).toBe('none')
+    expect(remapBannedHero('organic-wave', 'cream')).toBe('none')
     expect(allowedHeroes('classic', 'perfume')).not.toContain('seal')
-    expect(allowedHeroes('luxury', 'perfume')).toContain('crest')
+    expect(allowedHeroes('luxury', 'cream')).not.toContain('oval')
+    expect(allowedHeroes('luxury', 'perfume')).not.toContain('oval')
     expect(allowedHeroes('classic', 'food')).toEqual(['harvest', 'botanical'])
   })
 
@@ -39,6 +42,15 @@ describe('Phase 10b ban empty seal', () => {
     expect(svg).not.toMatch(/<polygon/)
   })
 
+  it('never paints the oval flacon medallion', () => {
+    const panel = { id: 'front', x: 0, y: 0, w: 70, h: 140, role: 'body' as const, polygon: [] }
+    const p = { bg: '#111', fg: '#eee', accent: '#c9a24e', muted: '#888', paper: '#f4efe4' }
+    expect(paintHeroGraphic('oval', panel, p)).toBe('')
+    expect(paintHeroGraphic('organic-wave', panel, p)).toBe('')
+    const cream = jobSpec('03-krem-tuck-luxury', 0)
+    expect(face(cream)).not.toContain('data-art="hero-oval"')
+  })
+
   it('P10b fixtures never ship data-hero=seal', () => {
     const perfume = jobSpec('01-parfum-tuck-luxury', 0)
     const cologne = jobSpec('02-kolonya-tuck-classic', 0)
@@ -46,7 +58,8 @@ describe('Phase 10b ban empty seal', () => {
     expect(perfume.designPlan?.heroGraphic.family).toBe('crest')
     expect(face(perfume)).toContain('data-hero="crest"')
     expect(face(perfume)).toContain('data-art="gold-bar"')
-    expect(face(cologne)).toContain('data-hero="crest"')
+    expect(face(cologne)).not.toContain('data-hero="crest"')
+    expect(face(cologne)).toContain('data-lockup-chrome="centered-crest"')
     expect(honey.designPlan?.heroGraphic.family).toBe('harvest')
     expect(face(honey)).not.toContain('data-hero="seal"')
     for (const spec of [perfume, cologne, honey]) {

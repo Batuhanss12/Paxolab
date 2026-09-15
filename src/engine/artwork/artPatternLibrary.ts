@@ -56,7 +56,7 @@ let cached: { dir: string; data: ArtPatternLibraryFile } | null = null
 const markupCache = new Map<string, string>()
 
 export function resolveArtPatternLibraryDir(): string {
-  return process.env.FORMA_ART_PATTERN_LIBRARY || ART_PATTERN_ASSET_DIR
+  return (typeof process !== 'undefined' && process.env?.FORMA_ART_PATTERN_LIBRARY) || ART_PATTERN_ASSET_DIR
 }
 
 export function clearArtPatternLibraryCache(): void {

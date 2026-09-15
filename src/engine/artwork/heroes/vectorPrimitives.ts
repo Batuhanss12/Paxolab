@@ -85,18 +85,9 @@ export function dashedLine(x1: number, y1: number, x2: number, y2: number, accen
   return `<line x1="${mm(x1)}" y1="${mm(y1)}" x2="${mm(x2)}" y2="${mm(y2)}" stroke="${accent}" stroke-width="${width}" stroke-opacity="${opacity}" stroke-dasharray="${dash}" />`
 }
 
-/** Flacon (bottle) silhouette — cosmetic/perfume element. */
-export function flaconSilhouette(cx: number, cy: number, w: number, h: number, accent: string, fillOpacity = 0.18, width = 0.16): string {
-  const capW = w * 0.5
-  const capH = h * 0.18
-  const capY = cy - h * 0.5
-  const bodyTopY = cy - h * 0.3
-  const bodyBotY = cy + h * 0.5
-  return `
-    <rect x="${mm(cx - capW / 2)}" y="${mm(capY)}" width="${mm(capW)}" height="${mm(capH)}" fill="${accent}" fill-opacity="${fillOpacity * 1.2}" stroke="${accent}" stroke-width="${width}" />
-    <line x1="${mm(cx - w * 0.3)}" y1="${mm(bodyTopY)}" x2="${mm(cx + w * 0.3)}" y2="${mm(bodyTopY)}" stroke="${accent}" stroke-width="${width * 1.1}" />
-    <path d="M${mm(cx - w / 2)} ${mm(bodyTopY)} L${mm(cx + w / 2)} ${mm(bodyTopY)} L${mm(cx + w * 0.4)} ${mm(bodyBotY)} L${mm(cx - w * 0.4)} ${mm(bodyBotY)} Z" fill="${accent}" fill-opacity="${fillOpacity}" stroke="${accent}" stroke-width="${width}" />
-  `
+/** Retired — bottle / flacon drawings never paint (user veto). */
+export function flaconSilhouette(_cx: number, _cy: number, _w: number, _h: number, _accent: string, _fillOpacity = 0.18, _width = 0.16): string {
+  return ''
 }
 
 /** Concentric ring set — decorative frame rings. */

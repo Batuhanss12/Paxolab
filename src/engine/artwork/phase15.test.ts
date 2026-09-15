@@ -33,10 +33,6 @@ function face(spec: { artwork: { layers: { panelId: string; markup: string }[] }
   return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
 }
 
-function atomSheets(svg: string): string[] {
-  return [...new Set([...svg.matchAll(/data-motif-atom="([^"]+)"/g)].map((m) => m[1].split('__')[0]))]
-}
-
 describe('Phase 15 blank-canvas director', () => {
   beforeEach(() => {
     resetArtMemory()
@@ -88,13 +84,14 @@ describe('Phase 15 blank-canvas director', () => {
     expect(moodPrior('modern').serif).toBe(false)
   })
 
-  it('blank perfume uses colors + crest/gold-bar without night-topo costume', () => {
+  it('blank perfume uses brief colors + crest/gold-bar on the kit-grade face', () => {
     const spec = jobSpec('01-parfum-tuck-luxury', true, '#1a0a0a #c9a227', 'luxury')
     const svg = face(spec)
     expect(svg).toContain('data-face="blank-canvas"')
     expect(svg).toContain('data-art="gold-bar"')
     expect(svg).toMatch(/data-hero="crest"|data-art="hero"/)
-    expect(svg).not.toContain('data-bg-kit="night-topo"')
+    expect(svg).toContain('data-lockup-chrome="centered-crest"')
+    expect(svg).not.toContain('data-art="art-pattern-compose"')
     expect(svg).not.toContain('data-hero="seal"')
     expect(spec.palette.bg.toLowerCase()).toBe('#1a0a0a')
     expect(spec.preflight.exportOk).toBe(true)
@@ -173,9 +170,10 @@ describe('Phase 15 blank-canvas director', () => {
     const minFace = face(minimal)
     expect(luxFace).toContain('data-face="blank-canvas"')
     expect(minFace).toContain('data-face="blank-canvas"')
-    expect(luxFace).not.toContain('data-bg-kit="night-topo"')
-    expect(minFace).not.toContain('data-bg-kit="botanical-field"')
-    expect(atomSheets(luxFace).join()).not.toBe(atomSheets(minFace).join())
+    expect(luxFace).toContain('data-lockup-chrome="centered-crest"')
+    expect(minFace).toContain('data-lockup-chrome="air-rule"')
+    expect(luxFace).not.toContain('data-art="art-pattern-compose"')
+    expect(minFace).not.toContain('data-art="art-pattern-compose"')
     expect(luxFace).toContain('AURELIA')
     expect(minFace).toContain('AURELIA')
     expect(luxury.preflight.exportOk).toBe(true)

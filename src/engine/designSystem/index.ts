@@ -15,6 +15,8 @@ export {
   preferHeroForConcept,
   kitSuppliesFocalLockup,
   kitLexiconUsedByKit,
+  kitGradeSkipsOverlay,
+  kitGradeOmitsCrestGlyph,
 } from './conceptKitAlignment'
 export {
   layoutFrontLockup,

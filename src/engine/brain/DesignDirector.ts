@@ -183,11 +183,8 @@ export function createPlan(input: DirectorInput): DesignPlan {
   if (plan.composition.intent === 'full-bleed') {
     plan.heroGraphic.scale = Math.min(plan.heroGraphic.scale, 0.9)
   }
-  if (input.blankCanvas) {
-    plan.patternSystem = { family: 'none', opacity: 0, avoidLockup: true, sideIntentional: false }
-    plan.illustrationSystem = { primitives: [], density: plan.decor.density }
-    plan.artDirection = { ...plan.artDirection, chrome: 'quiet' }
-    if (input.backgroundTreatment) plan.backgroundTreatment = input.backgroundTreatment
+  if (input.blankCanvas && input.backgroundTreatment) {
+    plan.backgroundTreatment = input.backgroundTreatment
   }
   plan.summaryTr = planSummaryTr(plan)
   rememberArt(style, { hero: plan.heroGraphic.family, pattern: plan.patternSystem.family })

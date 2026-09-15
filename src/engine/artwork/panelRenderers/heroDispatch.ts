@@ -16,6 +16,7 @@ import {
   wrapHero,
 } from '../heroGraphics'
 import { remapBannedHero } from '../../brain/DesignPlan'
+import { kitGradeOmitsCrestGlyph } from '../../designSystem/conceptKitAlignment'
 import { resolveHeroPlacement, type HeroPlacement } from '../heroes/heroPlacement'
 
 export type HeroPaintCtx = {
@@ -93,6 +94,7 @@ export function kitHeroMarkup(panel: Panel, system: DesignSystem, p: Palette, pl
   const scale = place?.scale ?? 1
   const xFrac = place?.xFrac ?? 0.5
   const y = (kitY: number) => place?.yFrac ?? kitY
+  if (kitGradeOmitsCrestGlyph(style) && (decor === 'crest' || decor === 'cartouche')) return ''
   if (decor === 'crest') return perfumeCrest(panel, p, true, y(0.148), scale, xFrac)
   if (decor === 'cartouche') return classicCartouche(panel, p, y(0.16), scale, xFrac)
   if (decor === 'leaf') return ecoLeaf(panel, p, y(0.17), scale, xFrac)
@@ -132,6 +134,9 @@ export function resolveFrontHeroPlacement(
 export function paintPlanHero(panel: Panel, system: DesignSystem, p: Palette, plan?: DesignPlan, ctx?: HeroPaintCtx): string {
   const kitFamily = remapBannedHero(kitHeroFamily(system.decor), system.sector)
   const family = remapBannedHero(plan?.heroGraphic.family ?? kitFamily, system.sector)
+  if (kitGradeOmitsCrestGlyph(system.style) && (family === 'crest' || family === 'seal' || kitFamily === 'crest')) {
+    return ''
+  }
   const useLib = family !== 'none' && family !== kitFamily
   const place = resolveFrontHeroPlacement(panel, system, plan, ctx)
   if (place.omitted) {

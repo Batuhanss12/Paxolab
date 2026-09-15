@@ -20,6 +20,7 @@ import {
 } from './artDesignRegions'
 import { motifFamilyOf, motifSubfamilyOf } from './artMotifFamily'
 import { atomHasFamilyFile } from './assetCatalog/catalog'
+import { isRetiredOverlayId, rejectRetiredOverlayAtoms } from './assetCatalog/retiredOverlay'
 import { atomRegionAllowed, resolveMotifDesign } from './artMotifMeta'
 import {
   atomAvoided,
@@ -172,6 +173,8 @@ export function buildMotifSlots(
   seed: number,
   opts: MotifPaintOpts,
 ): MotifSlot[] {
+  atoms = rejectRetiredOverlayAtoms(atoms)
+  if (!atoms.length) return []
   const fieldOp = FIELD_OP[style ?? 'luxury'] ?? 0.32
   const stamps = [...byRole(atoms, 'stamp'), ...byRole(atoms, 'ornament'), ...atoms]
   const unique = (list: MotifAtom[]) => {
@@ -262,6 +265,7 @@ export function buildMotifSlots(
 
 export function paintMotifSlots(slots: MotifSlot[], panel: Panel, p: Palette, recipe: MotifRecipeId): string {
   return slots
+    .filter((slot) => !isRetiredOverlayId(slot.atom.id) && !isRetiredOverlayId(slot.atom.sheetId) && !isRetiredOverlayId(slot.atom.sourceName))
     .map((slot) => {
       const clip = slot.lockout && panel.id ? ` clip-path="url(#lockout-${panel.id})"` : ''
       const family = motifFamilyOf(slot.atom)
@@ -278,6 +282,7 @@ export function paintMotifRecipeFromAtoms(
   opts: MotifPaintOpts = {},
 ): MotifRecipePaint {
   const empty: MotifRecipePaint = { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
+  atoms = rejectRetiredOverlayAtoms(atoms)
   if (!atoms.length) return empty
   const recipe = opts.recipeId ?? resolveMotifRecipeId(atoms, opts.style, opts.seed ?? 0)
   const slots = buildMotifSlots(recipe, atoms, panel, opts.style, opts.seed ?? 0, opts)
@@ -295,7 +300,7 @@ export function paintMotifRecipe(
   entry: ArtPatternEntry,
   opts: MotifPaintOpts = {},
 ): MotifRecipePaint {
-  if (entry.skipReason) return { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
+  if (entry.skipReason || isRetiredOverlayId(entry.id)) return { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
   const atoms = atomsForEntry(entry)
   if (isWeakSheet(entry, atoms)) return { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
   return paintMotifRecipeFromAtoms(panel, p, atoms, opts)
@@ -308,7 +313,7 @@ export function paintMotifRecipeById(
   opts: MotifPaintOpts = {},
 ): MotifRecipePaint {
   const entry = loadArtPatternLibrary().find((item) => item.id === sheetId)
-  if (!entry) return { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
+  if (!entry || isRetiredOverlayId(sheetId)) return { id: 'stamp-field', keepHero: true, slots: [], markup: '' }
   return paintMotifRecipe(panel, p, entry, opts)
 }
 

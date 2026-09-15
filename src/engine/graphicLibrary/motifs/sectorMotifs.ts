@@ -41,20 +41,9 @@ export function paintFoilStripe(ctx: PaintCtx): string {
   </g>`
 }
 
-/** Perfume bottle — perfume bottle silhouette. */
-export function paintPerfumeBottle(ctx: PaintCtx): string {
-  const { palette, safe } = ctx
-  const { cx, cy, r } = center(ctx)
-  if (hitsSafe(cx, cy, safe, r + 1)) return ''
-  const bw = r * 1.2
-  const bh = r * 1.8
-  const neckW = r * 0.4
-  const neckH = r * 0.4
-  return `<g data-art="motif" data-motif="perfume-bottle">
-    <rect x="${(cx - bw / 2).toFixed(2)}" y="${(cy - bh / 2 + neckH).toFixed(2)}" width="${bw.toFixed(2)}" height="${(bh - neckH).toFixed(2)}" rx="${(r * 0.15).toFixed(2)}" fill="none" stroke="${palette.accent}" stroke-width="0.24" />
-    <rect x="${(cx - neckW / 2).toFixed(2)}" y="${(cy - bh / 2).toFixed(2)}" width="${neckW.toFixed(2)}" height="${neckH.toFixed(2)}" fill="none" stroke="${palette.accent}" stroke-width="0.2" />
-    <line x1="${(cx - neckW / 2).toFixed(2)}" y1="${(cy - bh / 2 + neckH / 2).toFixed(2)}" x2="${(cx + neckW / 2).toFixed(2)}" y2="${(cy - bh / 2 + neckH / 2).toFixed(2)}" stroke="${palette.accent}" stroke-opacity="0.4" stroke-width="0.12" />
-  </g>`
+/** Retired — bottle silhouette never paints (user veto). */
+export function paintPerfumeBottle(_ctx: PaintCtx): string {
+  return ''
 }
 
 /** Wheat sheaf — food wheat stalk. */

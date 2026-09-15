@@ -104,7 +104,14 @@ export function atomFromCanonicalRecord(rec: CanonicalAssetRecord, markup: strin
       complexity: Math.round(rec.complexity * 40),
       compatibleSectors: rec.sectorCompatibility,
       compatibleStyles: compatibleStylesOf(rec),
-      styleTags: rec.family === 'botanical' ? [...rec.style, 'botanic', 'eco'] : rec.style,
+      styleTags:
+        rec.family === 'botanical'
+          ? [...rec.style, 'botanic', 'eco']
+          : rec.family === 'harvest'
+            ? [...rec.style, 'harvest', 'organic']
+            : rec.family === 'geometric-deco'
+              ? [...rec.style, 'artdeco', 'geometric']
+              : rec.style,
       preferredRegions: preferredRegionsOf(rec),
       allowedRegions: rec.allowedPlacement?.length ? regionsFromPlacement(rec.allowedPlacement) : undefined,
       forbiddenRegions: rec.forbiddenPlacement?.length ? regionsFromPlacement(rec.forbiddenPlacement) : undefined,

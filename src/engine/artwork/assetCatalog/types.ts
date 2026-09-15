@@ -21,6 +21,8 @@ export type CanonicalAssetRecord = {
   file?: string
   sheetId?: string
   classified?: boolean
+  /** Overlay never paints this file. Kit chrome / disk geometry tests still use it. */
+  retired?: boolean
 }
 
 export type AssetCatalogFile = {

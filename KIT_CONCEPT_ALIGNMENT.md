@@ -21,7 +21,7 @@ Lockup typography mathematics (`applyPlan` optical center, `typeSystem`) are unc
 | `capsule-field` | `badge-capsule` | Playful field; spend stays under budget |
 | `restrained-foil` | `centered-crest` | Luxury fallback |
 
-Label wrap/stack lockups are **not** remapped (label grammar wins).
+Label wrap/stack lockups are **not** remapped (label grammar wins). Faz 2.14 paints grammar-native chrome behind type; it does not turn a wrap into `centered-crest`.
 
 ## Frame / chrome / pattern
 
@@ -33,6 +33,8 @@ Label wrap/stack lockups are **not** remapped (label grammar wins).
 ## Overlay contract
 
 If the kit already supplies a **crest** focal (`centered-crest` lockup or crest hero), motif search treats `crest` as a used lexicon token and skips a second hero-stamp on `hero-with-support`. Companions must use unused lexicon tokens (ribbon / cartouche). Soft-oval lockup is shared language, not a clone — oval/ring may still win on the overlay.
+
+`serif-cartouche` is the same class of focal: kit already paints the cartouche grammar, so overlay must not stamp `crest-spot`. `cartouche` + `crest` are used; ribbon (or mineral band) is the companion. `badge-capsule` marks `capsule` used so the overlay prefers vintage/badge family files, not a second capsule.
 
 ## Faz 2.8 kit proof (before → after)
 
@@ -80,7 +82,7 @@ Overlay atomları doluydu; kit yüzü hâlâ ince kilit çizimiydi. `lockupRule`
 | LockupId | Chrome |
 |---|---|
 | `harvest-seal` | Yaprak uçlu rule + yan zeytin filizleri; foil elmas kostümü yok |
-| `centered-crest` | Çift heraldik bar + markanın üstünde küçük yay (ikinci kalkan değil) |
+| `centered-crest` | Çift heraldik bar + elmas tick; markanın üstünde yay yok |
 | `soft-oval` | Tip kolonunu saran çift elips (yüz boyu çerçeve değil) |
 | `air-rule` | Çift hairline + uç tick; oval / crest / yaprak yok |
 | `tech-grid` | Çift rule + uç kare + yan index tick; L-bracket pack yok |
@@ -109,4 +111,53 @@ Label wrap/stack chrome almaz. `serif-cartouche` / `metal-plaque` / `badge-capsu
 | `badge-capsule` | Tip kolonunu saran kapsül; panel L-pack yok |
 
 Kanıt işleri: `10-kurabiye-tray-classic`, `14` luxury (`signal-plaque`), `21-krem-eco-monstera`, `27-krem-modern-zebra`, `09-cikolata-tray-playful`. 2.11 beş yüz ve motif spend durur.
+
+## Faz 2.13 katalog boşlukları
+
+Aile dosyası olmayan primary family’ler sheet parçasına düşüyordu: harvest (grove/harvest-press/kraft), geometric-deco (restrained-foil), mineral-frame, ornate-stamp (capsule-field → `588vintage`). Yeni gramer yok. `pattern16` / deco sheet fallback durur; unused lexicon varken aile dosyası önde.
+
+| Aile | Atom | Lexicon |
+|---|---|---|
+| `harvest` | `harvest-olive-wreath`, `harvest-press-stamp`, `harvest-grain-leaf` | wreath / olive / press / grain / leaf |
+| `geometric-deco` | `deco-foil-corner`, `deco-hairline-frame` | foil / frame / hairline |
+| `mineral-frame` | `mineral-band-rule` | band companion |
+| `ornate-stamp` | `vintage-badge` | vintage / badge |
+
+Cartouche overlay: kit-10 winner `crest-spot` değil. kit-09 spend ≤ 0.48, aile dosyası sheet’in önünde. 2.11/2.12 lockup Y ve chrome durur. Family −1000 / L-pack durur.
+
+## Faz 2.14 etiket lockup kalemi
+
+Kutu LockupId’leri 2.11–2.12’de chrome aldı; `label-wrap` / `label-stack` hâlâ stil kostümü `lockupRule` (foil elmas) veya boş yüzdü. Grammar kilit: etiket kutu ID’sine remap edilmez. `layoutFrontLockup` Y’leri durur. Wrap chrome SEAM rezervinin solunda kalır.
+
+| LockupId | Chrome |
+|---|---|
+| `label-wrap` | Sol okuma rayı + çift hairline; L-bracket pack yok; seam’e binmez |
+| `label-stack` | Merkez çift rule + uç tick; kartuş / crest / kraft mühür değil |
+
+Kanıt: `05-parfum-wrap-luxury`, `07-serum-wrap-minimal`, `06-krem-wrap-modern`, `11-bal-label-classic`, `12-recel-label-eco`. 2.11 kutu Y ve harvest overlay durur.
+
+## Faz 2.15 kit-grade üretim
+
+İnsan bakışı: `FORMA-Faz2-Ornekler/02-katalog-kit` (stil-kit painter, overlay atom yok) kabul edilebilir; `FORMA-Faz25-Ornekler/01-blank-canvas` (overlay-first clip-art) değil. Modern / luxury / minimal özellikle kit yüzü.
+
+Stüdyo artık `blankCanvas: false` (katalog kit yolu). Blank generate de kit painter kullanır: arka plan, `frontDecor`, concept lockup remap. Overlay `<image>` clip-art **luxury / modern / minimal / classic** yüzünde boyanmaz. Eco / playful motif araması durur.
+
+`centered-crest` chrome’dan marka üstü yay (`crestArc`) çıktı — dual bar + elmas tick kaldı. Lockup Y, family −1000, L-pack, bütçe tavanı durur.
+
+| Yüz | 2.14 | 2.15 |
+|---|---|---|
+| Luxury / modern / minimal kit | Motif overlay + kit chrome | Kit chrome + native hero; overlay yok |
+| Blank (aynı stiller) | Boş zemin + overlay stamp | Kit painter; overlay yok |
+| Playful kit-09 | vintage-badge overlay | Held |
+| Classic / eco overlay | Aile dosyası | Held (MODIFY critic hâlâ açık) |
+
+## Faz 2.16 classic critic
+
+Klasik parfüm yüzünde iki clip-art üst üste biniyordu: `paintCrest` kalkan+şişe glyph’i ve `double-line-corner` overlay `<image>`. İnsan bakışı ikisini de veto etti.
+
+- Overlay skip classic’e uzadı (luxury / modern / minimal ile aynı kit yolu). Eco / playful araması durur.
+- Classic `crest` / `cartouche` kit glyph boyanmaz — lockup chrome (centered-crest bar / serif-cartouche) kalır.
+- `double-line-corner` retired. Flacon / perfume-bottle path’leri boş.
+- Luxury crest kalkanı durur; içindeki şişe/kapak yok. Lockup Y, family −1000, L-pack, bütçe tavanı durur.
+
 

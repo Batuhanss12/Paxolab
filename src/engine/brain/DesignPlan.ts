@@ -18,11 +18,13 @@ export type DirectorCue =
 export type HeroFamily = 'crest' | 'seal' | 'botanical' | 'emblem' | 'harvest' | 'tech' | 'oval' | 'monstera' | 'palm' | 'organic-wave' | 'zebra' | 'line-scene' | 'none'
 
 /** P10b — empty octagon/hex seal is retired. Keep the type for old plans; never paint it. */
+/** User veto — oval flacon-medallion and bottle silhouettes never paint. */
 export function remapBannedHero(family: HeroFamily, sector?: string): HeroFamily {
+  if (family === 'oval' || family === 'organic-wave') return 'none'
   if (family !== 'seal') return family
   if (sector === 'perfume') return 'crest'
   if (sector === 'food' || sector === 'beverage') return 'harvest'
-  return 'oval'
+  return 'none'
 }
 
 export function withoutSeal(list: HeroFamily[], sector?: string): HeroFamily[] {

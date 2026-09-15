@@ -10,11 +10,16 @@ import { styleHeroes } from './styleHeroConfig'
 import type { BackgroundTreatment, HeroFamily, PatternFamily } from './DesignPlan'
 import { withoutSeal } from './DesignPlan'
 
+function dropRetiredHeroes(list: HeroFamily[]): HeroFamily[] {
+  const next = list.filter((h) => h !== 'oval' && h !== 'organic-wave')
+  return next.length ? next : ['none']
+}
+
 export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: VocabularyRow): HeroFamily[] {
   // P2-A: minimal unlocks ONE quiet hero per sector (not luxury crests, just micro signals).
   if (style === 'minimal') {
-    if (sector === 'cream' || sector === 'serum' || sector === 'baby') return ['line-scene', 'oval']
-    if (sector === 'electronics') return withoutSeal(['none', 'tech'], sector)
+    if (sector === 'cream' || sector === 'serum' || sector === 'baby') return dropRetiredHeroes(['line-scene', 'oval'])
+    if (sector === 'electronics') return dropRetiredHeroes(withoutSeal(['none', 'tech'], sector))
     // cleaning, food, perfume, generic: stay none — rely on sector bg accent
     return ['none']
   }
@@ -24,10 +29,10 @@ export function allowedHeroes(style: StyleType, sector: SectorId, vocab?: Vocabu
     if (safe.length) {
       const head = preferred.filter((h) => h !== 'none' && h !== 'seal' && safe.includes(h))
       const tail = safe.filter((h) => !head.includes(h))
-      return withoutSeal(head.length ? [...head, ...tail] : safe, sector)
+      return dropRetiredHeroes(withoutSeal(head.length ? [...head, ...tail] : safe, sector))
     }
   }
-  return withoutSeal(preferred, sector)
+  return dropRetiredHeroes(withoutSeal(preferred, sector))
 }
 
 export function allowedPatterns(style: StyleType, vocab?: VocabularyRow, sector?: SectorId): PatternFamily[] {

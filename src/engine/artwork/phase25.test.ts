@@ -32,10 +32,6 @@ function face(spec: { artwork: { layers: { panelId: string; markup: string }[] }
   return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
 }
 
-function winnerAssets(): string[] {
-  return lastCompositionSearch()?.candidates.find((c) => c.decision === 'WINNER')?.assets ?? []
-}
-
 function kitOf(slug: string) {
   return new FormaLocalEngine().generate({
     brief: briefFrom(jobOf(slug)),
@@ -159,56 +155,50 @@ describe('Phase 25 kit ↔ VisualConcept alignment', () => {
 
   it('five kit faces share concept story; spend and 2.7 linear hold', { timeout: 20000 }, () => {
     const earth = kitOf('08-zeytinyagi-tuck-luxury')
-    const earthFace = face(earth)
-    const earthSearch = lastCompositionSearch()
     expect(earth.designPlan?.visualConcept.id).toBe('earthen-premium')
-    expect(earthFace).not.toContain('data-art="sector-frame"')
-    expect(earthFace).not.toContain('data-art="l-bracket"')
-    expect(earthFace).not.toContain('data-art="gold-bar"')
-    expect(winnerAssets().join(' ')).toMatch(/olive-branch|botanical-corner|botanical-accent/)
-    expect(earthSearch?.winner).not.toBe('balanced-corners')
-    expect(earthSearch?.concept?.spend ?? 0).toBeLessThanOrEqual((earth.designPlan?.visualConcept.decorationBudget ?? 0.42) + 0.05)
+    expect(face(earth)).not.toContain('data-art="sector-frame"')
+    expect(face(earth)).not.toContain('data-art="l-bracket"')
+    expect(face(earth)).not.toContain('data-art="gold-bar"')
+    expect(face(earth)).toContain('data-lockup-chrome="harvest-seal"')
+    expect(face(earth)).not.toContain('data-art="art-pattern-compose"')
+    expect(lastCompositionSearch()).toBeUndefined()
 
     const night = kitOf('01-parfum-tuck-luxury')
     const nightFace = face(night)
-    const nightSearch = lastCompositionSearch()
     expect(night.designPlan?.visualConcept.id).toBe('nocturne-crest')
     expect(nightFace).toContain('data-art="gold-bar"')
     expect(nightFace).toMatch(/data-hero="crest"|data-art="hero"/)
-    expect(nightSearch?.winner).not.toBe('balanced-corners')
-    const nightAssets = winnerAssets().join(' ')
-    expect(nightAssets).toMatch(/ribbon|cartouche/)
+    expect(nightFace).toContain('data-lockup-chrome="centered-crest"')
+    expect(nightFace).not.toContain('data-art="art-pattern-compose"')
     expect(night.designPlan?.artDirection.chrome).toBe('full')
 
     const oval = kitOf('03-krem-tuck-luxury')
     const ovalFace = face(oval)
-    const ovalSearch = lastCompositionSearch()
     expect(oval.designPlan?.visualConcept.id).toBe('soft-oval')
     expect(ovalFace).not.toContain('data-art="sector-frame"')
+    expect(ovalFace).toContain('data-lockup-chrome="soft-oval"')
+    expect(ovalFace).not.toContain('data-art="art-pattern-compose"')
     expect(oval.designPlan?.artDirection.chrome).toBe('quiet')
     expect(oval.designPlan?.patternSystem.family).not.toMatch(/contour|ornament/)
-    expect(ovalSearch?.concept?.winnerAssetId).toMatch(/soft-oval|oval|ring|capsule/)
-    expect(ovalSearch?.concept?.winnerAssetId).not.toMatch(/quiet-ticks/)
 
     const air = kitOf('04-serum-tuck-minimal')
     const airFace = face(air)
     expect(air.designPlan?.visualConcept.id).toBe('air-paper')
     expect(airFace).not.toContain('data-art="sector-frame"')
     expect(airFace).not.toContain('data-art="gold-bar"')
+    expect(airFace).toContain('data-lockup-chrome="air-rule"')
+    expect(airFace).not.toContain('data-art="art-pattern-compose"')
     expect(air.designPlan?.artDirection.chrome).toBe('quiet')
     expect(air.designPlan?.patternSystem.family).toBe('none')
-    expect(winnerAssets().join(' ')).toMatch(/hairline|quiet-rule|ticks/)
 
     const tech = kitOf('14-kulaklik-tuck-modern')
     const techFace = face(tech)
-    const techSearch = lastCompositionSearch()
     expect(tech.designPlan?.visualConcept.id).toBe('tech-glyph')
     expect(techFace).not.toContain('data-art="l-bracket"')
     expect(techFace).not.toContain('data-art="sector-frame"')
+    expect(techFace).toContain('data-lockup-chrome="tech-grid"')
+    expect(techFace).not.toContain('data-art="art-pattern-compose"')
     expect(allowedStrategies(tech.designPlan!)).not.toContain('balanced-corners')
-    expect(techSearch?.winner).not.toBe('balanced-corners')
-    expect(techSearch?.candidates.some((c) => c.strategy === 'balanced-corners')).toBe(false)
-    expect(techSearch?.concept?.winnerFamily).toBe('linear-tech')
     expect(markupFamilyGate(techFace, tech.designPlan!).ok).toBe(true)
 
     const choco = kitOf('09-cikolata-tray-playful')

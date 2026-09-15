@@ -138,9 +138,23 @@ export function preferPatternForConcept(concept: VisualConceptBlock | undefined)
   return undefined
 }
 
-/** Crest lockup/hero already is the focal — motif must not clone it. Oval lockup stays shared language. */
+/** Crest/cartouche lockup already is the focal — motif must not clone it. Oval lockup stays shared language. */
 export function kitSuppliesFocalLockup(lockup: LockupId, heroFamily?: HeroFamily): boolean {
-  return lockup === 'centered-crest' || heroFamily === 'crest'
+  return lockup === 'centered-crest' || lockup === 'serif-cartouche' || heroFamily === 'crest'
+}
+
+/**
+ * Faz 2.15–2.16 — catalog-kit grade.
+ * Overlay `<image>` clip-art stays off luxury / modern / minimal / classic.
+ * Eco / playful still run motif search.
+ */
+export function kitGradeSkipsOverlay(style: StyleType): boolean {
+  return style === 'luxury' || style === 'modern' || style === 'minimal' || style === 'classic'
+}
+
+/** Classic lockup chrome already carries the grammar; the floating shield+bottle is clip-art. */
+export function kitGradeOmitsCrestGlyph(style: StyleType): boolean {
+  return style === 'classic'
 }
 
 export function kitLexiconUsedByKit(
@@ -148,8 +162,13 @@ export function kitLexiconUsedByKit(
   lockup: LockupId,
   heroFamily?: HeroFamily,
 ): string[] {
+  const lexicon = concept?.motifLexicon ?? []
   const tokens: string[] = []
   if (lockup === 'centered-crest' || heroFamily === 'crest') tokens.push('crest')
-  if (lockup === 'serif-cartouche' && (concept?.motifLexicon ?? []).includes('cartouche')) tokens.push('cartouche')
+  if (lockup === 'serif-cartouche') {
+    if (lexicon.includes('cartouche')) tokens.push('cartouche')
+    if (lexicon.includes('crest') && !tokens.includes('crest')) tokens.push('crest')
+  }
+  if (lockup === 'badge-capsule' && lexicon.includes('capsule')) tokens.push('capsule')
   return tokens
 }

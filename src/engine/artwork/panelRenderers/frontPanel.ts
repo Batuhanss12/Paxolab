@@ -7,14 +7,14 @@
 import type { DesignBrief, DesignOverrides, DesignSpec, Palette, Panel } from '../../../types'
 import type { DesignPlan } from '../../brain/DesignPlan'
 import type { DesignSystem } from '../../designSystem/types'
-import { kitLexiconUsedByKit, kitSuppliesFocalLockup } from '../../designSystem/conceptKitAlignment'
+import { kitGradeSkipsOverlay, kitLexiconUsedByKit, kitSuppliesFocalLockup } from '../../designSystem/conceptKitAlignment'
 import { layoutFrontLockup } from '../../designSystem/typeSystem'
 import { expandKitSafe, kitLevel } from '../bgKits'
 import { paintArtPatternOverlay } from '../artPatternLibrary'
 import { paintArtPatternCompositionById } from '../artPatternCompose'
-import { paintMotifRecipeById, paintMotifRecipeFromAtoms, resolveMotifRecipeId, type MotifPaintOpts } from '../artMotifCompose'
+import { paintMotifRecipeById, type MotifPaintOpts } from '../artMotifCompose'
 import { matchMotifs } from '../artMotifMatch'
-import { selectMotifComposition } from '../compositionCandidates'
+import { clearCompositionSearch, selectMotifComposition } from '../compositionCandidates'
 import { paintPlanHero, resolveFrontHeroPlacement } from './heroDispatch'
 import { paintBackgroundTreatment, paintSectorBackground, paintStyleBackground } from '../backgroundTreatments'
 import { foodBoxTheatre } from '../foodLandscape'
@@ -86,44 +86,13 @@ export function renderFrontPanel(
     languages: designPlan?.visualConcept.languages,
     avoid: designPlan?.visualConcept.avoid,
     motifLexicon: designPlan?.visualConcept.motifLexicon,
-    kitLexiconUsed: !blank && designPlan
+    kitLexiconUsed: designPlan
       ? kitLexiconUsedByKit(designPlan.visualConcept, system.lockup, designPlan.heroGraphic.family)
       : undefined,
-    kitSuppliesFocal: !blank && kitSuppliesFocalLockup(system.lockup, designPlan?.heroGraphic.family),
+    kitSuppliesFocal: kitSuppliesFocalLockup(system.lockup, designPlan?.heroGraphic.family),
   }
-  if (blank) {
-    const match = matchMotifs({
-      mood: system.style,
-      sector: system.sector,
-      colors: brief.colors,
-      seed: designPlan?.variationIndex ?? 0,
-      sheetId: overrides.artPatternId,
-      family: designPlan?.visualConcept.family,
-      supportFamily: designPlan?.visualConcept.supportFamily,
-      conceptId: designPlan?.visualConcept.id,
-      languages: designPlan?.visualConcept.languages,
-      avoid: designPlan?.visualConcept.avoid,
-      motifLexicon: designPlan?.visualConcept.motifLexicon,
-    })
-    if (designPlan) {
-      const picked = selectMotifComposition({
-        panel,
-        palette: p,
-        atoms: match.atoms,
-        plan: designPlan,
-        opts: motifOpts,
-        forcedRecipe: overrides.motifRecipeId,
-      })
-      if (picked.markup) body += picked.markup
-    } else {
-      const recipeId = overrides.motifRecipeId ?? resolveMotifRecipeId(match.atoms, system.style, 0)
-      const motif = paintMotifRecipeFromAtoms(panel, p, match.atoms, { ...motifOpts, recipeId })
-      if (motif.markup) body += motif.markup
-    }
-    if (designPlan?.heroGraphic.family && designPlan.heroGraphic.family !== 'none') {
-      body += paintPlanHero(panel, system, p, designPlan, heroCtx)
-    }
-  } else if (compose) {
+  const skipOverlay = kitGradeSkipsOverlay(system.style)
+  if (compose && !blank) {
     const motif = paintMotifRecipeById(panel, p, overrides.artPatternId!, {
       ...motifOpts,
       recipeId: overrides.motifRecipeId,
@@ -168,7 +137,7 @@ export function renderFrontPanel(
         style: system.style,
       })
     }
-    if (designPlan?.visualConcept.family) {
+    if (!skipOverlay && designPlan?.visualConcept.family) {
       const match = matchMotifs({
         mood: system.style,
         sector: system.sector,
@@ -190,6 +159,8 @@ export function renderFrontPanel(
         forcedRecipe: overrides.motifRecipeId,
       })
       if (picked.markup) body += picked.markup
+    } else if (skipOverlay) {
+      clearCompositionSearch()
     }
 
     body += frontDecor(panel, system, p, lockup, designPlan, {

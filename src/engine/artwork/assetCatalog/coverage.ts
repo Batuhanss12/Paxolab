@@ -53,6 +53,8 @@ const COVERAGE_SLUGS = [
   '04-serum-tuck-minimal',
   '08-zeytinyagi-tuck-luxury',
   '09-cikolata-tray-playful',
+  '10-kurabiye-tray-classic',
+  '12-recel-label-eco',
   '14-kulaklik-tuck-modern',
 ]
 

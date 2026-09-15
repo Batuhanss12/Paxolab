@@ -15,6 +15,7 @@ import {
 
 export const LIBRARY = /data-hero="(monstera|palm|organic-wave|zebra|botanical|emblem)"/
 export const KIT_HERO = /data-hero="(crest|seal|oval|harvest|tech)"/
+export const KIT_CHROME = /data-lockup-chrome="(centered-crest|serif-cartouche|harvest-seal|stamp-center)"/
 
 export function faceOf(spec: Pick<DesignSpec, 'artwork'>): string {
   return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
@@ -46,7 +47,7 @@ export function makeScoreCtx(spec: Pick<DesignSpec, 'artwork' | 'copy'>, plan: D
   const face = faceOf(spec)
   const back = backOf(spec)
   const required = plan.style !== 'minimal' && plan.sector !== 'cleaning' && plan.sector !== 'generic'
-  const hasHero = /data-art="hero"/.test(face)
+  const hasHero = /data-art="hero"/.test(face) || KIT_CHROME.test(face)
   const leak = plan.sector === 'serum' && /data-pattern="contour"|data-pattern="ornament"/.test(face)
   const panelBounds = { x: 0, y: 0, w: 70, h: 90 }
   const geo = computeGeometryMetrics(face, panelBounds)
@@ -79,7 +80,7 @@ export function scoreHero(ctx: ScoreCtx, notes: string[]): number {
   else if (required && hasHero) {
     hero = 78
     if (LIBRARY.test(face)) hero += 10
-    else if (KIT_HERO.test(face)) hero += 6
+    else if (KIT_HERO.test(face) || KIT_CHROME.test(face)) hero += 6
   } else if (required) {
     hero = 28
     notes.push('Hero gerekli ama ön yüzde yok')
@@ -184,7 +185,7 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
 export function scoreSectorFit(ctx: ScoreCtx): number {
   const { face, back, plan, leak } = ctx
   let sectorFit = 62
-  if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"/.test(face)) sectorFit += 16
+  if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"|data-lockup-chrome="centered-crest"/.test(face)) sectorFit += 16
   if (plan.sector === 'food' && /harvest|NET|BESİN|DOĞAL|YAYLA|BAHÇE|SOFRA|YEREL/.test(`${face}\n${back}`)) sectorFit += 14
   if (plan.sector === 'electronics' && /WIRELESS|PRECISION|KABLOSUZ|HASSAS|data-hero="tech"|WEEE/.test(`${face}\n${back}`)) sectorFit += 14
   if (plan.sector === 'serum' && !leak) sectorFit += 10

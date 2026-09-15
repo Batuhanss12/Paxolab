@@ -367,12 +367,9 @@ describe('Phase 22 concept SoT / strategy≠recipe / asset relationships', () =>
     const earthenSearch = lastCompositionSearch()
     expect(earthen.designPlan?.visualConcept.id).toBe('earthen-premium')
     expect(earthen.designPlan?.artDirection.vocabulary).toBe('earthen-premium')
-    expect(earthenSearch?.winner).toBe('asymmetric-editorial')
-    expect(earthenSearch?.concept?.languages).toEqual(['botanical', 'organic'])
-    expect(earthenSearch?.concept?.avoid).toContain('heavy-frame')
-    expect(earthenSearch?.concept?.familyMatch).toBe('EXACT')
-    expect(earthenSearch?.candidates.some((c) => c.strategy === 'framed-content')).toBe(false)
-    expect((earthenSearch?.concept?.winnerAssetId ?? '').toLowerCase()).toMatch(/olive|botanic|organic/)
+    expect(face(earthen)).toContain('data-lockup-chrome="harvest-seal"')
+    expect(face(earthen)).not.toContain('data-art="art-pattern-compose"')
+    expect(earthenSearch).toBeUndefined()
 
     const oval = engine.generate({
       brief: briefFrom(jobOf('03-krem-tuck-luxury')),
@@ -380,10 +377,9 @@ describe('Phase 22 concept SoT / strategy≠recipe / asset relationships', () =>
     })
     const ovalSearch = lastCompositionSearch()
     expect(oval.designPlan?.visualConcept.id).toBe('soft-oval')
-    expect(ovalSearch?.concept?.visualLanguage).toBe('oval')
-    expect(['hero-with-support', 'asymmetric-editorial', 'minimal-accent']).toContain(ovalSearch?.winner)
-    expect(ovalSearch?.concept?.winnerAssetId).toMatch(/soft-oval|oval|ring|capsule/)
-    expect(ovalSearch?.concept?.winnerAssetId).not.toMatch(/quiet-ticks/)
+    expect(face(oval)).toContain('data-lockup-chrome="soft-oval"')
+    expect(face(oval)).not.toContain('data-art="art-pattern-compose"')
+    expect(ovalSearch).toBeUndefined()
 
     const air = engine.generate({
       brief: briefFrom(jobOf('04-serum-tuck-minimal')),
@@ -391,9 +387,11 @@ describe('Phase 22 concept SoT / strategy≠recipe / asset relationships', () =>
     })
     const airSearch = lastCompositionSearch()
     expect(air.designPlan?.visualConcept.id).toBe('air-paper')
-    expect(airSearch?.concept?.visualLanguage).toBe('quiet-line')
-    expect(airSearch?.concept?.avoid).toContain('heavy-frame')
+    expect(air.designPlan?.visualConcept.avoid).toContain('heavy-frame')
     expect(face(air)).not.toMatch(/islamic-border/)
+    expect(face(air)).toContain('data-lockup-chrome="air-rule"')
+    expect(face(air)).not.toContain('data-art="art-pattern-compose"')
+    expect(airSearch).toBeUndefined()
 
     const night = engine.generate({
       brief: briefFrom(jobOf('01-parfum-tuck-luxury')),
@@ -401,17 +399,9 @@ describe('Phase 22 concept SoT / strategy≠recipe / asset relationships', () =>
     })
     const nightSearch = lastCompositionSearch()
     expect(night.designPlan?.visualConcept.id).toBe('nocturne-crest')
-    expect(nightSearch?.winner).not.toBe('balanced-corners')
-    expect(nightSearch?.candidates.some((c) => c.strategy === 'balanced-corners')).toBe(false)
-    const nightAssets = (nightSearch?.candidates.find((c) => c.decision === 'WINNER')?.assets ?? []).join(' ')
-    expect(nightAssets.toLowerCase()).toMatch(/crest|ribbon|cartouche/)
-    if (nightSearch?.concept?.roles) {
-      nightSearch.candidates
-        .find((c) => c.decision === 'WINNER')
-        ?.assets.forEach((id, i) => {
-          if (/crest-spot|seal/.test(id)) expect(nightSearch.concept?.roles?.[i]).not.toBe('frame')
-        })
-    }
+    expect(face(night)).toContain('data-lockup-chrome="centered-crest"')
+    expect(face(night)).not.toContain('data-art="art-pattern-compose"')
+    expect(nightSearch).toBeUndefined()
 
     const tech = engine.generate({
       brief: briefFrom(jobOf('14-kulaklik-tuck-modern')),
@@ -419,14 +409,12 @@ describe('Phase 22 concept SoT / strategy≠recipe / asset relationships', () =>
     })
     const techSearch = lastCompositionSearch()
     expect(tech.designPlan?.visualConcept.id).toBe('tech-glyph')
-    expect(techSearch?.concept?.visualLanguage).toBe('linear')
-    expect(techSearch?.concept?.hardConstraint).not.toBe('FAILURE')
-    if (techSearch?.concept?.winnerAssetId) {
-      expect(techSearch.concept.familyMatch).not.toBe('NONE')
-      expect(techSearch.concept.winnerFamily).toBe('linear-tech')
-    }
+    expect(tech.designPlan?.visualConcept.languages).toEqual(expect.arrayContaining(['linear']))
     expect(markupFamilyGate(face(tech), tech.designPlan!).ok).toBe(true)
     expect(face(tech)).not.toMatch(/islamic-border/)
+    expect(face(tech)).toContain('data-lockup-chrome="tech-grid"')
+    expect(face(tech)).not.toContain('data-art="art-pattern-compose"')
+    expect(techSearch).toBeUndefined()
   })
 
   it('same brief + seed is deterministic; kit/NOX contracts hold', () => {

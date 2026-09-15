@@ -14,12 +14,12 @@ export function applyPlanToSystem(system: DesignSystem, plan: DesignPlan): Desig
   const typeScale = recipe?.typeScale ?? 1
   const trackingScale = recipe?.trackingScale ?? 1
   const lockup =
-    system.blankCanvas || system.grammar === 'label'
+    system.grammar === 'label'
       ? system.lockup
       : lockupForConcept(plan.visualConcept, system.lockup)
   const decor =
     lockup === system.lockup ? system.decor : pickDecor(system.style, system.sector, lockup)
-  const goldBar = system.blankCanvas ? system.goldBar : goldBarForConcept(plan.visualConcept, system.goldBar)
+  const goldBar = goldBarForConcept(plan.visualConcept, system.goldBar)
   return {
     ...system,
     lockup,

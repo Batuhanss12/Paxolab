@@ -20,10 +20,6 @@ function face(spec: { artwork: { layers: { panelId: string; markup: string }[] }
   return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
 }
 
-function winnerAssets(): string[] {
-  return lastCompositionSearch()?.candidates.find((c) => c.decision === 'WINNER')?.assets ?? []
-}
-
 describe('Phase 24 linear language ≠ corner pack', () => {
   beforeEach(() => {
     resetArtMemory()
@@ -71,36 +67,29 @@ describe('Phase 24 linear language ≠ corner pack', () => {
     })
     const search = lastCompositionSearch()
     expect(spec.designPlan?.visualConcept.id).toBe('tech-glyph')
-    expect(search?.winner).not.toBe('balanced-corners')
-    expect(['asymmetric-editorial', 'top-bottom-balance', 'minimal-accent', 'pattern-field', 'hero-with-support']).toContain(
-      search?.winner,
-    )
-    expect(search?.candidates.some((c) => c.strategy === 'balanced-corners')).toBe(false)
-    expect(search?.concept?.winnerFamily).toBe('linear-tech')
-    expect(search?.concept?.familyMatch).not.toBe('NONE')
-    expect((search?.concept?.winnerAssetId ?? '').toLowerCase()).toMatch(/pattern16|grid|glyph|stripe|index/)
-    expect(winnerAssets().every((id) => /pattern16|grid|glyph|stripe|index|lattice/.test(id))).toBe(true)
+    expect(search).toBeUndefined()
+    expect(allowedStrategies(spec.designPlan!)).not.toContain('balanced-corners')
+    expect(face(spec)).toContain('data-lockup-chrome="tech-grid"')
+    expect(face(spec)).not.toContain('data-art="art-pattern-compose"')
+    expect(face(spec)).not.toContain('data-art="l-bracket"')
     expect(markupFamilyGate(face(spec), spec.designPlan!).ok).toBe(true)
     expect(face(spec)).not.toMatch(/islamic-border/)
     expect(spec.preflight.exportOk).toBe(true)
   })
 
   it('EARTHEN / NOCTURNE companions still open when unused tokens exist', () => {
-    new FormaLocalEngine().generate({
+    const earthSpec = new FormaLocalEngine().generate({
       brief: briefFrom(jobOf('08-zeytinyagi-tuck-luxury')),
       overridePatch: { blankCanvas: true, variationIndex: 0 },
     })
-    const earth = lastCompositionSearch()
-    expect(earth?.winner).toBe('asymmetric-editorial')
-    expect(winnerAssets().join(' ')).toMatch(/olive-branch/)
-    expect(winnerAssets().join(' ')).toMatch(/botanical-corner|botanical-accent/)
-    expect(winnerAssets().length).toBeGreaterThanOrEqual(3)
+    expect(face(earthSpec)).toContain('data-lockup-chrome="harvest-seal"')
+    expect(face(earthSpec)).not.toContain('data-art="art-pattern-compose"')
 
-    new FormaLocalEngine().generate({
+    const nightSpec = new FormaLocalEngine().generate({
       brief: briefFrom(jobOf('01-parfum-tuck-luxury')),
       overridePatch: { blankCanvas: true, variationIndex: 0 },
     })
-    expect(winnerAssets().join(' ')).toMatch(/crest/)
-    expect(winnerAssets().join(' ')).toMatch(/ribbon|cartouche/)
+    expect(face(nightSpec)).not.toContain('data-art="art-pattern-compose"')
+    expect(face(nightSpec)).not.toMatch(/data-motif-atom="[^"]*(crest-spot|ribbon-corner|cartouche-arc)/)
   })
 })

@@ -10,6 +10,7 @@ import { decorationBudgetOf } from '../brain/VisualConcept'
 import { seedTieBreak, visualWeightOf, resolveMotifDesign, atomRegionAllowed, resolvedMotifRole, type MotifRegionId } from './artMotifMeta'
 import { atomFitsConceptFamily, familiesCompatible, motifFamilyOf, motifSubfamilyOf, selectFamilyPool } from './artMotifFamily'
 import { atomHasFamilyFile } from './assetCatalog/catalog'
+import { rejectRetiredOverlayAtoms } from './assetCatalog/retiredOverlay'
 import type { AssetMode } from './assetCatalog/types'
 import { familyMatchLevel } from './assetCatalog/familyMatrix'
 import type { MotifAtom } from './artMotifAtomizer'
@@ -290,7 +291,12 @@ export function fillDecorationBudget(
 }
 
 function atomsForConcept(atoms: MotifAtom[], plan: DesignPlan): MotifAtom[] {
-  return selectFamilyPool(atoms, plan.visualConcept.family, plan.visualConcept.supportFamily, plan.visualConcept.id).atoms
+  return selectFamilyPool(
+    rejectRetiredOverlayAtoms(atoms),
+    plan.visualConcept.family,
+    plan.visualConcept.supportFamily,
+    plan.visualConcept.id,
+  ).atoms
 }
 
 export function slotsPassFamilyConstraint(slots: MotifSlot[], plan: DesignPlan): boolean {

@@ -277,7 +277,7 @@ export default function App() {
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
-          overridePatch: { blankCanvas: true, ...result?.overridePatch },
+          overridePatch: { blankCanvas: false, ...result?.overridePatch },
           copyPatch: result?.copyPatch,
           llmCopy,
           logoHref: logo?.dataUrl,
