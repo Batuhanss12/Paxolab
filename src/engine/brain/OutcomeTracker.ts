@@ -1,6 +1,7 @@
 /**
  * FAZ 5 — behavioural outcome signals.
- * Does not learn rules. Patches the latest decision log for a design.
+ * Does not learn rules. Patches the latest decision log for a design and hands the
+ * event to the learning gate as an *observation* (candidate evidence only).
  */
 import {
   decisionLogFor,
@@ -9,6 +10,7 @@ import {
   type DesignOutcome,
   type StructuredFeedback,
 } from './DesignDecisionLog'
+import { observeFeedback, observeOutcome } from './LearningEngine'
 
 function maybeApprove(outcome: DesignOutcome, at: number): DesignOutcome {
   const approved = outcome.exported || outcome.downloaded || (outcome.stars ?? 0) >= 4
@@ -25,6 +27,14 @@ function patch(designId: string, update: (current: DesignOutcome) => DesignOutco
   const current = outcomeOf(designId) ?? decisionLogFor(designId)?.outcome
   if (!current) return
   patchLatestLog(designId, { outcome: update(current) })
+  const log = decisionLogFor(designId)
+  if (log) {
+    try {
+      observeOutcome(log)
+    } catch {
+      /* learning is an enhancement, never a dependency */
+    }
+  }
 }
 
 export function noteExport(designId: string): void {
@@ -47,6 +57,11 @@ export function noteFeedback(designId: string, incoming: StructuredFeedback[]): 
   const log = decisionLogFor(designId)
   if (!log) return
   patchLatestLog(designId, { feedback: [...log.feedback, ...incoming] })
+  try {
+    observeFeedback(log, incoming)
+  } catch {
+    /* best-effort */
+  }
 }
 
 export function noteFinalized(designId: string): void {

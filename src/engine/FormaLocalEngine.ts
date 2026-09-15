@@ -1,5 +1,14 @@
 import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
-import { applyPlanToSystem, captureGenerateDecision, createPlan, critiquePlan, repairPlan, scoreDesign } from './brain'
+import {
+  applyKnowledgeToBrief,
+  applyPlanToSystem,
+  captureGenerateDecision,
+  createPlan,
+  critiquePlan,
+  observeFeedback,
+  repairPlan,
+  scoreDesign,
+} from './brain'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
@@ -15,6 +24,8 @@ import { resolveCopyLocale } from './copyLocale'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
+import { applyStudioPreflight, composeStudioArtwork, hintsFromBrief, resolveDirection, type StudioReport } from './studio'
+import { studioHintsFromKnowledge } from './brain/studioKnowledge'
 
 const DEFAULT_OVERRIDES: DesignOverrides = {
   logoScale: 1,
@@ -106,12 +117,15 @@ export class FormaLocalEngine implements EnginePort {
           premium: overrides.premium,
         })
       : null
+    // Active, validated knowledge → KNOWLEDGE_DERIVED brief inputs. Empty store → same brief.
+    const knowledge = applyKnowledgeToBrief(brief)
+    const planBrief = knowledge.brief
     const designPlan = createPlan({
-      brief,
+      brief: planBrief,
       template,
       style,
       prev: styleChanged ? undefined : input.prev?.designPlan,
-      cue: overrides.directorCue || brief.directorCue,
+      cue: overrides.directorCue || planBrief.directorCue,
       variationIndex,
       forceHero: blankCanvas ? (overrides.heroFamily ?? blankFace?.finish.heroFamily) : overrides.heroFamily,
       blankCanvas,
@@ -135,12 +149,41 @@ export class FormaLocalEngine implements EnginePort {
       heightMm: dieline.dimensions.H,
     }
 
+    const studioOn = !!overrides.studio
+    const hero = findHeroPanel(dieline.panels)
+    const studioKnowledge = studioOn ? studioHintsFromKnowledge(brief) : null
     const paint = (plan: typeof designPlan) => {
       const system = applyPlanToSystem(
         resolveDesignSystem(brief, template.structureId, { blankCanvas }),
         plan,
       )
-      const artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
+      let artwork
+      let studio: StudioReport | undefined
+      if (studioOn) {
+        // Design Brain → direction (closed vocabulary) → deterministic studio painters.
+        const direction = resolveDirection({
+          brief: planBrief,
+          sector: resolveSector(brief),
+          style,
+          surface: kind === 'label' ? 'label' : 'box',
+          faceW: hero?.w ?? dieline.dimensions.L,
+          faceH: hero?.h ?? dieline.dimensions.H,
+          palette,
+          locale: brief.copyLocale ?? 'tr',
+          variationIndex,
+          copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },
+          hints: [
+            hintsFromBrief(planBrief, resolveSector(brief), kind === 'label' ? 'label' : 'box'),
+            ...(studioKnowledge?.hints ?? []),
+            ...(overrides.direction ? [overrides.direction] : []),
+          ],
+        })
+        const composed = composeStudioArtwork({ brief, dieline, copy, direction, system })
+        artwork = composed.artwork
+        studio = composed.report
+      } else {
+        artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
+      }
       const draft = {
         brief,
         copy,
@@ -153,21 +196,26 @@ export class FormaLocalEngine implements EnginePort {
         artwork,
         designPlan: plan,
       }
-      const preflight = runPreflight(draft, system)
-      const heroId = findHeroPanel(dieline.panels)?.id
+      const basePreflight = runPreflight(draft, system)
+      const preflight = studio ? applyStudioPreflight(basePreflight, studio) : basePreflight
+      const heroId = hero?.id
       const faceLayer = artwork.layers.find(
         (l: { panelId: string }) => l.panelId === heroId || l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront',
       )
       const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup)
-      return { artwork, preflight, critique, plan }
+      return { artwork, preflight, critique, plan, studio }
     }
 
     let pack = paint(designPlan)
-    if (pack.critique.needsRepair) {
+    if (pack.critique.needsRepair && !studioOn) {
       pack = paint(repairPlan(pack.plan, pack.critique))
       pack.critique = { ...pack.critique, repaired: true, needsRepair: false }
     }
-    if (overrides.heroFamily && pack.plan.heroGraphic.family !== overrides.heroFamily) {
+    if (studioOn && pack.critique.needsRepair) {
+      // Studio faces are direction-driven; the kit repair loop does not apply.
+      pack.critique = { ...pack.critique, needsRepair: false }
+    }
+    if (!studioOn && overrides.heroFamily && pack.plan.heroGraphic.family !== overrides.heroFamily) {
       pack = paint({
         ...pack.plan,
         heroGraphic: { ...pack.plan.heroGraphic, family: overrides.heroFamily },
@@ -183,10 +231,10 @@ export class FormaLocalEngine implements EnginePort {
     }
     const artwork = artworkFromDocument(document)
     const revision = (input.prev?.revision ?? 0) + 1
-    captureGenerateDecision({
+    const decision = captureGenerateDecision({
       designId: id,
       revision,
-      brief,
+      brief: planBrief,
       plan: pack.plan,
       critique: pack.critique,
       preflight: pack.preflight,
@@ -194,7 +242,30 @@ export class FormaLocalEngine implements EnginePort {
       overridePatch: input.overridePatch,
       copyPatch: input.copyPatch,
       feedback: input.feedback,
+      knowledgeVersion: knowledge.version,
+      appliedKnowledge: [...knowledge.applied, ...(studioKnowledge?.applied ?? [])],
+      feedbackFromLlm: input.feedbackFromLlm,
+      studio: pack.studio
+        ? {
+            archetype: pack.studio.direction.archetype,
+            background: pack.studio.direction.background,
+            temperament: pack.studio.direction.temperament,
+            typePairing: pack.studio.direction.typePairing,
+            source: pack.studio.direction.source,
+            collisions: pack.studio.collisions.length,
+            minTextMm: pack.studio.minTextMm,
+          }
+        : undefined,
+      directionFromLlm: pack.studio?.direction.source === 'llm',
     })
+    if (decision && input.feedback?.length) {
+      // Revision talk becomes learning evidence — observation only, never a rule.
+      try {
+        observeFeedback(decision, input.feedback)
+      } catch {
+        /* learning is an enhancement */
+      }
+    }
 
     return {
       id,
@@ -214,6 +285,9 @@ export class FormaLocalEngine implements EnginePort {
       preflight: pack.preflight,
       designPlan: pack.plan,
       critique: pack.critique,
+      designCritique: decision?.critiques,
+      appliedKnowledge: knowledge.applied.length || studioKnowledge?.applied.length ? [...knowledge.applied, ...(studioKnowledge?.applied ?? [])] : undefined,
+      studio: pack.studio,
       copyLocale: brief.copyLocale,
     }
   }

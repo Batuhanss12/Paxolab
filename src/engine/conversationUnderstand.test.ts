@@ -140,6 +140,7 @@ describe('CHAT-1 conversation understanding', () => {
     expect(second.replies.join(' ')).toMatch(/premium|editorial/i)
     expect(second.replies.join(' ')).toMatch(/etiketi de üret/i)
     expect(second.overridePatch.directorCue).toBe('luxury-tighten')
+    expect(second.overridePatch.studio).toBe(true)
     expect(second.awaiting).toBeNull()
     expect(second.brief.avoidMotifs).toEqual(
       expect.arrayContaining(['generic-corners', 'heavy-frame', 'generic-ticks', 'dense-pattern']),

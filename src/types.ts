@@ -40,6 +40,18 @@ export type DimensionsMm = {
   H: number
 }
 
+/**
+ * Where a brief value came from. Inferred values are never presented as user fact.
+ * Precedence when merging: USER_EXPLICIT > HEURISTIC_INFERRED > LLM_INFERRED > KNOWLEDGE_DERIVED > SYSTEM_DEFAULT.
+ */
+export type FieldSource = 'USER_EXPLICIT' | 'HEURISTIC_INFERRED' | 'LLM_INFERRED' | 'KNOWLEDGE_DERIVED' | 'SYSTEM_DEFAULT'
+
+export type FieldProvenance = {
+  source: FieldSource
+  /** 0–1. USER_EXPLICIT is 1 unless the phrasing was ambiguous. */
+  confidence: number
+}
+
 export type DesignBrief = {
   brandName: string
   productName: string
@@ -89,6 +101,8 @@ export type DesignBrief = {
   avoidMotifs?: string[]
   /** Requested surfaces from conversation. Catalog omits this. Engine paints one at a time. */
   deliverables?: PackagingMode[]
+  /** Per-field source + confidence. Catalog omits this; mergeBrief keeps the strongest source. */
+  provenance?: Partial<Record<string, FieldProvenance>>
 }
 
 export type BriefFieldKey = keyof DesignBrief
@@ -132,6 +146,13 @@ export type DesignOverrides = {
    * Catalog / gallery fixtures omit this so style kits stay QA-reproducible.
    */
   blankCanvas?: boolean
+  /**
+   * Studio path: reference-level archetype layouts (TASARIM REF DNA) with full anatomy.
+   * Catalog / gallery fixtures omit this so the frozen kit faces stay byte-stable.
+   */
+  studio?: boolean
+  /** Closed-vocabulary direction hints (LLM art director, knowledge bias, user words). */
+  direction?: import('./engine/studio/types').DirectionHints
 }
 
 export type Palette = {
@@ -246,6 +267,12 @@ export type DesignSpec = {
   preflight: PreflightReport
   designPlan?: import('./engine/brain/DesignPlan').DesignPlan
   critique?: import('./engine/brain/CritiqueEngine').CritiqueReport
+  /** Structured critic findings (category/target/severity/evidence). Read-only; never edits SVG. */
+  designCritique?: import('./engine/brain/DesignCritic').DesignCritique[]
+  /** Active knowledge rule ids that shaped this design's brief (KNOWLEDGE_DERIVED). */
+  appliedKnowledge?: string[]
+  /** Studio direction + ledger report when overrides.studio painted the faces. */
+  studio?: import('./engine/studio/types').StudioReport
   /** Mirror of brief.copyLocale for export manifest. */
   copyLocale?: CopyLocale
 }
@@ -268,6 +295,8 @@ export type EngineResult = {
   designPlan?: import('./engine/brain/DesignPlan').DesignPlan
   critiqueNotes?: string[]
   feedback?: import('./engine/brain/DesignDecisionLog').StructuredFeedback[]
+  /** Asked / answered ledger after this turn. */
+  state?: import('./engine/conversationState').ConversationState
 }
 
 export type DesignRating = {

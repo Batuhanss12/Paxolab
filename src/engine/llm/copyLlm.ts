@@ -6,7 +6,7 @@
 import type { DesignBrief } from '../../types'
 import { resolveSector } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
-import { llmComplete, parseLlmJson } from './client'
+import { getLlmProvider } from './provider'
 
 export interface LlmCopy {
   tagline: string
@@ -31,7 +31,8 @@ Rules:
 
 /** Generate copy via LLM. Returns null when unavailable or invalid. */
 export async function generateCopyWithLlm(brief: DesignBrief): Promise<LlmCopy | null> {
-  if (!import.meta.env.VITE_FORMA_LLM_URL) return null
+  const provider = getLlmProvider()
+  if (!provider.enabled()) return null
 
   const sector = resolveSector(brief)
   const surface = brief.packagingMode === 'label' ? 'label' : 'box'
@@ -47,16 +48,12 @@ export async function generateCopyWithLlm(brief: DesignBrief): Promise<LlmCopy |
 - Custom tagline override: ${brief.copyOverrides || '(none)'}
 - Required regulatory warnings (must appear in warnings): ${markWarn}`
 
-  const content = await llmComplete(
-    [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ],
-    { json: true, timeoutMs: 10000 },
-  )
-  if (!content) return null
-
-  const parsed = parseLlmJson<LlmCopyResponse>(content)
+  const parsed = await provider.generateStructured<LlmCopyResponse>({
+    task: 'copy',
+    system: SYSTEM_PROMPT,
+    user: userPrompt,
+    timeoutMs: 10000,
+  })
   if (!parsed) return null
 
   const tagline = (parsed.tagline || '').trim().slice(0, 80)

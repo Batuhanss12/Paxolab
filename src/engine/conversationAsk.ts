@@ -54,6 +54,29 @@ export function askCopy(brief: DesignBrief, key: AwaitingKey): string {
   return ASK[key] ?? ''
 }
 
+/**
+ * Second ask — never the same sentence twice. Names what did not land, gives concrete
+ * examples, and tells the user the shortest way out (a product noun, a quoted name, "şablon").
+ */
+export function askRetryCopy(brief: DesignBrief, key: AwaitingKey, lastAnswer: string): string {
+  const said = lastAnswer.trim().length > 0 && lastAnswer.trim().length <= 40 ? `“${lastAnswer.trim()}”` : 'Bu'
+  if (key === 'sector') {
+    return `${said} bir kategoriye oturmadı. Ürünün kendisini yaz, gerisini ben çıkarırım — örn. “cold brew kahve”, “onarıcı şampuan”, “çiçek balı”, “eau de parfum”, “D3 vitamini”, “bebek şampuanı”, “yüzey temizleyici”, “kablosuz kulaklık”.`
+  }
+  if (key === 'brandName') {
+    return `${said} marka adı olarak okunmadı. Markayı tek başına yaz — örn. “Elite Brew” — istersen tırnak içinde. Ürün hattını ayrıca sorarım.`
+  }
+  if (key === 'packagingMode') {
+    return `${said} yüzeyi belirlemedi. “kutu”, “etiket” ya da “kutu ve etiket” yaz; şişe/kavanoz için etiket, karton için kutu doğru seçim.`
+  }
+  if (key === 'dimensionsMm') {
+    return brief.packagingMode === 'label'
+      ? `Ölçüyü “90x70” gibi genişlik×yükseklik mm yaz; bilmiyorsan “şablon” de, ${brief.subProduct || brief.sector || 'ürün'} için standart etiketi kullanırım.`
+      : `Ölçüyü “80x50x180” gibi L×W×H mm yaz; bilmiyorsan “şablon” de, ${brief.subProduct || brief.sector || 'ürün'} için standart kutuyu kullanırım.`
+  }
+  return askCopy(brief, key)
+}
+
 export function nextMissing(brief: DesignBrief): AwaitingKey | null {
   for (const key of ASK_CRITICAL) {
     if (key === 'packagingMode' && !brief.packagingMode) return key

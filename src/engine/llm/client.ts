@@ -37,7 +37,7 @@ export async function llmComplete(messages: LlmMessage[], opts: LlmOptions = {})
       credentials: 'same-origin',
       signal: AbortSignal.timeout(opts.timeoutMs ?? 8000),
       body: JSON.stringify({
-        model: opts.model ?? 'gpt-4o-mini',
+        model: opts.model ?? (import.meta.env as Record<string, string | undefined>).VITE_FORMA_LLM_MODEL ?? 'gpt-4o-mini',
         ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
         messages,
       }),

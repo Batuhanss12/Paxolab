@@ -1,4 +1,6 @@
-import type { AwaitingKey, DesignBrief, DimensionsMm, PackagingMode, StyleType } from '../types'
+import type { AwaitingKey, DesignBrief, DimensionsMm, FieldProvenance, PackagingMode, StyleType } from '../types'
+import { sourceMayOverride } from './briefProvenance'
+import { isSectorOrSurfaceName } from './extractHelpers'
 import { styleLabel } from './styles'
 
 export const FIELD_LABELS: Partial<Record<AwaitingKey, string>> = {
@@ -63,10 +65,30 @@ export function parseDimensions(text: string): DimensionsMm | null {
   return { L: a, W: 0, H: b }
 }
 
+/**
+ * Merge a patch into the brief. Provenance-aware: a weaker source (LLM / knowledge /
+ * default) never overwrites a stronger one; patches without provenance keep legacy
+ * overwrite behaviour so catalog and template flows are untouched.
+ */
 export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): DesignBrief {
   const next = { ...base, dimensionsMm: { ...base.dimensionsMm } }
+  const incomingProvenance = patch.provenance ?? {}
+  const provenance: Partial<Record<string, FieldProvenance>> = { ...(base.provenance ?? {}) }
+  const accept = (key: string): boolean => {
+    const incoming = incomingProvenance[key]
+    if (!sourceMayOverride(provenance[key], incoming)) return false
+    if (incoming) provenance[key] = incoming
+    return true
+  }
+  /** Additive arrays always union; provenance keeps the strongest source seen. */
+  const acceptUnion = (key: string): void => {
+    const incoming = incomingProvenance[key]
+    if (incoming && sourceMayOverride(provenance[key], incoming)) provenance[key] = incoming
+  }
   for (const [key, value] of Object.entries(patch)) {
+    if (key === 'provenance') continue
     if (key === 'dimensionsMm' && value && typeof value === 'object') {
+      if (!accept(key)) continue
       next.dimensionsMm = { ...next.dimensionsMm, ...(value as DimensionsMm) }
       continue
     }
@@ -75,30 +97,42 @@ export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): Desi
       continue
     }
     if (key === 'avoidMotifs' && Array.isArray(value)) {
-      const extra = value.map((token) => String(token).trim()).filter(Boolean)
+      acceptUnion(key)
+      const extra = (value as unknown[]).map((token) => String(token).trim()).filter(Boolean)
       next.avoidMotifs = [...new Set([...(next.avoidMotifs ?? []), ...extra])]
       continue
     }
     if (key === 'deliverables' && Array.isArray(value)) {
-      const extra = value.filter((mode): mode is PackagingMode => mode === 'box' || mode === 'label')
+      acceptUnion(key)
+      const extra = (value as unknown[]).filter((mode): mode is PackagingMode => mode === 'box' || mode === 'label')
       next.deliverables = [...new Set([...(next.deliverables ?? []), ...extra])]
       continue
     }
     if (typeof value === 'string' && value.trim()) {
+      if (!accept(key)) continue
       ;(next as Record<string, unknown>)[key] = value.trim()
     }
   }
+  // Provenance for keys the patch describes without carrying a value (e.g. dimsDefaulted → dimensionsMm SYSTEM_DEFAULT).
+  for (const [key, row] of Object.entries(incomingProvenance)) {
+    if (!row || key in patch) continue
+    if (sourceMayOverride(provenance[key], row)) provenance[key] = row
+  }
+  if (Object.keys(provenance).length) next.provenance = provenance
   const brandKey = next.brandName.trim().toLocaleLowerCase('tr')
   if (brandKey) {
-    if (next.productName.trim().toLocaleLowerCase('tr') === brandKey) next.productName = ''
-    if (next.sector.trim().toLocaleLowerCase('tr') === brandKey) next.sector = ''
-    if (next.subProduct.trim().toLocaleLowerCase('tr') === brandKey) next.subProduct = ''
+    if (isSectorOrSurfaceName(next.brandName)) next.brandName = ''
+    else {
+      if (next.productName.trim().toLocaleLowerCase('tr') === brandKey) next.productName = ''
+      if (next.sector.trim().toLocaleLowerCase('tr') === brandKey) next.sector = ''
+      if (next.subProduct.trim().toLocaleLowerCase('tr') === brandKey) next.subProduct = ''
+    }
   }
   return next
 }
 
 export function isCoreReady(brief: DesignBrief): boolean {
-  const brand = brief.brandName.trim().length > 0
+  const brand = brief.brandName.trim().length > 0 && !isSectorOrSurfaceName(brief.brandName)
   const surface = brief.packagingMode !== '' || brief.sector.trim().length > 0
   return brand && surface
 }
@@ -153,7 +187,9 @@ export function briefSummary(brief: DesignBrief): string {
     brief.productName.trim().toLocaleLowerCase('tr') !== brief.brandName.trim().toLocaleLowerCase('tr')
       ? brief.productName
       : ''
-  return [brief.brandName, product, brief.sector || brief.packagingMode].filter(Boolean).join(' · ')
+  // "Elite Brew · kahve", not "Elite Brew · gıda": the product family is what the user said.
+  const family = brief.subProduct.trim() && !/^(bakım|genel)$/i.test(brief.subProduct) ? brief.subProduct.trim() : brief.sector
+  return [brief.brandName, product, family || brief.packagingMode].filter(Boolean).join(' · ')
 }
 
 export type FilledEntry = {
@@ -202,7 +238,7 @@ export function filledEntries(
 
 export function avoidsClassicStyle(text: string): boolean {
   const t = text.toLocaleLowerCase('tr')
-  return /klasik\s*(görünmesin|olmasın|durmasın)|çok\s*klasik|overly\s*classic|not\s*(too\s*)?classic|klasik\s*değil/i.test(
+  return /klasik\s*(görünmesin|olmasın|durmasın)|çok\s*klasik|overly\s*classic(?:al)?|not\s*(too\s*)?classic(?:al)?|too\s*classic(?:al)?|klasik\s*değil/i.test(
     t,
   )
 }
@@ -215,7 +251,7 @@ export function parseStyle(text: string): StyleType | '' {
   if (/editorial|editöryal|editoryal|contemporary|çağdaş/.test(t)) return 'modern'
   if (/eco|organik|doğal/.test(t)) return 'eco'
   if (/playful|eğlenc|renkli/.test(t)) return 'playful'
-  if (!skipClassic && /klasik|classic/.test(t)) return 'classic'
+  if (!skipClassic && /klasik|classic(?:al)?/.test(t)) return 'classic'
   if (/modern/.test(t)) return 'modern'
   if (skipClassic) return 'modern'
   return ''

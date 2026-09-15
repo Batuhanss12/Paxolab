@@ -8,12 +8,15 @@ import { parseDimensions, parseStyle } from './fields'
 import {
   MODE_RULES,
   NAME_STOP_RE,
+  SECTOR_NOUN_RE,
   SECTOR_RULES,
   SKIP_UTTERANCE,
+  normaliseSectorTypos,
 } from './extractRules'
 import {
   isGenericProductName,
   isPaletteName,
+  isSectorOrSurfaceName,
   labeled,
   labeledBlock,
   looksLikeName,
@@ -23,7 +26,8 @@ import {
 
 export function extractFields(text: string, attachments: Attachment[]): Partial<DesignBrief> {
   const patch: Partial<DesignBrief> = {}
-  const raw = text.trim()
+  // "Elektornik kutu" is a mistyped category, not a brand called Elektornik.
+  const raw = normaliseSectorTypos(text.trim())
   if (!raw || SKIP_UTTERANCE.test(raw)) {
     if (attachments.length) {
       const logos = attachments.filter((a) => a.kind === 'logo')
@@ -99,14 +103,37 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
     const wordCount = cut.split(/\s+/).filter(Boolean).length
     const shortOpen = wordCount <= 8 || /^\S+(?:\s+\S+){0,3}\s+için\b/i.test(cut)
     if (shortOpen) {
-      const words = cut.split(/\s+/).filter((w) => {
+      const rawWords = cut.split(/\s+/).filter(Boolean)
+      const words = rawWords.filter((w) => {
         const token = w.replace(/[:\-–]+$/g, '')
         return !isPaletteName(token) && !NAME_STOP_RE.test(token)
       })
+      // "Elite Brew kutu" / "Hair Process etiket": a leading run of capitalised name tokens
+      // followed only by category words is one multi-word brand, not brand + product.
+      const run: string[] = []
+      for (const w of rawWords) {
+        const token = w.replace(/[:\-–,]+$/g, '')
+        const nameLike =
+          /^[A-ZÇĞİÖŞÜ][\wÇĞİÖŞÜçğıöşü.'’&-]*$/.test(token) &&
+          !NAME_STOP_RE.test(token) &&
+          !isPaletteName(token) &&
+          !isGenericProductName(token) &&
+          !SKIP_UTTERANCE.test(token)
+        if (!nameLike) break
+        run.push(token)
+      }
+      const after = rawWords.slice(run.length).map((w) => w.replace(/[,.:;]+$/g, '').toLocaleLowerCase('tr'))
+      const onlyCategoryAfter =
+        after.length > 0 && after.every((w) => NAME_STOP_RE.test(w) || SECTOR_NOUN_RE.test(w) || isGenericProductName(w))
+      let brandRun = 0
+      if (!patch.brandName && run.length >= 2 && run.length <= 3 && onlyCategoryAfter) {
+        patch.brandName = run.join(' ')
+        brandRun = run.length
+      }
       if (!patch.brandName && words[0] && looksLikeName(words[0]) && !SKIP_UTTERANCE.test(words[0])) {
         patch.brandName = words[0]
       }
-      if (!patch.productName && !brand && !spokenBrand && words.length > 1) {
+      if (!patch.productName && !brand && !spokenBrand && words.length > 1 && !brandRun) {
         const rest = words.slice(1).find(
           (w) =>
             looksLikeName(w) &&
@@ -131,7 +158,7 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
       patch.brandName = parts.slice(0, -1).join(' ')
     }
   }
-  if (patch.brandName && (SKIP_UTTERANCE.test(patch.brandName) || isPaletteName(patch.brandName))) {
+  if (patch.brandName && (SKIP_UTTERANCE.test(patch.brandName) || isPaletteName(patch.brandName) || isSectorOrSurfaceName(patch.brandName))) {
     delete patch.brandName
   }
 

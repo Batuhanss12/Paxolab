@@ -3,13 +3,17 @@
  * Records what/why/score/source/version. Does not paint, does not mutate knowledge.
  * Persist is best-effort IndexedDB; generate must not throw if storage fails.
  */
-import type { DesignBrief, DesignOverrides, DesignSpec, PreflightReport } from '../../types'
+import type { DesignBrief, DesignOverrides, DesignSpec, FieldSource, PreflightReport } from '../../types'
 import { idbGetMemory, idbPutMemory } from '../../storage'
 import { assetLanguageFor } from '../artwork/assetLanguage'
 import { lastCompositionSearch, type CompositionSearchDebug } from '../artwork/compositionCandidates'
 import type { CompositionScore } from '../artwork/compositionStrategy'
+import { briefUsedLlm } from '../briefProvenance'
 import { kitGradeSkipsOverlay } from '../designSystem/conceptKitAlignment'
+import { activeModelConfig, type LlmModelConfig } from '../llm/provider'
 import type { CritiqueReport } from './CritiqueEngine'
+import { critiqueDesign, type DesignCritique } from './DesignCritic'
+import { brandScopeKey } from './DesignKnowledgeStore'
 import type { DesignPlan } from './DesignPlan'
 
 export const DESIGN_BRAIN_VERSION = '1.0'
@@ -100,6 +104,8 @@ export type DesignDecisionLog = {
     style?: string
     surface?: string
     positioning?: string
+    /** Hashed brand key (brandScopeKey) — brand-scope learning without brand PII. */
+    brandKey?: string
   }
   intent: {
     style: string
@@ -116,9 +122,33 @@ export type DesignDecisionLog = {
   candidates: LoggedCandidate[]
   winner?: { id: string; score: number; why: WinnerWhy }
   criticHints: { action: string; topic: string }[]
+  /** Structured critic findings for this revision. */
+  critiques: DesignCritique[]
   preflightPass: boolean
   outcome: DesignOutcome
   feedback: StructuredFeedback[]
+  /** Active knowledge version when generated and the rule ids that shaped the brief. */
+  knowledgeVersion: number
+  appliedKnowledge: string[]
+  /** Model configuration in play; null when heuristics answered everything. */
+  model: LlmModelConfig | null
+  /** Which semantic steps actually used the model for this revision. */
+  llmUsed: { briefExtract: boolean; feedback: boolean; critique: boolean; direction?: boolean }
+  /** Per-field brief sources — inferred values stay distinguishable from user fact. */
+  briefSources: Partial<Record<string, FieldSource>>
+  /** Studio direction when the reference-level path painted this revision. */
+  studio?: StudioDecision
+}
+
+/** Closed-vocabulary studio choices — what the learning engine aggregates on. */
+export type StudioDecision = {
+  archetype: string
+  background: string
+  temperament: string
+  typePairing: string
+  source: 'heuristic' | 'llm' | 'knowledge' | 'user'
+  collisions: number
+  minTextMm: number
 }
 
 let logs: DesignDecisionLog[] = []
@@ -318,6 +348,22 @@ export type CaptureGenerateInput = {
   copyPatch?: Partial<DesignSpec['copy']>
   feedback?: StructuredFeedback[]
   search?: CompositionSearchDebug
+  /** Full preflight when available — the critic reads fail/warn items. */
+  preflightReport?: PreflightReport
+  knowledgeVersion?: number
+  appliedKnowledge?: string[]
+  /** True when the LLM classified this turn's feedback (heuristics otherwise). */
+  feedbackFromLlm?: boolean
+  /** Studio direction summary when overrides.studio painted this revision. */
+  studio?: StudioDecision
+  /** True when the LLM art director proposed the studio direction. */
+  directionFromLlm?: boolean
+}
+
+function briefSourcesOf(brief: DesignBrief): Partial<Record<string, FieldSource>> {
+  const out: Partial<Record<string, FieldSource>> = {}
+  for (const [key, row] of Object.entries(brief.provenance ?? {})) if (row) out[key] = row.source
+  return out
 }
 
 export function captureGenerateDecision(input: CaptureGenerateInput): DesignDecisionLog | undefined {
@@ -333,6 +379,9 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
     const assets = assetLanguageFor(plan)
     const outcome = bumpOutcome(input.designId, at, input)
     const feedback = mergeFeedback(input.designId, input.feedback)
+    const preflightReport: PreflightReport =
+      input.preflightReport ?? ('items' in input.preflight ? (input.preflight as PreflightReport) : { items: [], ...input.preflight, collisions: false })
+    const critiques = critiqueDesign({ plan, critique: input.critique, preflight: preflightReport, search: path === 'overlay' ? search : undefined })
     const entry: DesignDecisionLog = {
       designId: input.designId,
       at,
@@ -348,6 +397,7 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
         style: plan.style,
         surface: plan.surface,
         positioning: plan.positioning,
+        brandKey: brandScopeKey(input.brief.brandName) || undefined,
       },
       intent: {
         style: plan.designIntent.style,
@@ -381,9 +431,21 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
           }
         : undefined,
       criticHints: input.critique.hints.map((hint) => ({ action: hint.action, topic: hint.topic })),
+      critiques,
       preflightPass: outcome.preflightPass,
       outcome,
       feedback,
+      knowledgeVersion: input.knowledgeVersion ?? 0,
+      appliedKnowledge: [...(input.appliedKnowledge ?? [])],
+      model: activeModelConfig(),
+      llmUsed: {
+        briefExtract: briefUsedLlm(input.brief),
+        feedback: !!input.feedbackFromLlm,
+        critique: false,
+        direction: !!input.directionFromLlm,
+      },
+      briefSources: briefSourcesOf(input.brief),
+      studio: input.studio,
     }
     logs = [...logs, entry].slice(-LIMIT)
     void persist()
@@ -393,13 +455,23 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
   }
 }
 
-export function patchLatestLog(designId: string, patch: Partial<Pick<DesignDecisionLog, 'outcome' | 'feedback'>>): void {
+export function patchLatestLog(
+  designId: string,
+  patch: Partial<Pick<DesignDecisionLog, 'outcome' | 'feedback' | 'critiques' | 'llmUsed'>>,
+): void {
   try {
     for (let i = logs.length - 1; i >= 0; i--) {
       if (logs[i].designId !== designId) continue
       const nextOutcome = patch.outcome ?? logs[i].outcome
       const nextFeedback = patch.feedback ?? logs[i].feedback
-      logs[i] = { ...logs[i], outcome: nextOutcome, feedback: nextFeedback, preflightPass: nextOutcome.preflightPass }
+      logs[i] = {
+        ...logs[i],
+        outcome: nextOutcome,
+        feedback: nextFeedback,
+        critiques: patch.critiques ?? logs[i].critiques,
+        llmUsed: patch.llmUsed ?? logs[i].llmUsed,
+        preflightPass: nextOutcome.preflightPass,
+      }
       sessionOutcomes.set(designId, nextOutcome)
       sessionFeedback.set(designId, nextFeedback)
       void persist()

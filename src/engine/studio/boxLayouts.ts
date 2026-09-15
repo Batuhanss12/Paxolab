@@ -1,0 +1,465 @@
+/**
+ * Box archetypes — front hero + back information + side manifesto + top/bottom brand + flaps.
+ * Panel-local coordinates; every element goes through the ledger.
+ */
+import {
+  barcodeBlock,
+  benefitColumn,
+  benefitRow,
+  brandMark,
+  brandPill,
+  chip,
+  claimBand,
+  cornerBrackets,
+  hairline,
+  legalColumn,
+  markKindFor,
+  monogramLockup,
+  netQuantity,
+  notesTable,
+  nutritionTable,
+  nutritionTableHeight,
+  paragraph,
+  pictogramRow,
+  pictogramsFor,
+  productStack,
+  qrPlaceholder,
+  qualityBadge,
+  spacedLine,
+  stackedLockup,
+  stackedWords,
+  thinDoubleFrame,
+  titleCard,
+  verticalBrand,
+  type Section,
+} from './anatomy'
+import { ground, paintBackground } from './backgrounds'
+import { darken, isDark, lighten, mix } from './color'
+import { backHeaders, nutritionRows, scentPyramid, usageLine } from './copyBank'
+import { paintLandscapeWindowFace } from './labelLayouts'
+import { cityLine, marginFor, type LayoutCtx } from './layoutContext'
+import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
+import type { BoxArchetype, StudioPalette } from './types'
+
+/** Sides / top / flaps use the "deep" surface of the direction: navy for ink-wash, black for dark-luxe, marble for marble. */
+function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
+  if (archetype === 'ink-wash') return p.accent2
+  if (archetype === 'landscape-window') return p.ground
+  if (archetype === 'botanical-card') return p.accent2
+  return p.ground
+}
+
+function deepInk(p: StudioPalette, archetype: BoxArchetype): string {
+  const g = deepGround(p, archetype)
+  if (archetype === 'landscape-window') return p.ink
+  return isDark(g) ? (archetype === 'botanical-card' ? '#ffffff' : p.accent) : p.cardInk
+}
+
+/* ------------------------------------------------------------------ fronts */
+
+function darkLandscape(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [ground(w, h, d.palette.ground)]
+  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { uid: ctx.uid, span: 0.66 }))
+  const ink = d.palette.ink
+  const accent = d.palette.accent
+  const lock = stackedLockup(ledger, d, w / 2, h * 0.08, w - m * 2, copy.brand, '', { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent })
+  parts.push(lock.markup)
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.015, w - m * 2, copy.product, { color: accent, accent, category: d.categoryLine, max: Math.min(6.5, w * 0.085) })
+  parts.push(stack.markup)
+  // tagline above the foot
+  const tagY = h * 0.86
+  parts.push(spacedLine(ledger, w / 2, tagY, d.taglineLine, Math.max(1.6, Math.min(2.2, w * 0.03)), accent, w - m * 2))
+  // foot row: volume left · spray chip right
+  const footY = h - m * 0.9
+  const vs = Math.max(1.8, Math.min(2.4, w * 0.032))
+  if (d.volumeLine) parts.push(netQuantity(ledger, m, footY, d.volumeLine, vs, ink, 'start'))
+  const right = d.chips[1] ?? d.chips[0]
+  if (right) {
+    const lines = wrapByWidth(right, w * 0.42, 1.3, 'sans', 2, 0.35)
+    let ly = footY - (lines.length - 1) * 1.9
+    for (const line of lines) {
+      parts.push(spacedLine(ledger, w - m, ly, line, 1.3, ink, w * 0.42, 'end'))
+      ly += 1.9
+    }
+  }
+  return parts.join('')
+}
+
+function inkWashFront(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { uid: ctx.uid, corner: 'bl' })]
+  const ink = d.palette.ink
+  const accent = d.palette.accent
+  parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.85))
+  const lock = stackedLockup(ledger, d, w / 2, m * 2, w - m * 3, copy.brand, cityLine(ctx.brief), { color: ink, markColor: accent, brandMax: Math.min(11, w * 0.16) })
+  parts.push(lock.markup)
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.05, w - m * 3, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.14) })
+  parts.push(stack.markup)
+  const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.5, 'sans', 3, 0.5)
+  const tag = stackedWords(ledger, w / 2, stack.bottom + h * 0.05, tagWords, 1.6, ink, w * 0.55)
+  parts.push(tag.markup)
+  // foot on the wash → card colour
+  const footY = h - m * 1.1
+  const footColor = d.palette.card
+  parts.push(spacedLine(ledger, w / 2, footY - 3.8, copy.tagline || d.chips[0] || '', 1.25, footColor, w - m * 3))
+  if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, footY, d.volumeLine, Math.max(1.8, Math.min(2.4, w * 0.032)), footColor))
+  return parts.join('')
+}
+
+function landscapeWindowFront(ctx: LayoutCtx): string {
+  // Same anatomy as the label face — the box front is just a taller canvas.
+  return paintLandscapeWindowFace(ctx, { brandMax: 10 })
+}
+
+function marbleFront(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.8 })]
+  const ink = d.palette.ink
+  const accent = d.palette.accent
+  const bx = m * 1.6
+  const bw = w - bx * 2
+  const by = h * 0.09
+  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 11) })
+  parts.push(lock.markup)
+  const bh = lock.bottom - by + 3
+  parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
+  parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, d.categoryLine, 1.5, ink, bw))
+  const stack = productStack(ledger, d, w / 2, h * 0.7, w - m * 2, copy.product, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) })
+  parts.push(stack.markup)
+  if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
+  return parts.join('')
+}
+
+function botanicalCardFront(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
+  const ink = d.palette.ink
+  const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6)
+  parts.push(pill.markup)
+  const cardW = w - m * 2
+  const cardY = Math.max(pill.box.y + pill.box.h + h * 0.14, h * 0.4)
+  const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, { prefix: d.productPrefix })
+  parts.push(card.markup)
+  const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
+  parts.push(band.markup)
+  const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, Math.max(1.6, Math.min(2.3, cardW * 0.045)), 'sans', ink, 2, 'middle')
+  parts.push(sentence.markup)
+  if (d.volumeLine) parts.push(netQuantity(ledger, m, h - m * 0.9, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink, 'start'))
+  return parts.join('')
+}
+
+function diagonalTechFront(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const ink = d.palette.ink
+  const accent = d.palette.accent
+  // brand small top-left, monogram top-right
+  const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4, 1.8, 'sans-heavy', 0.2)
+  parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2 }))
+  ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, 'sans-heavy', bSize * 0.2), bSize)
+  const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent)
+  parts.push(mono.markup)
+  // product light + heavy, left aligned, mid
+  const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
+  const first = words.length > 1 ? words.slice(0, -1).join(' ') : ''
+  const last = words[words.length - 1] ?? ''
+  const colW = w - m * 2
+  const titleMax = Math.min(9, colW * 0.16)
+  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8, 'sans-heavy', 0.02))
+  let y = Math.max(mono.bottom + 6, h * 0.42)
+  if (first) {
+    parts.push(textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 }))
+    ledger.text('product-light', m, y, textWidth(first, tSize, 'sans-light', tSize * 0.02), tSize)
+    y += tSize * 1.05
+  }
+  parts.push(textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 }))
+  ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
+  y += tSize * 0.6
+  const catSize = Math.max(1.7, tSize * 0.36)
+  parts.push(textEl({ x: m, y: y + catSize * 1.2, text: d.categoryLine, size: catSize, face: 'sans', fill: accent, tracking: catSize * 0.3 }))
+  ledger.text('category', m, y + catSize * 1.2, textWidth(d.categoryLine, catSize, 'sans', catSize * 0.3), catSize)
+  y += catSize * 2.6
+  let cx = m
+  for (const c of d.chips.slice(0, 2)) {
+    const el = chip(ledger, d, cx, y, c, { color: ink, size: Math.max(1.4, Math.min(1.9, w * 0.024)) })
+    if (cx + el.w > w - m) break
+    parts.push(el.markup)
+    cx += el.w + 2
+  }
+  // foot: quality badge left, volume right
+  const badge = qualityBadge(ledger, d, m + 14, h - m - 5.2, d.locale === 'en' ? 'PREMIUM QUALITY' : 'PREMIUM KALİTE', '', accent)
+  parts.push(badge.markup)
+  if (d.volumeLine) parts.push(netQuantity(ledger, w - m, h - m * 0.9, d.volumeLine, Math.max(1.8, Math.min(2.4, w * 0.03)), ink, 'end'))
+  return parts.join('')
+}
+
+export function paintBoxFront(ctx: LayoutCtx): string {
+  switch (ctx.d.archetype as BoxArchetype) {
+    case 'ink-wash':
+      return inkWashFront(ctx)
+    case 'landscape-window':
+      return landscapeWindowFront(ctx)
+    case 'marble-frame':
+      return marbleFront(ctx)
+    case 'botanical-card':
+      return botanicalCardFront(ctx)
+    case 'diagonal-tech':
+      return diagonalTechFront(ctx)
+    case 'dark-landscape':
+    default:
+      return darkLandscape(ctx)
+  }
+}
+
+/* -------------------------------------------------------------------- back */
+
+export function paintBoxBack(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const arche = d.archetype as BoxArchetype
+  const light = arche === 'ink-wash' || arche === 'landscape-window'
+  const bg = light ? d.palette.card : arche === 'marble-frame' ? d.palette.ground : arche === 'botanical-card' ? d.palette.ground : d.palette.ground
+  const ink = light ? d.palette.cardInk : d.palette.ink
+  const accent = arche === 'botanical-card' ? '#ffffff' : d.palette.accent
+  const parts: string[] = [ground(w, h, bg)]
+  if (arche === 'marble-frame') parts.push(paintBackground('marble', w, h, { ...d.palette, accent: mix(d.palette.accent, bg, 0.6) }, d.seed + 7, { uid: `${ctx.uid}-b`, intensity: 0.3 }))
+  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.55, accent, 0.8))
+  const hdr = backHeaders(d.locale)
+  // header lockup
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', { color: ink, markColor: accent, brandMax: Math.min(7, w * 0.1) })
+  parts.push(lock.markup)
+  const stack = productStack(ledger, d, w / 2, lock.bottom + 1, w - m * 3, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(4.6, w * 0.065) })
+  parts.push(stack.markup)
+  let y = stack.bottom + 3
+  // story
+  const bodySize = Math.max(1.35, Math.min(1.8, w * 0.024))
+  const story = paragraph(ledger, m * 1.4, y, w - m * 2.8, d.story, bodySize, pairingFaces(d.typePairing).body, ink, 4, 'middle')
+  parts.push(story.markup)
+  y = story.bottom + 2
+  const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
+  // footer reserve: pictos + barcode + producer
+  const barH = Math.max(7, Math.min(10, h * 0.07))
+  const footTop = h - m - barH - 9
+  // sector block: notes (perfume) / nutrition + benefits (food) / spec chips (electronics)
+  if (d.sector === 'perfume') {
+    const pyramid = scentPyramid(ctx.brief)
+    if (pyramid && footTop - y > 22) {
+      parts.push(spacedLine(ledger, w / 2, y + 1.6, d.taglineLine, 1.5, accent, w - m * 3))
+      const notes = notesTable(ledger, m, y + 4.5, w - m * 2, hdr.notes, pyramid, ink, accent)
+      parts.push(notes.markup)
+      y = notes.bottom + 1.5
+    }
+  } else if ((d.sector === 'food' || d.sector === 'beverage') && footTop - y > 26) {
+    const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
+    parts.push(row.markup)
+    y = row.bottom + 2.5
+    const tableSize = Math.max(1.2, Math.min(1.45, w * 0.018))
+    // leave room for at least the usage / warnings block under the table
+    const tableLimit = footTop - Math.max(9, (footTop - y) * 0.35)
+    if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
+      const tableW = Math.min(w - m * 2, Math.max(28, (w - m * 2) * 0.58))
+      const table = nutritionTable(ledger, m, y, tableW, hdr.nutrition, nutritionRows(d.locale, blob), ink, tableSize, tableLimit)
+      parts.push(table.markup)
+      // right of the table: ingredients + storage
+      if (w - m * 2 - tableW > 18) {
+        const rx = m + tableW + 2.5
+        const right = legalColumn(ledger, rx, y, w - m - rx, table.bottom, [
+          { title: hdr.ingredients, body: copy.ingredients },
+          { title: hdr.storage, body: usageLine('food', d.locale) },
+        ], ink, { size: Math.max(1.15, Math.min(1.4, w * 0.017)), titleColor: ink })
+        parts.push(right.markup)
+        y = Math.max(table.bottom, right.bottom) + 1.5
+      } else {
+        y = table.bottom + 1.5
+      }
+    }
+  } else if (d.sector === 'electronics' && footTop - y > 14) {
+    let cx = m
+    for (const c of d.chips.slice(0, 3)) {
+      const el = chip(ledger, d, cx, y, c, { color: ink, size: Math.max(1.3, Math.min(1.7, w * 0.02)) })
+      if (cx + el.w > w - m) break
+      parts.push(el.markup)
+      cx += el.w + 1.8
+    }
+    y += 6
+  } else if (footTop - y > 22) {
+    const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 3), accent, { labelColor: ink, r: Math.min(3.4, w * 0.055) })
+    parts.push(row.markup)
+    y = row.bottom + 2.5
+  }
+  // legal sections (the gate reads KULLANIM / INGREDIENTS / DIRECTIONS here)
+  const sections: Section[] = [
+    ...(d.sector === 'food' || d.sector === 'beverage' ? [] : [{ title: hdr.ingredients, body: copy.ingredients }]),
+    { title: hdr.usage, body: usageLine(d.sector, d.locale) },
+    { title: hdr.warnings, body: copy.warnings },
+  ]
+  const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: Math.max(1.2, Math.min(1.5, w * 0.019)), anchor: 'middle', titleColor: accent === ink ? ink : accent })
+  parts.push(legal.markup)
+  // footer: pictos left, volume middle, barcode right
+  const rowY = h - m - barH - 5.5
+  const picS = Math.max(3.8, Math.min(5.5, barH * 0.62))
+  const pics = pictogramsFor(d).slice(0, 4)
+  const pic = pictogramRow(ledger, m, rowY + (barH - picS) / 2 - 1.6, picS, pics, ink, ctx.paoMonths)
+  parts.push(pic.markup)
+  const barW = Math.min(w * 0.4, 30)
+  const barX = w - m - barW
+  parts.push(barcodeBlock(ledger, barX, rowY, barW, barH - 3.2, copy.barcode, ink, !isDark(bg)))
+  const vs = Math.max(1.5, Math.min(2.1, w * 0.025))
+  const volX = m + pic.w + 2
+  const volW = d.volumeLine ? textWidth(d.volumeLine, vs, 'sans', vs * 0.06) : 0
+  const qrRoom = d.sector === 'food' && barX - picS - 3 - (volX + volW) > 2.5
+  if (d.volumeLine && volX + volW < barX - 2.5) {
+    parts.push(netQuantity(ledger, volX, rowY + barH * 0.52, d.volumeLine, vs, ink, 'start'))
+  }
+  if (qrRoom) parts.push(qrPlaceholder(ledger, barX - picS - 3, rowY, picS, ink, d.seed + 3))
+  // producer + origin
+  const pSize = Math.max(1.15, Math.min(1.45, w * 0.017))
+  const producer = paragraph(ledger, m, h - m - 3.2, w - m * 2, `${copy.manufacturer} · ${copy.address}`, pSize, 'sans', ink, 1, 'middle')
+  parts.push(producer.markup)
+  parts.push(spacedLine(ledger, w / 2, h - m * 0.55, d.locale === 'en' ? 'MADE IN TÜRKİYE' : 'TÜRKİYE’DE ÜRETİLDİ', 1.1, ink, w - m * 2))
+  return parts.join('')
+}
+
+/* -------------------------------------------------------------------- sides */
+
+export function paintBoxSide(ctx: LayoutCtx, index: number): string {
+  const { w, h, d, ledger, copy } = ctx
+  const arche = d.archetype as BoxArchetype
+  const bg = deepGround(d.palette, arche)
+  const ink = deepInk(d.palette, arche)
+  const m = marginFor(w, h)
+  const parts: string[] = []
+  if (arche === 'dark-landscape' || arche === 'marble-frame') {
+    parts.push(paintBackground('marble', w, h, { ...d.palette, ground: bg, accent: mix(d.palette.accent, bg, arche === 'dark-landscape' ? 0.35 : 0) }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
+  } else if (arche === 'botanical-card') {
+    parts.push(paintBackground('botanical', w, h, { ...d.palette, ground: bg, accent2: darken(bg, 0.08) }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
+  } else if (arche === 'diagonal-tech') {
+    parts.push(paintBackground('circuit', w, h, d.palette, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}` }))
+  } else {
+    parts.push(ground(w, h, bg))
+  }
+  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, Math.min(m * 0.5, 1.8), d.palette.accent, 0.75))
+  // Three side regimes: full column (≥ 28 mm wide, ≥ 60 mm tall), compact (≥ 20 mm wide), spine (rotated text only).
+  const full = w >= 28 && h >= 60
+  const compact = !full && w >= 20 && h >= 40
+  const colW = w - m * 1.6
+  if (arche === 'landscape-window' && full) {
+    // Anadolu Bal side: brand small, "DOĞADAN SOFRANIZA" words, benefit column with icons
+    const lock = stackedLockup(ledger, d, w / 2, m, colW, copy.brand, '', { color: ink, brandMax: Math.min(4.6, w * 0.16), markColor: d.palette.accent })
+    parts.push(lock.markup)
+    const words = stackedWords(ledger, w / 2, lock.bottom + 3, d.manifesto.slice(0, 3), Math.min(2.2, w * 0.075), d.palette.accent2, colW)
+    parts.push(words.markup)
+    const colBottom = h - m * 3.4
+    const col = benefitColumn(ledger, d, m * 0.8, words.bottom + 4, colW, d.benefits.slice(0, 4), d.palette.accent, Math.max(2, h * 0.02), colBottom)
+    parts.push(col.markup)
+    if (col.bottom < h - 16) {
+      const tagSize = Math.min(2.4, w * 0.08)
+      const tagY = Math.min(h - m * 3.2, col.bottom + 6)
+      const tag = d.taglineLine.toLocaleLowerCase('tr')
+      parts.push(textEl({ x: w / 2, y: tagY, text: tag, size: tagSize, face: 'serif-italic', fill: d.palette.accent2, anchor: 'middle', italic: true }))
+      ledger.text('side-tagline', w / 2, tagY, textWidth(tag, tagSize, 'serif-italic'), tagSize, 'middle')
+    }
+    parts.push(verticalBrand(ledger, w - m * 0.55, h / 2, `${copy.brand} · ${d.categoryLine}`, 1.5, mix(ink, bg, 0.5), h - m * 4))
+    return parts.join('')
+  }
+  if (full) {
+    // GUESS / Rebull side: mark top, stacked manifesto middle, brand bottom, spine text along the edge
+    const r = Math.min(w * 0.14, 5)
+    parts.push(brandMark(markKindFor(d), w / 2, m + r * 1.2, r, ink, copy.brand))
+    ledger.add('element', 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.4)
+    const words = stackedWords(ledger, w / 2, h * 0.36, d.manifesto.slice(0, 4), Math.min(2.4, w * 0.085), ink, colW)
+    parts.push(words.markup)
+    const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), colW, Math.min(3.6, w * 0.12), 1.6, pairingFaces(d.typePairing).brand, 0.16)
+    const by = h - m * 2.4
+    parts.push(textEl({ x: w / 2, y: by, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: brandSize * 0.16 }))
+    ledger.text('side-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.16), brandSize, 'middle')
+    parts.push(spacedLine(ledger, w / 2, by + 2.6, cityLine(ctx.brief), 1.1, mix(ink, bg, 0.3), colW))
+    parts.push(verticalBrand(ledger, w - m * 0.55, h * 0.5, d.categoryLine, 1.4, mix(ink, bg, 0.55), h * 0.5))
+    return parts.join('')
+  }
+  if (compact) {
+    // mark on top, brand near the foot, rotated product line between them
+    const r = Math.min(w * 0.16, 3.6)
+    parts.push(brandMark(markKindFor(d), w / 2, m + r * 1.1, r, ink, copy.brand))
+    ledger.add('element', 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.2)
+    const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), colW, Math.min(2.8, w * 0.12), 1.4, pairingFaces(d.typePairing).brand, 0.14)
+    const by = h - m * 1.6
+    parts.push(textEl({ x: w / 2, y: by, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: brandSize * 0.14 }))
+    ledger.text('side-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.14), brandSize, 'middle')
+    const spineTop = m + r * 2.6
+    const spineBottom = by - brandSize * 1.6
+    parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, `${copy.product} · ${d.categoryLine}`, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineBottom - spineTop))
+    return parts.join('')
+  }
+  // narrow spine: one line along the long axis (rotated when the panel is taller than wide)
+  const spineText = `${copy.brand}  ·  ${copy.product}`
+  if (h >= w) {
+    parts.push(verticalBrand(ledger, w / 2, h / 2, spineText, Math.min(3, w * 0.4), ink, h - m * 3, pairingFaces(d.typePairing).brand))
+  } else {
+    const s = Math.min(3, h * 0.4)
+    parts.push(spacedLine(ledger, w / 2, h / 2 + s * 0.35, spineText, s, ink, w - m * 3, 'middle', pairingFaces(d.typePairing).brand))
+  }
+  return parts.join('')
+}
+
+/* ------------------------------------------------------------- top / bottom */
+
+export function paintBoxTop(ctx: LayoutCtx, which: 'top' | 'bottom'): string {
+  const { w, h, d, ledger, copy } = ctx
+  const arche = d.archetype as BoxArchetype
+  const bg = deepGround(d.palette, arche)
+  const ink = deepInk(d.palette, arche)
+  const m = marginFor(w, h)
+  const parts: string[] = [ground(w, h, bg)]
+  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, Math.min(m * 0.5, 1.6), d.palette.accent, 0.7))
+  const tall = h >= 14
+  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w - m * 2, Math.min(tall ? 5 : 3.4, h * 0.34), 1.6, pairingFaces(d.typePairing).brand, 0.16)
+  const by = h / 2 + (tall ? -0.5 : brandSize * 0.35)
+  parts.push(textEl({ x: w / 2, y: by, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: brandSize * 0.16 }))
+  ledger.text('top-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.16), brandSize, 'middle')
+  if (tall) {
+    const line = which === 'top' ? cityLine(ctx.brief) : d.taglineLine
+    parts.push(spacedLine(ledger, w / 2, by + 3.2, line, 1.2, mix(ink, bg, 0.25), w - m * 2))
+  }
+  return parts.join('')
+}
+
+export function paintBoxFlap(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const arche = d.archetype as BoxArchetype
+  const bg = deepGround(d.palette, arche)
+  const ink = mix(deepInk(d.palette, arche), bg, 0.2)
+  const parts: string[] = [ground(w, h, bg)]
+  if (h >= 8 && w >= 16) {
+    const s = Math.min(2.6, h * 0.28)
+    const text = copy.brand.toLocaleUpperCase('tr')
+    parts.push(textEl({ x: w / 2, y: h / 2 + s * 0.35, text, size: s, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: s * 0.2 }))
+    ledger.text('flap-brand', w / 2, h / 2 + s * 0.35, textWidth(text, s, pairingFaces(d.typePairing).brand, s * 0.2), s, 'middle')
+  }
+  return parts.join('')
+}
+
+export function paintGlue(ctx: LayoutCtx): string {
+  const arche = ctx.d.archetype as BoxArchetype
+  return ground(ctx.w, ctx.h, lighten(deepGround(ctx.d.palette, arche), 0.02))
+}
+
+export function paintPlain(ctx: LayoutCtx): string {
+  const arche = ctx.d.archetype as BoxArchetype
+  const bg = deepGround(ctx.d.palette, arche)
+  const parts = [ground(ctx.w, ctx.h, bg)]
+  if (ctx.w > 20 && ctx.h > 10) {
+    const s = Math.min(3, ctx.h * 0.25)
+    parts.push(textEl({ x: ctx.w / 2, y: ctx.h / 2 + s * 0.35, text: ctx.copy.brand.toLocaleUpperCase('tr'), size: s, face: 'sans', fill: mix(deepInk(ctx.d.palette, arche), bg, 0.3), anchor: 'middle', tracking: s * 0.2 }))
+    ctx.ledger.text('plain-brand', ctx.w / 2, ctx.h / 2 + s * 0.35, textWidth(ctx.copy.brand, s, 'sans', s * 0.2), s, 'middle')
+  }
+  return parts.join('')
+}
+
+export { hairline }

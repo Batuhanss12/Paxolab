@@ -113,11 +113,22 @@
     "id": "fm-box-tuck-universal",
     "title": "Evrensel tuck-end",
     "templateGroup": "universal-tuck",
-    "sectors": ["kozmetik", "gıda", "elektronik"],
+    "sectors": ["kozmetik", "gıda", "elektronik", "bebek", "sağlık", "temizlik"],
     "subProducts": ["genel"],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
     "defaultsMm": { "L": 80, "W": 40, "H": 120 },
+    "status": "active"
+  },
+  {
+    "id": "fm-label-universal",
+    "title": "Evrensel şişe etiketi",
+    "templateGroup": "universal-label",
+    "sectors": ["bebek", "sağlık", "temizlik", "ev", "içecek", "kozmetik", "gıda"],
+    "subProducts": ["genel"],
+    "structureId": "flat-label",
+    "packagingMode": "label",
+    "defaultsMm": { "L": 80, "W": 0, "H": 110 },
     "status": "active"
   },
   {

@@ -3,8 +3,9 @@
  * The user never sees this object. Maps onto DesignBrief + existing director cues.
  * Character is not a visualLanguageFor key; editorial/restrained → luxury-tighten.
  */
-import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, PackagingMode } from '../types'
+import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, FieldProvenance, PackagingMode } from '../types'
 import type { DirectorCue } from './brain/DesignPlan'
+import { confidenceNumber } from './briefProvenance'
 import { extractFields } from './extractFields'
 import { nextMissing } from './conversationAsk'
 import { mergeBrief } from './fields'
@@ -21,11 +22,11 @@ export type DesignUnderstanding = {
 }
 
 const DUAL_SURFACE =
-  /kutu\s*(ve|ile|\+)\s*(şişe\s*)?(etiket|label)|(etiket|label)\s*(ve|ile|\+)\s*kutu/i
+  /kutu\s*(ve|ile|\+)\s*(şişe\s*)?(etiket|label)|(etiket|label)\s*(ve|ile|\+)\s*kutu|\bbox\s*(and|\+|&)\s*(bottle\s*)?label|\blabel\s*(and|\+|&)\s*box/i
 
 export function parseDirectorCue(text: string): DirectorCue | '' {
   const t = text.toLocaleLowerCase('tr')
-  if (/editorial|editöryal|editoryal|restrained|sakin dur|çok klasik görünmesin/.test(t)) {
+  if (/editorial|editöryal|editoryal|restrained|sakin dur|çok klasik görünmesin|\bcalm\b|\bquiet\b/.test(t)) {
     return 'luxury-tighten'
   }
   if (/daha\s*(sade|minimal)|bol\s*hava/.test(t)) return 'open-air'
@@ -39,17 +40,46 @@ export function parseDirectorCue(text: string): DirectorCue | '' {
 export function deliverablesOf(text: string, packagingMode: PackagingMode | ''): PackagingMode[] {
   if (DUAL_SURFACE.test(text)) return ['box', 'label']
   if (packagingMode === 'label' || /etiket|label/i.test(text)) return ['label']
-  if (packagingMode === 'box' || /\bkutu\b/i.test(text)) return ['box']
+  if (packagingMode === 'box' || /\bkutu\b|\bbox\b/i.test(text)) return ['box']
   return packagingMode ? [packagingMode] : []
 }
 
 function avoidedOf(text: string): string[] {
   const t = text.toLocaleLowerCase('tr')
   const out: string[] = []
-  if (/klasik\s*(görünmesin|olmasın|durmasın)|çok\s*klasik|overly\s*classic|klasik\s*değil/.test(t)) {
+  if (
+    /klasik\s*(görünmesin|olmasın|durmasın)|çok\s*klasik|overly\s*classic(?:al)?|not\s*(too\s*)?classic(?:al)?|too\s*classic(?:al)?|klasik\s*değil/.test(
+      t,
+    )
+  ) {
     out.push('classic')
   }
   if (/ucuz\s*(da\s*)?durmasın|cheap|jenerik|generic/.test(t)) out.push('cheap')
+  return out
+}
+
+/** English brand phrasing: "for Luma", "a brand called Luma", "named Luma". Capitalised token only. */
+function englishBrandOf(text: string): string {
+  const m =
+    text.match(/\bbrand\s+(?:called|named)\s+["“]?([A-Z][\w'’-]{1,28})["”]?/) ||
+    text.match(/\b(?:called|named)\s+["“]?([A-Z][\w'’-]{1,28})["”]?/) ||
+    text.match(/\bfor\s+["“]?([A-Z][\w'’-]{1,28})["”]?(?=[\s.,;!]|$)/)
+  if (!m) return ''
+  const name = m[1].trim()
+  if (/^(Modern|Minimal|Luxury|Premium|Classic|Eco|Playful|Cream|Gold|Black|White|Green|Serum|Box|Label|The|And|Not)$/i.test(name)) return ''
+  return name
+}
+
+function provenanceFor(patch: Partial<DesignBrief>, confidence: DesignUnderstanding['confidence'], inferred: string[]): Partial<Record<string, FieldProvenance>> {
+  const out: Partial<Record<string, FieldProvenance>> = {}
+  for (const [key, value] of Object.entries(patch)) {
+    if (key === 'provenance' || value === undefined || value === '' || (Array.isArray(value) && !value.length)) continue
+    if (inferred.includes(key)) {
+      out[key] = { source: 'HEURISTIC_INFERRED', confidence: 0.8 }
+      continue
+    }
+    out[key] = { source: 'USER_EXPLICIT', confidence: confidenceNumber(confidence[key]) }
+  }
   return out
 }
 
@@ -86,18 +116,35 @@ export function understandUtterance(
   const extracted = extractFields(text, attachments)
   const directorCue = parseDirectorCue(text) || (brief.directorCue as DirectorCue | undefined) || ''
   const patch: Partial<DesignBrief> = { ...extracted }
-  if (directorCue && !patch.directorCue) patch.directorCue = directorCue
+  const inferred: string[] = []
+  if (!patch.brandName && !brief.brandName) {
+    const english = englishBrandOf(text)
+    if (english) patch.brandName = english
+  }
+  if (!patch.packagingMode && DUAL_SURFACE.test(text)) patch.packagingMode = 'box'
+  if (directorCue && !patch.directorCue) {
+    patch.directorCue = directorCue
+    inferred.push('directorCue')
+  }
   const avoided = avoidedOf(text)
   const avoidMotifs = motifAvoidTokens(avoided)
-  if (avoidMotifs.length) patch.avoidMotifs = avoidMotifs
+  if (avoidMotifs.length) {
+    patch.avoidMotifs = avoidMotifs
+    inferred.push('avoidMotifs')
+  }
+  if (patch.styleType && !/lüks|luxury|premium|minimal|sade|eco|organik|playful|eğlenc|\bmodern\b|klasik|classic/i.test(text)) {
+    inferred.push('styleType')
+  }
   const merged = mergeBrief(brief, patch)
   const deliverables = deliverablesOf(text, merged.packagingMode)
   if (deliverables.length) patch.deliverables = deliverables
+  const confidence = confidenceFor(text, patch)
+  patch.provenance = provenanceFor(patch, confidence, inferred)
   const resolved = mergeBrief(brief, patch)
   const missing = nextMissing(resolved)
   return {
     patch,
-    confidence: confidenceFor(text, patch),
+    confidence,
     missingCritical: missing ? [missing] : [],
     deliverables: deliverables.length ? deliverables : resolved.packagingMode ? [resolved.packagingMode] : [],
     avoided,
@@ -133,7 +180,7 @@ export function isDualDeliverable(brief: DesignBrief): boolean {
 }
 
 export function cueOverridePatch(brief: DesignBrief): Partial<DesignOverrides> {
-  const patch: Partial<DesignOverrides> = {}
+  const patch: Partial<DesignOverrides> = { studio: true }
   if (brief.directorCue) patch.directorCue = brief.directorCue
   if (brief.styleType === 'luxury') patch.premium = true
   return patch

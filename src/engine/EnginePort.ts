@@ -14,6 +14,8 @@ export type GenerateInput = {
   logoHref?: string
   /** FAZ 5 — classified revision talk. Does not select art. */
   feedback?: StructuredFeedback[]
+  /** True when the LLM (not heuristics) produced `feedback`; recorded for model versioning. */
+  feedbackFromLlm?: boolean
 }
 
 export interface EnginePort {

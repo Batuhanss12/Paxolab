@@ -35,6 +35,14 @@ export function looksLikeSector(value: string): boolean {
   return SECTOR_NOUN_RE.test(value.trim())
 }
 
+/** Sector / surface nouns (and common typos) must never become a brand lockup. */
+export function isSectorOrSurfaceName(value: string): boolean {
+  const t = value.trim()
+  if (!t || t.length > 32) return false
+  if (looksLikeSector(t) || isGenericProductName(t)) return true
+  return /^(elektro?ni[kc]|elektornik|teknoloji|gıda|gida|kozmetik|kahve|coffee|kutu|etiket|label|box)$/i.test(t)
+}
+
 /** Sector nouns are not SKU names — lockup must not read PARFÜM under EAU DE PARFUM. */
 export function isGenericProductName(value: string): boolean {
   return GENERIC_PRODUCT_RE.test(value.trim())

@@ -6,7 +6,7 @@
  */
 import type { DesignBrief, DesignOverrides, DesignSpec, StyleType } from '../../types'
 import type { IterateIntent } from '../iterate/parseIntent'
-import { llmComplete, parseLlmJson } from './client'
+import { getLlmProvider } from './provider'
 
 interface LlmIntentResponse {
   styleType?: StyleType
@@ -49,23 +49,20 @@ export async function parseIntentWithLlm(
   currentStyle: StyleType | '',
   brief: DesignBrief,
 ): Promise<IterateIntent | null> {
-  if (!import.meta.env.VITE_FORMA_LLM_URL) return null
+  const provider = getLlmProvider()
+  if (!provider.enabled()) return null
 
   const userPrompt = `Current style: ${currentStyle || '(none)'}
 Current brand: ${brief.brandName || '(none)'}
 Current product: ${brief.productName || '(none)'}
 User request: "${text}"`
 
-  const content = await llmComplete(
-    [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ],
-    { json: true, timeoutMs: 8000 },
-  )
-  if (!content) return null
-
-  const parsed = parseLlmJson<LlmIntentResponse>(content)
+  const parsed = await provider.generateStructured<LlmIntentResponse>({
+    task: 'intent',
+    system: SYSTEM_PROMPT,
+    user: userPrompt,
+    timeoutMs: 8000,
+  })
   if (!parsed) return null
 
   const overridePatch: Partial<DesignOverrides> = {}

@@ -10,7 +10,7 @@ import { assignAwaiting } from './assignAwaiting'
 import { extractFields } from './extractFields'
 import { labeled, looksLikeSector, sameName } from './extractHelpers'
 
-export { isPaletteName, sameName, looksLikeSector, isGenericProductName } from './extractHelpers'
+export { isPaletteName, sameName, looksLikeSector, isGenericProductName, isSectorOrSurfaceName } from './extractHelpers'
 export { extractFields } from './extractFields'
 export { assignAwaiting } from './assignAwaiting'
 

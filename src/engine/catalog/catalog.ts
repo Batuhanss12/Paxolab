@@ -102,7 +102,13 @@ export function pickTemplate(brief: DesignBrief): FormaTemplate {
     const exact = getTemplate(brief.templateId)
     if (exact) return exact
   }
-  return filterTemplates(brief)[0] ?? activeTemplates(true)[0]
+  const matched = filterTemplates(brief)[0]
+  if (matched) return matched
+  // Sector without a dedicated carton (bebek, sağlık, temizlik…): stay on the requested
+  // surface instead of falling back to a perfume box for a label brief.
+  const mode = brief.packagingMode || 'box'
+  const universal = getTemplate(mode === 'label' ? 'fm-label-universal' : 'fm-box-tuck-universal')
+  return universal ?? activeTemplates(true).find((t) => t.packagingMode === mode) ?? activeTemplates(true)[0]
 }
 
 export function structureFromTemplate(template: FormaTemplate): StructureId {

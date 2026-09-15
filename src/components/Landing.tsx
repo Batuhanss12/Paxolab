@@ -8,6 +8,9 @@ const CHIPS = [
   { label: 'Kutu', text: 'Kutu' },
   { label: 'Etiket', text: 'Etiket' },
   { label: 'Kutu + Etiket', text: 'Kutu + Etiket' },
+  { label: 'Kozmetik', text: 'Kozmetik kutusu' },
+  { label: 'Kahve', text: 'Kahve kutusu' },
+  { label: 'Elektronik', text: 'Elektronik kutusu' },
   { label: 'Henüz emin değilim', text: 'Henüz emin değilim' },
 ] as const
 

@@ -9,7 +9,7 @@ import { emptyBrief, mergeBrief, uid } from './engine/fields'
 import { styleLabel } from './engine/styles'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
-import { generateCopyWithLlm } from './engine/llm'
+import { generateCopyWithLlm, interpretFeedback, studioDirectionWithLlm } from './engine/llm'
 import { analyzeReferenceImageRich, analysisToBriefPatch } from './engine/referenceAnalysis'
 import { ApiError, loadAuth, type AuthUser } from './api/client'
 import {
@@ -26,7 +26,7 @@ import {
   syncSessionToCloud,
 } from './projectStore'
 import { getActiveProjectId, loadProject, saveProject } from './storage'
-import { initDecisionLog, initDesignMemory } from './engine/brain'
+import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
 import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
@@ -101,6 +101,8 @@ export default function App() {
   useEffect(() => {
     initDesignMemory()
     initDecisionLog()
+    initDesignKnowledge()
+    initLearning()
     const activeId = getActiveProjectId()
     if (!activeId) return
     void loadProject(activeId)
@@ -232,7 +234,9 @@ export default function App() {
 
   const runGenerate = useCallback((
     nextBrief: DesignBrief,
-    result?: Partial<Pick<ReturnType<typeof runConversation>, 'overridePatch' | 'copyPatch' | 'feedback'>>,
+    result?: Partial<Pick<ReturnType<typeof runConversation>, 'overridePatch' | 'copyPatch' | 'feedback'>> & {
+      feedbackFromLlm?: boolean
+    },
   ) => {
     dispatch({ type: 'generation.start' })
     const attemptId = uid()
@@ -273,16 +277,34 @@ export default function App() {
         await new Promise((r) => window.setTimeout(r, 720))
 
         const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
-        // Pre-fetch LLM copy in parallel with the artificial delay.
-        const llmCopy = await generateCopyWithLlm(nextBrief).catch(() => null)
+        const surface = nextBrief.packagingMode === 'label' ? 'label' : 'box'
+        const [llmCopy, llmDirection] = await Promise.all([
+          generateCopyWithLlm(nextBrief).catch(() => null),
+          studioDirectionWithLlm({
+            brand: nextBrief.brandName,
+            product: nextBrief.productName,
+            sector: nextBrief.sector,
+            subProduct: nextBrief.subProduct,
+            style: nextBrief.styleType,
+            surface,
+            colors: nextBrief.colors,
+            avoid: nextBrief.avoidMotifs,
+          }).catch(() => null),
+        ])
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
-          overridePatch: { blankCanvas: false, ...result?.overridePatch },
+          overridePatch: {
+            blankCanvas: false,
+            studio: true,
+            ...result?.overridePatch,
+            ...(llmDirection ? { direction: { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' } } : {}),
+          },
           copyPatch: result?.copyPatch,
           llmCopy,
           logoHref: logo?.dataUrl,
           feedback: result?.feedback,
+          feedbackFromLlm: result?.feedbackFromLlm,
         })
         designRef.current = next
         briefRef.current = next.brief
@@ -334,6 +356,7 @@ export default function App() {
           brief: mergedBrief,
           awaiting: awaitingRef.current,
           hasDesign: !!designRef.current,
+          state: stateRef.current.conversation,
         })
 
         briefRef.current = result.brief
@@ -343,6 +366,7 @@ export default function App() {
           brief: result.brief,
           awaiting: result.awaiting,
           showTemplates: result.showTemplates,
+          conversation: result.state,
         })
 
         const replies = [...result.replies]
@@ -365,6 +389,19 @@ export default function App() {
 
         if (result.shouldGenerate) {
           publish()
+          if (designRef.current) {
+            // Revision turn: LLM may enrich the heuristic classification; it never edits SVG.
+            void interpretFeedback(user.content)
+              .then((interpreted) =>
+                runGenerate(result.brief, {
+                  ...result,
+                  feedback: interpreted.feedback.length ? interpreted.feedback : result.feedback,
+                  feedbackFromLlm: interpreted.llmUsed,
+                }),
+              )
+              .catch(() => runGenerate(result.brief, result))
+            return
+          }
           runGenerate(result.brief, result)
           return
         }

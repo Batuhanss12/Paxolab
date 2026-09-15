@@ -14,7 +14,8 @@ const LS_PREFIX = 'forma.project.'
 export type PersistedSession = Pick<
   AppState,
   'phase' | 'messages' | 'brief' | 'awaiting' | 'design' | 'designHistory' | 'designFuture' | 'tab' | 'inputsOpen'
->
+> &
+  Partial<Pick<AppState, 'conversation'>>
 
 export interface ProjectMeta {
   id: string
@@ -56,6 +57,7 @@ export function toPersistedSession(state: AppState): PersistedSession {
     designFuture: state.designFuture.slice(0, 10),
     tab: state.tab,
     inputsOpen: state.inputsOpen,
+    conversation: state.conversation,
   }
 }
 

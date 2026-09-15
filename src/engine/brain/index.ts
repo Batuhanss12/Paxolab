@@ -38,8 +38,54 @@ export {
   outcomeOf,
   resetDecisionLogs,
 } from './DesignDecisionLog'
-export type { DesignDecisionLog, DesignOutcome, StructuredFeedback } from './DesignDecisionLog'
+export type { DesignDecisionLog, DesignOutcome, StructuredFeedback, FeedbackType, FeedbackStrength } from './DesignDecisionLog'
 export { noteDownload, noteExport, noteFeedback, noteFinalized, noteRating } from './OutcomeTracker'
+export { critiqueDesign, critiqueAsFeedback, worstSeverity } from './DesignCritic'
+export type { DesignCritique, CritiqueCategory, CritiqueSeverity, CritiqueEvidence } from './DesignCritic'
+export {
+  DESIGN_KNOWLEDGE_SCHEMA,
+  activeKnowledge,
+  addManualKnowledge,
+  brandScopeKey,
+  initDesignKnowledge,
+  knowledgeRule,
+  knowledgeRuleId,
+  knowledgeRules,
+  knowledgeVersion,
+  knowledgeVersions,
+  resetDesignKnowledge,
+  rollbackKnowledge,
+  transitionKnowledge,
+  upsertKnowledgeRule,
+} from './DesignKnowledgeStore'
+export type {
+  DesignKnowledgeRule,
+  KnowledgeCondition,
+  KnowledgeRecommendation,
+  KnowledgeScope,
+  KnowledgeScopeLevel,
+  KnowledgeState,
+  KnowledgeVersionEntry,
+} from './DesignKnowledgeStore'
+export {
+  LEARNING_THRESHOLDS,
+  aggregateObservations,
+  approveKnowledge,
+  deprecateKnowledge,
+  deriveKnowledgeCandidates,
+  feedbackRecommendation,
+  initLearning,
+  listObservations,
+  observeFeedback,
+  observeOutcome,
+  patternConfidence,
+  resetLearning,
+  runLearningCycle,
+  validateKnowledge,
+} from './LearningEngine'
+export type { LearningPattern, Observation } from './LearningEngine'
+export { applyKnowledgeToBrief, matchingKnowledge } from './applyKnowledge'
+export type { AppliedKnowledge } from './applyKnowledge'
 export {
   lookupVocabulary,
   resolveSubProduct,

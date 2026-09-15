@@ -5,8 +5,8 @@
 import type { AwaitingKey, DesignBrief } from '../types'
 import { parseCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
-import { SKIP_UTTERANCE } from './extractRules'
-import { isGenericProductName, isPaletteName, looksLikeName, looksLikeSector } from './extractHelpers'
+import { NAME_STOP_RE, SKIP_UTTERANCE, normaliseSectorTypos } from './extractRules'
+import { isGenericProductName, isPaletteName, isSectorOrSurfaceName, looksLikeName, looksLikeSector } from './extractHelpers'
 
 export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Partial<DesignBrief> {
   if (!awaiting || awaiting === 'templateId') return {}
@@ -62,12 +62,20 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
     return { copyLocale: parseCopyLocale(cleaned) ?? (/en|eng|english|ingiliz/i.test(cleaned) ? 'en' : 'tr') }
   }
   if (awaiting === 'sector') {
-    if (looksLikeSector(cleaned) && cleaned.split(/\s+/).length <= 2) return { sector: cleaned }
+    const canonical = normaliseSectorTypos(cleaned)
+    if (looksLikeSector(canonical) && canonical.split(/\s+/).length <= 2) return { sector: canonical }
     return {}
   }
   if (awaiting === 'brandName') {
+    if (SKIP_UTTERANCE.test(cleaned)) return {}
     const words = cleaned.split(/\s+/).filter(Boolean)
-    if (words.length <= 3 && looksLikeName(cleaned) && !isGenericProductName(cleaned) && !isPaletteName(cleaned)) {
+    const canonical = normaliseSectorTypos(cleaned)
+    // "Elektronik" / "kahve" answering a brand prompt is a sector, not a lockup.
+    if (isSectorOrSurfaceName(canonical) || isSectorOrSurfaceName(cleaned)) {
+      return looksLikeSector(canonical) ? { sector: canonical } : {}
+    }
+    const stopWord = words.length === 1 && NAME_STOP_RE.test(words[0])
+    if (words.length <= 3 && !stopWord && looksLikeName(cleaned) && !isGenericProductName(cleaned) && !isPaletteName(cleaned)) {
       return { brandName: cleaned }
     }
     return {}

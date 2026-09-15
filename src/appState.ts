@@ -7,6 +7,7 @@ import type {
   DesignSpec,
   TabId,
 } from './types'
+import { emptyConversationState, type ConversationState } from './engine/conversationState'
 import { emptyBrief } from './engine/fields'
 
 export type AppState = {
@@ -25,6 +26,8 @@ export type AppState = {
   inputsOpen: boolean
   tab: TabId
   showTemplates: boolean
+  /** Asked / answered ledger — the chat never re-asks what the user already settled. */
+  conversation: ConversationState
 }
 
 export type AppAction =
@@ -36,7 +39,7 @@ export type AppAction =
   | { type: 'pending.remove'; id: string }
   | { type: 'pending.clear' }
   | { type: 'messages.add'; messages: ChatMessage[] }
-  | { type: 'conversation'; brief: DesignBrief; awaiting: AwaitingKey | null; showTemplates: boolean }
+  | { type: 'conversation'; brief: DesignBrief; awaiting: AwaitingKey | null; showTemplates: boolean; conversation?: ConversationState }
   | { type: 'brief'; brief: DesignBrief }
   | { type: 'awaiting'; awaiting: AwaitingKey | null }
   | { type: 'typing'; typing: boolean }
@@ -65,6 +68,7 @@ export function createInitialAppState(): AppState {
     inputsOpen: true,
     tab: 'vektor',
     showTemplates: false,
+    conversation: emptyConversationState(),
   }
 }
 
@@ -96,6 +100,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         brief: action.brief,
         awaiting: action.awaiting,
         showTemplates: action.showTemplates,
+        conversation: action.conversation ?? state.conversation,
       }
     case 'brief':
       return { ...state, brief: action.brief }

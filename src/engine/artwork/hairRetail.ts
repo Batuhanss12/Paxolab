@@ -17,8 +17,12 @@ export function hairStepLabel(locale: CopyLocale): string {
 
 export function hairBilingualLine(product: string, _locale: CopyLocale): { display: string; sub: string } {
   const key = product.trim().toLocaleLowerCase('tr')
-  if (/keratin/.test(key)) return { display: 'KERATIN REPAIR', sub: 'Onarıcı bakım' }
-  if (/şampuan|sampuan|shampoo/.test(key)) return { display: 'DAILY CLEANSE', sub: 'Günlük temizlik' }
-  if (product.trim()) return { display: product.toLocaleUpperCase('en-US'), sub: 'Onarıcı bakım' }
+  // Only a bare category word gets the canned line; a named SKU ("Dailygrow Shampoo") stays as typed.
+  if (/^(keratin|keratin\s*(bakım|bakımı|onarım|onarımı|repair))$/.test(key)) return { display: 'KERATIN REPAIR', sub: 'Onarıcı bakım' }
+  if (/^(şampuan|sampuan|shampoo)$/.test(key)) return { display: 'DAILY CLEANSE', sub: 'Günlük temizlik' }
+  if (product.trim()) {
+    const sub = /şampuan|sampuan|shampoo/.test(key) ? 'Günlük temizlik' : 'Onarıcı bakım'
+    return { display: product.toLocaleUpperCase('en-US'), sub }
+  }
   return { display: 'KERATIN REPAIR', sub: 'Onarıcı bakım' }
 }
