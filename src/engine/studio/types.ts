@@ -18,6 +18,7 @@ export type LabelArchetype =
   | 'line-scene' // DNA Pharma — white, two-tone title, line-drawn scene in the lower half
   | 'landscape-badge' // Anadolu Bal — cream + thin double frame, landscape window, dark product badge
   | 'ink-panel' // Rebull Noir — cream panel, ink wash rising from a corner with metallic veins
+  | 'wave-panel' // cleaning / care — horizontal wave bands, stacked sans lockup
 
 /** Box front archetypes. Back / side / top anatomy follows the same direction. */
 export type BoxArchetype =
@@ -27,8 +28,13 @@ export type BoxArchetype =
   | 'marble-frame' // marble field carton with corner-bracket lockup
   | 'botanical-card' // vivid tone-on-tone botanical carton with a white title card
   | 'diagonal-tech' // charcoal with diagonal blocks — electronics / pro care
+  | 'line-scene' // DNA Pharma system on a carton — white field, two-tone title, line-drawn scene
+  | 'wave-panel' // cleaning carton — wave bands, stacked sans lockup
 
 export type StudioArchetype = LabelArchetype | BoxArchetype
+
+/** Shared visual system across box + label (companion generate keeps this key). */
+export type StudioFamily = 'marble' | 'botanical' | 'line-scene' | 'wave' | 'landscape' | 'ink' | 'dark-luxe' | 'tech'
 
 export type BackgroundFamily =
   | 'marble'
@@ -81,7 +87,7 @@ export type StudioPalette = {
   muted: string
 }
 
-export type DirectionSource = 'heuristic' | 'llm' | 'knowledge' | 'user'
+export type DirectionSource = 'heuristic' | 'llm' | 'knowledge' | 'user' | 'family'
 
 export type DesignDirection = {
   surface: StudioSurface

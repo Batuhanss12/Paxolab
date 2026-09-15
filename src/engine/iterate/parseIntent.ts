@@ -1,4 +1,5 @@
 import type { DesignBrief, DesignOverrides, DesignSpec, StyleType } from '../../types'
+import type { DirectionHints, StudioFamily } from '../studio/types'
 
 export type IterateIntent = {
   overridePatch: Partial<DesignOverrides>
@@ -88,10 +89,38 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
 
   if (/daha\s*koyu|darker/i.test(text)) {
     overridePatch.paletteShift = 'dark'
+    const direction: DirectionHints = { ...overridePatch.direction, temperament: 'dark-luxe', source: 'user' }
+    overridePatch.direction = direction
     notes.push('Zemin daha derin.')
   } else if (/daha\s*sıcak|warm/i.test(text)) {
     overridePatch.paletteShift = 'warm'
     notes.push('Paleti sıcak tarafa aldım.')
+  }
+
+  if (/daha\s*mermer|mermer\s*(yap|olsun)|more\s*marble/i.test(text)) {
+    briefPatch.studioFamily = 'marble' satisfies StudioFamily
+    overridePatch.direction = { ...overridePatch.direction, background: 'marble', source: 'user', rationale: ['Kullanıcı: daha mermer.'] }
+    notes.push('Görsel aileyi mermer sistemine aldım.')
+  } else if (/daha\s*botanik|botanik\s*(yap|olsun)/i.test(text)) {
+    briefPatch.studioFamily = 'botanical'
+    overridePatch.direction = { ...overridePatch.direction, background: 'botanical', source: 'user', rationale: ['Kullanıcı: daha botanik.'] }
+    notes.push('Görsel aileyi botanik karta aldım.')
+  } else if (/daha\s*(dalga|wave)/i.test(text)) {
+    briefPatch.studioFamily = 'wave'
+    overridePatch.direction = { ...overridePatch.direction, background: 'wave', source: 'user', rationale: ['Kullanıcı: daha dalga.'] }
+    notes.push('Görsel aileyi dalga paneline aldım.')
+  }
+
+  if (/daha\s*klinik/i.test(text)) {
+    overridePatch.direction = { ...overridePatch.direction, temperament: 'clean-clinical', source: 'user' }
+    notes.push('Yönü klinik ve sade tuttum.')
+  } else if (/daha\s*(sakin|sessiz|editorial)/i.test(text)) {
+    overridePatch.direction = { ...overridePatch.direction, temperament: 'light-luxe', source: 'user' }
+    if (!overridePatch.directorCue) overridePatch.directorCue = 'luxury-tighten'
+    notes.push('Yönü daha sakin ve editorial aldım.')
+  } else if (/daha\s*canlı|daha\s*vivid/i.test(text)) {
+    overridePatch.direction = { ...overridePatch.direction, temperament: 'vivid-mono', source: 'user' }
+    notes.push('Yönü daha canlı tek tona aldım.')
   }
 
   if (/baskıya\s*hazırla|üretime\s*gönder|print\s*ready/i.test(text)) {
@@ -141,7 +170,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
 }
 
 export function isIteration(text: string): boolean {
-  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad/i.test(
+  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga/i.test(
     text,
   )
 }

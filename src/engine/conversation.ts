@@ -1,4 +1,4 @@
-import type { Attachment, AwaitingKey, DesignBrief, EngineResult } from '../types'
+import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, EngineResult } from '../types'
 import { pickTemplate } from './catalog/catalog'
 import { applyExtraction, sameName } from './extract'
 import { askCopy, askRetryCopy, nextMissing } from './conversationAsk'
@@ -25,8 +25,17 @@ import {
 import { briefSummary, isCoreReady, mergeBrief } from './fields'
 import { parseFeedback } from './iterate/feedbackParser'
 import { isIteration, parseIntent } from './iterate/parseIntent'
+import { hintsFromFamily } from './studio/family'
 
 export { askCopy, nextMissing } from './conversationAsk'
+
+function studioGeneratePatch(brief: DesignBrief): Partial<DesignOverrides> {
+  const patch = cueOverridePatch(brief)
+  const surface = brief.packagingMode === 'label' ? 'label' : 'box'
+  const family = hintsFromFamily(brief.studioFamily, surface)
+  if (family) patch.direction = { ...patch.direction, ...family }
+  return patch
+}
 
 function withUnderstanding(brief: DesignBrief, text: string, attachments: Attachment[]): DesignBrief {
   const understanding = understandUtterance(text, brief, attachments)
@@ -54,7 +63,7 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
     ],
     shouldGenerate: true,
     showTemplates: false,
-    overridePatch: cueOverridePatch(next),
+    overridePatch: studioGeneratePatch(next),
     copyPatch: {},
     note: 'generate',
     feedback: parseFeedback(text),

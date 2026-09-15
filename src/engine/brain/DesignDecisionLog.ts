@@ -12,7 +12,7 @@ import { briefUsedLlm } from '../briefProvenance'
 import { kitGradeSkipsOverlay } from '../designSystem/conceptKitAlignment'
 import { activeModelConfig, type LlmModelConfig } from '../llm/provider'
 import type { CritiqueReport } from './CritiqueEngine'
-import { critiqueDesign, type DesignCritique } from './DesignCritic'
+import { critiqueDesign, type DesignCritique, type StudioLedgerEvidence } from './DesignCritic'
 import { brandScopeKey } from './DesignKnowledgeStore'
 import type { DesignPlan } from './DesignPlan'
 
@@ -356,6 +356,8 @@ export type CaptureGenerateInput = {
   feedbackFromLlm?: boolean
   /** Studio direction summary when overrides.studio painted this revision. */
   studio?: StudioDecision
+  /** Ledger evidence for the studio critic (kit hints are skipped when this is set). */
+  studioLedger?: StudioLedgerEvidence
   /** True when the LLM art director proposed the studio direction. */
   directionFromLlm?: boolean
 }
@@ -381,7 +383,13 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
     const feedback = mergeFeedback(input.designId, input.feedback)
     const preflightReport: PreflightReport =
       input.preflightReport ?? ('items' in input.preflight ? (input.preflight as PreflightReport) : { items: [], ...input.preflight, collisions: false })
-    const critiques = critiqueDesign({ plan, critique: input.critique, preflight: preflightReport, search: path === 'overlay' ? search : undefined })
+    const critiques = critiqueDesign({
+      plan,
+      critique: input.critique,
+      preflight: preflightReport,
+      search: path === 'overlay' && !input.studioLedger ? search : undefined,
+      studioLedger: input.studioLedger,
+    })
     const entry: DesignDecisionLog = {
       designId: input.designId,
       at,

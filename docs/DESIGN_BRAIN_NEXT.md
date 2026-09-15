@@ -2,7 +2,11 @@
 
 Tarih: 15 Eyl 2026. Faz 2 freeze durur (29 set-0 concept/hero/chrome/lockup/pattern, opticalY/brandY, overlay skip style-only).
 
-Karar zinciri: **Konuşma → Understanding → Intent → VL → AD → Asset Language → havuz → ranking → Composition → mevcut painter**.
+**Stüdyo aşaması (sohbet generate):** TASARIM REF DNA + `overrides.studio`. Sonraki yönler: [`docs/STUDIO_STAGE_AUDIT.md`](STUDIO_STAGE_AUDIT.md) (S0–S9). Bu dosya kit/VL freeze defteridir.
+
+Karar zinciri (kit job): **Konuşma → Understanding → Intent → VL → AD → Asset Language → havuz → ranking → Composition → mevcut painter**.
+
+Karar zinciri (sohbet): **Brief → Knowledge → hintsFromBrief + LLM DirectionHints → resolveDirection → composeStudioArtwork**. Kit `createPlan` log’da kalır, yüzeyi boyamaz.
 
 Öğrenme halkası (hedef): **LLM → Design Brain → Generate → Evaluate → Feedback → Learn → Design Knowledge → Design Brain**. LLM çizmez; kural yazmaz; SVG fine-tune yok; erken RL yok.
 
@@ -24,6 +28,9 @@ Karar zinciri: **Konuşma → Understanding → Intent → VL → AD → Asset L
 | **CRITIC-2** `DesignCritique {category,target,severity,issue,suggestedDirection,evidence}` | Kapandı |
 | **FAZ 6** Design Knowledge (scope user/brand/global, confidence, sampleCount, state, version) | Kapandı — otomatik kural yok |
 | **FAZ 7** Learning Gate (observation → aggregate → candidate → validate → approve) + rollback | Kapandı — A/B park |
+| **S0** Stüdyo aşaması geliştirme auditi | Kapandı — `docs/STUDIO_STAGE_AUDIT.md` |
+| **S1** Stüdyo font yükle (Cormorant / Montserrat / Great Vibes) | Kapandı — `index.css` + SVG `studio-fonts` |
+| **S2** Stüdyo critic (ledger) + kit repair stüdyoda yok | Kapandı — `DesignCritic` `studioLedger` |
 | Overlay skip’i dile bağlamak | Park — freeze delinmesi |
 | Character/density dil anahtarı; cue ikinci quiet-line | Park |
 | Painter stroke/scale/frame; GraphicLibrary; budget / lockup Y | Park |

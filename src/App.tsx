@@ -291,6 +291,7 @@ export default function App() {
             avoid: nextBrief.avoidMotifs,
           }).catch(() => null),
         ])
+        const familyLocked = !!nextBrief.studioFamily || !!result?.overridePatch?.direction?.archetype
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
@@ -298,7 +299,13 @@ export default function App() {
             blankCanvas: false,
             studio: true,
             ...result?.overridePatch,
-            ...(llmDirection ? { direction: { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' } } : {}),
+            ...(llmDirection
+              ? {
+                  direction: familyLocked
+                    ? { ...llmDirection, ...result?.overridePatch?.direction, source: result?.overridePatch?.direction?.source ?? 'family' }
+                    : { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' as const },
+                }
+              : {}),
           },
           copyPatch: result?.copyPatch,
           llmCopy,

@@ -13,7 +13,7 @@ archetype must be one of: ${ALL_ARCHETYPES.join(', ')}.
 background must be one of: ${ALL_BACKGROUNDS.join(', ')}.
 temperament must be one of: ${ALL_TEMPERAMENTS.join(', ')}.
 rationale: 1 short Turkish sentence, no JSON.
-Match TASARIM REF systems: coffee → marble-frame, honey/food landscape → landscape-window, cosmetics care → card-on-art / botanical-card, perfume → dark-landscape / ink-panel, electronics → diagonal-tech.
+Match TASARIM REF systems: coffee → marble-frame, honey/food landscape → landscape-window, cosmetics care (cream/shampoo) → card-on-art / botanical-card, serum / baby / health → line-scene, cleaning → wave-panel, perfume → dark-landscape / ink-panel, electronics → diagonal-tech.
 Do not invent geometry, colours as hex, or file names.`
 
 type LlmDirection = {

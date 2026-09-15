@@ -234,14 +234,16 @@ function diagonalSplit(ctx: LayoutCtx): string {
 
 /* --------------------------------------------------------------- line-scene */
 
-function lineScene(ctx: LayoutCtx): string {
+/** DNA Pharma system — white field, two-tone title, line-drawn scene. Shared by label and box front. */
+export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } = {}): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, d.palette.ground)]
   const ink = d.palette.ink
   const accent = d.palette.accent
-  // rounded label edge
-  parts.push(`<rect x="0.4" y="0.4" width="${f(w - 0.8)}" height="${f(h - 0.8)}" rx="${f(Math.min(4, w * 0.06))}" fill="none" stroke="${mix(ink, d.palette.ground, 0.75)}" stroke-width="0.2" />`)
+  if (opts.rounded !== false) {
+    parts.push(`<rect x="0.4" y="0.4" width="${f(w - 0.8)}" height="${f(h - 0.8)}" rx="${f(Math.min(4, w * 0.06))}" fill="none" stroke="${mix(ink, d.palette.ground, 0.75)}" stroke-width="0.2" />`)
+  }
   // brand mark + brand
   const r = Math.min(w * 0.1, 6)
   parts.push(brandMark(markKindFor(d), w / 2, m + r, r, ink, copy.brand))
@@ -275,6 +277,40 @@ function lineScene(ctx: LayoutCtx): string {
     parts.push(netQuantity(ledger, w / 2, h - m * 0.9, d.volumeLine, vs, ink))
   }
   void accent
+  if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
+  return parts.join('')
+}
+
+function lineScene(ctx: LayoutCtx): string {
+  return paintLineSceneFace(ctx)
+}
+
+/* ---------------------------------------------------------------- wave-panel */
+
+/** FERAH / surface-care — horizontal wave bands, stacked sans lockup. Shared by label and box front. */
+export function paintWavePanelFace(ctx: LayoutCtx): string {
+  const { w, h, d, ledger, copy } = ctx
+  const m = marginFor(w, h)
+  const parts: string[] = [paintBackground('wave', w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const ink = d.palette.ink
+  const accent = d.palette.accent
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.5, w - m * 2, copy.brand, '', {
+    color: ink,
+    mark: true,
+    markColor: accent,
+    brandMax: Math.min(11, w * 0.16),
+  })
+  parts.push(lock.markup)
+  parts.push(spacedLine(ledger, w / 2, lock.bottom + 2.6, d.categoryLine, Math.max(1.5, Math.min(2.2, w * 0.03)), ink, w - m * 2))
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.08, w - m * 2, copy.product, {
+    color: ink,
+    accent,
+    max: Math.min(8, w * 0.11),
+  })
+  parts.push(stack.markup)
+  if (d.volumeLine) {
+    parts.push(netQuantity(ledger, w / 2, h - m * 0.9, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
+  }
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
 }
@@ -397,6 +433,8 @@ export function paintLabelFace(ctx: LayoutCtx): string {
       return diagonalSplit(ctx)
     case 'line-scene':
       return lineScene(ctx)
+    case 'wave-panel':
+      return paintWavePanelFace(ctx)
     case 'landscape-badge':
       return landscapeBadge(ctx)
     case 'ink-panel':

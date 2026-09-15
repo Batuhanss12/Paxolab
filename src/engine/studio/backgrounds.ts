@@ -85,33 +85,63 @@ function veinPath(rng: Rng, w: number, h: number, wobble: number): string {
   return d
 }
 
+/** Diagonal S-curve from an edge — Elite Brew flowing marble, not a random scribble. */
+function flowVein(rng: Rng, w: number, h: number): string {
+  const fromLeft = rng() < 0.55
+  let x = fromLeft ? -w * 0.08 : rng() * w
+  let y = fromLeft ? rng() * h : -h * 0.08
+  const dirX = fromLeft ? 1 : rng() < 0.5 ? 1 : -0.25
+  const dirY = fromLeft ? rng() - 0.32 : 1
+  let d = `M${f(x)} ${f(y)}`
+  const steps = 4 + Math.floor(rng() * 3)
+  for (let i = 0; i < steps; i++) {
+    const nx = x + dirX * w * (0.18 + rng() * 0.22) + (rng() - 0.5) * w * 0.1
+    const ny = y + dirY * h * (0.12 + rng() * 0.18) + (rng() - 0.5) * h * 0.08
+    const c1x = x + (nx - x) * 0.35 + (rng() - 0.5) * w * 0.14
+    const c1y = y + (ny - y) * 0.22 + (rng() - 0.5) * h * 0.1
+    const c2x = x + (nx - x) * 0.72 + (rng() - 0.5) * w * 0.1
+    const c2y = y + (ny - y) * 0.78 + (rng() - 0.5) * h * 0.07
+    d += ` C${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(nx)} ${f(ny)}`
+    x = nx
+    y = ny
+  }
+  return d
+}
+
 export function marble(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
   const k = opts.intensity ?? 0.8
   const parts: string[] = [ground(w, h, pal.ground)]
   const area = Math.sqrt(w * h)
   const soft = mix(pal.ground, pal.accent2, 0.22)
-  // broad soft swirls
-  const swirls = Math.round(4 + k * 5)
+  const gold = mix(pal.accent, pal.accent2, 0.25)
+  const swirls = Math.round(5 + k * 6)
   for (let i = 0; i < swirls; i++) {
     parts.push(
-      `<path d="${veinPath(rng, w, h, 0.7)}" fill="none" stroke="${soft}" stroke-opacity="${f(0.35 + rng() * 0.3)}" stroke-width="${f(area * (0.02 + rng() * 0.05))}" stroke-linecap="round" />`,
+      `<path d="${flowVein(rng, w, h)}" fill="none" stroke="${soft}" stroke-opacity="${f(0.28 + rng() * 0.28)}" stroke-width="${f(area * (0.018 + rng() * 0.045))}" stroke-linecap="round" />`,
     )
   }
-  // fine metallic veins
-  const veins = Math.round(10 + k * 12)
+  const veins = Math.round(14 + k * 16)
+  let veinMarkup = ''
   for (let i = 0; i < veins; i++) {
-    parts.push(
-      `<path d="${veinPath(rng, w, h, 0.55)}" fill="none" stroke="${pal.accent}" stroke-opacity="${f(0.35 + rng() * 0.5)}" stroke-width="${f(area * (0.0025 + rng() * 0.006))}" stroke-linecap="round" />`,
-    )
+    const flowing = rng() < 0.72
+    veinMarkup += `<path d="${flowing ? flowVein(rng, w, h) : veinPath(rng, w, h, 0.5)}" fill="none" stroke="${i % 4 === 0 ? gold : pal.accent}" stroke-opacity="${f(0.38 + rng() * 0.5)}" stroke-width="${f(area * (0.0022 + rng() * 0.0055))}" stroke-linecap="round" />`
   }
-  // flecks
-  const flecks = Math.round(area * 1.4 * k)
-  let dots = ''
+  parts.push(`<g data-texture="veins">${veinMarkup}</g>`)
+  const flecks = Math.round(area * 2.1 * k)
+  let dust = ''
   for (let i = 0; i < flecks; i++) {
-    dots += `<circle cx="${f(rng() * w)}" cy="${f(rng() * h)}" r="${f(0.08 + rng() * 0.22)}" fill="${pal.accent}" fill-opacity="${f(0.3 + rng() * 0.6)}" />`
+    const cx = rng() * w
+    const cy = rng() * h
+    if (rng() < 0.22) {
+      const rx = 0.12 + rng() * 0.38
+      const ry = 0.05 + rng() * 0.12
+      dust += `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" transform="rotate(${f(rng() * 180)} ${f(cx)} ${f(cy)})" fill="${gold}" fill-opacity="${f(0.28 + rng() * 0.55)}" />`
+    } else {
+      dust += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(0.07 + rng() * 0.2)}" fill="${pal.accent}" fill-opacity="${f(0.28 + rng() * 0.58)}" />`
+    }
   }
-  parts.push(`<g data-texture="flecks">${dots}</g>`)
+  parts.push(`<g data-texture="dust">${dust}</g>`)
   return `<g data-bg="marble">${parts.join('')}</g>`
 }
 
@@ -142,24 +172,59 @@ function broadLeaf(cx: number, cy: number, len: number, angle: number, fill: str
   return `<g transform="translate(${f(cx)} ${f(cy)}) rotate(${f(angle)})"><path d="${d}" fill="${fill}" fill-opacity="${f(opacity)}" />${rib}</g>`
 }
 
+/** Woo-style fenestrated leaf: silhouette with evenodd cutouts so layers show through. */
+function fenestratedLeaf(cx: number, cy: number, len: number, angle: number, fill: string, opacity: number, rng: Rng): string {
+  const wdt = len * 0.5
+  const body = `M0 0 C${f(-wdt * 0.12)} ${f(-len * 0.16)} ${f(-wdt)} ${f(-len * 0.38)} ${f(-wdt * 0.72)} ${f(-len * 0.68)} C${f(-wdt * 0.22)} ${f(-len * 0.94)} ${f(-wdt * 0.04)} ${f(-len)} 0 ${f(-len)} C${f(wdt * 0.04)} ${f(-len)} ${f(wdt * 0.22)} ${f(-len * 0.94)} ${f(wdt * 0.72)} ${f(-len * 0.68)} C${f(wdt)} ${f(-len * 0.38)} ${f(wdt * 0.12)} ${f(-len * 0.16)} 0 0Z`
+  let holes = ''
+  const n = 4 + Math.floor(rng() * 3)
+  for (let i = 0; i < n; i++) {
+    const t = 0.2 + (i / n) * 0.58
+    const side = i % 2 === 0 ? -1 : 1
+    const hx = side * wdt * (0.16 + rng() * 0.18)
+    const hy = -len * t
+    const rx = len * (0.035 + rng() * 0.045)
+    const ry = len * (0.05 + rng() * 0.04)
+    holes += ` M${f(hx - rx)} ${f(hy)} a${f(rx)} ${f(ry)} 0 1 0 ${f(rx * 2)} 0 a${f(rx)} ${f(ry)} 0 1 0 ${f(-rx * 2)} 0`
+  }
+  const rib = `<path d="M0 ${f(-len * 0.04)} L0 ${f(-len * 0.94)}" stroke="${fill}" stroke-opacity="${f(opacity * 0.38)}" stroke-width="${f(len * 0.013)}" fill="none" />`
+  return `<g transform="translate(${f(cx)} ${f(cy)}) rotate(${f(angle)})"><path fill-rule="evenodd" d="${body}${holes}" fill="${fill}" fill-opacity="${f(opacity)}" />${rib}</g>`
+}
+
+function edgeAnchor(rng: Rng, w: number, h: number): { cx: number; cy: number } {
+  const edge = rng()
+  const cx = edge < 0.55 ? (rng() < 0.5 ? -w * 0.08 + rng() * w * 0.28 : w * 0.74 + rng() * w * 0.3) : rng() * w
+  const cy = edge < 0.55 ? rng() * h : rng() < 0.5 ? -h * 0.06 + rng() * h * 0.28 : h * 0.7 + rng() * h * 0.34
+  return { cx, cy }
+}
+
 export function botanical(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
   const k = opts.intensity ?? 0.8
-  const deep = pal.accent2
-  const deeper = darken(pal.accent2, 0.08)
+  const tones = [pal.accent2, darken(pal.accent2, 0.07), darken(pal.accent2, 0.14), mix(pal.accent2, pal.ground, 0.22)]
   const parts: string[] = [ground(w, h, pal.ground)]
   const diag = Math.sqrt(w * w + h * h)
-  const count = Math.round(5 + k * 5)
-  for (let i = 0; i < count; i++) {
-    const edge = rng()
-    // anchor on the edges so the middle stays calmer for the card
-    const cx = edge < 0.5 ? (rng() < 0.5 ? -w * 0.05 + rng() * w * 0.25 : w * 0.8 + rng() * w * 0.25) : rng() * w
-    const cy = edge < 0.5 ? rng() * h : rng() < 0.5 ? -h * 0.05 + rng() * h * 0.25 : h * 0.75 + rng() * h * 0.3
-    const len = diag * (0.28 + rng() * 0.32)
-    const angle = rng() * 360
-    const fill = rng() < 0.5 ? deep : deeper
-    const opacity = 0.55 + rng() * 0.35
-    parts.push(rng() < 0.55 ? frond(cx, cy, len, angle, fill, opacity, rng) : broadLeaf(cx, cy, len * 0.8, angle, fill, opacity))
+  const back = Math.round(4 + k * 3)
+  const mid = Math.round(4 + k * 3)
+  const front = Math.round(2 + k * 2)
+  for (let i = 0; i < back; i++) {
+    const { cx, cy } = edgeAnchor(rng, w, h)
+    const len = diag * (0.34 + rng() * 0.28)
+    parts.push(broadLeaf(cx, cy, len, rng() * 360, tones[i % tones.length], 0.42 + rng() * 0.22))
+  }
+  let cutouts = ''
+  for (let i = 0; i < mid; i++) {
+    const { cx, cy } = edgeAnchor(rng, w, h)
+    const len = diag * (0.26 + rng() * 0.24)
+    cutouts += fenestratedLeaf(cx, cy, len, rng() * 360, tones[(i + 1) % tones.length], 0.58 + rng() * 0.28, rng)
+  }
+  parts.push(`<g data-texture="cutouts">${cutouts}</g>`)
+  for (let i = 0; i < front; i++) {
+    const { cx, cy } = edgeAnchor(rng, w, h)
+    const len = diag * (0.2 + rng() * 0.18)
+    const fill = tones[(i + 2) % tones.length]
+    const opacity = 0.62 + rng() * 0.28
+    parts.push(rng() < 0.45 ? frond(cx, cy, len, rng() * 360, fill, opacity, rng) : broadLeaf(cx, cy, len * 0.85, rng() * 360, fill, opacity))
   }
   return `<g data-bg="botanical">${parts.join('')}</g>`
 }
@@ -194,11 +259,17 @@ export function diagonal(w: number, h: number, pal: StudioPalette, seed: number,
 /* ------------------------------------------------------------- landscapes */
 
 function ridge(rng: Rng, w: number, baseY: number, amp: number, peaks: number): string {
-  let d = `M0 ${f(baseY + amp)}`
+  const ys: number[] = []
   for (let i = 0; i <= peaks; i++) {
-    const x = (i / peaks) * w
-    const y = baseY - amp * (0.2 + rng() * 0.8) * (i % 2 === 0 ? 1 : 0.35)
-    d += ` L${f(x)} ${f(y)}`
+    const taper = i === 0 || i === peaks ? 0.32 : 1
+    ys.push(baseY - amp * (0.18 + rng() * 0.82) * taper * (i % 2 === 0 ? 1 : 0.4))
+  }
+  let d = `M0 ${f(ys[0])}`
+  const step = w / peaks
+  for (let i = 1; i <= peaks; i++) {
+    const x0 = (i - 1) * step
+    const x1 = i * step
+    d += ` C${f(x0 + step * 0.42)} ${f(ys[i - 1])} ${f(x1 - step * 0.42)} ${f(ys[i])} ${f(x1)} ${f(ys[i])}`
   }
   return d
 }
@@ -232,35 +303,39 @@ export function landscapeMoon(w: number, h: number, pal: StudioPalette, seed: nu
   // moon
   const moonR = Math.min(w, sceneH) * 0.16
   const moonX = w * (0.42 + rng() * 0.16)
-  const moonY = top + sceneH * 0.34
-  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 1.9)}" fill="${glow}" fill-opacity="0.16" />`)
-  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 1.35)}" fill="${glow}" fill-opacity="0.22" />`)
+  const moonY = top + sceneH * 0.32
+  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 2.15)}" fill="${glow}" fill-opacity="0.12" />`)
+  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 1.55)}" fill="${glow}" fill-opacity="0.2" />`)
   parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR)}" fill="url(#${id}-moon)" />`)
-  // mountain ridges (far → near)
-  const layers = 3
+  // mountain ridges (far → near), cubic silhouettes
+  const layers = 4
   for (let i = 0; i < layers; i++) {
     const t = i / (layers - 1)
-    const baseY = top + sceneH * (0.5 + t * 0.2)
-    const amp = sceneH * (0.26 - t * 0.06)
-    const fill = mix(pal.ground, pal.accent, 0.3 - t * 0.11)
-    parts.push(`<path d="${ridge(rng, w, baseY, amp, 6 + i * 2)} L${f(w)} ${f(bottom)} L0 ${f(bottom)}Z" fill="${fill}" />`)
+    const baseY = top + sceneH * (0.46 + t * 0.22)
+    const amp = sceneH * (0.28 - t * 0.05)
+    const fill = mix(pal.ground, pal.accent, 0.32 - t * 0.1)
+    parts.push(`<path d="${ridge(rng, w, baseY, amp, 7 + i * 2)} L${f(w)} ${f(bottom)} L0 ${f(bottom)}Z" fill="${fill}" />`)
   }
-  // pines on the near ridge
-  const treeBase = top + sceneH * 0.74
-  for (let i = 0; i < Math.round(w / 6); i++) {
+  const treeBase = top + sceneH * 0.72
+  for (let i = 0; i < Math.round(w / 4.5); i++) {
     const x = rng() * w
-    const hgt = sceneH * (0.06 + rng() * 0.08)
-    parts.push(pine(x, treeBase + rng() * sceneH * 0.02, hgt, darken(pal.ground, 0.02), 0.95))
+    const hgt = sceneH * (0.055 + rng() * 0.09)
+    parts.push(pine(x, treeBase + rng() * sceneH * 0.03, hgt, darken(pal.ground, 0.03), 0.92 + rng() * 0.08))
   }
-  // water band with highlights
-  const waterY = top + sceneH * 0.76
-  parts.push(`<rect x="0" y="${f(waterY)}" width="${f(w)}" height="${f(bottom - waterY)}" fill="${mix(pal.ground, pal.accent, 0.1)}" />`)
+  const waterY = top + sceneH * 0.74
+  parts.push(`<path d="M0 ${f(waterY + sceneH * 0.02)} C${f(w * 0.28)} ${f(waterY - sceneH * 0.03)} ${f(w * 0.62)} ${f(waterY + sceneH * 0.04)} ${f(w)} ${f(waterY)} L${f(w)} ${f(bottom)} L0 ${f(bottom)}Z" fill="${mix(pal.ground, pal.accent, 0.12)}" />`)
+  const reflectH = sceneH * 0.16
+  parts.push(`<g data-texture="reflection">
+    <ellipse cx="${f(moonX)}" cy="${f(waterY + reflectH * 0.42)}" rx="${f(moonR * 0.42)}" ry="${f(reflectH * 0.55)}" fill="${pal.accent}" fill-opacity="0.2" />
+    <ellipse cx="${f(moonX)}" cy="${f(waterY + reflectH * 0.28)}" rx="${f(moonR * 0.22)}" ry="${f(reflectH * 0.32)}" fill="${lighten(pal.accent, 0.2)}" fill-opacity="0.28" />
+  </g>`)
   let ripples = ''
-  for (let i = 0; i < 18; i++) {
-    const y = waterY + rng() * (bottom - waterY) * 0.7
-    const x = moonX + (rng() - 0.5) * w * 0.5
-    const len = w * (0.03 + rng() * 0.1)
-    ripples += `<line x1="${f(x - len / 2)}" y1="${f(y)}" x2="${f(x + len / 2)}" y2="${f(y)}" stroke="${pal.accent}" stroke-opacity="${f(0.25 + rng() * 0.45)}" stroke-width="${f(0.12 + rng() * 0.2)}" />`
+  for (let i = 0; i < 28; i++) {
+    const near = rng() < 0.55
+    const y = waterY + rng() * (bottom - waterY) * 0.68
+    const x = moonX + (rng() - 0.5) * w * (near ? 0.28 : 0.62)
+    const len = w * (0.025 + rng() * (near ? 0.07 : 0.12))
+    ripples += `<line x1="${f(x - len / 2)}" y1="${f(y)}" x2="${f(x + len / 2)}" y2="${f(y)}" stroke="${pal.accent}" stroke-opacity="${f(0.22 + rng() * 0.5)}" stroke-width="${f(0.1 + rng() * 0.22)}" />`
   }
   parts.push(`<g data-texture="ripples">${ripples}</g>`)
   // fade to ground at the bottom so copy sits on solid colour

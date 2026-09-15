@@ -41,8 +41,9 @@ function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, br
   if (sector === 'electronics') return dark || style !== 'minimal' ? 'tech-dark' : 'clean-clinical'
   if (sector === 'food' || style === 'eco') return dark && style === 'luxury' ? 'dark-luxe' : 'natural-warm'
   if (style === 'luxury' || style === 'classic') return dark ? 'dark-luxe' : 'light-luxe'
-  if (style === 'minimal' || sector === 'health') return 'clean-clinical'
-  if (style === 'playful' || sector === 'cream' || sector === 'serum' || sector === 'baby' || sector === 'cleaning') return 'vivid-mono'
+  if (style === 'minimal' || sector === 'health' || sector === 'serum') return 'clean-clinical'
+  if (sector === 'cleaning') return 'clean-clinical'
+  if (style === 'playful' || sector === 'cream' || sector === 'baby') return 'vivid-mono'
   if (style === 'modern') return dark ? 'tech-dark' : 'clean-clinical'
   return dark ? 'dark-luxe' : 'light-luxe'
 }
@@ -160,7 +161,16 @@ function productFamilyFit(id: string, input: DirectionInput): number {
   const blob = `${input.brief.sector} ${input.brief.subProduct} ${input.brief.productName}`.toLocaleLowerCase('tr')
   if (/kahve|coffee|espresso|frappe|brew/.test(blob)) return id === 'marble-frame' ? 0.55 : id === 'dark-landscape' ? 0.1 : -0.15
   if (/\bbal\b|honey|reçel|dağ/.test(blob)) return id === 'landscape-window' || id === 'landscape-badge' ? 0.55 : -0.1
-  if (/şampuan|shampoo|krem|serum|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
+  if (/serum|ampul/.test(blob) || input.sector === 'serum') {
+    return id === 'line-scene' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
+  }
+  if (/bebek|baby/.test(blob) || input.sector === 'baby') {
+    return id === 'line-scene' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
+  }
+  if (/temizlik|deterjan/.test(blob) || input.sector === 'cleaning') {
+    return id === 'wave-panel' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.25 : 0
+  }
+  if (/şampuan|shampoo|krem|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
     return id === 'botanical-card' || id === 'card-on-art' ? 0.5 : id === 'diagonal-tech' || id === 'diagonal-split' ? 0.15 : 0
   }
   if (/parfüm|perfume|eau de/.test(blob)) return id === 'dark-landscape' || id === 'ink-wash' || id === 'ink-panel' ? 0.5 : 0
@@ -184,7 +194,21 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
     hints.archetype = label ? 'landscape-badge' : 'landscape-window'
     hints.background = 'landscape-meadow'
     hints.rationale = ['Gıda / bal — kemerli manzara penceresi.']
-  } else if (/şampuan|shampoo|krem|serum|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
+  } else if (/serum|ampul/.test(blob) || sector === 'serum') {
+    hints.archetype = 'line-scene'
+    hints.background = 'line-scene'
+    hints.temperament = 'clean-clinical'
+    hints.rationale = ['Serum — DNA Pharma klinik line-scene sistemi.']
+  } else if (/bebek|baby/.test(blob) || sector === 'baby') {
+    hints.archetype = 'line-scene'
+    hints.background = 'line-scene'
+    hints.rationale = ['Bebek — line-scene; botanik karta düşmez.']
+  } else if (/temizlik|deterjan/.test(blob) || sector === 'cleaning') {
+    hints.archetype = 'wave-panel'
+    hints.background = 'wave'
+    hints.temperament = 'clean-clinical'
+    hints.rationale = ['Temizlik — FERAH dalga paneli.']
+  } else if (/şampuan|shampoo|krem|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
     hints.archetype = label ? 'card-on-art' : 'botanical-card'
     hints.temperament = 'vivid-mono'
     hints.rationale = ['Kozmetik bakım — woo.originals botanik kart sistemi.']

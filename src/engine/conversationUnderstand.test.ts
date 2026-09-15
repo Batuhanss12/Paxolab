@@ -201,6 +201,27 @@ describe('CHAT-1 conversation understanding', () => {
     expect(label.replies.join(' ')).toMatch(/etiket/i)
   })
 
+  it('“etiketi de üret” carries the box studio family onto the label generate', () => {
+    const label = runConversation({
+      text: 'etiketi de üret',
+      attachments: [],
+      brief: mergeBrief(emptyBrief(), {
+        brandName: 'Elite Brew',
+        sector: 'gıda',
+        subProduct: 'kahve',
+        packagingMode: 'box',
+        studioFamily: 'marble',
+      }),
+      awaiting: null,
+      hasDesign: true,
+    })
+    expect(label.shouldGenerate).toBe(true)
+    expect(label.brief.packagingMode).toBe('label')
+    expect(label.brief.studioFamily).toBe('marble')
+    expect(label.overridePatch.direction?.archetype).toBe('marble-frame')
+    expect(label.overridePatch.direction?.source).toBe('family')
+  })
+
   it('classifies revision talk as structured feedback without dropping parseIntent overrides', () => {
     const turned = runConversation({
       text: 'Logo çok aşağıda.',

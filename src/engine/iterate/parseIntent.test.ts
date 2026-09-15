@@ -50,3 +50,24 @@ describe('common Turkish revision phrases', () => {
     expect(isIteration('ürün adını büyüt')).toBe(true)
   })
 })
+
+describe('studio family iteration dictionary', () => {
+  it('maps daha mermer to the marble family', () => {
+    const intent = parseIntent('daha mermer', 'luxury')
+    expect(intent.briefPatch.studioFamily).toBe('marble')
+    expect(intent.overridePatch.direction?.background).toBe('marble')
+    expect(isIteration('daha mermer')).toBe(true)
+  })
+
+  it('maps daha sakin to a quieter temperament', () => {
+    const intent = parseIntent('daha sakin', 'luxury')
+    expect(intent.overridePatch.direction?.temperament).toBe('light-luxe')
+    expect(intent.overridePatch.directorCue).toBe('luxury-tighten')
+  })
+
+  it('maps daha koyu to dark-luxe without leaving the kit palette shift', () => {
+    const intent = parseIntent('daha koyu', 'luxury')
+    expect(intent.overridePatch.paletteShift).toBe('dark')
+    expect(intent.overridePatch.direction?.temperament).toBe('dark-luxe')
+  })
+})

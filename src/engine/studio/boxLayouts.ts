@@ -36,7 +36,7 @@ import {
 import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageLine } from './copyBank'
-import { paintLandscapeWindowFace } from './labelLayouts'
+import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, marginFor, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
@@ -46,6 +46,8 @@ function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
   if (archetype === 'ink-wash') return p.accent2
   if (archetype === 'landscape-window') return p.ground
   if (archetype === 'botanical-card') return p.accent2
+  if (archetype === 'line-scene') return p.accent2
+  if (archetype === 'wave-panel') return p.accent2
   return p.ground
 }
 
@@ -211,6 +213,10 @@ export function paintBoxFront(ctx: LayoutCtx): string {
       return botanicalCardFront(ctx)
     case 'diagonal-tech':
       return diagonalTechFront(ctx)
+    case 'line-scene':
+      return paintLineSceneFace(ctx, { rounded: false })
+    case 'wave-panel':
+      return paintWavePanelFace(ctx)
     case 'dark-landscape':
     default:
       return darkLandscape(ctx)
@@ -223,12 +229,13 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const arche = d.archetype as BoxArchetype
-  const light = arche === 'ink-wash' || arche === 'landscape-window'
-  const bg = light ? d.palette.card : arche === 'marble-frame' ? d.palette.ground : arche === 'botanical-card' ? d.palette.ground : d.palette.ground
+  const light = arche === 'ink-wash' || arche === 'landscape-window' || arche === 'line-scene'
+  const bg = light ? d.palette.card : arche === 'marble-frame' ? d.palette.ground : arche === 'botanical-card' || arche === 'wave-panel' ? d.palette.ground : d.palette.ground
   const ink = light ? d.palette.cardInk : d.palette.ink
   const accent = arche === 'botanical-card' ? '#ffffff' : d.palette.accent
   const parts: string[] = [ground(w, h, bg)]
   if (arche === 'marble-frame') parts.push(paintBackground('marble', w, h, { ...d.palette, accent: mix(d.palette.accent, bg, 0.6) }, d.seed + 7, { uid: `${ctx.uid}-b`, intensity: 0.3 }))
+  if (arche === 'wave-panel') parts.push(paintBackground('wave', w, h, d.palette, d.seed + 7, { uid: `${ctx.uid}-b` }))
   if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.55, accent, 0.8))
   const hdr = backHeaders(d.locale)
   // header lockup
@@ -341,6 +348,8 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
     parts.push(paintBackground('botanical', w, h, { ...d.palette, ground: bg, accent2: darken(bg, 0.08) }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
   } else if (arche === 'diagonal-tech') {
     parts.push(paintBackground('circuit', w, h, d.palette, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}` }))
+  } else if (arche === 'wave-panel') {
+    parts.push(paintBackground('wave', w, h, { ...d.palette, ground: bg }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}` }))
   } else {
     parts.push(ground(w, h, bg))
   }

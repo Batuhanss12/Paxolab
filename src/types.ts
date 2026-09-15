@@ -101,6 +101,11 @@ export type DesignBrief = {
   avoidMotifs?: string[]
   /** Requested surfaces from conversation. Catalog omits this. Engine paints one at a time. */
   deliverables?: PackagingMode[]
+  /**
+   * Studio visual family (marble, botanical, line-scene…). Catalog omits this.
+   * Companion generate (“etiketi de üret”) reads it so box and label stay in the same DNA.
+   */
+  studioFamily?: import('./engine/studio/types').StudioFamily
   /** Per-field source + confidence. Catalog omits this; mergeBrief keeps the strongest source. */
   provenance?: Partial<Record<string, FieldProvenance>>
 }

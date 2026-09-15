@@ -104,4 +104,50 @@ describe('Design Critic — structured findings, no SVG mutation', () => {
     expect(log?.knowledgeVersion).toBe(0)
     expect(log?.appliedKnowledge).toEqual([])
   })
+
+  it('maps studio ledger collisions and type-fit without mutating SVG or applying kit lockup hints', () => {
+    const spec = new FormaLocalEngine().generate({ brief: serumBrief() })
+    const before = JSON.stringify(spec.artwork)
+    const findings = critiqueDesign({
+      plan: spec.designPlan!,
+      critique: { ...spec.critique!, hints: [{ action: 'MODIFY', topic: 'lockupClearance', note: 'kit pencere' }] },
+      preflight: {
+        ...PASSING_PREFLIGHT,
+        items: [
+          { id: 'collision', label: 'Çarpışma', detail: 'Studio ledger: brand/product', status: 'fail' },
+          { id: 'safe-zone', label: 'Güvenli alan', detail: 'ok değil', status: 'fail' },
+        ],
+      },
+      studioLedger: { collisions: ['front:brand/product'], outOfBounds: ['front:legal'], minTextMm: 0.7 },
+    })
+    expect(JSON.stringify(spec.artwork)).toBe(before)
+    expect(findings.some((row) => row.evidence.topic === 'lockupClearance')).toBe(false)
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: 'composition',
+          target: 'placement',
+          severity: 'error',
+          evidence: expect.objectContaining({ source: 'studioLedger', topic: 'collision' }),
+        }),
+        expect.objectContaining({
+          category: 'typography',
+          target: 'fit',
+          evidence: expect.objectContaining({ source: 'studioLedger', topic: 'text-overflow' }),
+        }),
+        expect.objectContaining({
+          category: 'typography',
+          target: 'type_size',
+          severity: 'error',
+          evidence: expect.objectContaining({ source: 'studioLedger', topic: 'type-fit' }),
+        }),
+        expect.objectContaining({
+          category: 'technical',
+          target: 'safe-zone',
+          evidence: expect.objectContaining({ source: 'preflight' }),
+        }),
+      ]),
+    )
+    expect(findings.some((row) => row.target === 'collision' && row.evidence.source === 'preflight')).toBe(false)
+  })
 })

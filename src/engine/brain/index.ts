@@ -41,7 +41,7 @@ export {
 export type { DesignDecisionLog, DesignOutcome, StructuredFeedback, FeedbackType, FeedbackStrength } from './DesignDecisionLog'
 export { noteDownload, noteExport, noteFeedback, noteFinalized, noteRating } from './OutcomeTracker'
 export { critiqueDesign, critiqueAsFeedback, worstSeverity } from './DesignCritic'
-export type { DesignCritique, CritiqueCategory, CritiqueSeverity, CritiqueEvidence } from './DesignCritic'
+export type { DesignCritique, CritiqueCategory, CritiqueSeverity, CritiqueEvidence, StudioLedgerEvidence } from './DesignCritic'
 export {
   DESIGN_KNOWLEDGE_SCHEMA,
   activeKnowledge,

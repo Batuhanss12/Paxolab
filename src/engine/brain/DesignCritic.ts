@@ -11,6 +11,7 @@
  */
 import type { PreflightReport } from '../../types'
 import type { CompositionSearchDebug } from '../artwork/compositionCandidates'
+import { STUDIO_FLOOR_TEXT_MM, STUDIO_MIN_TEXT_MM } from '../studio/studioPreflight'
 import type { CritiqueReport } from './CritiqueEngine'
 import type { StructuredFeedback } from './DesignDecisionLog'
 import type { DesignPlan } from './DesignPlan'
@@ -32,7 +33,7 @@ export type CritiqueCategory =
 export type CritiqueSeverity = 'info' | 'warn' | 'error'
 
 export type CritiqueEvidence = {
-  source: 'critiquePlan' | 'compositionCritic' | 'preflight' | 'llm'
+  source: 'critiquePlan' | 'compositionCritic' | 'preflight' | 'llm' | 'studioLedger'
   topic: string
   score?: number
   detail?: string
@@ -82,11 +83,21 @@ function topicMap(table: Record<string, TopicMap>, topic: string): TopicMap {
   return key ? table[key] : { category: 'composition', target: 'plan', severity: 'info', direction: 'review' }
 }
 
+const STUDIO_PREFLIGHT_SKIP = new Set(['collision', 'type-fit', 'text-overflow'])
+
+export type StudioLedgerEvidence = {
+  collisions: string[]
+  outOfBounds: string[]
+  minTextMm: number
+}
+
 export function critiqueDesign(input: {
   plan: DesignPlan
   critique: CritiqueReport
   preflight: PreflightReport
   search?: CompositionSearchDebug
+  /** Present when the studio painter ran — kit lockup/density hints do not apply. */
+  studioLedger?: StudioLedgerEvidence
 }): DesignCritique[] {
   const out: DesignCritique[] = []
   const push = (row: DesignCritique) => {
@@ -94,36 +105,80 @@ export function critiqueDesign(input: {
     out.push(row)
   }
 
-  for (const hint of input.critique.hints) {
-    if (hint.action !== 'MODIFY') continue
-    const map = topicMap(PLAN_TOPICS, hint.topic)
-    push({
-      category: map.category,
-      target: map.target,
-      severity: map.severity,
-      issue: hint.note,
-      suggestedDirection: map.direction,
-      evidence: { source: 'critiquePlan', topic: hint.topic, detail: hint.principle },
-    })
-  }
-
-  const winner = input.search?.candidates.find((c) => c.decision === 'WINNER')
-  if (winner) {
-    for (const topic of winner.issues) {
-      const map = topicMap(COMPOSITION_TOPICS, topic)
+  if (!input.studioLedger) {
+    for (const hint of input.critique.hints) {
+      if (hint.action !== 'MODIFY') continue
+      const map = topicMap(PLAN_TOPICS, hint.topic)
       push({
         category: map.category,
         target: map.target,
-        severity: winner.critic === 'REJECT' ? 'error' : map.severity,
-        issue: `Kompozisyon kritiği: ${topic} (${winner.strategy}).`,
+        severity: map.severity,
+        issue: hint.note,
         suggestedDirection: map.direction,
-        evidence: { source: 'compositionCritic', topic, score: winner.total, detail: winner.strategy },
+        evidence: { source: 'critiquePlan', topic: hint.topic, detail: hint.principle },
+      })
+    }
+
+    const winner = input.search?.candidates.find((c) => c.decision === 'WINNER')
+    if (winner) {
+      for (const topic of winner.issues) {
+        const map = topicMap(COMPOSITION_TOPICS, topic)
+        push({
+          category: map.category,
+          target: map.target,
+          severity: winner.critic === 'REJECT' ? 'error' : map.severity,
+          issue: `Kompozisyon kritiği: ${topic} (${winner.strategy}).`,
+          suggestedDirection: map.direction,
+          evidence: { source: 'compositionCritic', topic, score: winner.total, detail: winner.strategy },
+        })
+      }
+    }
+  } else {
+    const ledger = input.studioLedger
+    for (const hit of ledger.collisions.slice(0, 6)) {
+      push({
+        category: 'composition',
+        target: 'placement',
+        severity: 'error',
+        issue: `Stüdyo ledger çarpışma: ${hit}`,
+        suggestedDirection: 'separate',
+        evidence: { source: 'studioLedger', topic: 'collision', detail: hit },
+      })
+    }
+    for (const hit of ledger.outOfBounds.slice(0, 6)) {
+      push({
+        category: 'typography',
+        target: 'fit',
+        severity: 'error',
+        issue: `Stüdyo ledger taşma: ${hit}`,
+        suggestedDirection: 'fit',
+        evidence: { source: 'studioLedger', topic: 'text-overflow', detail: hit },
+      })
+    }
+    if (ledger.minTextMm > 0 && ledger.minTextMm < STUDIO_FLOOR_TEXT_MM) {
+      push({
+        category: 'typography',
+        target: 'type_size',
+        severity: 'error',
+        issue: `En küçük metin ${ledger.minTextMm.toFixed(2)} mm — bası eşiğinin altında.`,
+        suggestedDirection: 'enlarge',
+        evidence: { source: 'studioLedger', topic: 'type-fit', score: ledger.minTextMm },
+      })
+    } else if (ledger.minTextMm > 0 && ledger.minTextMm < STUDIO_MIN_TEXT_MM) {
+      push({
+        category: 'typography',
+        target: 'type_size',
+        severity: 'warn',
+        issue: `En küçük metin ${ledger.minTextMm.toFixed(2)} mm — ${STUDIO_MIN_TEXT_MM} mm hedefin altında.`,
+        suggestedDirection: 'enlarge',
+        evidence: { source: 'studioLedger', topic: 'type-fit', score: ledger.minTextMm },
       })
     }
   }
 
   for (const item of input.preflight.items) {
     if (item.status !== 'fail' && item.status !== 'warn') continue
+    if (input.studioLedger && STUDIO_PREFLIGHT_SKIP.has(item.id)) continue
     push({
       category: 'technical',
       target: item.id,

@@ -24,7 +24,7 @@ import { resolveCopyLocale } from './copyLocale'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
-import { applyStudioPreflight, composeStudioArtwork, hintsFromBrief, resolveDirection, type StudioReport } from './studio'
+import { applyStudioPreflight, composeStudioArtwork, familyOf, hintsFromBrief, hintsFromFamily, resolveDirection, type StudioReport } from './studio'
 import { studioHintsFromKnowledge } from './brain/studioKnowledge'
 
 const DEFAULT_OVERRIDES: DesignOverrides = {
@@ -161,11 +161,13 @@ export class FormaLocalEngine implements EnginePort {
       let studio: StudioReport | undefined
       if (studioOn) {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
+        const surface = kind === 'label' ? 'label' : 'box'
+        const familyHint = hintsFromFamily(planBrief.studioFamily, surface)
         const direction = resolveDirection({
           brief: planBrief,
           sector: resolveSector(brief),
           style,
-          surface: kind === 'label' ? 'label' : 'box',
+          surface,
           faceW: hero?.w ?? dieline.dimensions.L,
           faceH: hero?.h ?? dieline.dimensions.H,
           palette,
@@ -173,9 +175,10 @@ export class FormaLocalEngine implements EnginePort {
           variationIndex,
           copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },
           hints: [
-            hintsFromBrief(planBrief, resolveSector(brief), kind === 'label' ? 'label' : 'box'),
+            hintsFromBrief(planBrief, resolveSector(brief), surface),
             ...(studioKnowledge?.hints ?? []),
             ...(overrides.direction ? [overrides.direction] : []),
+            ...(familyHint ? [familyHint] : []),
           ],
         })
         const composed = composeStudioArtwork({ brief, dieline, copy, direction, system })
@@ -202,18 +205,16 @@ export class FormaLocalEngine implements EnginePort {
       const faceLayer = artwork.layers.find(
         (l: { panelId: string }) => l.panelId === heroId || l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront',
       )
-      const critique = critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup)
+      const critique = studioOn
+        ? { ...critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup), needsRepair: false }
+        : critiquePlan(plan, scoreDesign({ artwork, preflight, copy, kind }, plan), faceLayer?.markup)
       return { artwork, preflight, critique, plan, studio }
     }
 
     let pack = paint(designPlan)
-    if (pack.critique.needsRepair && !studioOn) {
+    if (!studioOn && pack.critique.needsRepair) {
       pack = paint(repairPlan(pack.plan, pack.critique))
       pack.critique = { ...pack.critique, repaired: true, needsRepair: false }
-    }
-    if (studioOn && pack.critique.needsRepair) {
-      // Studio faces are direction-driven; the kit repair loop does not apply.
-      pack.critique = { ...pack.critique, needsRepair: false }
     }
     if (!studioOn && overrides.heroFamily && pack.plan.heroGraphic.family !== overrides.heroFamily) {
       pack = paint({
@@ -256,6 +257,9 @@ export class FormaLocalEngine implements EnginePort {
             minTextMm: pack.studio.minTextMm,
           }
         : undefined,
+      studioLedger: pack.studio
+        ? { collisions: pack.studio.collisions, outOfBounds: pack.studio.outOfBounds, minTextMm: pack.studio.minTextMm }
+        : undefined,
       directionFromLlm: pack.studio?.direction.source === 'llm',
     })
     if (decision && input.feedback?.length) {
@@ -267,10 +271,12 @@ export class FormaLocalEngine implements EnginePort {
       }
     }
 
+    const studioFamily = pack.studio ? familyOf(pack.studio.direction.archetype, brief.studioFamily) : undefined
+
     return {
       id,
       kind,
-      brief,
+      brief: studioFamily ? { ...brief, studioFamily } : brief,
       palette,
       layout,
       copy,

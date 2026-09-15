@@ -11,6 +11,7 @@ import { paintBoxBack, paintBoxFlap, paintBoxFront, paintBoxSide, paintBoxTop, p
 import { paintLabelBack, paintLabelFace } from './labelLayouts'
 import { makeCtx } from './layoutContext'
 import { dnaFor } from './referenceDna'
+import { studioFontStyle } from './text'
 import type { DesignDirection, StudioPanelReport, StudioReport } from './types'
 
 export type StudioComposeInput = {
@@ -23,8 +24,9 @@ export type StudioComposeInput = {
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
 
-function wrap(panel: Panel, direction: DesignDirection, inner: string, role: string): string {
-  return `<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="translate(${f(panel.x)} ${f(panel.y)})">${inner}</g></g>`
+function wrap(panel: Panel, direction: DesignDirection, inner: string, role: string, fonts = false): string {
+  const head = fonts ? studioFontStyle() : ''
+  return `${head}<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="translate(${f(panel.x)} ${f(panel.y)})">${inner}</g></g>`
 }
 
 export function composeStudioArtwork(input: StudioComposeInput): { artwork: ArtworkModel; report: StudioReport } {
@@ -33,6 +35,7 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
   const reports: StudioPanelReport[] = []
   let sideIndex = 0
   const hasBack = dieline.panels.some((p) => p.id === 'labelBack' || p.id === 'warnLabel' || nativeKindFor(p) === 'legal-back')
+  const frontPanelId = findHeroPanel(dieline.panels)?.id ?? dieline.panels[0].id
   const layers = dieline.panels.map((panel) => {
     const uid = `st-${panel.id}-${(direction.seed % 9973).toString(36)}`
     const kind = nativeKindFor(panel)
@@ -74,9 +77,8 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
       inner = paintPlain(ctx)
     }
     reports.push(ctx.ledger.report(role))
-    return { panelId: panel.id, markup: wrap(panel, direction, inner, String(role)) }
+    return { panelId: panel.id, markup: wrap(panel, direction, inner, String(role), panel.id === frontPanelId) }
   })
-  const frontPanelId = findHeroPanel(dieline.panels)?.id ?? dieline.panels[0].id
   const collisions = reports.flatMap((r) => r.collisions.map((c) => `${r.panelId}:${c}`))
   const outOfBounds = reports.flatMap((r) => r.outOfBounds.map((c) => `${r.panelId}:${c}`))
   const sizes = reports.map((r) => r.minTextMm).filter((s) => s > 0)

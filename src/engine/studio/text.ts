@@ -11,6 +11,14 @@ import { escapeSvg } from '../artwork/svgGeometry'
 
 export type Face = 'serif' | 'serif-italic' | 'sans' | 'sans-light' | 'sans-heavy' | 'script' | 'mono'
 
+/** Loaded in `index.css` and inlined on the studio SVG so export previews match the DNA faces. */
+export const STUDIO_FONT_HREF =
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@300;500;700&display=swap'
+
+export function studioFontStyle(): string {
+  return `<style data-art="studio-fonts">@import url('${STUDIO_FONT_HREF}');</style>`
+}
+
 const FACE_STACK: Record<Face, string> = {
   serif: "'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif",
   'serif-italic': "'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif",
