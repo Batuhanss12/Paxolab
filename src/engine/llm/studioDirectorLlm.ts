@@ -14,13 +14,28 @@ background must be one of: ${ALL_BACKGROUNDS.join(', ')}.
 temperament must be one of: ${ALL_TEMPERAMENTS.join(', ')}.
 rationale: 1 short Turkish sentence, no JSON.
 Match TASARIM REF systems: coffee → marble-frame, honey/food landscape → landscape-window, cosmetics care (cream/shampoo) → card-on-art / botanical-card, serum / baby / health → line-scene, cleaning → wave-panel, perfume → dark-landscape / ink-panel, electronics → diagonal-tech.
-Do not invent geometry, colours as hex, or file names.`
+Do not invent geometry, colours as hex, or file names. Unknown enum values are dropped.`
 
-type LlmDirection = {
+const GEOMETRY = /svg|viewBox|stroke-width|path\s|d="|#[0-9a-fA-F]{3,8}\b|\b\d+(\.\d+)?mm\b|\.svg\b|filename/i
+
+export type LlmDirection = {
   archetype?: string
   background?: string
   temperament?: string
   rationale?: string
+}
+
+/** Closed-vocabulary gate. Invalid enums / geometry / hex never become hints. */
+export function sanitizeStudioDirection(parsed: LlmDirection | null | undefined): DirectionHints | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const hints: DirectionHints = { source: 'llm', rationale: [] }
+  if (typeof parsed.archetype === 'string' && isArchetype(parsed.archetype)) hints.archetype = parsed.archetype
+  if (typeof parsed.background === 'string' && isBackground(parsed.background)) hints.background = parsed.background
+  if (typeof parsed.temperament === 'string' && isTemperament(parsed.temperament)) hints.temperament = parsed.temperament
+  const rationale = typeof parsed.rationale === 'string' ? parsed.rationale.trim().slice(0, 160) : ''
+  if (rationale && !GEOMETRY.test(rationale)) hints.rationale = [rationale]
+  if (!hints.archetype && !hints.background && !hints.temperament) return null
+  return hints
 }
 
 export async function studioDirectionWithLlm(input: {
@@ -48,12 +63,5 @@ export async function studioDirectionWithLlm(input: {
     user,
     timeoutMs: 7000,
   })
-  if (!parsed) return null
-  const hints: DirectionHints = { source: 'llm', rationale: [] }
-  if (parsed.archetype && isArchetype(parsed.archetype)) hints.archetype = parsed.archetype
-  if (parsed.background && isBackground(parsed.background)) hints.background = parsed.background
-  if (parsed.temperament && isTemperament(parsed.temperament)) hints.temperament = parsed.temperament
-  if (parsed.rationale?.trim()) hints.rationale = [parsed.rationale.trim().slice(0, 160)]
-  if (!hints.archetype && !hints.background && !hints.temperament) return null
-  return hints
+  return sanitizeStudioDirection(parsed)
 }

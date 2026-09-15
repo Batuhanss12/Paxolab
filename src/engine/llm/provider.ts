@@ -36,7 +36,7 @@ export interface LLMProvider {
   generateStructured<T>(request: StructuredRequest): Promise<T | null>
 }
 
-export const PROMPT_VERSION = '2026-09-15'
+export const PROMPT_VERSION = '2026-09-16'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 

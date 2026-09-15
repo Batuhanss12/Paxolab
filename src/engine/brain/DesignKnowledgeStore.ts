@@ -95,16 +95,31 @@ const ALLOWED: Record<KnowledgeState, KnowledgeState[]> = {
 
 let store: StoreShape = { rules: [], versions: [{ version: 0, at: 0, note: 'baseline', activeRuleIds: [] }], currentVersion: 0 }
 let hydrated = false
+let hydrateGen = 0
+let inflight: Promise<void> | null = null
 
-async function hydrate(): Promise<void> {
-  if (hydrated) return
-  hydrated = true
-  try {
-    const stored = (await idbGetMemory(DESIGN_KNOWLEDGE_SCHEMA)) as StoreShape | null
-    if (stored && Array.isArray(stored.rules) && Array.isArray(stored.versions)) store = stored
-  } catch {
-    /* baseline rules stay available */
+function hydrate(): Promise<void> {
+  if (hydrated) return Promise.resolve()
+  if (!inflight) {
+    const gen = hydrateGen
+    inflight = (async () => {
+      try {
+        const stored = (await idbGetMemory(DESIGN_KNOWLEDGE_SCHEMA)) as StoreShape | null
+        if (gen !== hydrateGen) return
+        if (stored && Array.isArray(stored.rules) && Array.isArray(stored.versions)) store = stored
+      } catch {
+        /* baseline rules stay available */
+      } finally {
+        if (gen === hydrateGen) hydrated = true
+      }
+    })()
   }
+  return inflight
+}
+
+/** Wait until IndexedDB snapshot is in memory. Empty store = baseline. */
+export function whenDesignKnowledgeReady(): Promise<void> {
+  return hydrate()
 }
 
 async function persist(): Promise<void> {
@@ -120,6 +135,8 @@ export function initDesignKnowledge(): void {
 }
 
 export function resetDesignKnowledge(): void {
+  hydrateGen += 1
+  inflight = null
   store = { rules: [], versions: [{ version: 0, at: 0, note: 'baseline', activeRuleIds: [] }], currentVersion: 0 }
   hydrated = true
   void persist()

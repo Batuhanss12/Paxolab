@@ -1,13 +1,52 @@
-import type { DielineModel } from '../../types'
+import type { DielineModel, Point } from '../../types'
 
 const CUT = '#111111'
 const CREASE = '#cc3333'
+const PERF = '#b03ab0'
 const GLUE = 'rgba(201, 168, 108, 0.32)'
 const PANEL = 'rgba(255,255,255,0.035)'
 const SAFE = 'rgba(90, 180, 120, 0.32)'
 const BLEED = 'rgba(200, 120, 80, 0.28)'
 
 export type DielineRenderMode = 'structure' | 'combined'
+
+function ringD(ring: Point[], pad: number): string {
+  const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ')
+  return ring.length >= 3 ? `${d} Z` : d
+}
+
+export function dielineTechMarkup(
+  model: DielineModel,
+  pad: number,
+  mode: 'preview' | 'doc',
+): { cut: string; crease: string; perf: string } {
+  const cutStroke = mode === 'preview' ? CUT : '#000'
+  const creaseStroke = mode === 'preview' ? CREASE : '#c00'
+  const perfStroke = mode === 'preview' ? PERF : '#909'
+  const cutW = mode === 'preview' ? '0.55' : '0.5'
+  const creaseW = mode === 'preview' ? '0.42' : '0.35'
+  const creaseDash = mode === 'preview' ? '2 1.15' : '2 1.1'
+  const cut = model.cut
+    .map(
+      (ring) =>
+        `<path d="${ringD(ring, pad)}" fill="none" stroke="${cutStroke}" stroke-width="${cutW}" stroke-linejoin="miter" data-type="cut" />`,
+    )
+    .join('')
+  const crease = model.crease
+    .map(
+      ([a, b]) =>
+        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${creaseStroke}" stroke-width="${creaseW}" stroke-dasharray="${creaseDash}" data-type="crease" />`,
+    )
+    .join('')
+  const perf = (model.perf ?? [])
+    .filter((ring) => ring.length >= 2)
+    .map(
+      (ring) =>
+        `<path d="${ringD(ring, pad)}" fill="none" stroke="${perfStroke}" stroke-width="0.35" stroke-dasharray="1 0.9" data-type="perf" />`,
+    )
+    .join('')
+  return { cut, crease, perf }
+}
 
 export function renderDielineSvg(
   model: DielineModel,
@@ -17,30 +56,18 @@ export function renderDielineSvg(
   const w = model.width + pad * 2
   const h = model.height + pad * 2
   const combined = opts?.mode === 'combined' || !!opts?.showArtwork
-  const paper = opts?.paper ?? (combined ? '#0b0b0b' : '#0b0b0b')
+  const paper = opts?.paper ?? '#0b0b0b'
+  const { cut, crease, perf } = dielineTechMarkup(model, pad, 'preview')
 
-  const cut = model.cut
-    .map((ring) => {
-      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="${CUT}" stroke-width="0.55" stroke-linejoin="miter" />`
-    })
-    .join('')
-  const crease = model.crease
-    .map(
-      ([a, b]) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="${CREASE}" stroke-width="0.42" stroke-dasharray="2 1.15" />`,
-    )
-    .join('')
-
-  // When printReady (safeInsetMm > 0): inward safe + outward bleed guide. Guide-only — not press bleed / PDF/X.
+  // printReady overlay: inward safe + outward bleed. Guide only — dieline PDF is PDF/X-4 sRGB.
   const safeInset = opts?.safeInsetMm ?? 0
   const proofPanels =
     combined && safeInset > 0 ? model.panels.filter((p) => !model.glueIds.includes(p.id)) : []
   const combinedSafe = proofPanels
     .map((p) => {
-      const w = Math.max(0, p.w - safeInset * 2)
-      const h = Math.max(0, p.h - safeInset * 2)
-      return `<rect x="${p.x + pad + safeInset}" y="${p.y + pad + safeInset}" width="${w}" height="${h}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
+      const pw = Math.max(0, p.w - safeInset * 2)
+      const ph = Math.max(0, p.h - safeInset * 2)
+      return `<rect x="${p.x + pad + safeInset}" y="${p.y + pad + safeInset}" width="${pw}" height="${ph}" fill="none" stroke="${SAFE}" stroke-width="0.15" stroke-dasharray="1 0.8" data-proof="safe" />`
     })
     .join('')
   const combinedBleed = proofPanels
@@ -70,6 +97,7 @@ export function renderDielineSvg(
     ${combined && opts?.artworkMarkup ? `<g transform="translate(${pad} ${pad})">${opts.artworkMarkup}</g>` : ''}
     ${combinedBleed ? `<g data-proof="bleed-set">${combinedBleed}</g>` : ''}
     ${combinedSafe ? `<g data-proof="safe-set">${combinedSafe}</g>` : ''}
+    <g>${perf}</g>
     <g>${crease}</g>
     <g>${cut}</g>
   </svg>`
@@ -79,18 +107,7 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
   const pad = 8
   const w = model.width + pad * 2
   const h = model.height + pad * 2
-  const cut = model.cut
-    .map((ring) => {
-      const d = ring.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x + pad} ${p.y + pad}`).join(' ') + ' Z'
-      return `<path d="${d}" fill="none" stroke="#000" stroke-width="0.5" stroke-linejoin="miter" />`
-    })
-    .join('')
-  const crease = model.crease
-    .map(
-      ([a, b]) =>
-        `<line x1="${a.x + pad}" y1="${a.y + pad}" x2="${b.x + pad}" y2="${b.y + pad}" stroke="#c00" stroke-width="0.35" stroke-dasharray="2 1.1" />`,
-    )
-    .join('')
+  const { cut, crease, perf } = dielineTechMarkup(model, pad, 'doc')
   const labels = model.panels
     .map(
       (p) =>
@@ -101,6 +118,7 @@ export function renderStructureDoc(model: DielineModel, title: string): string {
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
   <title>${title} — Grapxor dieline</title>
   ${labels}
+  ${perf}
   ${crease}
   ${cut}
 </svg>`

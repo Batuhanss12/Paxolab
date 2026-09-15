@@ -9,7 +9,12 @@ function utf8ToB64(s: string): string {
   return btoa(bin)
 }
 
-const BufferShim = {
+type BufferLike = {
+  byteLength(s: string): number
+  from(data: string | Uint8Array, enc?: string): { length: number; toString(enc?: string): string }
+}
+
+const BufferShim: BufferLike = {
   byteLength(s: string) {
     return utf8Bytes(String(s)).length
   },
@@ -25,5 +30,5 @@ const BufferShim = {
   },
 }
 
-const g = globalThis as typeof globalThis & { Buffer?: typeof BufferShim }
-if (typeof g.Buffer === 'undefined') g.Buffer = BufferShim
+const root = globalThis as unknown as { Buffer?: BufferLike }
+if (typeof root.Buffer === 'undefined') root.Buffer = BufferShim

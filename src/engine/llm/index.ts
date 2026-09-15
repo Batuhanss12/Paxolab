@@ -16,8 +16,8 @@ export {
   type LlmTask,
   type StructuredRequest,
 } from './provider'
-export { generateCopyWithLlm, type LlmCopy } from './copyLlm'
+export { generateCopyWithLlm, mergeLlmCopy, type LlmCopy, type MergedLlmCopy } from './copyLlm'
 export { parseIntentWithLlm } from './parseIntentLlm'
 export { interpretFeedback, interpretFeedbackWithLlm } from './feedbackLlm'
 export { critiqueWithLlm } from './critiqueLlm'
-export { studioDirectionWithLlm } from './studioDirectorLlm'
+export { sanitizeStudioDirection, studioDirectionWithLlm } from './studioDirectorLlm'

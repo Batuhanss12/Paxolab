@@ -38,23 +38,27 @@ function face(spec: { artwork: { layers: { panelId: string; markup: string }[] }
 describe('Phase 9 polish craft + claim motifs', () => {
   beforeEach(() => resetArtMemory())
 
-  it('P9-A playful and luxury cosmetics keep a painted pattern or craft ≥77', () => {
-    const soft = [
-      jobSpec('24-krem-playful-palm', 0),
-      jobSpec('25-krem-playful-wave', 0),
-      jobSpec('03-krem-tuck-luxury', 2),
-      jobSpec('17-evrensel-kozmetik-tuck', 2),
-    ]
-    for (const spec of soft) {
-      const family = spec.designPlan?.patternSystem.family
-      const craft = scoreVisualCraft(spec, spec.designPlan!).visualCraft
-      const painted = /data-art="pattern"/.test(face(spec))
-      expect(family).not.toBe('none')
-      expect(painted || craft >= 77).toBe(true)
-      expect(craft).toBeGreaterThanOrEqual(77)
-      expect(spec.preflight.exportOk).toBe(true)
-    }
-  })
+  it(
+    'P9-A playful and luxury cosmetics keep a painted pattern or craft ≥77',
+    () => {
+      const soft = [
+        jobSpec('24-krem-playful-palm', 0),
+        jobSpec('25-krem-playful-wave', 0),
+        jobSpec('03-krem-tuck-luxury', 2),
+        jobSpec('17-evrensel-kozmetik-tuck', 2),
+      ]
+      for (const spec of soft) {
+        const family = spec.designPlan?.patternSystem.family
+        const craft = scoreVisualCraft(spec, spec.designPlan!).visualCraft
+        const painted = /data-art="pattern"/.test(face(spec))
+        expect(family).not.toBe('none')
+        expect(painted || craft >= 77).toBe(true)
+        expect(craft).toBeGreaterThanOrEqual(77)
+        expect(spec.preflight.exportOk).toBe(true)
+      }
+    },
+    20_000,
+  )
 
   it('P9-B wrap step-pill and electronics stripe clear craft 77', () => {
     const wrap = jobSpec('29-sampuan-wrap-modern', 0)

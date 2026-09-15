@@ -63,11 +63,11 @@ Zincir: ham feedback / outcome → `Observation` (user / brand / global scope; b
 
 Eşikler `LEARNING_THRESHOLDS` (LearningEngine.ts): `minSamples {user 2, brand 3, global 30}`, `minConsistency 0.7`, `minConfidence 0.6`, `saturationSamples {user 3, brand 4, global 40}` — confidence = consistency × min(1, n / saturation); tam tutarlı bir grup tam `minSamples`’ta 0.6’yı geçer. `autoApprove {user, brand}`; global yalnız insan.
 
-Uygulama: `applyKnowledgeToBrief` (FormaLocalEngine, `createPlan` öncesi) → `KNOWLEDGE_DERIVED` provenance; log `knowledgeVersion` + `appliedKnowledge`; `DesignSpec.appliedKnowledge`. Uygulama katmanı `runLearningCycle` çağırmaz; approve düğmesi/CLI ile açılır.
+Uygulama: `applyKnowledgeToBrief` (FormaLocalEngine, `createPlan` öncesi) → `KNOWLEDGE_DERIVED` provenance; log `knowledgeVersion` + `appliedKnowledge`; `DesignSpec.appliedKnowledge`. Generate `runLearningCycle` çağırmaz. **S7:** üst çubuk Öğrenme paneli döngüyü çalıştırır (user/brand otomatik, global insan), adayları listeler, onay/red/rollback yapar. Boş depo = baseline.
 
-## Bilinen kırmızılar (bu dilim dışı, dokunulmadı)
+## Bilinen kırmızılar
 
-`FormaLocalEngine printReady proof` (PDF/X-4 metni), `formaBoxCert`, `structure.test` (`data-type="cut"/"perf"`), `phase9 P9-A` (tam suite altında 5 s timeout; tek başına yeşil), `src/shims/buffer-global.ts` tsc tipi.
+S9 kapandı: printReady 3 mm + PDF/X-4 sRGB yorumu, `data-type="cut"|"perf"`, formaBoxCert, P9-A 20 s, `buffer-global` shim tipi. FOGRA/CMYK yok.
 
 ## CHAT-3
 

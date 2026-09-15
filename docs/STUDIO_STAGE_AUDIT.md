@@ -134,12 +134,12 @@ Kapı: `LLMProvider.generateStructured`. Görevler: `brief-extract | feedback-in
 | ID | Gap |
 |---|---|
 | L1 | `VITE_FORMA_LLM_URL` yoksa tüm LLM `null` — art director heuristik `hintsFromBrief` |
-| L2 | `studio-direct` kapalı sözlük; geçersiz arketip düşer. Prompt sözleşmesi testte mock’lanıyor, canlı sözleşme kırılgan |
-| L3 | `critiqueWithLlm` otomatik çağrılmıyor (doğru); stüdyo ledger’a bakmıyor |
-| L4 | Copy LLM stüdyo bank’ını ezebilir; generic tagline filtresi yalnız “masada duran lezzet” |
+| L2 | `studio-direct` kapalı sözlük; geçersiz arketip düşer. Prompt sözleşmesi testte mock’lanıyor, canlı sözleşme kırılgan | Kapandı S8 — `sanitizeStudioDirection` |
+| L3 | `critiqueWithLlm` otomatik çağrılmıyor (doğru); stüdyo ledger’a bakmıyor | Kapandı S8 — ledger kanıt; geometri drop |
+| L4 | Copy LLM stüdyo bank’ını ezebilir; generic tagline filtresi yalnız “masada duran lezzet” | Kapandı S8 — `mergeLlmCopy` |
 | L5 | Model adı Design Brain’de yok (doğru); log `llmUsed.direction` var |
 
-**Sıra:** L1 üretimde endpoint + fail-open heuristik (zaten var) → L2 sözleşme testi (geçersiz enum drop) → L4 stüdyo bank vs LLM kopya birleşimi → L3 stüdyo critic kanıtı. Fine-tune (FAZ 9) park.
+**Sıra:** L1 fail-open durur. L2–L4 kapandı S8. Fine-tune (FAZ 9) park.
 
 ---
 
@@ -156,14 +156,14 @@ Kapı: `LLMProvider.generateStructured`. Görevler: `brief-extract | feedback-in
 
 | ID | Gap |
 |---|---|
-| K1 | **UI yok.** `runLearningCycle` Workspace’te yok; adaylar görünmez; insan global onay yok |
+| K1 | **UI yok.** `runLearningCycle` Workspace’te yok; adaylar görünmez; insan global onay yok | Kapandı S7 |
 | K2 | `critiquePlan` kit overlay/hero; stüdyo yüzünde `needsRepair` zorla kapatılıyor | `FormaLocalEngine` |
 | K3 | Studio ledger collision/minText → preflight’a gidiyor; DesignCritic category/target’a tam map değil |
-| K4 | RatingBar yıldız → OutcomeTracker; stüdyo prefer bağının kullanıcıya izahı yok |
+| K4 | RatingBar yıldız → OutcomeTracker; stüdyo prefer bağının kullanıcıya izahı yok | Kapandı S7 — süreç notu `Öğrendim: …` |
 | K5 | A/B knowledge (FAZ 7b) park — doğru; veri yokken açma |
 | K6 | Preference model / RL park |
 
-**Sıra:** K3 stüdyo critic (ledger → StructuredFeedback, SVG mute yok) → K2 kit repair’i stüdyoda hiç çağırma (temiz ayırım) → K1 aday paneli (user/brand auto, global insan) → K4 süreç notunda “öğrendiğim: kahvede mermer”.
+**Sıra:** K1+K4 kapandı S7. K5 A/B ve K6 RL park.
 
 ---
 
@@ -225,11 +225,11 @@ Kapı: `LLMProvider.generateStructured`. Görevler: `brief-extract | feedback-in
 | **S4** | Aile anahtarı kutu→etiket; iterasyon sözlüğü DirectionHints | “etiketi de üret” aynı family | **Kapandı** |
 | **S5** | Doku yoğunluğu (botanik silüet, mermer damar, manzara) seeded | Aynı seed = aynı path | **Kapandı** |
 | **S6** | Stüdyo golden 18 yüz hash | CI’da stüdyo set; 29 kit ayrı | **Kapandı** |
-| **S7** | Learning UI (aday / onay / rollback) | Global insan; boş depo = baseline | A/B, RL yok |
-| **S8** | LLM sözleşmesi + copy birleşimi | Endpoint fail-open | Fine-tune park |
-| **S9** | Üretim: export kapısı, font subset, 3D, P1 kırmızılar | Dürüst PDF/X iddiası | FOGRA yok |
+| **S7** | Learning UI (aday / onay / rollback) | Global insan; boş depo = baseline | **Kapandı** |
+| **S8** | LLM sözleşmesi + copy birleşimi | Endpoint fail-open | **Kapandı** |
+| **S9** | Üretim: export kapısı, font subset, 3D, P1 kırmızılar | Dürüst PDF/X iddiası | **Kapandı** — FOGRA yok |
 
-Bir fazı bitirmeden sonrakine atlama. S1–S6 kapandı. S7 Learning UI.
+Bir fazı bitirmeden sonrakine atlama. S1–S9 kapandı.
 
 ---
 
@@ -287,14 +287,37 @@ Sonraki PR: **S7** Learning UI (aday / onay / rollback).
 - Galeri işleri `studioGalleryJobs.ts`; dump: `scripts/dump-studio-golden.ts`.
 - Katalog 29 freeze ayrı slug; stüdyo generate `studio:true`. 03/07/09 botanik değil.
 
-Sonraki PR: **S7** Learning UI (aday / onay / rollback).
+---
+
+## 17. S7 — uygulandı (16 Eyl 2026)
+
+- Üst çubuk **Öğrenme** paneli: `runLearningCycle({ approve: 'automated' })` user/brand açar, global doğrulanmış kural insan **Onayla / Reddet** bekler.
+- Rollback önceki aktif kümeye döner; geçmiş silinmez. Boş depo = baseline.
+- Süreç notu: `Öğrendim: kahvede marble frame arketipi tercih.` Generate döngü çalıştırmaz.
+- A/B ve RL yok.
+
+Sonraki PR: **S8** LLM sözleşmesi + copy birleşimi.
 
 ---
 
-## 16. S6 — uygulandı (16 Eyl 2026)
+## 18. S8 — uygulandı (16 Eyl 2026)
 
-- 18 stüdyo yüz (9 sektör × kutu/etiket) `STUDIO_FACE_GOLDEN`: arketip + doku + aile + SHA-256 yüz hash.
-- Galeri işleri `studioGalleryJobs.ts`; dump: `scripts/dump-studio-golden.ts`.
-- Katalog 29 freeze ayrı slug; stüdyo generate `studio:true`. 03/07/09 botanik değil.
+- `sanitizeStudioDirection`: kapalı sözlük; uydurma arketip / hex / SVG gerekçe düşer. Endpoint yoksa `null` → heuristik.
+- `mergeLlmCopy`: kullanıcı sloganı kazanır; LLM tagline yalnız boilerplate değilse; aksi halde sample, stüdyo yüzünde bank (`isGenericTagline`).
+- `critiqueWithLlm` stüdyo ledger’ı kanıt olarak alır, geometri satırını yutar; pipeline otomatik çağırmaz.
+- Fine-tune yok.
 
-Sonraki PR: **S7** Learning UI (aday / onay / rollback).
+Sonraki PR: yok — S9 kapandı. FOGRA / CMYK park.
+
+---
+
+## 19. S9 — uygulandı (16 Eyl 2026)
+
+- Combined SVG `exportOk` olmadan üretilmez; galeri ve katalog combined’ı preflight fail’de yazmaz.
+- `printReady` prova 3 mm güvenli + bleed; yorum `PDF/X-4 sRGB · trap yok · FOGRA değil`.
+- Dieline SVG `data-type="cut"|"crease"|"perf"`; formaBoxCert + structure.test.
+- Export yüzü Google `@import` düşer; `@font-face` unicode-range Latin+TR, local() + Georgia/Arial. Binary WOFF yok.
+- 3D kutu/etiket yüzleri stüdyo panel markup’ını boyar (`renderPanelSvg`).
+- P9-A timeout 20 s. `buffer-global` Node `Buffer` tipine çarpmaz.
+- QR yüzünde `data-sample`; combined SVG’de “örnek, ISO/IEC 18004 değil” notu. GS1/FOGRA iddiası yok.
+

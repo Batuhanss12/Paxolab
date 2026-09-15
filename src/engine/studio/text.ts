@@ -11,12 +11,43 @@ import { escapeSvg } from '../artwork/svgGeometry'
 
 export type Face = 'serif' | 'serif-italic' | 'sans' | 'sans-light' | 'sans-heavy' | 'script' | 'mono'
 
-/** Loaded in `index.css` and inlined on the studio SVG so export previews match the DNA faces. */
+/** Loaded in `index.css` and inlined on the studio SVG so live previews match the DNA faces. */
 export const STUDIO_FONT_HREF =
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@300;500;700&display=swap'
 
+/** Latin + Turkish. Named faces, not a packed WOFF subset. */
+export const STUDIO_FONT_UNICODE_RANGE =
+  'U+0000-00FF, U+0100-024F, U+011E-011F, U+0130-0131, U+015E-015F, U+1E00-1EFF'
+
+export const STUDIO_EXPORT_FONT_COMMENT =
+  'Grapxor fonts: unicode-range Latin+TR named faces; binary WOFF not embedded; press fallback Georgia/Arial.'
+
 export function studioFontStyle(): string {
   return `<style data-art="studio-fonts">@import url('${STUDIO_FONT_HREF}');</style>`
+}
+
+function studioSubsetFaces(): string {
+  const faces: Array<[string, string]> = [
+    ['Cormorant Garamond', "local('Cormorant Garamond'), local('Georgia')"],
+    ['Montserrat', "local('Montserrat'), local('Arial')"],
+    ['Great Vibes', "local('Great Vibes'), local('Segoe Script')"],
+  ]
+  return faces
+    .map(
+      ([family, src]) =>
+        `@font-face{font-family:'${family}';src:${src};unicode-range:${STUDIO_FONT_UNICODE_RANGE};font-display:swap}`,
+    )
+    .join('')
+}
+
+/** Export SVG: drop the Google @import (RIP has no network) and declare named local faces. */
+export function studioExportFontStyle(): string {
+  return `<style data-art="studio-fonts-subset">${studioSubsetFaces()}</style>`
+}
+
+export function withStudioExportFonts(markup: string): string {
+  if (!markup.includes('data-art="studio-fonts"')) return markup
+  return `${studioExportFontStyle()}${markup.replace(/<style data-art="studio-fonts">[\s\S]*?<\/style>/g, '')}`
 }
 
 const FACE_STACK: Record<Face, string> = {

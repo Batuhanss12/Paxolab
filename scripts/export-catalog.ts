@@ -48,12 +48,12 @@ for (const job of JOBS) {
     throw new Error(`${job.slug} missing data-hero="${job.heroFamily}" (got ${spec.designPlan?.heroGraphic.family})`)
   }
 
-  const combined = buildCombinedSvg(spec) ?? renderArtworkDoc(spec.dieline, spec.artwork, spec.copy.brand)
+  const combined = spec.preflight.exportOk ? buildCombinedSvg(spec) : null
   const front = `<?xml version="1.0" encoding="UTF-8"?>\n${renderFrontSvg(spec.dieline, spec.artwork, spec.palette)}`
   const artwork = renderArtworkDoc(spec.dieline, spec.artwork, spec.copy.brand)
 
   writeFileSync(join(dir, `${job.slug}-on-yuz.svg`), front, 'utf8')
-  writeFileSync(join(dir, `${job.slug}-combined.svg`), combined, 'utf8')
+  if (combined) writeFileSync(join(dir, `${job.slug}-combined.svg`), combined, 'utf8')
   writeFileSync(join(dir, `${job.slug}-artwork.svg`), artwork, 'utf8')
 
   rows.push({
@@ -120,10 +120,10 @@ const index = `<!doctype html>
       <div class="meta">
         ${esc(r.product)} · ${esc(r.sector)}<br />
         Şablon ${esc(r.usedTemplate)} · stil ${esc(r.style)} · hero ${esc(r.hero)} · craft ${r.craft ?? '—'}<br />
-        <a href="${r.folder}/${r.slug}-combined.svg">combined</a> ·
+        ${r.exportOk ? `<a href="${r.folder}/${r.slug}-combined.svg">combined</a> ·` : 'combined yok ·'}
         <a href="${r.folder}/${r.slug}-artwork.svg">artwork</a> ·
         <a href="${r.folder}/${r.slug}-on-yuz.svg">ön yüz</a>
-        ${r.exportOk ? '' : ' · ön uçuş uyarısı'}
+        ${r.exportOk ? '' : ' · exportOk kapalı'}
       </div>
     </article>`,
       )

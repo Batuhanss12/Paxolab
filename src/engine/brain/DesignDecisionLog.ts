@@ -146,7 +146,7 @@ export type StudioDecision = {
   background: string
   temperament: string
   typePairing: string
-  source: 'heuristic' | 'llm' | 'knowledge' | 'user'
+  source: 'heuristic' | 'llm' | 'knowledge' | 'user' | 'family'
   collisions: number
   minTextMm: number
 }

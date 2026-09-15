@@ -6,6 +6,7 @@
 import type { DesignBrief } from '../../types'
 import { resolveSector } from '../designSystem/sector'
 import { resolveMarkRecipe } from '../marks/MarkMatrix'
+import { isGenericTagline } from '../studio/copyBank'
 import { getLlmProvider } from './provider'
 
 export interface LlmCopy {
@@ -58,7 +59,6 @@ export async function generateCopyWithLlm(brief: DesignBrief): Promise<LlmCopy |
 
   const tagline = (parsed.tagline || '').trim().slice(0, 80)
   const ingredients = (parsed.ingredients || '').trim().slice(0, 400)
-  // Always append required regulatory warnings — LLM may omit them.
   const llmWarn = (parsed.warnings || '').trim().slice(0, 300)
   const warnings = mergeWarnings(llmWarn, markWarn)
 
@@ -68,6 +68,47 @@ export async function generateCopyWithLlm(brief: DesignBrief): Promise<LlmCopy |
     tagline: brief.copyOverrides.trim() || tagline,
     ingredients,
     warnings,
+  }
+}
+
+function usableIngredientLine(text: string): boolean {
+  const t = text.trim()
+  if (t.length < 8) return false
+  if (/^(içerik(ler)?|ingredients?|örnek|n\/a|yok)$/i.test(t)) return false
+  if (/svg|viewBox|stroke|#[0-9a-fA-F]{3,8}\b/i.test(t)) return false
+  return true
+}
+
+export type MergedLlmCopy = {
+  tagline: string
+  ingredients: string
+  warnings: string
+  usedLlm: { tagline: boolean; ingredients: boolean }
+}
+
+/**
+ * Studio/kit copy merge. User line wins; LLM tagline only if it is not boilerplate;
+ * otherwise the sample (and later the studio bank) stays. Warnings always keep
+ * required mark text via the LLM helper's merge, then union with sample.
+ */
+export function mergeLlmCopy(input: {
+  llm?: LlmCopy | null
+  sample: { tagline: string; ingredients: string; warnings: string }
+  userTagline?: string
+  brand?: string
+}): MergedLlmCopy {
+  const user = (input.userTagline ?? '').trim()
+  const llmTag = (input.llm?.tagline ?? '').trim()
+  const llmOk = Boolean(llmTag) && !isGenericTagline(llmTag, input.brand)
+  const tagline = user || (llmOk ? llmTag : '') || input.sample.tagline
+  const llmIng = (input.llm?.ingredients ?? '').trim()
+  const ingOk = usableIngredientLine(llmIng)
+  const llmWarn = (input.llm?.warnings ?? '').trim()
+  return {
+    tagline,
+    ingredients: ingOk ? llmIng : input.sample.ingredients,
+    warnings: mergeWarnings(llmWarn, input.sample.warnings),
+    usedLlm: { tagline: !user && llmOk, ingredients: ingOk },
   }
 }
 

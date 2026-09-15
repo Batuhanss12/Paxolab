@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
+import { learnedPreferenceLine } from '../engine/brain'
 import { Chat } from './Chat'
+import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
 import { DielinePreview } from './DielinePreview'
 import { InputsPanel } from './InputsPanel'
@@ -87,7 +89,7 @@ function ConversationBrief({
 /** Spoken design-process trail: critic findings + learned preferences. No JSON, no geometry. */
 function DesignProcessNote({ design }: { design: DesignSpec }) {
   const findings = (design.designCritique ?? []).filter((row) => row.severity !== 'info')
-  const learned = design.appliedKnowledge?.length ?? 0
+  const learned = learnedPreferenceLine(design.appliedKnowledge)
   const studio = design.studio?.direction
   if (!findings.length && !learned && !studio) return null
   const top = findings.slice(0, 2).map((row) => row.issue.replace(/\.$/, '')).join(' · ')
@@ -96,12 +98,12 @@ function DesignProcessNote({ design }: { design: DesignSpec }) {
     <p className="brief-log__note">
       {studio ? `Stüdyo: ${studio.archetype.replace(/-/g, ' ')} · ${studio.background}${anatomy ? ` — ${anatomy}` : ''}. ` : ''}
       {findings.length ? `Kritik ${findings.length} not aldı${top ? `: ${top}` : ''}. ` : studio ? '' : 'Kritik temiz. '}
-      {learned ? `Bu marka için öğrenilmiş ${learned} tercih uygulandı.` : ''}
+      {learned}
     </p>
   )
 }
 
-type ToolsMenu = 'none' | 'style' | 'inputs'
+type ToolsMenu = 'none' | 'style' | 'inputs' | 'learn'
 
 export function Workspace({
   messages,
@@ -180,51 +182,66 @@ export function Workspace({
         )}
 
         <div className="topbar__right">
-          {showStyles && (
-            <div className="topbar-tools" ref={toolsRef}>
-              <button
-                type="button"
-                className={`ghost-btn ${toolsMenu === 'style' ? 'is-active' : ''}`}
-                aria-expanded={toolsMenu === 'style'}
-                onClick={() => setToolsMenu((m) => (m === 'style' ? 'none' : 'style'))}
-              >
-                Stil
-              </button>
-              <button
-                type="button"
-                className={`ghost-btn ${toolsMenu === 'inputs' ? 'is-active' : ''}`}
-                aria-expanded={toolsMenu === 'inputs'}
-                onClick={() => setToolsMenu((m) => (m === 'inputs' ? 'none' : 'inputs'))}
-              >
-                Girdiler
-              </button>
-              {toolsMenu === 'style' && (
-                <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Stil">
-                  <StyleBar
-                    brief={brief}
-                    design={design}
-                    onStyle={onStyle}
-                    onDims={onDims}
-                    onVary={onVary}
-                    variant="rail"
-                  />
-                </div>
-              )}
-              {toolsMenu === 'inputs' && (
-                <div className="topbar-popover topbar-popover--inputs" role="dialog" aria-label="Girdiler">
-                  <InputsPanel
-                    brief={brief}
-                    design={design}
-                    open
-                    onToggle={() => {
-                      setToolsMenu('none')
-                      if (inputsOpen) onToggleInputs()
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          <div className="topbar-tools" ref={toolsRef}>
+            {showStyles && (
+              <>
+                <button
+                  type="button"
+                  className={`ghost-btn ${toolsMenu === 'style' ? 'is-active' : ''}`}
+                  aria-expanded={toolsMenu === 'style'}
+                  onClick={() => setToolsMenu((m) => (m === 'style' ? 'none' : 'style'))}
+                >
+                  Stil
+                </button>
+                <button
+                  type="button"
+                  className={`ghost-btn ${toolsMenu === 'inputs' ? 'is-active' : ''}`}
+                  aria-expanded={toolsMenu === 'inputs'}
+                  onClick={() => setToolsMenu((m) => (m === 'inputs' ? 'none' : 'inputs'))}
+                >
+                  Girdiler
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className={`ghost-btn ${toolsMenu === 'learn' ? 'is-active' : ''}`}
+              aria-expanded={toolsMenu === 'learn'}
+              onClick={() => setToolsMenu((m) => (m === 'learn' ? 'none' : 'learn'))}
+            >
+              Öğrenme
+            </button>
+            {toolsMenu === 'style' && (
+              <div className="topbar-popover topbar-popover--style" role="dialog" aria-label="Stil">
+                <StyleBar
+                  brief={brief}
+                  design={design}
+                  onStyle={onStyle}
+                  onDims={onDims}
+                  onVary={onVary}
+                  variant="rail"
+                />
+              </div>
+            )}
+            {toolsMenu === 'inputs' && (
+              <div className="topbar-popover topbar-popover--inputs" role="dialog" aria-label="Girdiler">
+                <InputsPanel
+                  brief={brief}
+                  design={design}
+                  open
+                  onToggle={() => {
+                    setToolsMenu('none')
+                    if (inputsOpen) onToggleInputs()
+                  }}
+                />
+              </div>
+            )}
+            {toolsMenu === 'learn' && (
+              <div className="topbar-popover topbar-popover--learn" role="dialog" aria-label="Öğrenme">
+                <LearningPanel />
+              </div>
+            )}
+          </div>
           {syncNote && (
             <span className="topbar__sync" title={syncNote}>
               {syncNote}

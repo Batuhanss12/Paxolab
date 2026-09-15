@@ -82,16 +82,31 @@ export type LearningPattern = {
 const OBSERVATION_KEY = 'designObservations.v1'
 let observations: Observation[] = []
 let hydrated = false
+let hydrateGen = 0
+let inflight: Promise<void> | null = null
 
-async function hydrate(): Promise<void> {
-  if (hydrated) return
-  hydrated = true
-  try {
-    const stored = (await idbGetMemory(OBSERVATION_KEY)) as Observation[] | null
-    if (Array.isArray(stored)) observations = stored.slice(-LEARNING_THRESHOLDS.maxObservations)
-  } catch {
-    /* no observations = no learning; baseline stays */
+function hydrate(): Promise<void> {
+  if (hydrated) return Promise.resolve()
+  if (!inflight) {
+    const gen = hydrateGen
+    inflight = (async () => {
+      try {
+        const stored = (await idbGetMemory(OBSERVATION_KEY)) as Observation[] | null
+        if (gen !== hydrateGen) return
+        if (Array.isArray(stored)) observations = stored.slice(-LEARNING_THRESHOLDS.maxObservations)
+      } catch {
+        /* no observations = no learning; baseline stays */
+      } finally {
+        if (gen === hydrateGen) hydrated = true
+      }
+    })()
   }
+  return inflight
+}
+
+/** Wait until observation log is in memory. */
+export function whenLearningReady(): Promise<void> {
+  return hydrate()
 }
 
 async function persist(): Promise<void> {
@@ -107,6 +122,8 @@ export function initLearning(): void {
 }
 
 export function resetLearning(): void {
+  hydrateGen += 1
+  inflight = null
   observations = []
   hydrated = true
   void persist()
@@ -371,6 +388,14 @@ export function approveKnowledge(id: string, by: 'human' | 'automated'): boolean
 
 export function deprecateKnowledge(id: string, by = 'human'): boolean {
   return transitionKnowledge(id, 'deprecated', by)
+}
+
+/** Human decline of a candidate/validated rule. Does not rewrite history. */
+export function rejectKnowledge(id: string, by = 'human'): boolean {
+  const rule = knowledgeRule(id)
+  if (!rule) return false
+  if (rule.state !== 'candidate' && rule.state !== 'validated') return false
+  return transitionKnowledge(id, 'rejected', by)
 }
 
 /**

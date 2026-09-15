@@ -9,7 +9,7 @@ import { panelClip as clip } from './svgGeometry'
 import { findHeroPanel, nativeKindFor } from '../dieline/panelKind'
 import { deviceOverlayArt, flapGround, glueOnly, labelBackArt, polygonWallArt, productWindowArt, renderBackPanel, renderFrontPanel, renderSidePanel, renderTopPanel } from './panelRenderers'
 
-export { artworkMarkup, clipDefs, renderArtNetSvg, renderArtworkDoc, renderFrontSvg } from './renderArtwork'
+export { artworkMarkup, clipDefs, facePanelId, renderArtNetSvg, renderArtworkDoc, renderFrontSvg, renderPanelSvg } from './renderArtwork'
 
 /** Dispatch a single panel to its specialized renderer. */
 function panelArt(

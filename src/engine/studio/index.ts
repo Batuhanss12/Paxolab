@@ -24,6 +24,12 @@ export {
   isTypePairing,
 } from './referenceDna'
 export { STUDIO_GALLERY_JOBS } from './studioGalleryJobs'
-export { hashStudioFace, STUDIO_FACE_GOLDEN } from './studioGolden'
-export { copyBank, volumeLine } from './copyBank'
-export { studioFontStyle, STUDIO_FONT_HREF } from './text'
+export { copyBank, isGenericTagline, volumeLine } from './copyBank'
+export {
+  studioExportFontStyle,
+  studioFontStyle,
+  withStudioExportFonts,
+  STUDIO_EXPORT_FONT_COMMENT,
+  STUDIO_FONT_HREF,
+  STUDIO_FONT_UNICODE_RANGE,
+} from './text'

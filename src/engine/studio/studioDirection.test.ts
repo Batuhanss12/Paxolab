@@ -3,6 +3,7 @@ import { FormaLocalEngine } from '../FormaLocalEngine'
 import { emptyBrief } from '../fields'
 import { hintsFromBrief, resolveDirection, studioPalette } from './direction'
 import { paletteFor } from '../artwork/languages'
+import { withStudioExportFonts } from './text'
 
 describe('studio direction — TASARIM REF families', () => {
   it('pins coffee to the Elite Brew marble system', () => {
@@ -134,6 +135,10 @@ describe('studio direction — TASARIM REF families', () => {
     expect(markup).toMatch(/studio-fonts/)
     expect(markup).toMatch(/Cormorant/)
     expect(markup).toMatch(/Montserrat/)
+    const exported = withStudioExportFonts(markup)
+    expect(exported).toMatch(/studio-fonts-subset/)
+    expect(exported).toMatch(/unicode-range/)
+    expect(exported).not.toMatch(/@import url/)
     expect(spec.critique?.needsRepair).toBe(false)
     expect(spec.designCritique?.some((row) => row.evidence.source === 'critiquePlan' && row.evidence.topic === 'lockupClearance')).toBe(false)
     expect(spec.copy.brand).toBe('Elite Brew')

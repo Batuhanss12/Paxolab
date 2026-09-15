@@ -299,7 +299,19 @@ export function copyBankFor(brief: Pick<DesignBrief, 'sector' | 'subProduct' | '
   return copyBank(sector, locale)
 }
 
-export const GENERIC_SAMPLE_TAGLINE = /masada duran lezzet|gurme gıda|artisan food/i
+export const GENERIC_SAMPLE_TAGLINE =
+  /masada duran lezzet|gurme gıda|artisan food|flavour that holds the table|character that holds the surface|yüzeyde duran karakter|premium quality|kaliteli ürün|en iyi seçim|lezzet şöleni|taste the difference|crafted with (passion|love)/i
+
+/** True when a spoken/LLM tagline is kit-leak or boilerplate and must not paint the studio face. */
+export function isGenericTagline(text: string, brand?: string): boolean {
+  const t = text.trim()
+  if (!t) return true
+  if (GENERIC_SAMPLE_TAGLINE.test(t)) return true
+  const brandKey = (brand ?? '').trim().toLocaleLowerCase('tr')
+  if (brandKey && t.toLocaleLowerCase('tr') === brandKey) return true
+  if (/^(premium(\s+(quality|series|product))?|quality (first|product))$/i.test(t)) return true
+  return false
+}
 
 /** Sub-product refinements on top of the sector bank (coffee, honey, shampoo, oil…). */
 export function refineCategory(brief: Pick<DesignBrief, 'subProduct' | 'productName' | 'sector'>, sector: SectorId, locale: CopyLocale): string | null {

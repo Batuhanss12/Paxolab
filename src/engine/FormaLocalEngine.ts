@@ -26,6 +26,7 @@ import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
 import { applyStudioPreflight, composeStudioArtwork, familyOf, hintsFromBrief, hintsFromFamily, resolveDirection, type StudioReport } from './studio'
 import { studioHintsFromKnowledge } from './brain/studioKnowledge'
+import { mergeLlmCopy } from './llm/copyLlm'
 
 const DEFAULT_OVERRIDES: DesignOverrides = {
   logoScale: 1,
@@ -83,16 +84,22 @@ export class FormaLocalEngine implements EnginePort {
       const autoClaims = defaultIngredientClaims(brief)
       if (autoClaims) brief.ingredientClaims = autoClaims
     }
+    const mergedCopy = mergeLlmCopy({
+      llm: input.llmCopy,
+      sample,
+      userTagline: overrides.customTagline || input.copyPatch?.tagline || brief.copyOverrides,
+      brand: brief.brandName,
+    })
     const copy = {
       brand: input.copyPatch?.brand || brief.brandName || input.prev?.copy.brand || 'FORMA',
       product: resolveProductLine(
         brief,
         input.copyPatch?.product || brief.productName || input.prev?.copy.product || '',
       ),
-      tagline: overrides.customTagline || input.copyPatch?.tagline || input.llmCopy?.tagline || sample.tagline,
+      tagline: mergedCopy.tagline,
       volume: input.copyPatch?.volume || brief.volume || sample.volume,
-      ingredients: input.copyPatch?.ingredients || input.llmCopy?.ingredients || sample.ingredients,
-      warnings: input.copyPatch?.warnings || input.llmCopy?.warnings || sample.warnings,
+      ingredients: input.copyPatch?.ingredients || mergedCopy.ingredients,
+      warnings: input.copyPatch?.warnings || mergedCopy.warnings,
       barcode: brief.barcode,
       manufacturer: brief.manufacturerName,
       address: brief.manufacturerAddress,

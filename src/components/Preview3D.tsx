@@ -1,10 +1,45 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import type { Attachment, DesignSpec } from '../types'
 import { monogram } from '../engine/artwork/copy'
+import { facePanelId, renderPanelSvg, type BoxFace } from '../engine/artwork/renderArtwork'
 
 type Preview3DProps = {
   design: DesignSpec
   attachments: Attachment[]
+}
+
+function faceArt(design: DesignSpec, face: BoxFace): string {
+  const panelId = facePanelId(design.dieline, design.artwork, face)
+  if (!panelId) return ''
+  return renderPanelSvg(design.dieline, design.artwork, panelId, design.palette, { pad: 0, exportFonts: false })
+}
+
+function Face({
+  face,
+  art,
+  fallback,
+  style,
+}: {
+  face: BoxFace
+  art: string
+  fallback: ReactNode
+  style: CSSProperties
+}) {
+  if (art) {
+    return (
+      <div
+        className={`face face--${face} face--art`}
+        style={style}
+        data-face={face}
+        dangerouslySetInnerHTML={{ __html: art }}
+      />
+    )
+  }
+  return (
+    <div className={`face face--${face}`} style={style} data-face={face}>
+      {fallback}
+    </div>
+  )
 }
 
 export function Preview3D({ design, attachments }: Preview3DProps) {
@@ -48,6 +83,12 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
     '--box-h': `${heightPx}px`,
     '--box-d': `${depthPx}px`,
   } as CSSProperties
+  const front = faceArt(design, 'front')
+  const back = faceArt(design, 'back')
+  const right = faceArt(design, 'right')
+  const left = faceArt(design, 'left')
+  const top = faceArt(design, 'top')
+  const bottom = faceArt(design, 'bottom')
 
   return (
     <div className="preview-stage">
@@ -60,26 +101,40 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
           className={`box3d ${isLabel ? 'box3d--card' : ''}`}
           style={boxStyle}
         >
-          <div className="face face--front" style={{ background: p.bg, color: p.fg, borderColor: p.accent }}>
-            {logo ? (
-              <img src={logo.dataUrl} alt="" className="face__logo" style={{ transform: `scale(${overrides.logoScale})` }} />
-            ) : (
-              <span className="face__mono" style={{ color: p.accent, transform: `scale(${overrides.logoScale})` }}>
-                {mark}
-              </span>
-            )}
-            <strong>{copy.brand}</strong>
-            <em>{copy.product}</em>
-            <small style={{ color: p.muted }}>{copy.tagline}</small>
-          </div>
-          <div className="face face--back" style={{ background: p.paper, color: p.muted }}>
-            <p>{copy.ingredients}</p>
-            {copy.warnings && <p className="face__warn">{copy.warnings}</p>}
-          </div>
-          <div className="face face--right" style={{ background: p.accent }} />
-          <div className="face face--left" style={{ background: p.paper }} />
-          <div className="face face--top" style={{ background: p.fg }} />
-          <div className="face face--bottom" style={{ background: '#050505' }} />
+          <Face
+            face="front"
+            art={front}
+            style={{ background: p.bg, color: p.fg, borderColor: p.accent }}
+            fallback={
+              <>
+                {logo ? (
+                  <img src={logo.dataUrl} alt="" className="face__logo" style={{ transform: `scale(${overrides.logoScale})` }} />
+                ) : (
+                  <span className="face__mono" style={{ color: p.accent, transform: `scale(${overrides.logoScale})` }}>
+                    {mark}
+                  </span>
+                )}
+                <strong>{copy.brand}</strong>
+                <em>{copy.product}</em>
+                <small style={{ color: p.muted }}>{copy.tagline}</small>
+              </>
+            }
+          />
+          <Face
+            face="back"
+            art={back}
+            style={{ background: p.paper, color: p.muted }}
+            fallback={
+              <>
+                <p>{copy.ingredients}</p>
+                {copy.warnings && <p className="face__warn">{copy.warnings}</p>}
+              </>
+            }
+          />
+          <Face face="right" art={right} style={{ background: p.accent }} fallback={null} />
+          <Face face="left" art={left} style={{ background: p.paper }} fallback={null} />
+          <Face face="top" art={top} style={{ background: p.fg }} fallback={null} />
+          <Face face="bottom" art={bottom} style={{ background: '#050505' }} fallback={null} />
         </div>
       </div>
     </div>

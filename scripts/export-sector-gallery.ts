@@ -44,6 +44,14 @@ async function main() {
       overridePatch: { studio: true, premium: job.styleType === 'luxury', variationIndex: 0 },
     })
     const dir = spec.studio?.direction
+    if (!spec.preflight.exportOk) {
+      const fails = spec.preflight.items.filter((i) => i.status === 'fail').map((i) => i.id).join(', ')
+      index.push(
+        `| ${job.slug} | ${job.brand} | SKIP exportOk | ${fails || 'fail'} | ${spec.templateId} | ${dir?.archetype ?? '—'} | ${dir?.background ?? '—'} |`,
+      )
+      console.warn(`${job.slug}  SKIP exportOk=false  ${fails}`)
+      continue
+    }
     const front = renderFrontSvg(spec.dieline, spec.artwork, spec.palette)
     const full = renderArtworkDoc(spec.dieline, spec.artwork, `${job.slug} — ${job.brand}`)
     await fs.writeFile(path.join(OUT, `${job.slug}-on.svg`), front, 'utf8')

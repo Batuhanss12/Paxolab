@@ -7,6 +7,7 @@ import { FormaLocalEngine } from './FormaLocalEngine'
 import { emptyBrief } from './fields'
 import { artworkFromDocument, validateDesignDocument } from './document'
 import { parseIntent } from './iterate/parseIntent'
+import { facePanelId, renderPanelSvg } from './artwork/renderArtwork'
 
 function perfumeBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
   return {
@@ -89,6 +90,8 @@ describe('FormaLocalEngine', () => {
     expect(svg!).toContain('trap yok')
     expect(svg!).toContain('FOGRA değil')
     expect(svg!).not.toContain('not PDF/X')
+    expect(svg!).toContain('data-type="cut"')
+    expect(svg!).toContain('data-type="crease"')
 
     const bleed = design.preflight.items.find((i) => i.id === 'bleed')
     expect(bleed?.detail).toMatch(/3 mm/)
@@ -107,6 +110,36 @@ describe('FormaLocalEngine', () => {
 
     expect(design.preflight.exportOk).toBe(false)
     expect(buildCombinedSvg(design)).toBeNull()
+  })
+
+  it('refuses combined SVG when exportOk is false even without collisions', () => {
+    const design = new FormaLocalEngine().generate({ brief: perfumeBrief() })
+    expect(design.preflight.exportOk).toBe(true)
+    expect(
+      buildCombinedSvg({
+        ...design,
+        preflight: { ...design.preflight, exportOk: false, blocking: true },
+      }),
+    ).toBeNull()
+  })
+
+  it('studio export SVG replaces Google @import with unicode-range named faces', () => {
+    const design = new FormaLocalEngine().generate({
+      brief: perfumeBrief(),
+      overridePatch: { studio: true, printReady: true },
+    })
+    expect(design.preflight.exportOk).toBe(true)
+    const svg = buildCombinedSvg(design)
+    expect(svg).toBeTruthy()
+    expect(svg!).toContain('studio-fonts-subset')
+    expect(svg!).toContain('unicode-range')
+    expect(svg!).toContain('Georgia')
+    expect(svg!).not.toContain('@import url')
+    expect(svg!).toContain('data-art="studio"')
+    const frontId = facePanelId(design.dieline, design.artwork, 'front')
+    expect(frontId).toBeTruthy()
+    const front = renderPanelSvg(design.dieline, design.artwork, frontId!, design.palette)
+    expect(front).toContain('data-art="studio"')
   })
 
   it('golden compose-wiring: luxury perfume tuck-end front carries pattern art', () => {

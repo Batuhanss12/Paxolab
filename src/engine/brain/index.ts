@@ -57,6 +57,7 @@ export {
   rollbackKnowledge,
   transitionKnowledge,
   upsertKnowledgeRule,
+  whenDesignKnowledgeReady,
 } from './DesignKnowledgeStore'
 export type {
   DesignKnowledgeRule,
@@ -79,11 +80,22 @@ export {
   observeFeedback,
   observeOutcome,
   patternConfidence,
+  rejectKnowledge,
   resetLearning,
   runLearningCycle,
   validateKnowledge,
+  whenLearningReady,
 } from './LearningEngine'
 export type { LearningPattern, Observation } from './LearningEngine'
+export {
+  describeCondition,
+  describeKnowledgeRule,
+  describeRecommendation,
+  describeScope,
+  learnedPreferenceLine,
+  learningSnapshot,
+} from './learningUi'
+export type { LearningSnapshot } from './learningUi'
 export { applyKnowledgeToBrief, matchingKnowledge } from './applyKnowledge'
 export type { AppliedKnowledge } from './applyKnowledge'
 export {

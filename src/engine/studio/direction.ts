@@ -7,7 +7,7 @@
 import type { CopyLocale, DesignBrief, Palette, StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
-import { claimChip, copyBankFor, GENERIC_SAMPLE_TAGLINE, refineBenefits, refineCategory, volumeLine } from './copyBank'
+import { claimChip, copyBankFor, isGenericTagline, refineBenefits, refineCategory, volumeLine } from './copyBank'
 import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
 import type { DesignDirection, DirectionHints, StudioArchetype, StudioPalette, StudioSurface, Temperament } from './types'
 
@@ -286,7 +286,7 @@ export function resolveDirection(input: DirectionInput): DesignDirection {
   const productPrefix =
     hints.productPrefix ?? (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans' ? bank.prefixes[input.variationIndex % bank.prefixes.length] : '')
   const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
-  const tagline = (GENERIC_SAMPLE_TAGLINE.test(spokenTag) ? '' : spokenTag) || bank.tagline
+  const tagline = (isGenericTagline(spokenTag, brief.brandName) ? '' : spokenTag) || bank.tagline
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
   return {
     surface,
