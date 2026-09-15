@@ -26,7 +26,8 @@ export function paintOval(cx: number, cy: number, r: number, accent: string): st
   return `
     <g data-art="hero-oval">
       ${rays.join('')}
-      <circle cx="${mm(cx)}" cy="${mm(cy)}" r="${mm(R * 0.78)}" fill="none" stroke="${accent}" stroke-opacity="0.5" stroke-width="0.2" />
+      <circle cx="${mm(cx)}" cy="${mm(cy)}" r="${mm(R * 0.86)}" fill="none" stroke="${accent}" stroke-opacity="0.62" stroke-width="0.28" />
+      <circle cx="${mm(cx)}" cy="${mm(cy)}" r="${mm(R * 0.7)}" fill="none" stroke="${accent}" stroke-opacity="0.42" stroke-width="0.16" />
       <path d="${diamond}" fill="${accent}" fill-opacity="0.06" stroke="${accent}" stroke-width="0.22" />
       ${flacon}
     </g>

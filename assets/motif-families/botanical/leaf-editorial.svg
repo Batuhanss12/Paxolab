@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 100" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M20 88 C24 60 28 36 44 14"/>
-  <path d="M32 40 C18 48 14 64 24 74 C28 62 30 50 32 40 Z"/>
-  <path d="M36 32 C48 24 58 28 56 42 C48 38 40 36 36 32 Z"/>
-  <path d="M28 56 C22 64 24 76 34 78"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 100" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20 90 C24 60 28 34 46 12"/>
+  <path d="M32 40 C16 50 12 68 24 78 C28 64 30 50 32 40 Z"/>
+  <path d="M36 30 C50 20 60 26 58 42 C48 38 40 34 36 30 Z"/>
+  <path d="M28 56 C22 66 24 78 34 80"/>
+  <path d="M24 58 C20 62 19 66 21 70" opacity="0.65"/>
+  <path d="M48 28 C52 26 56 28 58 32" opacity="0.65"/>
+  <ellipse cx="22" cy="70" rx="1.6" ry="2.1" fill="currentColor" stroke="none"/>
 </svg>

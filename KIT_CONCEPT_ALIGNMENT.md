@@ -47,3 +47,52 @@ If the kit already supplies a **crest** focal (`centered-crest` lockup or crest 
 
 Blank 2.5–2.7 winners were not rewritten.
 
+## Faz 2.9 craft fill
+
+After alignment, spend had a **cap** but no **floor**. Kit NOCTURNE sat at 0.09 (ribbon speck). `fillDecorationBudget` raises opacity / support scale toward `craftFillFloor` without exceeding `decorationBudget`. Kit crest focal may take a second unused-lexicon companion (ribbon + cartouche on opposite top corners — not a 4-corner L-pack). Kit-supplied crest counts in concept fidelity so the overlay is not punished for not cloning the crest.
+
+| Face | 2.8 | 2.9 |
+|---|---|---|
+| NOCTURNE kit | spend 0.09, 1 ribbon, fidelity 38 | spend 0.19, ribbon + cartouche, fidelity 100 |
+| EARTHEN kit | 3 atoms, spend 0.35 | held |
+| SOFT OVAL kit | spend 0.14 | spend 0.15, oval ring held |
+| AIR PAPER | spend 0.12 | held (quiet floor) |
+| TECH / NOX | 1 glyph, spend 0.21 | 1 glyph, spend 0.22, still not L-pack |
+| kit-09 | spend 0.37 / 0.48 | held |
+
+## Faz 2.10 atom kalemi
+
+Craft fill ölçeği düzeltti; çizimler hâlâ ince kalemdi. Aynı ailede daha ağır SVG: zeytin dalı (damar + meyve), çift oval halka, kalkan+kurdele, kartuş volüt, linear glyph damgası. Yeni dil / yeni gramer yok. `pattern16` sayfası duruyor; lexicon hit varken aile dosyası sheet parçasının önüne geçer.
+
+| Face | 2.9 | 2.10 |
+|---|---|---|
+| EARTHEN kit | olive-branch, 3 atoms, spend 0.35 | aynı lexicon, damar+meyve, spend 0.38 |
+| NOCTURNE kit | ribbon + cartouche, spend 0.19 | kalkan/kurdele/kartuş dolu, spend 0.26 |
+| SOFT OVAL kit | tek ellipse, spend 0.15 | çift halka + tick, spend 0.17 |
+| AIR PAPER | hairline, spend 0.12 | çift hairline, spend 0.14 (quiet) |
+| TECH / NOX | pattern16 fragment, spend 0.22 | `tech-glyph-mark`, spend 0.24, not L-pack |
+| kit-09 | spend 0.37 / 0.48 | held |
+
+## Faz 2.11 kit lockup kalemi
+
+Overlay atomları doluydu; kit yüzü hâlâ ince kilit çizimiydi. `lockupRule` stil kostümü (foil elmas / hair). `lockupWindow` sessiz chrome’da kapanıyor. Aynı `LockupId`, aynı `layoutFrontLockup` Y’leri — chrome yazının **arkasına** biner, tipi kaydırmaz. `ruleKindOf` / `hasRule` / `stackH` kilit (modern `tech-grid` zaten `hasRule: false`; chrome fallback `ruleY` kullanır).
+
+| LockupId | Chrome |
+|---|---|
+| `harvest-seal` | Yaprak uçlu rule + yan zeytin filizleri; foil elmas kostümü yok |
+| `centered-crest` | Çift heraldik bar + markanın üstünde küçük yay (ikinci kalkan değil) |
+| `soft-oval` | Tip kolonunu saran çift elips (yüz boyu çerçeve değil) |
+| `air-rule` | Çift hairline + uç tick; oval / crest / yaprak yok |
+| `tech-grid` | Çift rule + uç kare + yan index tick; L-bracket pack yok |
+
+Label wrap/stack chrome almaz. `serif-cartouche` / `metal-plaque` / `badge-capsule` bu fazda dokunulmaz. Motif spend değişmez (kit boyası). Crafted LockupId `lockupWindow` kutusunu da kapatır (jenerik 0.16 rect, kilit chrome’unun üstüne binmesin).
+
+| Face | Overlay (2.10 held) | Lockup chrome |
+|---|---|---|
+| EARTHEN kit | olive-branch, 3 atoms, spend 0.38 / 0.42 | harvest-seal rule + filiz |
+| NOCTURNE kit | ribbon + cartouche, spend 0.26 / 0.28 | centered-crest bar + yay |
+| SOFT OVAL kit | oval ring, spend 0.17 / 0.24 | kolon elipsi |
+| AIR PAPER | hairline, spend 0.14 / 0.18 | çift hairline |
+| TECH / NOX | `tech-glyph-mark`, spend 0.24 / 0.22 | dual rule + kare, not L-pack |
+| kit-09 | spend 0.37 / 0.48 | held (badge-capsule, chrome yok) |
+

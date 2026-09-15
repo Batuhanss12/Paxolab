@@ -11,6 +11,7 @@ import { fontStack } from '../languages'
 import { frontSpecLine } from '../copy'
 import { escapeSvg as esc, minMm as mm } from '../svgGeometry'
 import { lockupRule } from './shared'
+import { lockupOwnsRule, paintLockupChrome } from './lockupChrome'
 import { capsuleVolume, goldBar, outlineVolume, stampVolume } from './volume'
 import { foodClaimStrip, foodClaimStripY, ingredientBadges } from './foodElements'
 import { placeFrontExtras } from './frontExtras'
@@ -74,10 +75,11 @@ export function renderFrontLockup(
     const py = Math.max(panel.y + 2.2, (brandYs[0] ?? layout.brandY) - layout.brandSize - 5.4)
     body += `<g data-art="step-pill"><rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="1.4" fill="${p.accent}" fill-opacity="0.14" stroke="${p.accent}" stroke-width="0.2" /><text x="${px + pw / 2}" y="${py + 2.45}" text-anchor="middle" fill="${p.accent}" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="1.45" letter-spacing="0.35">${esc(pill)}</text></g>`
   }
+  body += paintLockupChrome(layout, panel, system, p)
   brandLines.forEach((line, i) => {
     body += `<text x="${ax}" y="${brandYs[i] ?? layout.brandY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.brandFont}" font-weight="${layout.brandWeight}" font-size="${layout.brandSize}" letter-spacing="${layout.brandTracking}">${esc(line)}</text>`
   })
-  body += lockupRule(layout, panel, p)
+  body += lockupRule(layout, panel, p, lockupOwnsRule(system.lockup))
   if (copy.product.trim()) {
     const productPaint = hair ? hairBilingualLine(copy.product, locale).display : faceUpper(copy.product, locale)
     body += `<text x="${ax}" y="${layout.productY}" text-anchor="${anchor}" fill="${p.fg}" font-family="${layout.productFont}" font-weight="${layout.productWeight}" font-size="${layout.productSize}" letter-spacing="${layout.productTracking}">${esc(productPaint)}</text>`

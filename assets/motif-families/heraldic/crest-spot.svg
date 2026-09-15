@@ -1,5 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 88" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round">
-  <path d="M36 10 L58 28 V58 C58 70 36 80 36 80 C36 80 14 70 14 58 V28 Z"/>
-  <path d="M36 22 V70" opacity="0.55"/>
-  <path d="M24 34 H48" opacity="0.55"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 88" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round">
+  <path d="M36 8 L60 26 V56 C60 70 36 82 36 82 C36 82 12 70 12 56 V26 Z"/>
+  <path d="M36 16 L52 28 V54 C52 64 36 74 36 74 C36 74 20 64 20 54 V28 Z" opacity="0.85"/>
+  <path d="M24 12 H48"/>
+  <path d="M28 8 H44 L36 4 Z"/>
+  <path d="M36 32 L42 42 H30 Z"/>
+  <path d="M36 24 V70" opacity="0.45"/>
+  <path d="M26 38 H46" opacity="0.45"/>
+  <path d="M18 78 C26 72 46 72 54 78 C46 84 26 84 18 78 Z"/>
+  <path d="M26 78 H46" opacity="0.55"/>
 </svg>

@@ -11,6 +11,7 @@ import {
   shouldPaintModernGrid,
   shouldPaintSectorFrame,
 } from '../../designSystem/conceptKitAlignment'
+import { lockupOwnsRule } from './lockupChrome'
 import type { DesignSystem } from '../../designSystem/types'
 import { paintPrimitives } from '../illustrationPrimitives'
 import { lockupWindow, type SafeRect } from '../motifs'
@@ -83,7 +84,11 @@ export function frontDecor(panel: Panel, system: DesignSystem, p: Palette, safe?
     }
   }
 
-  if (shouldPaintLockupWindow(plan?.visualConcept, plan?.artDirection.chrome, style, grammar) && safe) {
+  if (
+    shouldPaintLockupWindow(plan?.visualConcept, plan?.artDirection.chrome, style, grammar) &&
+    safe &&
+    !lockupOwnsRule(system.lockup)
+  ) {
     out += lockupWindow(safe, p.accent)
   }
 

@@ -1,7 +1,6 @@
 /**
- * Writes Faz 2.8 sample designs to a Desktop folder.
- * Blank-canvas faces: visual concept → family/budget → candidate search.
- * Kit faces read the same VisualConcept for lockup/chrome/frame, then motif overlay.
+ * Writes Faz 2.11 sample designs to a Desktop folder.
+ * Same VisualConcept SoT and lockup math; kit lockup chrome is LockupId-owned.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -185,7 +184,7 @@ async function main() {
     hasSearch: boolean
   }[] = []
   const lines = [
-    'FORMA — FAZ 2.8 örnek üretim (Visual Concept / kit alignment)',
+    'FORMA — FAZ 2.11 örnek üretim (kit lockup kalemi / Visual Concept)',
     `tarih: 2026-09-15`,
     `klasör: ${OUT}`,
     '',
@@ -328,7 +327,7 @@ async function main() {
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>FORMA FAZ 2.8 örnekler</title>
+  <title>FORMA FAZ 2.11 örnekler</title>
   <style>
     body { font-family: Georgia, serif; margin: 0; background: #111; color: #f4efe6; }
     header { padding: 28px 32px 12px; }
@@ -345,8 +344,8 @@ async function main() {
 </head>
 <body>
   <header>
-    <h1>FORMA — FAZ 2.8 örnekler</h1>
-    <p>Blank-canvas ve katalog kit: visual concept → lockup/chrome/motif aynı SoT. Kit yüzü style costume değil, concept dilini izler.</p>
+    <h1>FORMA — FAZ 2.11 örnekler</h1>
+    <p>Kit lockup kalemi: harvest / crest / oval / air-rule / tech-grid chrome. Tip matematiği kilit. Heavy-frame / L-pack geri gelmez.</p>
   </header>
   <section>
     <h2>Blank canvas · aday araması</h2>

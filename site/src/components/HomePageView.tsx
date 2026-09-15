@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/content/types";
 import { getContent } from "@/content";
@@ -129,9 +130,17 @@ function ProductStage({
   );
 }
 
+const brandCards = [
+  { src: "/brand/02-palette.png", tr: "Renk", en: "Color" },
+  { src: "/brand/03-type.png", tr: "Tipografi", en: "Typography" },
+  { src: "/brand/04-promise.png", tr: "Vaat", en: "Promise" },
+  { src: "/brand/08-locale.png", tr: "Dil", en: "Locale" },
+] as const;
+
 export function HomePageView({ locale }: { locale: Locale }) {
   const { home } = getContent(locale);
   const howHref = locale === "en" ? "/en/how-it-works" : "/nasil-calisir";
+  const isEn = locale === "en";
 
   return (
     <>
@@ -195,6 +204,39 @@ export function HomePageView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {/* Brand identity strip */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+        <h2 className="section-headline text-cream">
+          {isEn ? "Brand language" : "Marka dili"}
+        </h2>
+        <p className="mt-4 max-w-xl text-base text-cream/45">
+          {isEn
+            ? "Grapxor’s visual system — palette, type, promise, and locale — in one glance."
+            : "Grapxor görsel sistemi — renk, tipografi, vaat ve dil — tek bakışta."}
+        </p>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {brandCards.map((card) => (
+            <figure
+              key={card.src}
+              className="group overflow-hidden rounded-2xl border border-white/[0.07] transition hover:border-copper/40"
+            >
+              <div className="relative aspect-square">
+                <Image
+                  src={card.src}
+                  alt={isEn ? card.en : card.tr}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover"
+                />
+              </div>
+              <figcaption className="border-t border-white/[0.06] bg-ink-900/60 px-4 py-3 text-sm text-cream/60">
+                {isEn ? card.en : card.tr}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       <section className="border-y border-white/[0.06] bg-ink-975">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
           <h2 className="section-headline text-cream">{home.hubsTitle}</h2>
@@ -214,6 +256,38 @@ export function HomePageView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {/* Studio craft row */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+        <h2 className="section-headline text-cream">
+          {isEn ? "Studio craft" : "Stüdyo işçiliği"}
+        </h2>
+        <p className="mt-4 max-w-xl text-base text-cream/45">
+          {isEn
+            ? "From workspace to print-ready dieline."
+            : "Çalışma alanından baskıya hazır dieline’a."}
+        </p>
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/[0.07] transition hover:border-copper/40">
+            <Image
+              src="/brand/05-studio.png"
+              alt={isEn ? "Studio" : "Stüdyo"}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/[0.07] transition hover:border-copper/40">
+            <Image
+              src="/brand/07-dieline.png"
+              alt={isEn ? "Dieline" : "Dieline"}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-ink-850 to-ink-975 p-8 sm:p-12">
           <div
@@ -224,12 +298,23 @@ export function HomePageView({ locale }: { locale: Locale }) {
                 "radial-gradient(circle, rgba(196,149,94,0.35), transparent 70%)",
             }}
           />
-          <div className="relative flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
-            <div>
-              <h2 className="section-headline text-cream">{home.ctaTitle}</h2>
-              <p className="mt-3 max-w-lg text-base text-cream/45">{home.ctaLead}</p>
+          <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_minmax(0,240px)]">
+            <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
+              <div>
+                <h2 className="section-headline text-cream">{home.ctaTitle}</h2>
+                <p className="mt-3 max-w-lg text-base text-cream/45">{home.ctaLead}</p>
+              </div>
+              <StudioLink className="shrink-0 px-7 py-3 text-[15px]" />
             </div>
-            <StudioLink className="shrink-0 px-7 py-3 text-[15px]" />
+            <div className="relative mx-auto hidden aspect-square w-full max-w-[240px] overflow-hidden rounded-2xl border border-white/[0.08] lg:block">
+              <Image
+                src="/brand/10-cta.png"
+                alt={isEn ? "Open studio" : "Stüdyoyu aç"}
+                fill
+                sizes="240px"
+                className="object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>

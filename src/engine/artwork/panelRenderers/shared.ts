@@ -17,8 +17,15 @@ export function lockoutClip(id: string, panel: Panel, hole: SafeRect): string {
   return `<defs><clipPath id="lockout-${id}" clipPathUnits="userSpaceOnUse"><path fill-rule="evenodd" d="M${x} ${y}h${w}v${h}h${-w}z M${hole.x} ${hole.y}h${hole.w}v${hole.h}h${-hole.w}z" /></clipPath></defs>`
 }
 
-/** Decorative rule under lockup — foil diamond, double line, hair, or eco. */
-export function lockupRule(layout: ReturnType<typeof layoutFrontLockup>, panel: Panel, p: Palette): string {
+/** Decorative rule under lockup — foil diamond, double line, hair, or eco.
+ * Crafted LockupIds paint their own rule via paintLockupChrome. */
+export function lockupRule(
+  layout: ReturnType<typeof layoutFrontLockup>,
+  panel: Panel,
+  p: Palette,
+  skip = false,
+): string {
+  if (skip) return ''
   if (!layout.hasRule || layout.ruleY == null) return ''
   const { ax, ruleY, ruleKind } = layout
   const cx = panel.x + panel.w / 2

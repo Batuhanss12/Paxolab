@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="square">
-  <path d="M8 40 V8 H40"/>
-  <path d="M12 40 V12 H40" opacity="0.55"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="square" stroke-linejoin="miter">
+  <path d="M7 41 V7 H41"/>
+  <path d="M12 41 V12 H41" opacity="0.6"/>
+  <path d="M7 7 L12 12"/>
+  <path d="M7 18 H14"/>
+  <path d="M18 7 V14"/>
+  <path d="M7 7 L4 4 M7 7 L10 4 M7 7 L4 10" opacity="0.45"/>
 </svg>

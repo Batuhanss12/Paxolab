@@ -179,7 +179,7 @@ function languageAlign(got: VisualLanguage[], wanted?: VisualLanguage): number {
   return 34
 }
 
-export function conceptFidelityOf(slots: SlotLike[], plan: ConceptPlan): number {
+export function conceptFidelityOf(slots: SlotLike[], plan: ConceptPlan, kitLexiconUsed: string[] = []): number {
   const wanted = languagesOfConcept(plan)
   const lexicon = lexiconOf(plan)
   const avoid = avoidOf(plan)
@@ -197,7 +197,7 @@ export function conceptFidelityOf(slots: SlotLike[], plan: ConceptPlan): number 
   const allWeak = scores.every((s) => s <= 40)
   let score = anyExact ? Math.min(100, mean + 8) : allWeak ? Math.min(mean, 36) : mean
 
-  const hitTokens = new Set<string>()
+  const hitTokens = new Set<string>(kitLexiconUsed.filter((token) => lexicon.includes(token) || token === 'crest'))
   let avoided = 0
   for (const slot of slots) {
     for (const token of atomLexiconHits(slot.atom, lexicon)) hitTokens.add(token)
@@ -225,7 +225,8 @@ export function conceptFidelityOf(slots: SlotLike[], plan: ConceptPlan): number 
   const tags = (plan.visualConcept.tags ?? []).join(' ')
   const oneHero = /one-hero|nocturne/.test(`${id} ${tags}`)
   if (oneHero && lexicon.includes('crest')) {
-    const hasCrest = slots.some((s) => atomLexiconHits(s.atom, ['crest']).length > 0)
+    const hasCrest =
+      kitLexiconUsed.includes('crest') || slots.some((s) => atomLexiconHits(s.atom, ['crest']).length > 0)
     if (!hasCrest) score = Math.min(score, 48)
   }
 

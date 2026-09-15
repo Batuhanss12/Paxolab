@@ -19,6 +19,7 @@ import {
   type SlotKind,
 } from './artDesignRegions'
 import { motifFamilyOf, motifSubfamilyOf } from './artMotifFamily'
+import { atomHasFamilyFile } from './assetCatalog/catalog'
 import { atomRegionAllowed, resolveMotifDesign } from './artMotifMeta'
 import {
   atomAvoided,
@@ -148,6 +149,9 @@ function pickForSlot(
       if (va !== vb) return va - vb
       const novA = unusedLexiconHits(a, lexicon, usedTokens).length
       const novB = unusedLexiconHits(b, lexicon, usedTokens).length
+      const fa = atomHasFamilyFile(a) ? 1 : 0
+      const fb = atomHasFamilyFile(b) ? 1 : 0
+      if (fa !== fb && (novA > 0 || novB > 0)) return fb - fa
       if (novA !== novB) return novB - novA
       const ia = earliestUnusedLexiconIndex(a, lexicon, usedTokens)
       const ib = earliestUnusedLexiconIndex(b, lexicon, usedTokens)

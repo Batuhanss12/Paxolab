@@ -1,13 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 160" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M40 12 C36 48 44 88 40 148"/>
-  <path d="M40 36 C22 42 16 54 22 62 C30 54 38 46 40 36 Z"/>
-  <path d="M40 36 C58 42 64 54 58 62 C50 54 42 46 40 36 Z"/>
-  <path d="M40 72 C24 78 18 90 24 98 C32 90 38 82 40 72 Z"/>
-  <path d="M40 72 C56 78 62 90 56 98 C48 90 42 82 40 72 Z"/>
-  <path d="M40 108 C26 114 22 126 28 132 C34 124 38 116 40 108 Z"/>
-  <path d="M40 108 C54 114 58 126 52 132 C46 124 42 116 40 108 Z"/>
-  <circle cx="24" cy="58" r="1" fill="currentColor" stroke="none"/>
-  <circle cx="56" cy="58" r="1" fill="currentColor" stroke="none"/>
-  <circle cx="26" cy="94" r="1" fill="currentColor" stroke="none"/>
-  <circle cx="54" cy="94" r="1" fill="currentColor" stroke="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 160" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M40 8 C36 46 45 86 39 152"/>
+  <path d="M40 36 C20 43 14 56 22 66 C31 56 38 46 40 36 Z"/>
+  <path d="M40 36 C60 43 66 56 58 66 C49 56 42 46 40 36 Z"/>
+  <path d="M32 48 C26 52 24 58 26 62" opacity="0.7"/>
+  <path d="M48 48 C54 52 56 58 54 62" opacity="0.7"/>
+  <path d="M40 70 C23 78 16 92 24 102 C33 92 38 80 40 70 Z"/>
+  <path d="M40 70 C57 78 64 92 56 102 C47 92 42 80 40 70 Z"/>
+  <path d="M32 84 C26 88 24 94 26 98" opacity="0.7"/>
+  <path d="M48 84 C54 88 56 94 54 98" opacity="0.7"/>
+  <path d="M40 106 C25 113 20 126 28 134 C35 125 38 116 40 106 Z"/>
+  <path d="M40 106 C55 113 60 126 52 134 C45 125 42 116 40 106 Z"/>
+  <path d="M33 118 C28 122 27 127 29 130" opacity="0.65"/>
+  <path d="M47 118 C52 122 53 127 51 130" opacity="0.65"/>
+  <ellipse cx="23" cy="62" rx="2.4" ry="3.1" fill="currentColor" stroke="none"/>
+  <ellipse cx="57" cy="62" rx="2.4" ry="3.1" fill="currentColor" stroke="none"/>
+  <ellipse cx="25" cy="98" rx="2.2" ry="2.9" fill="currentColor" stroke="none"/>
+  <ellipse cx="55" cy="98" rx="2.2" ry="2.9" fill="currentColor" stroke="none"/>
+  <ellipse cx="29" cy="130" rx="1.8" ry="2.4" fill="currentColor" stroke="none"/>
+  <ellipse cx="51" cy="130" rx="1.8" ry="2.4" fill="currentColor" stroke="none"/>
 </svg>

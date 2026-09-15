@@ -9,6 +9,7 @@ import { densityCap } from '../brain/CompositionGrammar'
 import { decorationBudgetOf } from '../brain/VisualConcept'
 import { seedTieBreak, visualWeightOf, resolveMotifDesign, atomRegionAllowed, resolvedMotifRole, type MotifRegionId } from './artMotifMeta'
 import { atomFitsConceptFamily, familiesCompatible, motifFamilyOf, motifSubfamilyOf, selectFamilyPool } from './artMotifFamily'
+import { atomHasFamilyFile } from './assetCatalog/catalog'
 import type { AssetMode } from './assetCatalog/types'
 import { familyMatchLevel } from './assetCatalog/familyMatrix'
 import type { MotifAtom } from './artMotifAtomizer'
@@ -197,6 +198,97 @@ export function applyDecorationBudget(slots: MotifSlot[], panel: Panel, budget: 
   return slots.map((s) => fittedById.get(s.atom.id)).filter((s): s is MotifSlot => Boolean(s))
 }
 
+function shouldCraftFill(plan: DesignPlan): boolean {
+  const id = plan.visualConcept.id
+  if (!id || id === 'lux') return false
+  return Boolean(plan.visualConcept.family || (plan.visualConcept.languages ?? []).length)
+}
+
+/** Target spend floor inside the concept budget. Does not raise the cap. */
+export function craftFillFloor(plan: DesignPlan, budget: number): number {
+  const cap = Math.max(0.12, budget)
+  const id = plan.visualConcept.id
+  const langs = languagesOfConcept(plan)
+  if (id === 'air-paper') return Math.min(cap, cap * 0.55)
+  if (id === 'capsule-field') return Math.min(cap, cap * 0.72)
+  if (langs.includes('linear')) return Math.min(cap, cap * 0.7)
+  if (id === 'soft-oval') return Math.min(cap, cap * 0.62)
+  if (id === 'nocturne-crest' || id === 'heraldic-crest') return Math.min(cap, cap * 0.58)
+  if (langs.includes('quiet-line')) return Math.min(cap, cap * 0.55)
+  return Math.min(cap, cap * 0.62)
+}
+
+function growBox(box: MotifSlot['box'], factor: number, panel: Panel): MotifSlot['box'] {
+  const w = box.w * factor
+  const h = box.h * factor
+  const inset = 1.2
+  let x = box.x - (w - box.w) / 2
+  let y = box.y - (h - box.h) / 2
+  x = Math.max(panel.x + inset, Math.min(x, panel.x + panel.w - w - inset))
+  y = Math.max(panel.y + inset, Math.min(y, panel.y + panel.h - h - inset))
+  return { x, y, w: Math.min(w, panel.w - inset * 2), h: Math.min(h, panel.h - inset * 2) }
+}
+
+/** Raise opacity / box toward the concept floor. Never exceeds the budget cap. */
+export function fillDecorationBudget(
+  slots: MotifSlot[],
+  panel: Panel,
+  budget: number,
+  plan: DesignPlan,
+  opts: MotifPaintOpts = {},
+): MotifSlot[] {
+  if (!slots.length || !shouldCraftFill(plan)) return slots
+  const cap = Math.max(0.12, budget)
+  const floor = craftFillFloor(plan, cap)
+  let next = slots.map((s) => ({ ...s, box: { ...s.box } }))
+  let spend = decorationSpendOf(next, panel)
+  if (spend >= floor - 1e-6) return next
+
+  for (let i = 0; i < next.length && spend < floor; i++) {
+    const meta = resolveMotifDesign(next[i].atom)
+    const maxOp = Math.min(0.92, meta.maxOpacity ?? 0.95)
+    if (next[i].opacity >= maxOp - 0.01) continue
+    const raised = { ...next[i], opacity: Math.min(maxOp, Math.round((next[i].opacity + 0.1) * 100) / 100) }
+    const trial = next.map((s, j) => (j === i ? raised : s))
+    const nextSpend = decorationSpendOf(trial, panel)
+    if (nextSpend <= cap + 0.02) {
+      next = trial
+      spend = nextSpend
+    }
+  }
+
+  const langs = languagesOfConcept(plan)
+  const mayGrow =
+    opts.kitSuppliesFocal ||
+    langs.includes('linear') ||
+    plan.visualConcept.id === 'soft-oval' ||
+    plan.visualConcept.id === 'earthen-premium'
+  if (!mayGrow) return next
+
+  const origin = slots.map((s) => s.box)
+  for (let step = 0; step < 3 && spend < floor; step++) {
+    let grew = false
+    for (let i = 0; i < next.length; i++) {
+      const meta = resolveMotifDesign(next[i].atom)
+      const grown = growBox(next[i].box, 1.08, panel)
+      if (grown.w <= next[i].box.w + 0.05) continue
+      if (grown.w > origin[i].w * Math.max(1.22, meta.maxScale ?? 1.2) + 0.2) continue
+      if (opts.lockup && lockupOverlapVerdict({ ...next[i], box: grown }, opts.lockup).verdict === 'reject') continue
+      if (opts.heroBox && opts.heroBox.w > 0 && boxesCollide(grown, opts.heroBox, 0.35)) continue
+      if (next.some((s, j) => j !== i && boxesCollide(grown, s.box, 0.5))) continue
+      const trial = next.map((s, j) => (j === i ? { ...s, box: grown } : s))
+      const nextSpend = decorationSpendOf(trial, panel)
+      if (nextSpend > cap + 0.02) continue
+      next = trial
+      spend = nextSpend
+      grew = true
+      if (spend >= floor) break
+    }
+    if (!grew) break
+  }
+  return next
+}
+
 function atomsForConcept(atoms: MotifAtom[], plan: DesignPlan): MotifAtom[] {
   return selectFamilyPool(atoms, plan.visualConcept.family, plan.visualConcept.supportFamily, plan.visualConcept.id).atoms
 }
@@ -215,12 +307,31 @@ function familyConsistencyOf(slots: MotifSlot[], plan: DesignPlan): number {
   return 50
 }
 
-function constrainAtomScale(atom: MotifAtom, strategy: CompositionStrategy): MotifAtom {
+function constrainAtomScale(
+  atom: MotifAtom,
+  strategy: CompositionStrategy,
+  plan?: DesignPlan,
+  opts?: MotifPaintOpts,
+): MotifAtom {
   const range = CUSTOM_STRATEGY_SCALE[strategy]
   if (!range) return atom
   const meta = resolveMotifDesign(atom)
-  const maxScale = Math.min(meta.maxScale ?? 1.8, range.max)
-  const minScale = Math.min(maxScale, Math.max(meta.minScale ?? 0.35, range.min))
+  let maxScale = Math.min(meta.maxScale ?? 1.8, range.max)
+  let minScale = Math.min(maxScale, Math.max(meta.minScale ?? 0.35, range.min))
+  if (plan) {
+    const langs = languagesOfConcept(plan)
+    if (langs.includes('linear') && (strategy === 'asymmetric-editorial' || strategy === 'minimal-accent')) {
+      minScale = Math.min(maxScale, Math.max(minScale, 0.7))
+      maxScale = Math.max(maxScale, 1.16)
+    }
+    if (opts?.kitSuppliesFocal && strategy === 'hero-with-support') {
+      minScale = Math.min(maxScale, Math.max(minScale, 0.68))
+      maxScale = Math.max(maxScale, 1.18)
+    }
+    if (plan.visualConcept.id === 'soft-oval' && strategy === 'hero-with-support') {
+      minScale = Math.min(maxScale, Math.max(minScale, 0.62))
+    }
+  }
   return { ...atom, design: { ...meta, minScale, maxScale } }
 }
 
@@ -360,6 +471,9 @@ function layoutCustomSlots(
       if (va !== vb) return va - vb
       const novA = unusedLexiconHits(a, lexicon, used).length
       const novB = unusedLexiconHits(b, lexicon, used).length
+      const fa = atomHasFamilyFile(a) ? 1 : 0
+      const fb = atomHasFamilyFile(b) ? 1 : 0
+      if (fa !== fb && (novA > 0 || novB > 0)) return fb - fa
       if (novA !== novB) return novB - novA
       const ia = earliestUnusedLexiconIndex(a, lexicon, used)
       const ib = earliestUnusedLexiconIndex(b, lexicon, used)
@@ -378,7 +492,7 @@ function layoutCustomSlots(
       return 0
     }).slice(0, n)
   }
-  const ranged = (atom: MotifAtom | undefined) => (atom ? constrainAtomScale(atom, strategy) : undefined)
+  const ranged = (atom: MotifAtom | undefined) => (atom ? constrainAtomScale(atom, strategy, plan, opts) : undefined)
   const tryPush = (pool: MotifAtom[], kind: SlotKind, salt: number, opacity: number, lockout: boolean, role: MotifSlot['role']) => {
     for (const atom of pick(pool, kind, 8, salt)) {
       const before = slots.length
@@ -410,7 +524,21 @@ function layoutCustomSlots(
       tryPush(stamps, 'hero-stamp', 3, 0.8, false, 'stamp')
     }
     const support: SlotKind = heroX >= 0.5 ? 'nw' : 'ne'
-    if (canCompanion(stamps) || opts.kitSuppliesFocal) tryPush(stamps, support, 4, 0.7, false, 'corner')
+    const supportOp = opts.kitSuppliesFocal ? 0.84 : 0.7
+    if (canCompanion(stamps) || opts.kitSuppliesFocal) tryPush(stamps, support, 4, supportOp, false, 'corner')
+    if (opts.kitSuppliesFocal && decorationBudgetOf(plan) >= 0.24) {
+      const bands = uniqueAtoms([
+        ...atoms.filter((a) => atomMatchesRole(a, 'band')),
+        ...atoms.filter((a) => atomMatchesRole(a, 'accent')),
+        ...atoms.filter((a) => atomMatchesRole(a, 'divider')),
+        ...stamps,
+      ])
+      const otherTop: SlotKind = support === 'nw' ? 'ne' : 'nw'
+      const unused = (pool: MotifAtom[]) =>
+        pool.filter((atom) => unusedLexiconHits(atom, lexiconOf(plan), usedTokens()).length > 0)
+      if (canCompanion(stamps)) tryPush(unused(stamps), otherTop, 8, 0.78, false, 'corner')
+      if (canCompanion(bands)) tryPush(unused(bands), 'band-bottom', 7, 0.74, true, 'accent')
+    }
   }
   return slots
 }
@@ -589,7 +717,7 @@ export function scoreCompositionSlots(
   const productionSafety = collision < 20 ? 10 : slots.length ? 88 : 40
   const geo = markup ? computeGeometryMetrics(markup, panel) : undefined
   const geoBalance = geo ? clampScore(geo.balance * 100) : balance
-  const conceptFidelity = clampScore(conceptFidelityOf(slots, plan))
+  const conceptFidelity = clampScore(conceptFidelityOf(slots, plan, opts.kitLexiconUsed))
 
   const parts = {
     hierarchy,
@@ -694,8 +822,9 @@ export function generateCompositionCandidates(input: {
   const out: CompositionCandidate[] = []
   for (const strategy of strategies) {
     const raw = buildCandidateSlots(strategy, atoms, panel, plan, opts)
+    const filled = fillDecorationBudget(raw, panel, budget, plan, opts)
     const slots = repairCompositionSlots(
-      applyDecorationBudget(raw, panel, budget).filter((s) =>
+      applyDecorationBudget(filled, panel, budget).filter((s) =>
         atomFitsConceptFamily(s.atom, plan.visualConcept.family, plan.visualConcept.supportFamily),
       ),
       panel,

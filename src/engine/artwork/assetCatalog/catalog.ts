@@ -31,6 +31,10 @@ export function lookupAssetRecord(idOrSheet: string): CanonicalAssetRecord | und
   return assets.find((a) => a.id === idOrSheet || a.sheetId === idOrSheet)
 }
 
+export function atomHasFamilyFile(atom: { sheetId: string; id?: string; sourceName?: string }): boolean {
+  return Boolean(lookupAssetRecordForAtom(atom.sheetId, atom.id, atom.sourceName)?.file)
+}
+
 export function lookupAssetRecordForAtom(sheetId: string, atomId?: string, sourceName?: string): CanonicalAssetRecord | undefined {
   const assets = catalogRecords()
   const byAtom = atomId ? assets.find((a) => a.id === atomId || atomId.startsWith(`${a.id}__`)) : undefined
