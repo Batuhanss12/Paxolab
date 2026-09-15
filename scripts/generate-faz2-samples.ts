@@ -1,6 +1,6 @@
 /**
- * Writes Faz 2.11 sample designs to a Desktop folder.
- * Same VisualConcept SoT and lockup math; kit lockup chrome is LockupId-owned.
+ * Writes Faz 2.12 sample designs to a Desktop folder.
+ * Same VisualConcept SoT and lockup math; remaining box lockups own their chrome.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -137,8 +137,11 @@ const KIT_SLUGS = [
   '04-serum-tuck-minimal',
   '08-zeytinyagi-tuck-luxury',
   '09-cikolata-tray-playful',
+  '10-kurabiye-tray-classic',
   '14-kulaklik-tuck-modern',
   '20-temizlik-tuck-minimal',
+  '21-krem-eco-monstera',
+  '27-krem-modern-zebra',
 ]
 
 function xmlFront(svg: string): string {
@@ -184,7 +187,7 @@ async function main() {
     hasSearch: boolean
   }[] = []
   const lines = [
-    'FORMA — FAZ 2.11 örnek üretim (kit lockup kalemi / Visual Concept)',
+    'FORMA — FAZ 2.12 örnek üretim (kalan kutu lockup kalemi / Visual Concept)',
     `tarih: 2026-09-15`,
     `klasör: ${OUT}`,
     '',
@@ -205,6 +208,17 @@ async function main() {
         job,
       }
     }),
+    {
+      slug: 'kit-14-kulaklik-tuck-luxury',
+      title: 'Kulaklık · luxury · NOX Pulse · kit',
+      folder: '02-katalog-kit',
+      blank: false,
+      brief: {
+        ...briefFrom(JOBS.find((j) => j.slug === '14-kulaklik-tuck-modern') as Job),
+        styleType: 'luxury',
+        colors: '#1a0a0a #c9a227',
+      },
+    },
   ]
 
   for (const sample of all) {
@@ -327,7 +341,7 @@ async function main() {
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>FORMA FAZ 2.11 örnekler</title>
+  <title>FORMA FAZ 2.12 örnekler</title>
   <style>
     body { font-family: Georgia, serif; margin: 0; background: #111; color: #f4efe6; }
     header { padding: 28px 32px 12px; }
@@ -344,8 +358,8 @@ async function main() {
 </head>
 <body>
   <header>
-    <h1>FORMA — FAZ 2.11 örnekler</h1>
-    <p>Kit lockup kalemi: harvest / crest / oval / air-rule / tech-grid chrome. Tip matematiği kilit. Heavy-frame / L-pack geri gelmez.</p>
+    <h1>FORMA — FAZ 2.12 örnekler</h1>
+    <p>Kalan kutu lockup kalemi: cartouche / plaque / stamp / left-index / capsule. Tip matematiği kilit. Heavy-frame / L-pack geri gelmez.</p>
   </header>
   <section>
     <h2>Blank canvas · aday araması</h2>

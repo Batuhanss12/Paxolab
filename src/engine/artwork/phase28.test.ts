@@ -101,10 +101,6 @@ describe('Phase 28 lockup chrome (Faz 2.11)', () => {
     expect(lockupOwnsRule('soft-oval')).toBe(true)
     expect(lockupOwnsRule('air-rule')).toBe(true)
     expect(lockupOwnsRule('tech-grid')).toBe(true)
-    expect(lockupOwnsRule('badge-capsule')).toBe(false)
-    expect(lockupOwnsRule('serif-cartouche')).toBe(false)
-    expect(lockupOwnsRule('metal-plaque')).toBe(false)
-    expect(lockupOwnsRule('stamp-center')).toBe(false)
   })
 
   it('does not rematch 2.8 lockup ids', () => {

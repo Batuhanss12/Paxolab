@@ -96,3 +96,17 @@ Label wrap/stack chrome almaz. `serif-cartouche` / `metal-plaque` / `badge-capsu
 | TECH / NOX | `tech-glyph-mark`, spend 0.24 / 0.22 | dual rule + kare, not L-pack |
 | kit-09 | spend 0.37 / 0.48 | held (badge-capsule, chrome yok) |
 
+## Faz 2.12 kalan kutu lockup kalemi
+
+2.11 beş kanıt ID’sini çizdi; kalan kutu lockup’ları hâlâ stil kostümü `lockupRule` / boş yüzdü. Aynı kural: `layoutFrontLockup` kilit, chrome yazının arkasına biner. Label wrap/stack yine boş.
+
+| LockupId | Chrome |
+|---|---|
+| `serif-cartouche` | Kolon kartuşu (çift yuvarlatılmış çerçeve + yan volüt); crest kalkanı değil |
+| `metal-plaque` | Tip kolonunda sığ plaka + uç tick; L-bracket pack / sector-frame yok |
+| `stamp-center` | Kraft pres halkası (kesikli daire) + eco rule; ornate-seal / zeytin yok |
+| `left-index` | Sol index rayı + tick; dört köşe L yok |
+| `badge-capsule` | Tip kolonunu saran kapsül; panel L-pack yok |
+
+Kanıt işleri: `10-kurabiye-tray-classic`, `14` luxury (`signal-plaque`), `21-krem-eco-monstera`, `27-krem-modern-zebra`, `09-cikolata-tray-playful`. 2.11 beş yüz ve motif spend durur.
+
