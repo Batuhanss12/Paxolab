@@ -38,6 +38,7 @@ import {
 import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, usageLine } from './copyBank'
+import { fitLabelBarcode } from '../barcode'
 import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, type LayoutCtx } from './layoutContext'
 import { Ledger, fitSize, textEl, textWidth, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
@@ -48,8 +49,8 @@ function legalSections(ctx: LayoutCtx): Section[] {
   const hdr = backHeaders(ctx.d.locale)
   return [
     { title: hdr.usage, body: usageLine(ctx.d.sector, ctx.d.locale) },
-    { title: hdr.warnings, body: ctx.copy.warnings },
-    { title: hdr.ingredients, body: ctx.copy.ingredients },
+    { title: hdr.warnings, body: ctx.copy.warnings, edit: 'warnings' },
+    { title: hdr.ingredients, body: ctx.copy.ingredients, edit: 'ingredients' },
   ]
 }
 
@@ -99,7 +100,7 @@ function cardOnArt(ctx: LayoutCtx): string {
   parts.push(card.markup)
   const band = claimBand(ledger, d, cardX, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
   parts.push(band.markup)
-  const sentence = paragraph(ledger, cardX, band.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle')
+  const sentence = paragraph(ledger, cardX, band.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle', false, 'tagline')
   parts.push(sentence.markup)
   // pictograms + QR + net quantity
   const pic = pictogramRow(ledger, m, picY, picS, pictogramsFor(d).filter((k) => k !== 'flammable').slice(0, 3), ink, ctx.paoMonths)
@@ -115,6 +116,7 @@ function cardOnArt(ctx: LayoutCtx): string {
 function marbleFrame(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
+  const landscape = isLandscape(w, h)
   const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
   const ink = d.palette.ink
   const accent = d.palette.accent
@@ -130,11 +132,14 @@ function marbleFrame(ctx: LayoutCtx): string {
   const catSize = 1.5
   parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, d.categoryLine, catSize, ink, bw))
   // product at the foot: script prefix + heavy product
-  const productTop = h * 0.7
-  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
+  const volSize = d.volumeLine ? Math.max(2, Math.min(2.8, w * 0.032, h * 0.07)) : 0
+  const stackMax = Math.min(8.5, w * 0.11, landscape || h < 55 ? Math.max(2.8, h * 0.18) : 8.5)
+  const stackH = stackMax * (d.productPrefix ? 1.9 : 1.35) + (volSize ? volSize * 2.4 : 2)
+  const productTop = Math.max(lock.bottom + 4, Math.min(h * 0.7, h - m - stackH))
+  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: stackMax }))
   parts.push(stack.markup)
   if (d.volumeLine) {
-    const size = Math.max(2, Math.min(2.8, w * 0.032))
+    const size = volSize || Math.max(2, Math.min(2.8, w * 0.032))
     parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + size * 2.2), d.volumeLine, size, ink))
   }
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
@@ -159,17 +164,19 @@ function diagonalSplit(ctx: LayoutCtx): string {
   const titleMax = Math.min(landscape ? 7.5 : 8.5, colW * 0.17) * ctx.titleScale
   const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
   let y = m + tSize
+  let productBlock = ''
   if (first) {
-    parts.push(textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 }))
+    productBlock += textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 })
     ledger.text('product-light', m, y, textWidth(first, tSize, 'sans-light', tSize * 0.02), tSize)
     y += tSize * 1.05
   }
-  parts.push(textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 }))
+  productBlock += textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 })
   ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
+  parts.push(`<g data-edit="product">${productBlock}</g>`)
   y += tSize * 0.9
   // sub + chip + gold category
   const subSize = Math.max(1.5, tSize * 0.32)
-  parts.push(textEl({ x: m, y, text: d.taglineLine, size: subSize, face: 'sans', fill: d.palette.muted }))
+  parts.push(textEl({ x: m, y, text: d.taglineLine, size: subSize, face: 'sans', fill: d.palette.muted, extra: 'data-edit="tagline"' }))
   ledger.text('sub', m, y, textWidth(d.taglineLine, subSize, 'sans'), subSize)
   y += subSize * 1.6
   const c = chip(ledger, d, m, y, d.chips[1] ?? d.chips[0] ?? 'PROFESSIONAL', { color: ink, size: Math.max(1.5, subSize * 0.95) })
@@ -192,7 +199,7 @@ function diagonalSplit(ctx: LayoutCtx): string {
     legalBottom = legal.bottom
   }
   if (!tiny) {
-    const producer = paragraph(ledger, m, producerTop, colW, producerLine(ctx), 1.15, 'sans', d.palette.muted, 2, 'start')
+    const producer = paragraph(ledger, m, producerTop, colW, producerLine(ctx), 1.15, 'sans', d.palette.muted, 2, 'start', false, 'manufacturer')
     parts.push(producer.markup)
   }
   const pics = pictogramRow(ledger, m, picY, picS, pictogramsFor(d).filter((k) => k !== 'flammable').slice(0, 3), ink, ctx.paoMonths)
@@ -252,7 +259,7 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'brand-logo' : 'brand-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2)
   const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
   const brandY = m + r * 2 + brandSize * 1.4
-  parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: brandSize * 0.12 }))
+  parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: brandSize * 0.12, extra: 'data-edit="brand"' }))
   ledger.text('brand', w / 2, brandY, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, 'sans-heavy', brandSize * 0.12), brandSize, 'middle')
   // two-tone title
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
@@ -266,8 +273,9 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const wb = b ? textWidth(` ${b}`, size, 'sans-heavy', track) : 0
   const startX = w / 2 - (wa + wb) / 2
   const titleY = brandY + size * 2.6
-  parts.push(textEl({ x: startX, y: titleY, text: a, size, face: 'sans-light', fill: d.palette.accent2, tracking: track, weight: 400 }))
-  if (b) parts.push(textEl({ x: startX + wa, y: titleY, text: ` ${b}`, size, face: 'sans-heavy', fill: ink, tracking: track }))
+  let productBlock = textEl({ x: startX, y: titleY, text: a, size, face: 'sans-light', fill: d.palette.accent2, tracking: track, weight: 400 })
+  if (b) productBlock += textEl({ x: startX + wa, y: titleY, text: ` ${b}`, size, face: 'sans-heavy', fill: ink, tracking: track })
+  parts.push(`<g data-edit="product">${productBlock}</g>`)
   ledger.text('product', w / 2, titleY, wa + wb, size, 'middle')
   const subSize = Math.max(1.6, size * 0.36)
   parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, d.categoryLine, subSize, ink, w - m * 2))
@@ -371,7 +379,7 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
     const chipY = Math.min(h - m * 2.6, lock.bottom + preSize * 3.2)
     if (chipY > lock.bottom + preSize * 2.4) chipBlock(colCx, chipY, colW)
     const foot = h - m * 0.9
-    if (foot - chipY > 3.5) parts.push(spacedLine(ledger, colCx, foot, d.taglineLine, 1.4, d.palette.muted, colW))
+    if (foot - chipY > 3.5) parts.push(spacedLine(ledger, colCx, foot, d.taglineLine, 1.4, d.palette.muted, colW, 'middle', 'sans', 'tagline'))
   } else {
     const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', withIdent(ctx, { mark: true, markKind: 'mountain', markColor: accent, color: ink, brandMax: Math.min(opts.brandMax ?? 9, w * 0.13) }))
     parts.push(lock.markup)
@@ -389,7 +397,7 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
     const chipY = Math.min(h - m * 1.6, badge.bottom + 3.4)
     chipBlock(w / 2, chipY, winW)
     const foot = h - m * 0.75
-    if (foot - chipY > 3.5) parts.push(spacedLine(ledger, w / 2, foot, d.taglineLine, 1.4, d.palette.muted, w - m * 3))
+    if (foot - chipY > 3.5) parts.push(spacedLine(ledger, w / 2, foot, d.taglineLine, 1.4, d.palette.muted, w - m * 3, 'middle', 'sans', 'tagline'))
   }
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
@@ -416,13 +424,13 @@ function inkPanel(ctx: LayoutCtx): string {
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.6, 'sans', 3, 0.5)
   const tagTop = stack.bottom + h * 0.05
   const tag = stackedWords(ledger, w / 2, tagTop, tagWords, 1.7, ink, w * 0.55)
-  parts.push(tag.markup)
+  parts.push(`<g data-edit="tagline">${tag.markup}</g>`)
   // foot: tagline / volume on the right-bottom (ink wash occupies bottom-left)
   const footY = h - m * 1.1
   const onInk = footY > h * 0.6
   const footColor = onInk ? d.palette.card : ink
   if (d.volumeLine) parts.push(netQuantity(ledger, w - m, footY, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.03)), footColor, 'end'))
-  parts.push(spacedLine(ledger, w - m, footY - 4, copy.tagline || d.chips[0] || '', 1.3, footColor, w * 0.6, 'end'))
+  parts.push(spacedLine(ledger, w - m, footY - 4, copy.tagline || d.chips[0] || '', 1.3, footColor, w * 0.6, 'end', 'sans', 'tagline'))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
 }
@@ -461,16 +469,19 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   const hdr = backHeaders(d.locale)
   const title = copy.product.toLocaleUpperCase('tr')
   const tSize = fitSize(title, w - m * 2, 4.2 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
-  parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: tSize * 0.12 }))
+  parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: tSize * 0.12, extra: 'data-edit="product"' }))
   ledger.text('back-title', w / 2, m + tSize, textWidth(title, tSize, 'sans-heavy', tSize * 0.12), tSize, 'middle')
   parts.push(hairline(m, m + tSize * 1.8, w - m, d.palette.accent, 0.8, 0.22))
-  const barH = Math.max(7, Math.min(10, h * 0.12))
-  const footTop = h - m - barH - 3.4
+  const pics = pictogramsFor(d).slice(0, 3)
+  const vs = Math.max(1.6, Math.min(2.2, w * 0.026))
+  const volW = d.volumeLine ? textWidth(d.volumeLine, vs, 'sans', vs * 0.06) : 0
+  const slot = fitLabelBarcode({ w, h, margin: m, picCount: pics.length, leftExtra: volW ? volW + 2.2 : 0 })
+  const footTop = slot.footTop
   const sections: Section[] = [
     { title: hdr.usage, body: usageLine(d.sector, d.locale) },
-    { title: hdr.warnings, body: copy.warnings },
-    { title: hdr.ingredients, body: copy.ingredients },
-    { title: hdr.producer, body: producerLine(ctx) },
+    { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
+    { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
+    { title: hdr.producer, body: producerLine(ctx), edit: 'manufacturer' },
   ]
   const legalSize = Math.max(1.25, Math.min(1.6, w * 0.017))
   const titleColor = d.palette.accent === ink ? ink : vivid ? ink : d.palette.accent
@@ -479,7 +490,6 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   let legalW = w - m * 2
   const food = d.sector === 'food' || d.sector === 'beverage'
   if (food) {
-    // Food backs carry the nutrition table: beside the legal copy when wide, above it otherwise.
     const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
     const tableSize = Math.max(1.15, Math.min(1.4, w * 0.015))
     const rows = nutritionRows(d.locale, blob)
@@ -496,22 +506,13 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   }
   const legal = legalColumn(ledger, legalX, legalTop, legalW, footTop - 1.5, sections, ink, { size: legalSize, anchor: food && legalW < w - m * 2 ? 'start' : 'middle', titleColor })
   parts.push(legal.markup)
-  // foot row: pictograms | barcode | volume
-  const picS = Math.max(3.6, Math.min(5.2, barH * 0.6))
-  const pics = pictogramsFor(d).slice(0, 3)
-  const picW = pics.length * picS + (pics.length - 1) * picS * 0.35
-  const barW = Math.min(w * 0.42, 30)
-  const rowY = h - m - barH
-  parts.push(pictogramRow(ledger, m, rowY + (barH - picS) / 2 - 1.2, picS, pics, ink, ctx.paoMonths).markup)
-  const barX = Math.max(m + picW + 2, w - m - barW)
-  parts.push(barcodeBlock(ledger, barX, rowY, Math.min(barW, w - m - barX), barH - 3.2, copy.barcode, ink, !isDark(bg)))
+  parts.push(pictogramRow(ledger, slot.picX, slot.picY, slot.picS, pics, ink, ctx.paoMonths).markup)
+  parts.push(barcodeBlock(ledger, slot.x, slot.y, slot.w, slot.barsH, copy.barcode, ink, !isDark(bg), slot.captionSize))
   if (d.volumeLine) {
-    const vs = Math.max(1.6, Math.min(2.2, w * 0.026))
+    const picW = pics.length * slot.picS + (pics.length - 1) * slot.picS * 0.35
     const volX = m + picW + 1.5
-    const volW = textWidth(d.volumeLine, vs, 'sans', vs * 0.06)
-    // measured: the line must end before the barcode quiet zone; otherwise it sits above the pictograms
-    if (volX + volW < barX - 2.5) parts.push(netQuantity(ledger, volX, rowY + barH * 0.55, d.volumeLine, vs, ink, 'start'))
-    else if (rowY - 1 > legal.bottom + vs * 1.2) parts.push(netQuantity(ledger, m, rowY - 1.2, d.volumeLine, vs, ink, 'start'))
+    if (volX + volW < slot.x - 2) parts.push(netQuantity(ledger, volX, slot.y + slot.barH * 0.55, d.volumeLine, vs, ink, 'start'))
+    else if (slot.y - 1 > legal.bottom + vs * 1.2) parts.push(netQuantity(ledger, m, slot.y - 1.2, d.volumeLine, vs, ink, 'start'))
   }
   return parts.join('')
 }

@@ -73,7 +73,7 @@ function darkLandscape(ctx: LayoutCtx): string {
   parts.push(stack.markup)
   // tagline above the foot
   const tagY = h * 0.86
-  parts.push(spacedLine(ledger, w / 2, tagY, d.taglineLine, Math.max(1.6, Math.min(2.2, w * 0.03)), accent, w - m * 2))
+  parts.push(spacedLine(ledger, w / 2, tagY, d.taglineLine, Math.max(1.6, Math.min(2.2, w * 0.03)), accent, w - m * 2, 'middle', 'sans', 'tagline'))
   // foot row: volume left · spray chip right
   const footY = h - m * 0.9
   const vs = Math.max(1.8, Math.min(2.4, w * 0.032))
@@ -103,11 +103,11 @@ function inkWashFront(ctx: LayoutCtx): string {
   parts.push(stack.markup)
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.5, 'sans', 3, 0.5)
   const tag = stackedWords(ledger, w / 2, stack.bottom + h * 0.05, tagWords, 1.6, ink, w * 0.55)
-  parts.push(tag.markup)
+  parts.push(`<g data-edit="tagline">${tag.markup}</g>`)
   // foot on the wash → card colour
   const footY = h - m * 1.1
   const footColor = d.palette.card
-  parts.push(spacedLine(ledger, w / 2, footY - 3.8, copy.tagline || d.chips[0] || '', 1.25, footColor, w - m * 3))
+  parts.push(spacedLine(ledger, w / 2, footY - 3.8, copy.tagline || d.chips[0] || '', 1.25, footColor, w - m * 3, 'middle', 'sans', 'tagline'))
   if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, footY, d.volumeLine, Math.max(1.8, Math.min(2.4, w * 0.032)), footColor))
   return parts.join('')
 }
@@ -150,7 +150,7 @@ function botanicalCardFront(ctx: LayoutCtx): string {
   parts.push(card.markup)
   const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
   parts.push(band.markup)
-  const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, Math.max(1.6, Math.min(2.3, cardW * 0.045)), 'sans', ink, 2, 'middle')
+  const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, Math.max(1.6, Math.min(2.3, cardW * 0.045)), 'sans', ink, 2, 'middle', false, 'tagline')
   parts.push(sentence.markup)
   if (d.volumeLine) parts.push(netQuantity(ledger, m, h - m * 0.9, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink, 'start'))
   return parts.join('')
@@ -164,7 +164,7 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const accent = d.palette.accent
   // brand small top-left, monogram top-right
   const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4 * ctx.titleScale, 1.8 * ctx.titleScale, 'sans-heavy', 0.2)
-  parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2 }))
+  parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2, extra: 'data-edit="brand"' }))
   ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, 'sans-heavy', bSize * 0.2), bSize)
   const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent, identOf(ctx))
   parts.push(mono.markup)
@@ -176,13 +176,15 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const titleMax = Math.min(9, colW * 0.16) * ctx.titleScale
   const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
   let y = Math.max(mono.bottom + 6, h * 0.42)
+  let productBlock = ''
   if (first) {
-    parts.push(textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 }))
+    productBlock += textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 })
     ledger.text('product-light', m, y, textWidth(first, tSize, 'sans-light', tSize * 0.02), tSize)
     y += tSize * 1.05
   }
-  parts.push(textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 }))
+  productBlock += textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 })
   ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
+  parts.push(`<g data-edit="product">${productBlock}</g>`)
   y += tSize * 0.6
   const catSize = Math.max(1.7, tSize * 0.36)
   parts.push(textEl({ x: m, y: y + catSize * 1.2, text: d.categoryLine, size: catSize, face: 'sans', fill: accent, tracking: catSize * 0.3 }))
@@ -258,7 +260,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   if (d.sector === 'perfume') {
     const pyramid = scentPyramid(ctx.brief)
     if (pyramid && footTop - y > 22) {
-      parts.push(spacedLine(ledger, w / 2, y + 1.6, d.taglineLine, 1.5, accent, w - m * 3))
+      parts.push(spacedLine(ledger, w / 2, y + 1.6, d.taglineLine, 1.5, accent, w - m * 3, 'middle', 'sans', 'tagline'))
       const notes = notesTable(ledger, m, y + 4.5, w - m * 2, hdr.notes, pyramid, ink, accent)
       parts.push(notes.markup)
       y = notes.bottom + 1.5
@@ -278,7 +280,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
       if (w - m * 2 - tableW > 18) {
         const rx = m + tableW + 2.5
         const right = legalColumn(ledger, rx, y, w - m - rx, table.bottom, [
-          { title: hdr.ingredients, body: copy.ingredients },
+          { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
           { title: hdr.storage, body: usageLine('food', d.locale) },
         ], ink, { size: Math.max(1.15, Math.min(1.4, w * 0.017)), titleColor: ink })
         parts.push(right.markup)
@@ -303,9 +305,9 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   }
   // legal sections (the gate reads KULLANIM / INGREDIENTS / DIRECTIONS here)
   const sections: Section[] = [
-    ...(d.sector === 'food' || d.sector === 'beverage' ? [] : [{ title: hdr.ingredients, body: copy.ingredients }]),
+    ...(d.sector === 'food' || d.sector === 'beverage' ? [] : [{ title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' }]),
     { title: hdr.usage, body: usageLine(d.sector, d.locale) },
-    { title: hdr.warnings, body: copy.warnings },
+    { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]
   const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: Math.max(1.2, Math.min(1.5, w * 0.019)), anchor: 'middle', titleColor: accent === ink ? ink : accent })
   parts.push(legal.markup)
@@ -328,7 +330,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   if (qrRoom) parts.push(qrPlaceholder(ledger, barX - picS - 3, rowY, picS, ink, d.seed + 3))
   // producer + origin
   const pSize = Math.max(1.15, Math.min(1.45, w * 0.017))
-  const producer = paragraph(ledger, m, h - m - 3.2, w - m * 2, `${copy.manufacturer} · ${copy.address}`, pSize, 'sans', ink, 1, 'middle')
+  const producer = paragraph(ledger, m, h - m - 3.2, w - m * 2, `${copy.manufacturer} · ${copy.address}`, pSize, 'sans', ink, 1, 'middle', false, 'manufacturer')
   parts.push(producer.markup)
   parts.push(spacedLine(ledger, w / 2, h - m * 0.55, d.locale === 'en' ? 'MADE IN TÜRKİYE' : 'TÜRKİYE’DE ÜRETİLDİ', 1.1, ink, w - m * 2))
   return parts.join('')

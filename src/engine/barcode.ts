@@ -54,18 +54,115 @@ export function ean13Modules(code: string): string {
   return bits
 }
 
-export function barcodeSvg(code: string, x: number, y: number, w: number, h: number, color: string, caption = true): string {
+export type LabelBarcodeFit = {
+  x: number
+  y: number
+  w: number
+  barsH: number
+  barH: number
+  captionSize: number
+  picCount: number
+  picS: number
+  picX: number
+  picY: number
+  footTop: number
+}
+
+function picRowWidth(count: number, size: number): number {
+  if (count <= 0) return 0
+  return count * size + (count - 1) * size * 0.35
+}
+
+/**
+ * Footer: pictograms left, EAN in leftover width. Inset is proportional so a
+ * size change cannot pin the quiet-zone plate to the double frame.
+ */
+export function fitLabelBarcode(opts: {
+  w: number
+  h: number
+  margin: number
+  picCount?: number
+  bottomReserve?: number
+  leftExtra?: number
+}): LabelBarcodeFit {
+  const w = Math.max(1, opts.w)
+  const h = Math.max(1, opts.h)
+  const m = Math.max(0.8, opts.margin)
+  const reserve = Math.max(0, opts.bottomReserve ?? 0)
+  const barH = Math.max(7, Math.min(10, h * 0.12))
+  const barsH = Math.max(3.6, barH - 4.4)
+  const pics = Math.max(0, Math.floor(opts.picCount ?? 0))
+  const picS = Math.max(3.6, Math.min(5.2, barH * 0.6))
+  const picW = picRowWidth(pics, picS)
+  const leftPics = m + (picW ? picW + 2.4 : 0)
+  const frame = Math.max(1.15, m * 0.55)
+  const whitePad = 1
+  const rightInset = Math.min(6.35, Math.max(5, m + 2.15, frame + 3.25))
+  const right = w - rightInset
+  const minBar = Math.min(16, Math.max(10, right - leftPics))
+  const extra = Math.max(0, opts.leftExtra ?? 0)
+  const left = extra && right - leftPics - extra >= minBar ? leftPics + extra : leftPics
+  const avail = Math.max(0.8, right - left)
+  const barW = Math.max(minBar, Math.min(avail, Math.max(22, Math.min(w * 0.48, 36))))
+  const used = Math.min(barW, avail)
+  const x = Math.max(left, right - used)
+  const captionSize = Math.max(1.25, Math.min(1.85, used / 9.2))
+  const capPad = Math.max(4.2, captionSize * 2.15)
+  const lift = Math.min(1.15, Math.max(0.55, Math.min(w, h) * 0.015))
+  const blockH = barsH + capPad
+  const minY = frame + whitePad
+  const maxY = h - reserve - frame - (blockH - whitePad)
+  const desiredY = h - m - barH - reserve - lift
+  const y =
+    maxY >= minY
+      ? Math.max(minY, Math.min(desiredY, maxY))
+      : Math.max(0.35, Math.min(desiredY, h - reserve - (blockH - whitePad)))
+
+  return {
+    x: Math.max(left, Math.min(x, w - rightInset - used)),
+    y,
+    w: used,
+    barsH,
+    barH,
+    captionSize,
+    picCount: pics,
+    picS,
+    picX: m,
+    picY: y + (barH - picS) / 2 - 1.2,
+    footTop: y - 3.4,
+  }
+}
+
+export function barcodeSvg(
+  code: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  color: string,
+  caption = true,
+  captionSize = 1.7,
+): string {
   const digits = normalizeEan13(code)
   const bits = ean13Modules(digits)
-  const barW = w / bits.length
+  const modules = Math.max(1, bits.length)
+  const barW = w / modules
   let bars = ''
   for (let i = 0; i < bits.length; i++) {
-    if (bits[i] === '1') bars += `<rect x="${(x + i * barW).toFixed(3)}" y="${y}" width="${Math.max(0.22, barW).toFixed(3)}" height="${h}" fill="${color}" />`
+    if (bits[i] === '1') {
+      bars += `<rect x="${(x + i * barW).toFixed(3)}" y="${y}" width="${barW.toFixed(4)}" height="${h}" fill="${color}" shape-rendering="crispEdges" />`
+    }
   }
   const sample = isFormaSampleEan(digits)
-  const captionText = sample ? `${digits} · örnek` : digits
-  const label = caption
-    ? `<text x="${x + w / 2}" y="${y + h + 2.4}" text-anchor="middle" fill="${color}" font-family="Inter, Arial, sans-serif" font-size="1.7" letter-spacing="0.35">${captionText}</text>`
+  const cap = Math.max(1.15, Math.min(captionSize, 1.85, (w - 0.8) / 8.6))
+  const capY = y + h + Math.max(2.2, cap * 1.22)
+  const span = Math.max(8, w - 1)
+  const digitsEl = caption
+    ? `<text data-barcode-digits="${digits}" x="${x + w / 2}" y="${capY.toFixed(2)}" text-anchor="middle" fill="${color}" font-family="Inter, Arial, sans-serif" font-size="${cap.toFixed(2)}" letter-spacing="${Math.min(0.32, cap * 0.16).toFixed(2)}" textLength="${span.toFixed(2)}" lengthAdjust="spacing">${digits}</text>`
     : ''
-  return `<g data-mark="barcode">${bars}${label}</g>`
+  const note =
+    caption && sample
+      ? `<text x="${x + w / 2}" y="${(capY + cap * 0.88).toFixed(2)}" text-anchor="middle" fill="${color}" fill-opacity="0.78" font-family="Inter, Arial, sans-serif" font-size="${Math.min(1.05, cap * 0.68).toFixed(2)}">örnek</text>`
+      : ''
+  return `<g data-mark="barcode">${bars}${digitsEl}${note}</g>`
 }

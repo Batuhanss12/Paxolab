@@ -60,6 +60,7 @@ export type AppAction =
   | { type: 'tab'; tab: TabId }
   | { type: 'surfaceView'; surface: SurfaceView }
   | { type: 'bottleShape'; shape: BottleShape }
+  | { type: 'design.live'; design: DesignSpec; commit?: boolean; historyFrom?: DesignSpec }
 
 function slotDesign(design: DesignSpec, state: AppState): Pick<AppState, 'boxDesign' | 'labelDesign' | 'surfaceView'> {
   const isLabel = design.kind === 'label'
@@ -219,5 +220,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         bottleShape: action.shape,
         brief: { ...state.brief, bottleShape: action.shape },
       }
+    case 'design.live': {
+      const history =
+        action.commit && action.historyFrom
+          ? [...state.designHistory, action.historyFrom].slice(-20)
+          : state.designHistory
+      return {
+        ...state,
+        brief: action.design.brief,
+        design: action.design,
+        ...slotDesign(action.design, state),
+        designHistory: history,
+        designFuture: action.commit ? [] : state.designFuture,
+      }
+    }
   }
 }

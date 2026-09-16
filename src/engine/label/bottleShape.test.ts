@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { emptyBrief } from '../fields'
-import { PERFUME_CYLINDER_PX, recommendBottleShape } from './bottleShape'
+import { recommendBottleShape } from './bottleShape'
 
 describe('recommendBottleShape', () => {
-  it('picks a cylinder for perfume wrap and a square jar otherwise', () => {
+  it('keeps the square bottle for perfume and jar labels', () => {
     expect(
       recommendBottleShape({
         ...emptyBrief(),
@@ -11,7 +11,7 @@ describe('recommendBottleShape', () => {
         subProduct: 'parfüm',
         templateId: 'fm-cos-label-bottle',
       }),
-    ).toBe('cylinder')
+    ).toBe('square')
     expect(
       recommendBottleShape({
         ...emptyBrief(),
@@ -22,18 +22,12 @@ describe('recommendBottleShape', () => {
     ).toBe('square')
   })
 
-  it('uses a 50–100 ml spray proportion, not a thin wrap tube', () => {
-    const diameter = PERFUME_CYLINDER_PX.radius * 2
-    expect(diameter / PERFUME_CYLINDER_PX.bodyH).toBeGreaterThan(0.7)
-    expect(PERFUME_CYLINDER_PX.bodyH / diameter).toBeLessThan(1.5)
-  })
-
-  it('honours an explicit bottleShape', () => {
+  it('ignores an explicit cylinder request', () => {
     expect(
       recommendBottleShape({
         ...emptyBrief(),
         subProduct: 'parfüm',
-        bottleShape: 'square',
+        bottleShape: 'cylinder',
       }),
     ).toBe('square')
   })

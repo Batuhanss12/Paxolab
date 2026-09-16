@@ -191,7 +191,7 @@ export function stackedLockup(
     ledger.text('brand-sub', cx, subBase, subW, subSize, 'middle')
     y = subBase + subSize * 0.4
   }
-  return { markup: `<g data-art="lockup" data-lockup="stacked">${out}</g>`, bottom: y, top }
+  return { markup: `<g data-art="lockup" data-lockup="stacked" data-edit="brand">${out}</g>`, bottom: y, top }
 }
 
 /** White rounded pill with the brand — woo.originals top-right. Returns the pill box. */
@@ -213,7 +213,7 @@ export function brandPill(
   const h = size * 1.9
   const x = right - w
   const rx = h / 2
-  let markup = `<g data-art="lockup" data-lockup="pill"><rect x="${f(x)}" y="${f(top)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />${textEl({ x: x + w / 2, y: top + h * 0.68, text: brand, size, face: faces.brand === 'sans-heavy' ? 'sans-heavy' : faces.brand, fill: d.palette.cardInk, anchor: 'middle', tracking: -size * 0.02 })}</g>`
+  let markup = `<g data-art="lockup" data-lockup="pill" data-edit="brand"><rect x="${f(x)}" y="${f(top)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />${textEl({ x: x + w / 2, y: top + h * 0.68, text: brand, size, face: faces.brand === 'sans-heavy' ? 'sans-heavy' : faces.brand, fill: d.palette.cardInk, anchor: 'middle', tracking: -size * 0.02 })}</g>`
   ledger.add('container', 'brand-pill', x, top, w, h)
   ledger.text('brand', x + w / 2, top + h * 0.68, textW, size, 'middle')
   const href = ident.logoHref?.trim()
@@ -264,7 +264,7 @@ export function monogramLockup(
   const track = brandSize * 0.3
   out += textEl({ x: cx, y: bBase, text: brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans', fill: color, anchor: 'middle', tracking: track })
   ledger.text('brand', cx, bBase, textWidth(brand.toLocaleUpperCase('tr'), brandSize, 'sans', track), brandSize, 'middle')
-  return { markup: `<g data-art="lockup" data-lockup="monogram">${out}</g>`, bottom: bBase + brandSize * 0.5, top }
+  return { markup: `<g data-art="lockup" data-lockup="monogram" data-edit="brand">${out}</g>`, bottom: bBase + brandSize * 0.5, top }
 }
 
 /* -------------------------------------------------------------- product set */
@@ -328,7 +328,7 @@ export function productStack(
     ledger.text('category', x, base, textWidth(cat, cSize, faces.meta, cTrack), cSize, anchor)
     y = base + cSize * 0.4
   }
-  return { markup: `<g data-art="product">${out}</g>`, bottom: y }
+  return { markup: `<g data-art="product" data-edit="product">${out}</g>`, bottom: y }
 }
 
 function splitTitle(text: string): string[] {
@@ -471,7 +471,7 @@ export function benefitColumn(ledger: Ledger, _d: DesignDirection, x: number, y:
 
 /* ---------------------------------------------------------------- text blocks */
 
-export type Section = { title: string; body: string }
+export type Section = { title: string; body: string; edit?: string }
 
 /** Small legal column: bold spaced header + wrapped body, stacked. Returns the bottom edge. */
 export function legalColumn(
@@ -493,11 +493,12 @@ export function legalColumn(
   for (const s of sections) {
     if (!s.body.trim()) continue
     if (cy + lineH * 2 > maxBottom) break
+    let section = ''
     if (s.title) {
       const tSize = size * 1.05
       const track = tSize * 0.24
       const base = cy + tSize
-      out += textEl({ x: tx, y: base, text: s.title.toLocaleUpperCase('tr'), size: tSize, face: 'sans-heavy', fill: opts.titleColor ?? color, anchor, tracking: track })
+      section += textEl({ x: tx, y: base, text: s.title.toLocaleUpperCase('tr'), size: tSize, face: 'sans-heavy', fill: opts.titleColor ?? color, anchor, tracking: track })
       ledger.text('legal-title', tx, base, textWidth(s.title.toLocaleUpperCase('tr'), tSize, 'sans-heavy', track), tSize, anchor)
       cy = base + size * 0.55
     }
@@ -505,16 +506,17 @@ export function legalColumn(
     const lines = wrapByWidth(s.body, w, size, 'sans', Math.min(opts.maxLines ?? 12, room))
     for (const line of lines) {
       const base = cy + size
-      out += textEl({ x: tx, y: base, text: line, size, face: 'sans', fill: color, anchor, opacity: 0.92 })
+      section += textEl({ x: tx, y: base, text: line, size, face: 'sans', fill: color, anchor, opacity: 0.92 })
       ledger.text('legal', tx, base, textWidth(line, size, 'sans'), size, anchor)
       cy = base + size * 0.36
     }
+    out += s.edit ? `<g data-edit="${s.edit}">${section}</g>` : section
     cy += size * 1.1
   }
   return { markup: `<g data-art="legal-column">${out}</g>`, bottom: cy }
 }
 
-export function paragraph(ledger: Ledger, x: number, y: number, w: number, text: string, size: number, face: Face, color: string, maxLines: number, anchor: 'start' | 'middle' = 'middle', italic = false): { markup: string; bottom: number } {
+export function paragraph(ledger: Ledger, x: number, y: number, w: number, text: string, size: number, face: Face, color: string, maxLines: number, anchor: 'start' | 'middle' = 'middle', italic = false, edit?: string): { markup: string; bottom: number } {
   const lines = wrapByWidth(text, w, size, face, maxLines)
   const tx = anchor === 'middle' ? x + w / 2 : x
   let out = ''
@@ -525,16 +527,16 @@ export function paragraph(ledger: Ledger, x: number, y: number, w: number, text:
     ledger.text('paragraph', tx, base, textWidth(line, size, face), size, anchor)
     cy = base + size * 0.45
   }
-  return { markup: `<g data-art="paragraph">${out}</g>`, bottom: cy }
+  return { markup: `<g data-art="paragraph"${edit ? ` data-edit="${edit}"` : ''}>${out}</g>`, bottom: cy }
 }
 
 /** Spaced caps line, e.g. tagline. */
-export function spacedLine(ledger: Ledger, cx: number, baseline: number, text: string, size: number, color: string, maxW: number, anchor: 'middle' | 'start' | 'end' = 'middle', face: Face = 'sans'): string {
+export function spacedLine(ledger: Ledger, cx: number, baseline: number, text: string, size: number, color: string, maxW: number, anchor: 'middle' | 'start' | 'end' = 'middle', face: Face = 'sans', edit?: string): string {
   const upper = text.toLocaleUpperCase('tr')
   const s = fitSize(upper, maxW, size, 1.3, face, size * 0.34)
   const track = s * 0.34
   ledger.text('spaced', cx, baseline, textWidth(upper, s, face, track), s, anchor)
-  return textEl({ x: cx, y: baseline, text: upper, size: s, face, fill: color, anchor, tracking: track })
+  return textEl({ x: cx, y: baseline, text: upper, size: s, face, fill: color, anchor, tracking: track, extra: edit ? `data-edit="${edit}"` : undefined })
 }
 
 /** Stacked manifesto words: WILD / CONFIDENT / AUTHENTIC / YOU with a short rule. */
@@ -566,7 +568,7 @@ export function verticalBrand(ledger: Ledger, cx: number, cy: number, text: stri
 export function netQuantity(ledger: Ledger, cx: number, baseline: number, text: string, size: number, color: string, anchor: 'middle' | 'start' | 'end' = 'middle'): string {
   if (!text) return ''
   ledger.text('net-quantity', cx, baseline, textWidth(text, size, 'sans', size * 0.06), size, anchor)
-  return `<g data-art="net-quantity">${textEl({ x: cx, y: baseline, text, size, face: 'sans', fill: color, anchor, tracking: size * 0.06 })}</g>`
+  return `<g data-art="net-quantity" data-edit="volume">${textEl({ x: cx, y: baseline, text, size, face: 'sans', fill: color, anchor, tracking: size * 0.06 })}</g>`
 }
 
 export type PictoKind = 'recycle' | 'pao' | 'flammable' | 'emark' | 'glassfork' | 'weee' | 'keepdry' | 'thiswayup'
@@ -612,10 +614,22 @@ export function pictogramRow(ledger: Ledger, x: number, y: number, s: number, ki
   return { markup: `<g data-art="pictograms">${out}</g>`, w: cx - g - x }
 }
 
-export function barcodeBlock(ledger: Ledger, x: number, y: number, w: number, h: number, code: string, color: string, onLight = true): string {
-  const box = onLight ? '' : `<rect x="${f(x - 1)}" y="${f(y - 1)}" width="${f(w + 2)}" height="${f(h + 4.2)}" fill="#ffffff" />`
-  ledger.add('element', 'barcode', x - 1, y - 1, w + 2, h + 4.2)
-  return `<g data-art="barcode-block">${box}${barcodeSvg(code, x, y, w, h, onLight ? color : '#111111')}</g>`
+export function barcodeBlock(
+  ledger: Ledger,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  code: string,
+  color: string,
+  onLight = true,
+  captionSize?: number,
+): string {
+  const cap = captionSize ?? Math.max(1.25, Math.min(1.85, w / 9.2))
+  const capPad = Math.max(4.2, cap * 2.15)
+  const box = onLight ? '' : `<rect x="${f(x - 1)}" y="${f(y - 1)}" width="${f(w + 2)}" height="${f(h + capPad)}" fill="#ffffff" />`
+  ledger.add('element', 'barcode', x - 1, y - 1, w + 2, h + capPad)
+  return `<g data-art="barcode-block" data-edit="barcode">${box}${barcodeSvg(code, x, y, w, h, onLight ? color : '#111111', true, cap)}</g>`
 }
 
 /** Deterministic QR-looking placeholder (not scannable; marked as sample). */
@@ -745,7 +759,7 @@ export function productBadge(ledger: Ledger, d: DesignDirection, cx: number, y: 
     out += textEl({ x: cx, y: base, text: volume, size: volSize, face: 'serif', fill: d.palette.card, anchor: 'middle' })
     ledger.text('badge-volume', cx, base, textWidth(volume, volSize, 'serif'), volSize, 'middle')
   }
-  return { markup: `<g data-art="product-badge">${out}</g>`, bottom: y + h }
+  return { markup: `<g data-art="product-badge" data-edit="product">${out}</g>`, bottom: y + h }
 }
 
 /** Arched window clip for landscape scenes. */

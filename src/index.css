@@ -349,6 +349,10 @@ h2 {
   grid-template-columns: var(--left) 1fr;
 }
 
+.workspace__body.has-preview.has-copy-canvas {
+  grid-template-columns: minmax(200px, min(360px, 28vw)) minmax(0, 1fr);
+}
+
 .workspace__left {
   display: flex;
   flex-direction: column;
@@ -940,6 +944,188 @@ h2 {
   background: radial-gradient(ellipse 42% 36% at 50% 48%, rgba(255, 255, 255, 0.035), transparent 70%);
 }
 
+.preview-stage__work {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.preview-stage--edit {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px 10px 12px 18px;
+}
+
+.preview-stage--edit .preview-stage__meta {
+  padding-right: 8px;
+  margin-bottom: 10px;
+}
+
+.preview-stage--edit .preview-stage__work {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 0;
+}
+
+.preview-stage--edit .preview-stage__canvas {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px 8px;
+}
+
+.preview-stage--edit .art-svg {
+  width: min(420px, 92%);
+}
+
+.preview-stage--edit .art-svg--label {
+  width: min(360px, 86%);
+}
+
+.preview-stage--edit .art-svg--live [data-edit] {
+  cursor: text;
+}
+
+.preview-stage--edit .art-svg--live [data-edit]:hover {
+  outline: 1px dashed rgba(201, 168, 108, 0.38);
+  outline-offset: 2px;
+}
+
+.preview-stage--edit .art-svg--live [data-edit].is-editing {
+  outline: 1px solid rgba(201, 168, 108, 0.72);
+  outline-offset: 2px;
+}
+
+.copy-canvas {
+  flex: 0 0 228px;
+  width: 228px;
+  max-width: 228px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(8, 8, 8, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.copy-canvas__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 12px;
+}
+
+.copy-canvas__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.copy-canvas__live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c9a86c;
+  box-shadow: 0 0 0 3px rgba(201, 168, 108, 0.16);
+}
+
+.copy-canvas__head h2 {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.copy-canvas__close {
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.copy-canvas__group + .copy-canvas__group {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.copy-canvas__group h3 {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.copy-canvas__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.copy-canvas__field > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.copy-canvas__field > span em {
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--dim);
+}
+
+.copy-canvas__field input,
+.copy-canvas__field textarea {
+  width: 100%;
+  background: #0c0c0c;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: #eee;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+}
+
+.copy-canvas__field textarea {
+  min-height: 52px;
+}
+
+.copy-canvas__field.is-active input,
+.copy-canvas__field.is-active textarea {
+  border-color: #c9a86c66;
+  box-shadow: 0 0 0 1px rgba(201, 168, 108, 0.18);
+}
+
+.copy-canvas__field input:focus,
+.copy-canvas__field textarea:focus {
+  outline: none;
+  border-color: #c9a86c99;
+}
+
 .artboard {
   width: min(420px, 72%);
   height: auto;
@@ -1134,6 +1320,43 @@ h2 {
   background: #1a1a1a;
 }
 
+.copy-canvas__toggle {
+  margin-left: 4px;
+}
+
+.copy-canvas__toggle.is-active {
+  color: var(--fg);
+  border-color: #c9a86c55;
+}
+
+.orbit-toggle {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+.orbit-toggle.is-active {
+  color: var(--fg);
+  background: #1a1a1a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.orbit-toggle:hover {
+  color: var(--fg);
+}
+
+.carton-shell__meta .orbit-toggle {
+  margin-left: 0;
+  padding: 3px 10px;
+  font-size: 10px;
+}
+
 .bottle3d {
   position: relative;
   transform-style: preserve-3d;
@@ -1194,7 +1417,8 @@ h2 {
   top: 0;
   overflow: hidden;
   backface-visibility: hidden;
-  background: var(--glass);
+  background-color: var(--glass);
+  background-repeat: no-repeat;
   box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.12);
 }
 
@@ -1206,10 +1430,31 @@ h2 {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.22));
 }
 
+.bottle3d__seg--label {
+  overflow: hidden;
+}
+
+.bottle3d__seg-clip {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateZ(0);
+  isolation: isolate;
+}
+
 .bottle3d__seg-art {
   position: absolute;
   left: 0;
+  top: 0;
   pointer-events: none;
+}
+
+.bottle3d__seg-art > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .bottle3d__seg-art > svg {
@@ -1579,6 +1824,8 @@ h2 {
 .carton-shell__meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 11px;
   color: var(--muted);
@@ -1753,11 +2000,13 @@ h2 {
 /* scrollbars */
 .chat__thread::-webkit-scrollbar,
 .girdiler__body::-webkit-scrollbar,
+.copy-canvas::-webkit-scrollbar,
 .workspace__right > :not(.design-rail)::-webkit-scrollbar {
   width: 8px;
 }
 .chat__thread::-webkit-scrollbar-thumb,
 .girdiler__body::-webkit-scrollbar-thumb,
+.copy-canvas::-webkit-scrollbar-thumb,
 .workspace__right > :not(.design-rail)::-webkit-scrollbar-thumb {
   background: #1c1c1c;
   border-radius: 8px;

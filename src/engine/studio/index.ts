@@ -1,5 +1,6 @@
 export * from './types'
 export { composeStudioArtwork } from './composeStudioArtwork'
+export { recomposeCopy, clampCopyPatch, COPY_FIELD_LIMIT, type CopyField, type CopyPatch } from './recomposeCopy'
 export {
   decideDirection,
   describeDirection,

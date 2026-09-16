@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CopyField } from '../engine/studio/recomposeCopy'
 import type { Attachment, BottleShape, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
 import { isDualDeliverable } from '../engine/conversationUnderstand'
@@ -54,6 +55,8 @@ type WorkspaceProps = {
   onSelectTemplate: (templateId: string, dims: DimensionsMm) => void
   onPickTemplate: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
+  onCopyChange?: (field: CopyField, value: string) => void
+  onCopyCommit?: () => void
   onStyle: (style: StyleType) => void
   onVary?: () => void
   tab: TabId
@@ -145,6 +148,8 @@ export function Workspace({
   onSelectTemplate,
   onPickTemplate,
   onDims,
+  onCopyChange,
+  onCopyCommit,
   onStyle,
   onVary,
   tab,
@@ -329,7 +334,7 @@ export function Workspace({
         </div>
       </header>
 
-      <div className={`workspace__body ${showPreview ? 'has-preview' : ''}`}>
+      <div className={`workspace__body ${showPreview ? 'has-preview' : ''} ${tab === 'vektor' && design && !showPicker ? 'has-copy-canvas' : ''}`}>
         <aside className="workspace__left">
           <Chat
             messages={messages}
@@ -361,7 +366,13 @@ export function Workspace({
               <ConversationBrief messages={messages} design={design} />
             )}
             {!generating && !showPicker && tab === 'vektor' && design && (
-              <Preview2D design={design} attachments={allAttachments} onDims={onDims} />
+              <Preview2D
+                design={design}
+                attachments={allAttachments}
+                onDims={onDims}
+                onCopyChange={onCopyChange}
+                onCopyCommit={onCopyCommit}
+              />
             )}
             {!generating && !showPicker && tab === 'karsilastir' && design && (
               <ComparePreview current={design} previous={designHistory.filter((d) => d.kind === design.kind).at(-1)} />

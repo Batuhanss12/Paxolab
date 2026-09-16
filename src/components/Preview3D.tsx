@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode } from 'react'
 import type { Attachment, BottleShape, DesignSpec } from '../types'
 import { monogram } from '../engine/artwork/copy'
 import { facePanelId, renderPanelSvg, type BoxFace } from '../engine/artwork/renderArtwork'
-import { recommendBottleShape } from '../engine/label/bottleShape'
 import { BottlePreview } from './BottlePreview'
+import { OrbitToggle, useOrbit3D } from './useOrbit3D.tsx'
 
 type Preview3DProps = {
   design: DesignSpec
@@ -46,41 +46,16 @@ function Face({
   )
 }
 
-export function Preview3D({ design, attachments, bottleShape, onBottleShape }: Preview3DProps) {
+export function Preview3D({ design, attachments }: Preview3DProps) {
   if (design.kind === 'label') {
-    const shape = bottleShape ?? recommendBottleShape(design.brief)
-    return <BottlePreview design={design} shape={shape} onShape={(next) => onBottleShape?.(next)} />
+    return <BottlePreview design={design} />
   }
   return <CartonPreview3D design={design} attachments={attachments} />
 }
 
 function CartonPreview3D({ design, attachments }: { design: DesignSpec; attachments: Attachment[] }) {
   const { palette: p, copy, overrides, layout } = design
-  const [rot, setRot] = useState({ x: -18, y: 32 })
-  const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null)
-  const auto = useRef(true)
-
-  useEffect(() => {
-    let frame = 0
-    const tick = () => {
-      if (auto.current) setRot((r) => ({ ...r, y: r.y + 0.12 }))
-      frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [])
-
-  function down(e: PointerEvent<HTMLDivElement>) {
-    auto.current = false
-    drag.current = { x: e.clientX, y: e.clientY, rx: rot.x, ry: rot.y }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-  function move(e: PointerEvent<HTMLDivElement>) {
-    if (!drag.current) return
-    const dx = e.clientX - drag.current.x
-    const dy = e.clientY - drag.current.y
-    setRot({ x: drag.current.rx - dy * 0.35, y: drag.current.ry + dx * 0.35 })
-  }
+  const { rot, spinning, toggle, down, move, up } = useOrbit3D({ restX: -18, restY: 32, speed: 0.72 })
 
   const logo = attachments.find((a) => a.kind === 'logo') ?? attachments[0]
   const mark = monogram(copy.brand)
@@ -106,8 +81,9 @@ function CartonPreview3D({ design, attachments }: { design: DesignSpec; attachme
       <div className="preview-stage__meta">
         <span>Sürükleyerek döndür</span>
         <span>Tuck / tepsi hacmi</span>
+        <OrbitToggle spinning={spinning} onToggle={toggle} />
       </div>
-      <div className="scene" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null }}>
+      <div className="scene" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div
           className="box3d"
           data-preview="carton"

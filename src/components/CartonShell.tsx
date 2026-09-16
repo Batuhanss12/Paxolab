@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { type CSSProperties } from 'react'
+import { OrbitToggle, useOrbit3D } from './useOrbit3D.tsx'
 
 type CartonShellProps = {
   widthMm: number
@@ -17,32 +18,8 @@ export function CartonShell({
   caption,
   grammar,
 }: CartonShellProps) {
-  const [rot, setRot] = useState({ x: -18, y: 32 })
-  const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null)
-  const auto = useRef(true)
+  const { rot, spinning, toggle, down, move, up } = useOrbit3D({ restX: -18, restY: 32, speed: 0.7 })
   const isLabel = kind === 'label'
-
-  useEffect(() => {
-    let frame = 0
-    const tick = () => {
-      if (auto.current) setRot((r) => ({ ...r, y: r.y + 0.12 }))
-      frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [])
-
-  function down(e: PointerEvent<HTMLDivElement>) {
-    auto.current = false
-    drag.current = { x: e.clientX, y: e.clientY, rx: rot.x, ry: rot.y }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-  function move(e: PointerEvent<HTMLDivElement>) {
-    if (!drag.current) return
-    const dx = e.clientX - drag.current.x
-    const dy = e.clientY - drag.current.y
-    setRot({ x: drag.current.rx - dy * 0.35, y: drag.current.ry + dx * 0.35 })
-  }
 
   const scale = Math.min(180 / Math.max(widthMm, 1), 210 / Math.max(heightMm, 1))
   const widthPx = Math.max(72, Math.round(widthMm * scale))
@@ -62,8 +39,9 @@ export function CartonShell({
         <span>
           {widthMm}×{depthMm || '—'}×{heightMm} mm
         </span>
+        <OrbitToggle spinning={spinning} onToggle={toggle} />
       </div>
-      <div className="scene scene--shell" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null }}>
+      <div className="scene scene--shell" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div className={`box3d ${isLabel ? 'box3d--card' : ''}`} style={boxStyle}>
           <div className="face face--front" data-face="front">
             <em>Ön</em>

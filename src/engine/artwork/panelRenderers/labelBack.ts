@@ -89,13 +89,16 @@ export function labelBackArt(
     body += `<text x="${x + 4}" y="${footY - 1.6}" fill="${p.muted}" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="1.55">${esc(copy.address)}</text>`
   }
   body += `<line x1="${x + 4}" y1="${footY}" x2="${x + w - 4}" y2="${footY}" stroke="${p.muted}" stroke-opacity="0.5" stroke-width="0.16" />`
+  const rightPad = Math.max(6.5, Math.min(8, w * 0.08))
+  const barW = copy.barcode ? Math.max(0, Math.min(36, w - rightPad - (ids.length ? 22 : 8), Math.max(16, w * 0.38))) : 0
   if (ids.length) {
-    const reserve = copy.barcode ? 28 : 6
+    const reserve = copy.barcode ? barW + 8 : 6
     const span = Math.max(18, w - reserve - 6)
     body += renderMarkStrip(x + 4, footY + 2.2, span, p.accent, ids, sticker.recipe, perfumeAssetsAllowed(system.sector), 7.2)
   }
-  if (copy.barcode) {
-    body += barcodeSvg(copy.barcode, x + w - 28, footY + 2.4, 24, 7.2, p.fg)
+  if (copy.barcode && barW > 0) {
+    const barH = Math.min(7.2, Math.max(4.4, footer - 6.2))
+    body += barcodeSvg(copy.barcode, x + w - rightPad - barW, footY + 2.2, barW, barH, p.fg, true, Math.max(1.25, Math.min(1.8, barW / 9.2)))
   }
   return `<g clip-path="${clip(panel)}">${body}</g>`
 }

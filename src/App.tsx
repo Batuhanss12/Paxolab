@@ -29,7 +29,8 @@ import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
 import { applyVetoToHints } from './engine/studio/family'
 import { recommendBottleShape } from './engine/label/bottleShape'
-import type { Attachment, BottleShape, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
+import { recomposeCopy, type CopyField } from './engine/studio/recomposeCopy'
+import type { Attachment, BottleShape, ChatMessage, DesignBrief, DesignSpec, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
 
@@ -92,6 +93,7 @@ export default function App() {
   const briefRef = useRef(brief)
   const awaitingRef = useRef(awaiting)
   const designRef = useRef(design)
+  const copyBaseRef = useRef<DesignSpec | null>(null)
   const attachRef = useRef(allAttachments)
   const startedRef = useRef(messages.length > 0)
   const stateRef = useRef(state)
@@ -334,6 +336,7 @@ export default function App() {
         })
         designRef.current = next
         briefRef.current = next.brief
+        copyBaseRef.current = null
         dispatch({
           type: 'generation.finish',
           design: next,
@@ -514,6 +517,26 @@ export default function App() {
     }, 420)
   }, [runGenerate])
 
+  const onCopyChange = useCallback((field: CopyField, value: string) => {
+    const prev = designRef.current
+    if (!prev) return
+    if (!copyBaseRef.current) copyBaseRef.current = prev
+    const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
+    const next = recomposeCopy(prev, { [field]: value }, { logoHref: logo?.dataUrl })
+    designRef.current = next
+    briefRef.current = next.brief
+    dispatch({ type: 'design.live', design: next })
+  }, [])
+
+  const onCopyCommit = useCallback(() => {
+    const current = designRef.current
+    const from = copyBaseRef.current
+    copyBaseRef.current = null
+    if (!current || !from) return
+    if (current.copy === from.copy) return
+    dispatch({ type: 'design.live', design: current, commit: true, historyFrom: from })
+  }, [])
+
   const onStyle = useCallback((style: StyleType) => {
     const next = { ...briefRef.current, styleType: style }
     briefRef.current = next
@@ -640,6 +663,8 @@ export default function App() {
           onSelectTemplate={onSelectTemplate}
           onPickTemplate={onPickTemplate}
           onDims={onDims}
+          onCopyChange={onCopyChange}
+          onCopyCommit={onCopyCommit}
           onStyle={onStyle}
           onVary={onVary}
           tab={tab}
