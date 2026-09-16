@@ -12,7 +12,7 @@ const LUMA =
 const NOMA = 'Noma special series kahve kutusu istiyorum, contemporary editorial, earth tones.'
 
 describe('CHAT-1 conversation understanding', () => {
-  it('maps the Luma serum paragraph onto brief + restrained cue, and asks dimensions not barcode', () => {
+  it('maps the Luma serum paragraph onto brief + restrained cue, and asks product name', () => {
     const extracted = extractFields(LUMA, [])
     expect(extracted.brandName).toBe('Luma')
     expect(extracted.sector).toBe('kozmetik')
@@ -33,7 +33,7 @@ describe('CHAT-1 conversation understanding', () => {
     expect(motifAvoidTokens(['classic', 'cheap'])).toEqual(['generic-corners', 'heavy-frame', 'generic-ticks', 'dense-pattern'])
     expect(understood.directorCue).toBe('luxury-tighten')
     expect(understood.confidence.brandName).toBe('high')
-    expect(understood.missingCritical).toEqual(['dimensionsMm'])
+    expect(understood.missingCritical).toEqual(['productName'])
 
     const turned = runConversation({
       text: LUMA,
@@ -48,11 +48,10 @@ describe('CHAT-1 conversation understanding', () => {
       expect.arrayContaining(['generic-corners', 'heavy-frame', 'generic-ticks', 'dense-pattern']),
     )
     expect(turned.shouldGenerate).toBe(false)
-    expect(turned.awaiting).toBe('dimensionsMm')
-    expect(turned.replies.join(' ')).toMatch(/ölçü|şablon|serum/i)
-    expect(turned.awaiting).not.toBe('barcode')
+    expect(turned.awaiting).toBe('productName')
+    expect(turned.replies.join(' ')).toMatch(/ürün/i)
     expect(turned.awaiting).not.toBe('manufacturerName')
-    expect(nextMissing(turned.brief)).toBe('dimensionsMm')
+    expect(nextMissing(turned.brief)).toBe('productName')
   })
 
   it('understands Noma coffee special series as editorial food packaging', () => {
@@ -67,7 +66,7 @@ describe('CHAT-1 conversation understanding', () => {
 
     const understood = understandUtterance(NOMA, emptyBrief())
     expect(understood.directorCue).toBe('luxury-tighten')
-    expect(understood.missingCritical).toEqual(['dimensionsMm'])
+    expect(understood.missingCritical).toEqual(['barcode'])
 
     const turned = runConversation({
       text: NOMA,
@@ -78,8 +77,8 @@ describe('CHAT-1 conversation understanding', () => {
     })
     expect(turned.brief.brandName).toBe('Noma')
     expect(turned.shouldGenerate).toBe(false)
-    expect(turned.awaiting).toBe('dimensionsMm')
-    expect(turned.replies.join(' ')).not.toMatch(/barkod/i)
+    expect(turned.awaiting).toBe('barcode')
+    expect(turned.replies.join(' ')).toMatch(/barkod|GTIN/i)
   })
 
   it('keeps chips optional: Kutu sets surface, free text still starts a brief', () => {
@@ -118,7 +117,7 @@ describe('CHAT-1 conversation understanding', () => {
     expect(typed.awaiting).not.toBe('barcode')
   })
 
-  it('defaults dimensions then opens the structure picker, without a barcode gauntlet', () => {
+  it('asks product and barcode then opens the structure picker', () => {
     const first = runConversation({
       text: LUMA,
       attachments: [],
@@ -126,17 +125,25 @@ describe('CHAT-1 conversation understanding', () => {
       awaiting: null,
       hasDesign: false,
     })
-    const second = runConversation({
-      text: 'şablon',
+    const named = runConversation({
+      text: 'Noir',
       attachments: [],
       brief: first.brief,
       awaiting: first.awaiting,
+      hasDesign: false,
+    })
+    const second = runConversation({
+      text: 'örnek',
+      attachments: [],
+      brief: named.brief,
+      awaiting: named.awaiting,
       hasDesign: false,
     })
     expect(second.shouldGenerate).toBe(false)
     expect(second.showTemplates).toBe(true)
     expect(second.awaiting).toBe('templateId')
     expect(second.brief.templateId).toBe('')
+    expect(second.brief.productName).toBe('Noir')
     expect(second.structureOffer?.candidates.length).toBeGreaterThan(0)
     expect(second.brief.deliverables).toEqual(['box', 'label'])
     expect(second.replies.join(' ')).toMatch(/Luma/i)
@@ -173,7 +180,7 @@ describe('CHAT-1 conversation understanding', () => {
     })
     expect(brandOnly.brief.brandName).toBe('Aurelia')
     expect(brandOnly.brief.productName).toBe('')
-    expect(brandOnly.awaiting).toBe('dimensionsMm')
+    expect(brandOnly.awaiting).toBe('productName')
   })
 
   it('after a box, “etiketi de üret” switches to a label surface', () => {
@@ -184,17 +191,31 @@ describe('CHAT-1 conversation understanding', () => {
       awaiting: null,
       hasDesign: false,
     })
-    const ready = runConversation({
-      text: 'şablon',
+    const named = runConversation({
+      text: 'Noir',
       attachments: [],
       brief: first.brief,
       awaiting: first.awaiting,
       hasDesign: false,
     })
+    const ready = runConversation({
+      text: 'örnek',
+      attachments: [],
+      brief: named.brief,
+      awaiting: named.awaiting,
+      hasDesign: false,
+    })
+    const started = runConversation({
+      text: 'başlat',
+      attachments: [],
+      brief: ready.brief,
+      awaiting: ready.awaiting,
+      hasDesign: false,
+    })
     const label = runConversation({
       text: 'etiketi de üret',
       attachments: [],
-      brief: ready.brief,
+      brief: started.brief,
       awaiting: null,
       hasDesign: true,
     })

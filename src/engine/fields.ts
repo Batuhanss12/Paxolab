@@ -102,6 +102,16 @@ export function mergeBrief(base: DesignBrief, patch: Partial<DesignBrief>): Desi
       next.avoidMotifs = [...new Set([...(next.avoidMotifs ?? []), ...extra])]
       continue
     }
+    if (key === 'avoidStudioFamilies' && Array.isArray(value)) {
+      acceptUnion(key)
+      const extra = (value as unknown[]).map((token) => String(token).trim()).filter(Boolean)
+      next.avoidStudioFamilies = [...new Set([...(next.avoidStudioFamilies ?? []), ...extra])] as DesignBrief['avoidStudioFamilies']
+      continue
+    }
+    if (key === 'directionVariation' && typeof value === 'number' && Number.isFinite(value)) {
+      next.directionVariation = Math.max(0, Math.floor(value))
+      continue
+    }
     if (key === 'deliverables' && Array.isArray(value)) {
       acceptUnion(key)
       const extra = (value as unknown[]).filter((mode): mode is PackagingMode => mode === 'box' || mode === 'label')

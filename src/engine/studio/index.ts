@@ -1,14 +1,36 @@
 export * from './types'
 export { composeStudioArtwork } from './composeStudioArtwork'
-export { describeDirection, hashSeed, hintsFromBrief, resolveDirection, resolveStudioCopy, studioPalette, type DirectionInput } from './direction'
+export {
+  decideDirection,
+  describeDirection,
+  hashSeed,
+  hintsFromBrief,
+  resolveDirection,
+  resolveStudioCopy,
+  studioPalette,
+  type DirectionClaim,
+  type DirectionDecision,
+  type DirectionInput,
+} from './direction'
 export { applyStudioPreflight, STUDIO_MIN_TEXT_MM, STUDIO_FLOOR_TEXT_MM } from './studioPreflight'
 export {
+  applyVetoToHints,
   archetypeForFamily,
+  archetypesOfFamilies,
+  familiesFromUtterance,
   familyOf,
   hintsFromFamily,
+  hintsFromVeto,
   isStudioFamily,
   STUDIO_FAMILIES,
 } from './family'
+export {
+  applyDirectionTalk,
+  assembleStudioHints,
+  explainStudioDirection,
+  inspectStudioDirection,
+  parseDirectionTalk,
+} from './directionTalk'
 export {
   ALL_ARCHETYPES,
   ALL_BACKGROUNDS,

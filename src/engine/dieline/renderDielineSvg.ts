@@ -45,7 +45,26 @@ export function dielineTechMarkup(
         `<path d="${ringD(ring, pad)}" fill="none" stroke="${perfStroke}" stroke-width="0.35" stroke-dasharray="1 0.9" data-type="perf" />`,
     )
     .join('')
-  return { cut, crease, perf }
+  return {
+    cut: `<g id="CUT" data-layer="CUT">${cut}</g>`,
+    crease: `<g id="CREASE" data-layer="CREASE">${crease}</g>`,
+    perf: `<g id="PERF" data-layer="PERF">${perf}</g>`,
+  }
+}
+
+/** Plotter / CAD knife SVG — cut / crease / perf only, millimetre units, named layers. */
+export function renderKnifeDoc(model: DielineModel, title: string): string {
+  const pad = 8
+  const w = model.width + pad * 2
+  const h = model.height + pad * 2
+  const { cut, crease, perf } = dielineTechMarkup(model, pad, 'doc')
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
+  <title>${title} — Grapxor knife CUT/CREASE/PERF</title>
+  ${perf}
+  ${crease}
+  ${cut}
+</svg>`
 }
 
 export function renderDielineSvg(

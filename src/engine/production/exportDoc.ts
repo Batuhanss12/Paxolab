@@ -2,7 +2,7 @@ import type { DesignSpec } from '../../types'
 import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { noteDownload, noteExport } from '../brain/OutcomeTracker'
-import { dielineTechMarkup, renderStructureDoc } from '../dieline/renderDielineSvg'
+import { dielineTechMarkup, renderKnifeDoc, renderStructureDoc } from '../dieline/renderDielineSvg'
 import { artworkFromDocument } from '../document'
 import { STUDIO_EXPORT_FONT_COMMENT, withStudioExportFonts } from '../studio/text'
 import { pressBleedMm, pressProofSvgComment, pressSafeMm } from './pressBoxes'
@@ -64,12 +64,13 @@ export function buildExportSvg(spec: DesignSpec): string | null {
 
 export function buildExportBundle(
   spec: DesignSpec,
-): { dieline: string; artwork: string; combined: string; dxf: string } | null {
+): { dieline: string; knife: string; artwork: string; combined: string; dxf: string } | null {
   const combined = buildCombinedSvg(spec)
   if (!combined) return null
   const slug = spec.copy.brand || 'forma'
   return {
     dieline: renderStructureDoc(spec.dieline, slug),
+    knife: renderKnifeDoc(spec.dieline, slug),
     artwork: renderArtworkDoc(spec.dieline, artworkFromDocument(spec.document), slug),
     combined,
     dxf: buildDielineDxf(spec.dieline),
@@ -106,10 +107,11 @@ export function downloadZip(spec: DesignSpec): boolean {
   if (!bundle) return false
   const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
   const blob = zipStore([
+    { name: `${slug}-knife.svg`, data: bundle.knife },
+    { name: `${slug}-knife.dxf`, data: bundle.dxf },
     { name: `${slug}-dieline.svg`, data: bundle.dieline },
     { name: `${slug}-artwork.svg`, data: bundle.artwork },
     { name: `${slug}-combined.svg`, data: bundle.combined },
-    { name: `${slug}-dieline.dxf`, data: bundle.dxf },
   ])
   triggerDownload(blob, `${slug}-forma.zip`)
   noteExport(spec.id)

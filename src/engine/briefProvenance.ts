@@ -55,12 +55,14 @@ export type FieldStatus = 'KNOWN' | 'INFERRED' | 'UNKNOWN'
 export type FieldNecessity = 'REQUIRED' | 'OPTIONAL'
 
 /** Fields that block a first deterministic design. Mirrors conversationAsk ASK_CRITICAL. */
-export const REQUIRED_FIELDS: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'dimensionsMm']
-export const OPTIONAL_FIELDS: AwaitingKey[] = ['productName', 'styleType', 'colors', 'volume', 'barcode', 'manufacturerName', 'copyLocale']
+export const REQUIRED_FIELDS: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'productName', 'barcode']
+export const OPTIONAL_FIELDS: AwaitingKey[] = ['styleType', 'colors', 'volume', 'dimensionsMm', 'manufacturerName', 'copyLocale']
 
 function hasValue(brief: DesignBrief, key: AwaitingKey): boolean {
   if (key === 'dimensionsMm') return (brief.dimensionsMm.L > 0 && brief.dimensionsMm.H > 0) || !!brief.dimsDefaulted
   if (key === 'templateId') return !!brief.templateId
+  if (key === 'productName') return brief.productName.trim().length > 0 || !!brief.productSkipped
+  if (key === 'barcode') return brief.barcode.trim().length > 0 || !!brief.barcodeDefaulted
   const value = (brief as Record<string, unknown>)[key]
   if (typeof value === 'string') return value.trim().length > 0
   if (Array.isArray(value)) return value.length > 0

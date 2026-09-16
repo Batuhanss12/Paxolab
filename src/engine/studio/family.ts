@@ -68,6 +68,68 @@ export function hintsFromFamily(family: unknown, surface: StudioSurface): Direct
     archetype: pair[surface],
     ...(pair.background ? { background: pair.background } : {}),
     source: 'family',
+    pinSource: 'family',
     rationale: ['Aynı görsel aile — kutu ve etiket aynı DNA.'],
   }
+}
+
+export function archetypesOfFamilies(families: readonly StudioFamily[]): StudioArchetype[] {
+  const out: StudioArchetype[] = []
+  for (const family of families) {
+    if (!isStudioFamily(family)) continue
+    const pair = STUDIO_FAMILIES[family]
+    out.push(pair.box, pair.label)
+  }
+  return [...new Set(out)]
+}
+
+/** User veto → closed-vocabulary avoid lists. Empty input is a no-op. */
+export function hintsFromVeto(families: readonly StudioFamily[] | undefined): DirectionHints | null {
+  if (!families?.length) return null
+  const known = families.filter(isStudioFamily)
+  if (!known.length) return null
+  const backgrounds = known
+    .map((family) => STUDIO_FAMILIES[family].background)
+    .filter((row): row is BackgroundFamily => !!row)
+  return {
+    avoidArchetypes: archetypesOfFamilies(known),
+    avoidBackgrounds: [...new Set(backgrounds)],
+    source: 'user',
+    rationale: [`Kullanıcı veto: ${known.join(', ')}.`],
+  }
+}
+
+const FAMILY_ALIASES: [RegExp, StudioFamily][] = [
+  [/\bmarble\b|mermer/i, 'marble'],
+  [/\bbotanical\b|botanik|\byaprak\b/i, 'botanical'],
+  [/line[\s-]?scene|klinik|çizgisel|line[\s-]?art/i, 'line-scene'],
+  [/\bwave\b|\bdalga\b/i, 'wave'],
+  [/\blandscape\b|manzara/i, 'landscape'],
+  [/\bink\b|mürekkep/i, 'ink'],
+  [/dark[\s-]?luxe|koyu\s*lüks/i, 'dark-luxe'],
+  [/\btech\b|teknik|diyagonal|diagonal|antrasit/i, 'tech'],
+]
+
+/** Closed family dictionary — several aliases per family, not a single hardcoded phrase. */
+export function familiesFromUtterance(text: string): StudioFamily[] {
+  const t = text.toLocaleLowerCase('tr')
+  const out: StudioFamily[] = []
+  for (const [re, family] of FAMILY_ALIASES) {
+    if (re.test(t) && !out.includes(family)) out.push(family)
+  }
+  return out
+}
+
+export function applyVetoToHints(hints: DirectionHints, vetoed: readonly StudioFamily[] | undefined): DirectionHints {
+  if (!vetoed?.length) return hints
+  const avoid = archetypesOfFamilies(vetoed.filter(isStudioFamily))
+  const next: DirectionHints = {
+    ...hints,
+    avoidArchetypes: [...new Set([...(hints.avoidArchetypes ?? []), ...avoid])],
+  }
+  if (next.archetype && avoid.includes(next.archetype)) {
+    const { archetype: _drop, ...rest } = next
+    return rest
+  }
+  return next
 }

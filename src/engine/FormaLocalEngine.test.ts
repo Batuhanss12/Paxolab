@@ -69,11 +69,22 @@ describe('FormaLocalEngine', () => {
     expect(validateDesignDocument(design.document).valid).toBe(true)
     expect(artworkFromDocument(design.document)).toEqual(design.artwork)
     expect(buildCombinedSvg(design)).toContain('<svg')
-    const dxf = buildExportBundle(design)?.dxf ?? ''
+    const bundle = buildExportBundle(design)
+    expect(bundle).toBeTruthy()
+    const dxf = bundle!.dxf
     expect(dxf).toContain('LWPOLYLINE')
     expect(dxf).toContain('CUT')
     expect(dxf).toContain('CREASE')
+    expect(dxf).toContain('TABLE')
+    expect(dxf).toContain('LAYER')
     expect(dxf).toMatch(/LWPOLYLINE[\s\S]*?\n70\n1\n/)
+    expect(design.dieline.cut.length).toBeGreaterThan(0)
+    expect(design.dieline.crease.length).toBeGreaterThan(0)
+    expect(bundle!.knife).toContain('id="CUT"')
+    expect(bundle!.knife).toContain('data-type="cut"')
+    expect(bundle!.knife).toContain('data-type="crease"')
+    expect(bundle!.knife).toContain('width="')
+    expect(bundle!.knife).toContain('mm')
   })
 
   it('printReady proof draws 3 mm safe + bleed and stays honest (PDF/X-4 sRGB, no trap)', () => {
@@ -249,5 +260,12 @@ describe('FormaLocalEngine', () => {
     const left = renderPanelSvg(design.dieline, design.artwork, 'side-left', design.palette)
     expect(left).toContain('data-art="studio"')
     expect(left).toMatch(/data-role="side"/)
+    expect(design.dieline.cut.length).toBeGreaterThan(0)
+    expect(design.dieline.crease.length).toBeGreaterThan(3)
+    const knife = buildExportBundle(design)?.knife ?? ''
+    expect(knife).toContain('data-type="cut"')
+    expect(knife).toContain('data-type="crease"')
+    expect(knife).toContain('id="CUT"')
+    expect(knife).toContain('id="CREASE"')
   })
 })

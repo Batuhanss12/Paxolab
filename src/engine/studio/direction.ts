@@ -141,19 +141,40 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
   }
 }
 
-function scoreArchetype(dna: ArchetypeDna, input: DirectionInput, temperament: Temperament, hints: DirectionHints): number {
+export type ArchetypeScoreParts = {
+  sectorFit: number
+  styleFit: number
+  aspectFit: number
+  tempFit: number
+  productFamily: number
+  hintPin: number
+  veto: number
+  backgroundMismatch: number
+}
+
+function scoreArchetype(
+  dna: ArchetypeDna,
+  input: DirectionInput,
+  temperament: Temperament,
+  hints: DirectionHints,
+): { score: number; parts: ArchetypeScoreParts } {
   const sectorFit = dna.sectors[input.sector] ?? 0.2
   const styleFit = dna.styles[input.style] ?? 0.3
   const ratio = input.faceH / Math.max(1, input.faceW)
   const aspectFit = dna.aspect === 'any' ? 0.7 : dna.aspect === 'portrait' ? (ratio >= 1.1 ? 1 : 0.3) : ratio <= 0.95 ? 1 : 0.3
   const tempFit = dna.temperaments.includes(temperament) ? 1 : 0.3
-  let score = sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18
-  score += productFamilyFit(dna.id, input)
-  if (hints.archetype === dna.id) score += hints.source === 'heuristic' ? 0.85 : 2
-  if (hints.avoidArchetypes?.includes(dna.id)) score -= 1.5
-  if (hints.background && !dna.backgrounds.includes(hints.background)) score -= 0.15
-  if (hints.avoidBackgrounds?.length && dna.backgrounds.every((b) => hints.avoidBackgrounds?.includes(b))) score -= 0.6
-  return score
+  const productFamily = productFamilyFit(dna.id, input)
+  const avoided = hints.avoidArchetypes?.includes(dna.id) ?? false
+  const hintPin = hints.archetype === dna.id && !avoided ? (hints.source === 'heuristic' ? 0.85 : 2) : 0
+  const veto = avoided ? -1.5 : 0
+  const bgMiss = hints.background && !dna.backgrounds.includes(hints.background) ? -0.15 : 0
+  const bgAvoid = hints.avoidBackgrounds?.length && dna.backgrounds.every((b) => hints.avoidBackgrounds?.includes(b)) ? -0.6 : 0
+  const backgroundMismatch = bgMiss + bgAvoid
+  const score = sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18 + productFamily + hintPin + veto + backgroundMismatch
+  return {
+    score,
+    parts: { sectorFit, styleFit, aspectFit, tempFit, productFamily, hintPin, veto, backgroundMismatch },
+  }
 }
 
 /** TASARIM REF product families → the archetype distilled from that reference. */
@@ -186,13 +207,14 @@ function productFamilyFit(id: string, input: DirectionInput): number {
  */
 function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
   if (/mermer|marble/.test(blob)) {
-    return { archetype: 'marble-frame', background: 'marble', rationale: ['Brief: mermer — sektör pin’inin önüne geçer.'] }
+    return { archetype: 'marble-frame', background: 'marble', pinSource: 'visual', rationale: ['Brief: mermer — sektör pin’inin önüne geçer.'] }
   }
   if (/botanik|yaprak|\bleaf\b/.test(blob)) {
     return {
       archetype: label ? 'card-on-art' : 'botanical-card',
       background: 'botanical',
       temperament: 'vivid-mono',
+      pinSource: 'visual',
       rationale: ['Brief: botanik.'],
     }
   }
@@ -201,16 +223,18 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
       archetype: 'line-scene',
       background: 'line-scene',
       temperament: 'clean-clinical',
+      pinSource: 'visual',
       rationale: ['Brief: klinik / çizgisel.'],
     }
   }
   if (/\bdalga\b|\bwave\b/.test(blob)) {
-    return { archetype: 'wave-panel', background: 'wave', temperament: 'clean-clinical', rationale: ['Brief: dalga.'] }
+    return { archetype: 'wave-panel', background: 'wave', temperament: 'clean-clinical', pinSource: 'visual', rationale: ['Brief: dalga.'] }
   }
   if (/manzara|landscape|mürekkep|\bink\b/.test(blob)) {
     return {
       archetype: label ? 'ink-panel' : 'dark-landscape',
       temperament: 'dark-luxe',
+      pinSource: 'visual',
       rationale: ['Brief: manzara / mürekkep.'],
     }
   }
@@ -218,6 +242,7 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
     return {
       archetype: label ? 'diagonal-split' : 'diagonal-tech',
       temperament: 'tech-dark',
+      pinSource: 'visual',
       rationale: ['Brief: diyagonal / antrasit.'],
     }
   }
@@ -230,7 +255,7 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
   const visual = visualOverrideFromBrief(blob, label)
   if (visual.archetype) return { source: 'heuristic', ...visual }
 
-  const hints: DirectionHints = { source: 'heuristic', rationale: [] }
+  const hints: DirectionHints = { source: 'heuristic', pinSource: 'sector', rationale: [] }
   if (/kahve|coffee|espresso|frappe|brew/.test(blob)) {
     hints.archetype = 'marble-frame'
     hints.background = 'marble'
@@ -269,6 +294,7 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
   if (sector === 'perfume' && !hints.archetype) {
     hints.archetype = label ? 'ink-panel' : 'dark-landscape'
   }
+  if (!hints.archetype) delete hints.pinSource
   return hints
 }
 
@@ -329,16 +355,107 @@ function directionRationale(dna: ArchetypeDna, temperament: Temperament, backgro
   ]
 }
 
-export function resolveDirection(input: DirectionInput): DesignDirection {
+export type DirectionClaimKey = 'visualOverride' | 'sectorPrior' | 'productFamily' | 'styleFit' | 'userPin' | 'veto'
+
+export type DirectionClaim = {
+  key: DirectionClaimKey
+  authority: 'REAL'
+  text: string
+  briefField?: 'colors' | 'subProduct' | 'styleType' | 'studioFamily' | 'productName'
+}
+
+export type DirectionScoreRow = {
+  id: StudioArchetype
+  score: number
+  parts: ArchetypeScoreParts
+}
+
+export type DirectionDecision = {
+  direction: DesignDirection
+  scores: DirectionScoreRow[]
+  claims: DirectionClaim[]
+  winnerId: StudioArchetype
+}
+
+function groundedClaims(
+  input: DirectionInput,
+  hints: DirectionHints,
+  winner: DirectionScoreRow,
+  runner: DirectionScoreRow | undefined,
+): DirectionClaim[] {
+  const claims: DirectionClaim[] = []
+  const beat = (value: number, other: number | undefined) => other == null || value > other + 0.001
+  if (hints.pinSource === 'visual' && hints.archetype === winner.id && winner.parts.hintPin > 0) {
+    claims.push({
+      key: 'visualOverride',
+      authority: 'REAL',
+      briefField: 'colors',
+      text:
+        hints.rationale?.[0] ??
+        `brief'teki görsel sözcük (${input.brief.colors || input.brief.directorCue || 'görsel ipucu'}) bu arketipi pinledi`,
+    })
+  }
+  if (hints.pinSource === 'sector' && hints.archetype === winner.id && winner.parts.hintPin > 0) {
+    claims.push({
+      key: 'sectorPrior',
+      authority: 'REAL',
+      briefField: 'subProduct',
+      text: hints.rationale?.[0] ?? 'sektör priori bu aileyi önerdi',
+    })
+  }
+  if (winner.parts.productFamily > 0 && beat(winner.parts.productFamily, runner?.parts.productFamily)) {
+    const family = input.brief.subProduct || input.brief.productName || input.brief.sector
+    claims.push({
+      key: 'productFamily',
+      authority: 'REAL',
+      briefField: input.brief.subProduct ? 'subProduct' : 'productName',
+      text: `ürün ailesi (${family}) bu arketipe +${winner.parts.productFamily.toFixed(2)} verdi`,
+    })
+  }
+  if (winner.parts.styleFit >= 0.6 && beat(winner.parts.styleFit, runner?.parts.styleFit)) {
+    claims.push({
+      key: 'styleFit',
+      authority: 'REAL',
+      briefField: 'styleType',
+      text: `${input.style} ruh hali bu arketipin stil uyumunu yükseltti`,
+    })
+  }
+  if ((hints.source === 'user' || hints.source === 'family' || hints.pinSource === 'family') && hints.archetype === winner.id) {
+    claims.push({
+      key: 'userPin',
+      authority: 'REAL',
+      briefField: 'studioFamily',
+      text: `kilitli görsel aile ${input.brief.studioFamily ?? winner.id} bu yönü sabitledi`,
+    })
+  }
+  if (hints.avoidArchetypes?.length && winner.parts.veto === 0) {
+    claims.push({
+      key: 'veto',
+      authority: 'REAL',
+      text: `veto listesi (${hints.avoidArchetypes.join(', ')}) bu adayı dışlamadı; alternatifler düştü`,
+    })
+  }
+  return claims
+}
+
+export function decideDirection(input: DirectionInput): DirectionDecision {
   const hints = mergeHints(input.hints)
   const { brief, sector, style, surface, locale } = input
   const temperamentGuess = hints.temperament ?? temperamentFor(sector, style, input.palette, brief)
-  const candidates = archetypesFor(surface)
-    .map((dna) => ({ dna, score: scoreArchetype(dna, input, temperamentGuess, hints) }))
+  const avoided = new Set(hints.avoidArchetypes ?? [])
+  const scored = archetypesFor(surface)
+    .map((dna) => {
+      const row = scoreArchetype(dna, input, temperamentGuess, hints)
+      return { dna, score: row.score, parts: row.parts }
+    })
     .sort((a, b) => b.score - a.score || a.dna.id.localeCompare(b.dna.id))
-  const pinned = hints.archetype ? candidates.find((c) => c.dna.id === hints.archetype) : undefined
-  const pool = candidates.slice(0, 3)
-  const pick = pinned ?? pool[input.variationIndex % pool.length] ?? candidates[0]
+  const scores: DirectionScoreRow[] = scored.map((row) => ({ id: row.dna.id as StudioArchetype, score: row.score, parts: row.parts }))
+  const pinned =
+    hints.archetype && !avoided.has(hints.archetype) ? scored.find((c) => c.dna.id === hints.archetype) : undefined
+  const eligible = scored.filter((c) => !avoided.has(c.dna.id as StudioArchetype))
+  const ranked = eligible.length ? eligible : scored
+  const pool = ranked.slice(0, 3)
+  const pick = pinned ?? pool[input.variationIndex % Math.max(1, pool.length)] ?? ranked[0] ?? scored[0]
   const dna = pick.dna
   const temperament: Temperament = dna.temperaments.includes(temperamentGuess) ? temperamentGuess : (hints.temperament ?? dna.temperaments[0])
   const background =
@@ -360,7 +477,7 @@ export function resolveDirection(input: DirectionInput): DesignDirection {
   const productPrefix =
     hints.productPrefix ?? (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans' ? bank.prefixes[input.variationIndex % bank.prefixes.length] : '')
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
-  return {
+  const direction: DesignDirection = {
     surface,
     archetype: dna.id as StudioArchetype,
     background,
@@ -384,6 +501,22 @@ export function resolveDirection(input: DirectionInput): DesignDirection {
     sector,
     locale,
   }
+  const winner = scores.find((row) => row.id === direction.archetype) ?? {
+    id: direction.archetype,
+    score: pick.score,
+    parts: pick.parts,
+  }
+  const runner = scores.find((row) => row.id !== winner.id)
+  return {
+    direction,
+    scores,
+    claims: groundedClaims(input, hints, winner, runner),
+    winnerId: direction.archetype,
+  }
+}
+
+export function resolveDirection(input: DirectionInput): DesignDirection {
+  return decideDirection(input).direction
 }
 
 /** Short TR summary for the chat / process note. */

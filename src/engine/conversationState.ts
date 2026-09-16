@@ -71,10 +71,16 @@ export function acceptDefaultFor(brief: DesignBrief, key: AwaitingKey): DesignBr
       provenance: { colors: { source: 'SYSTEM_DEFAULT', confidence: 1 } },
     })
   }
+  if (key === 'barcode') {
+    return mergeBrief(brief, {
+      barcodeDefaulted: true,
+      provenance: { barcode: { source: 'SYSTEM_DEFAULT', confidence: 1 } },
+    })
+  }
   if (key === 'templateId') return brief
   return brief
 }
 
 export function canDefault(key: AwaitingKey): boolean {
-  return key === 'dimensionsMm' || key === 'templateId' || key === 'colors' || key === 'styleType'
+  return key === 'dimensionsMm' || key === 'templateId' || key === 'colors' || key === 'styleType' || key === 'barcode'
 }

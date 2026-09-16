@@ -108,6 +108,16 @@ export type DesignBrief = {
    * Companion generate (“etiketi de üret”) reads it so box and label stay in the same DNA.
    */
   studioFamily?: import('./engine/studio/types').StudioFamily
+  /**
+   * Families the user vetoed this conversation. Catalog omits.
+   * Scoring excludes their archetypes; generate must not re-pin them.
+   */
+  avoidStudioFamilies?: import('./engine/studio/types').StudioFamily[]
+  /**
+   * Chat vary step inside the current family. Catalog omits.
+   * StyleBar still uses override variationIndex; this persists the chat step.
+   */
+  directionVariation?: number
   /** Per-field source + confidence. Catalog omits this; mergeBrief keeps the strongest source. */
   provenance?: Partial<Record<string, FieldProvenance>>
 }

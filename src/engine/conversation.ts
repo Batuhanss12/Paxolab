@@ -27,19 +27,37 @@ import {
 import { briefSummary, isCoreReady, isSurfaceOnlySummary, mergeBrief } from './fields'
 import { parseFeedback } from './iterate/feedbackParser'
 import { isIteration, parseIntent } from './iterate/parseIntent'
-import { hintsFromFamily } from './studio/family'
+import {
+  applyDirectionTalk,
+  explainStudioDirection,
+  inspectStudioDirection,
+  parseDirectionTalk,
+} from './studio/directionTalk'
+import { familyOf, hintsFromFamily, hintsFromVeto, applyVetoToHints } from './studio/family'
 
 export { askCopy, nextMissing } from './conversationAsk'
+
+const START_DESIGN = /^(başlat|çalıştır|üret|tasarla|motor|tasarımı\s*başlat|devam)$/i
 
 function studioGeneratePatch(brief: DesignBrief): Partial<DesignOverrides> {
   const patch = cueOverridePatch(brief)
   const surface = brief.packagingMode === 'label' ? 'label' : 'box'
-  const family = hintsFromFamily(brief.studioFamily, surface)
-  if (family) patch.direction = { ...patch.direction, ...family }
+  const vetoed = brief.avoidStudioFamilies ?? []
+  const veto = hintsFromVeto(vetoed)
+  const family = brief.studioFamily && !vetoed.includes(brief.studioFamily) ? hintsFromFamily(brief.studioFamily, surface) : null
+  const direction = applyVetoToHints({ ...patch.direction, ...veto, ...family }, vetoed)
+  if (veto || family || patch.direction) patch.direction = direction
+  if (brief.directionVariation != null) patch.variationIndex = brief.directionVariation
   return patch
 }
 
-function withUnderstanding(brief: DesignBrief, text: string, attachments: Attachment[]): DesignBrief {
+function withUnderstanding(
+  brief: DesignBrief,
+  text: string,
+  attachments: Attachment[],
+  awaiting: AwaitingKey | null,
+): DesignBrief {
+  if (awaiting && awaiting !== 'colors' && awaiting !== 'styleType') return brief
   const understanding = understandUtterance(text, brief, attachments)
   return mergeBrief(brief, understanding.patch)
 }
@@ -67,7 +85,7 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
     awaiting: null,
     replies: [
       `${briefing}${dual} ${structure} Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.`,
-      'Yönü konuşarak iterasyon: “daha premium”, “daha modern”, “logoyu büyüt”, “etiketi de üret”.',
+      'Yönü konuşarak iterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “etiketi de üret”.',
     ],
     shouldGenerate: true,
     showTemplates: false,
@@ -99,7 +117,7 @@ function offerStructureResult(brief: DesignBrief, ack?: string, state?: Conversa
     brief: next,
     awaiting: 'templateId',
     replies: [
-      `${briefing}${dual} Brief hazır. Uygun yapılar sağda — birini seç, sonra tasarım başlar.`,
+      `${briefing}${dual} Brief hazır. Uygun yapılar sağda — kartı seç, ölçüyü orada ayarla, sonra tasarımı başlat.`,
       top ? `Yapı: önerilen ${topLabel}.` : '',
       lines.join('\n'),
     ].filter(Boolean),
@@ -110,6 +128,47 @@ function offerStructureResult(brief: DesignBrief, ack?: string, state?: Conversa
     note: 'offer',
     state: noteAsked(state ?? emptyConversationState(), 'templateId'),
     structureOffer: offer,
+  }
+}
+
+function dimsFromTemplate(templateId: string): { L: number; W: number; H: number } {
+  const tmpl = getTemplate(templateId)
+  return tmpl?.defaultsMm ?? { L: 80, W: 40, H: 120 }
+}
+
+function structureGate(input: { hasDesign: boolean; awaiting: AwaitingKey | null; brief: DesignBrief }): boolean {
+  if (input.hasDesign || input.awaiting === 'templateId') return true
+  const miss = nextMissing(input.brief)
+  return miss === null || miss === 'templateId'
+}
+
+/** User named a carton — pin it and wait for dim edit + start. Do not generate yet. */
+function selectStructureResult(brief: DesignBrief, templateId: string, text: string, state?: ConversationState): EngineResult {
+  const tmpl = getTemplate(templateId)
+  const dims = dimsFromTemplate(templateId)
+  const next = {
+    ...brief,
+    templateId,
+    packagingMode: brief.packagingMode || tmpl?.packagingMode || 'box',
+    dimensionsMm: dims,
+    dimsDefaulted: true,
+  }
+  const offer = recommendStructures(next)
+  const label = tmpl ? (STRUCTURE_LABEL[tmpl.structureId] ?? tmpl.title) : templateId
+  return {
+    brief: next,
+    awaiting: 'templateId',
+    replies: [
+      `${label} seçildi. Şablon ölçüsü ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştir, sonra “Tasarımı başlat”.`,
+    ],
+    shouldGenerate: false,
+    showTemplates: true,
+    overridePatch: studioGeneratePatch(next),
+    copyPatch: {},
+    note: 'select',
+    feedback: parseFeedback(text),
+    state: noteAsked(state ?? emptyConversationState(), 'templateId'),
+    structureOffer: { ...offer, selectedTemplateId: templateId },
   }
 }
 
@@ -155,7 +214,7 @@ export function runConversation(input: {
 
   const previewOffer = recommendStructures(input.brief)
   const offerPick = parseOfferChoice(text, previewOffer.candidates.length)
-  if (offerPick && (input.hasDesign || input.awaiting === 'templateId' || isCoreReady(input.brief))) {
+  if (offerPick && structureGate(input)) {
     const hit = previewOffer.candidates[offerPick - 1]
     if (hit) {
       const next = {
@@ -163,31 +222,84 @@ export function runConversation(input: {
         templateId: hit.templateId,
         packagingMode: input.brief.packagingMode || (hit.structureId.includes('label') ? ('label' as const) : ('box' as const)),
       }
-      if (input.hasDesign || isCoreReady(next)) {
-        return generateResult(next, directionBriefing(next), text, state)
-      }
+      if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state)
+      return selectStructureResult(next, hit.templateId, text, state)
     }
   }
 
   const structureId = templateIdFromUtterance(text, input.brief.packagingMode)
-  if (structureId && (input.hasDesign || input.awaiting === 'templateId' || isCoreReady(input.brief))) {
+  if (structureId && structureGate(input)) {
     const next = {
       ...input.brief,
       templateId: structureId,
       packagingMode: input.brief.packagingMode || (structureId.includes('label') ? 'label' as const : 'box' as const),
     }
-    if (input.hasDesign || isCoreReady(next)) {
-      return generateResult(next, directionBriefing(next), text, state)
-    }
+    if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state)
+    return selectStructureResult(next, structureId, text, state)
   }
 
-  if (input.awaiting === 'templateId' && SKIP_UTTERANCE.test(text) && isCoreReady(input.brief)) {
-    return generateResult(input.brief, 'Önerdiğim yapıyla devam ediyorum.', text, state)
+  if (
+    input.awaiting === 'templateId' &&
+    isCoreReady(input.brief) &&
+    (SKIP_UTTERANCE.test(text) || START_DESIGN.test(text))
+  ) {
+    const seeded =
+      input.brief.templateId
+        ? input.brief
+        : { ...input.brief, templateId: previewOffer.candidates[0]?.templateId ?? '', dimensionsMm: dimsFromTemplate(previewOffer.candidates[0]?.templateId ?? '') }
+    return generateResult(seeded, seeded.templateId ? 'Ölçü ve yapıyla tasarımı başlatıyorum.' : 'Önerdiğim yapı + standart ölçüyle devam ediyorum.', text, state)
   }
 
   if (input.hasDesign && wantsCompanionLabel(text) && input.brief.packagingMode !== 'label') {
     const labelBrief = { ...input.brief, packagingMode: 'label' as const, templateId: '' }
     return generateResult(labelBrief, `${directionBriefing(labelBrief)} Şişe etiketini kuruyorum.`, text, state)
+  }
+
+  const currentFamily =
+    input.brief.studioFamily ??
+    (input.hasDesign ? familyOf(inspectStudioDirection(input.brief).direction.archetype) : undefined)
+  const talk = parseDirectionTalk(text, currentFamily)
+  if (talk?.kind === 'why') {
+    const explained = explainStudioDirection(input.brief)
+    return {
+      brief: input.brief,
+      awaiting: input.awaiting,
+      replies: [explained.text],
+      shouldGenerate: false,
+      showTemplates: false,
+      overridePatch: {},
+      copyPatch: {},
+      note: 'why',
+      state,
+    }
+  }
+  if (talk && (talk.kind === 'veto' || talk.kind === 'vary' || talk.kind === 'pin')) {
+    const applied = applyDirectionTalk(input.brief, talk, text)
+    if (!input.hasDesign) {
+      return {
+        brief: applied.brief,
+        awaiting: input.awaiting,
+        replies: [applied.note],
+        shouldGenerate: false,
+        showTemplates: input.awaiting === 'templateId',
+        overridePatch: applied.overridePatch,
+        copyPatch: {},
+        note: talk.kind,
+        state,
+      }
+    }
+    return {
+      brief: applied.brief,
+      awaiting: null,
+      replies: [applied.note],
+      shouldGenerate: true,
+      showTemplates: false,
+      overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
+      copyPatch: {},
+      note: talk.kind,
+      feedback: parseFeedback(text),
+      state,
+    }
   }
 
   if (input.hasDesign && isIteration(text)) {
@@ -207,7 +319,7 @@ export function runConversation(input: {
   }
 
   const extracted = applyExtraction(input.brief, text, input.attachments, input.awaiting)
-  const understood = withUnderstanding(extracted, text, input.attachments)
+  const understood = withUnderstanding(extracted, text, input.attachments, input.awaiting)
   state = settleAwaiting(state, input.awaiting, text, input.brief, understood)
   const resolvedMissing = resolveMissing(understood, state)
   const brief = resolvedMissing.brief
@@ -244,7 +356,7 @@ export function runConversation(input: {
     return {
       brief,
       awaiting: null,
-      replies: ['İterasyon: stil çipi, “luxury yap / eco’ya geç”, “logoyu büyüt”, “daha premium”, “metni … yap”, “baskıya hazırla”.'],
+      replies: ['İterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “luxury yap”, “logoyu büyüt”, “baskıya hazırla”.'],
       shouldGenerate: false,
       showTemplates: false,
       overridePatch: {},
@@ -260,8 +372,7 @@ export function runConversation(input: {
       input.awaiting === 'productName' && sameName(text, brief.brandName) && !brief.productName.trim() ? 'productName' : missing
     // Same field, second time, nothing learned from the answer → rephrase, never repeat verbatim.
     const retry = input.awaiting === askKey && timesAsked(state, askKey) >= 1 && !grew
-    if (askKey === 'productName') replies.push(askCopy(brief, 'productName'))
-    else if (retry) replies.push(askRetryCopy(brief, askKey, text))
+    if (retry) replies.push(askRetryCopy(brief, askKey, text))
     else replies.push(`${grew && ack && !isSurfaceOnlySummary(ack) ? `${ack}. ` : ''}${askCopy(brief, missing)}`.trim())
     return {
       brief,

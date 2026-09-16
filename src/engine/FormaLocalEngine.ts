@@ -24,7 +24,7 @@ import { resolveCopyLocale } from './copyLocale'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
-import { applyStudioPreflight, composeStudioArtwork, familyOf, hintsFromBrief, hintsFromFamily, resolveDirection, type StudioReport } from './studio'
+import { applyStudioPreflight, assembleStudioHints, composeStudioArtwork, familyOf, resolveDirection, type StudioReport } from './studio'
 import { studioHintsFromKnowledge } from './brain/studioKnowledge'
 import { mergeLlmCopy } from './llm/copyLlm'
 
@@ -169,7 +169,6 @@ export class FormaLocalEngine implements EnginePort {
       if (studioOn) {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
         const surface = kind === 'label' ? 'label' : 'box'
-        const familyHint = hintsFromFamily(planBrief.studioFamily, surface)
         const direction = resolveDirection({
           brief: planBrief,
           sector: resolveSector(brief),
@@ -181,12 +180,10 @@ export class FormaLocalEngine implements EnginePort {
           locale: brief.copyLocale ?? 'tr',
           variationIndex,
           copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },
-          hints: [
-            hintsFromBrief(planBrief, resolveSector(brief), surface),
+          hints: assembleStudioHints(planBrief, surface, [
             ...(studioKnowledge?.hints ?? []),
             ...(overrides.direction ? [overrides.direction] : []),
-            ...(familyHint ? [familyHint] : []),
-          ],
+          ]),
         })
         const composed = composeStudioArtwork({ brief, dieline, copy, direction, system })
         artwork = composed.artwork

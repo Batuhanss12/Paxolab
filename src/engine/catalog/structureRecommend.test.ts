@@ -31,6 +31,17 @@ function ids(rows: { structureId: string }[]): string[] {
   return rows.map((r) => r.structureId)
 }
 
+function chatOffer(text: string) {
+  let t = runConversation({ text, attachments: [], brief: emptyBrief(), awaiting: null, hasDesign: false })
+  if (t.awaiting === 'productName') {
+    t = runConversation({ text: 'Noir', attachments: [], brief: t.brief, awaiting: t.awaiting, hasDesign: false })
+  }
+  if (t.awaiting === 'barcode') {
+    t = runConversation({ text: 'örnek', attachments: [], brief: t.brief, awaiting: t.awaiting, hasDesign: false })
+  }
+  return t
+}
+
 describe('C5 structure recommendation', () => {
   it('TEST 1 — tall/narrow vs wide/low changes ranking and selected family', () => {
     const tall = recommendStructures(perfume({ L: 70, W: 35, H: 140 }))
@@ -42,20 +53,8 @@ describe('C5 structure recommendation', () => {
     expect(ids(wide.candidates)).not.toEqual(ids(tall.candidates))
     expect(wide.selectedTemplateId).not.toBe(tall.selectedTemplateId)
 
-    const tallGen = runConversation({
-      text: 'Luma parfüm kutusu 70x35x140 siyah altın',
-      attachments: [],
-      brief: emptyBrief(),
-      awaiting: null,
-      hasDesign: false,
-    })
-    const wideGen = runConversation({
-      text: 'Luma parfüm kutusu 180x120x60 siyah altın',
-      attachments: [],
-      brief: emptyBrief(),
-      awaiting: null,
-      hasDesign: false,
-    })
+    const tallGen = chatOffer('Luma parfüm kutusu 70x35x140 siyah altın')
+    const wideGen = chatOffer('Luma parfüm kutusu 180x120x60 siyah altın')
     expect(tallGen.shouldGenerate).toBe(false)
     expect(wideGen.shouldGenerate).toBe(false)
     expect(tallGen.showTemplates).toBe(true)
@@ -91,13 +90,7 @@ describe('C5 structure recommendation', () => {
       expect(row.reason).toMatch(/70|140|35|mm/)
       expect(row.reason).not.toMatch(/bu yapı ürününüz için uygundur/i)
     }
-    const chat = runConversation({
-      text: 'Luma parfüm kutusu 70x35x140 siyah altın',
-      attachments: [],
-      brief: emptyBrief(),
-      awaiting: null,
-      hasDesign: false,
-    })
+    const chat = chatOffer('Luma parfüm kutusu 70x35x140 siyah altın')
     expect(chat.replies.join(' ')).toMatch(/140/)
     expect(chat.replies.join(' ')).toMatch(/Yapı:/)
   })
@@ -143,13 +136,7 @@ describe('C5 structure recommendation', () => {
   })
 
   it('TEST 6 — choosing #2 writes that template into generate', () => {
-    const first = runConversation({
-      text: 'Luma parfüm kutusu 70x35x140 siyah altın',
-      attachments: [],
-      brief: emptyBrief(),
-      awaiting: null,
-      hasDesign: false,
-    })
+    const first = chatOffer('Luma parfüm kutusu 70x35x140 siyah altın')
     const secondId = first.structureOffer?.candidates[1]?.templateId
     expect(secondId).toBeTruthy()
     expect(parseOfferChoice('2. yapıyı seçiyorum', first.structureOffer!.candidates.length)).toBe(2)
@@ -157,13 +144,21 @@ describe('C5 structure recommendation', () => {
       text: '2. yapıyı seçiyorum',
       attachments: [],
       brief: first.brief,
-      awaiting: null,
-      hasDesign: true,
+      awaiting: 'templateId',
+      hasDesign: false,
     })
-    expect(picked.shouldGenerate).toBe(true)
+    expect(picked.shouldGenerate).toBe(false)
     expect(picked.brief.templateId).toBe(secondId)
-    expect(picked.brief.templateId).not.toBe(first.brief.templateId)
-    const spec = new FormaLocalEngine().generate({ brief: picked.brief, overridePatch: { studio: true } })
+    const started = runConversation({
+      text: 'başlat',
+      attachments: [],
+      brief: picked.brief,
+      awaiting: 'templateId',
+      hasDesign: false,
+    })
+    expect(started.shouldGenerate).toBe(true)
+    expect(started.brief.templateId).toBe(secondId)
+    const spec = new FormaLocalEngine().generate({ brief: started.brief, overridePatch: { studio: true } })
     expect(spec.brief.templateId).toBe(secondId)
     expect(spec.dieline.structureId).toBe(first.structureOffer!.candidates[1]!.structureId)
   })
@@ -192,13 +187,7 @@ describe('C5 structure recommendation', () => {
   })
 
   it('TEST 9 — USER → recommend → select → compose → SVG → preflight', () => {
-    const turned = runConversation({
-      text: 'Luma parfüm kutusu 70x35x140 siyah altın',
-      attachments: [],
-      brief: emptyBrief(),
-      awaiting: null,
-      hasDesign: false,
-    })
+    const turned = chatOffer('Luma parfüm kutusu 70x35x140 siyah altın')
     expect(turned.shouldGenerate).toBe(false)
     expect(turned.awaiting).toBe('templateId')
     expect(turned.structureOffer?.candidates.length).toBeGreaterThan(1)
@@ -207,11 +196,19 @@ describe('C5 structure recommendation', () => {
       text: '2. yapıyı seçiyorum',
       attachments: [],
       brief: turned.brief,
-      awaiting: null,
-      hasDesign: true,
+      awaiting: 'templateId',
+      hasDesign: false,
     })
-    const spec = new FormaLocalEngine().generate({ brief: pick.brief, overridePatch: { studio: true } })
-    expect(spec.brief.templateId).toBe(pick.brief.templateId)
+    const started = runConversation({
+      text: 'başlat',
+      attachments: [],
+      brief: pick.brief,
+      awaiting: 'templateId',
+      hasDesign: false,
+    })
+    expect(started.shouldGenerate).toBe(true)
+    const spec = new FormaLocalEngine().generate({ brief: started.brief, overridePatch: { studio: true } })
+    expect(spec.brief.templateId).toBe(started.brief.templateId)
     expect(spec.dieline.structureId).toBe(getTemplate(pick.brief.templateId)?.structureId)
     expect(spec.artwork.layers.some((l) => /data-art="studio"/.test(l.markup))).toBe(true)
     expect(spec.preflight.exportOk).toBe(true)

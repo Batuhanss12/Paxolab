@@ -3,24 +3,25 @@
  * Barcode / manufacturer / SKU / volume are sample defaults, not a gauntlet.
  */
 import type { AwaitingKey, DesignBrief } from '../types'
-import { acceptedDimsDefault, acceptedDirectionDefault, hasDirectionSignal, hasUserDims } from './fields'
+import { acceptedDirectionDefault, hasDirectionSignal } from './fields'
 
 const ASK: Partial<Record<AwaitingKey, string>> = {
   packagingMode: 'Kutu mu tasarlıyoruz, etiket mi, yoksa ikisi birden mi?',
   sector: 'Ne ürünü paketliyoruz — parfüm, serum, kahve, kulaklık, bal? Kategori adını yazmana gerek yok; ürünü söyle.',
   brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
-  productName: 'Ürün hattı veya SKU adı nedir? Marka adı değil — örneğin Noir. Yoksa “örnek” yazın; lockup’ta yalnız marka kalır.',
+  productName: 'Ürünün adı nedir? Markadan ayrı yaz — örneğin Noir, Serum 30 ml, Special Series.',
   volume: 'Hacim nedir — örneğin 50 ml? Bilmiyorsanız “örnek” yazın; Girdiler’de varsayılan diye işaretlerim.',
   dimensionsMm:
     'Ölçüler nedir (L×W×H mm)? Bilmiyorsan “şablon” yaz; sektörün standart kutusunu kullanırım.',
   barcode:
-    'Barkod / GTIN nedir? Yazmazsanız örnek bir barkod çizerim — Girdiler’de örnek diye işaretlenir, gerçek GS1 değildir.',
+    'Barkod / GTIN nedir (8–14 hane)? Yazmazsan “örnek” de; örnek barkod çizerim — GS1 değildir.',
   manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
   manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
   styleType: 'Soldaki ruh hali çipleri ipucu: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik. Kostüm şablonu değil — renk ve motifler brief’ten kurulur.',
   colors:
     'Renk, duruş veya hikâye — bir cümle yeter (ör. siyah · altın, editorial, sessiz yoğunluk). Yoksa paleti üründen kurarım; “örnek” yaz.',
-  templateId: 'Uygun yapılar sağda. Bir kart seç veya “1. yapı” / “mailer” yaz; tasarım ondan sonra başlar. “örnek” dersen önerdiğimle devam ederim.',
+  templateId:
+    'Uygun yapılar sağda. Kartı seç, şablon ölçüsünü orada değiştir, sonra “Tasarımı başlat”. “örnek” dersen önerilen yapı + standart ölçüyle devam ederim.',
   copyLocale: 'Metinler Türkçe mi, İngilizce mi?',
 }
 
@@ -30,8 +31,8 @@ const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
   dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazman yeterli.',
 }
 
-/** Ask only what still blocks a first design. Production samples fill the rest. */
-const ASK_CRITICAL: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'dimensionsMm']
+/** Ask before the structure picker. Ölçü şablonda; chat’te sorulmaz. */
+const ASK_CRITICAL: AwaitingKey[] = ['packagingMode', 'sector', 'brandName', 'productName', 'barcode']
 
 function dimensionsAsk(brief: DesignBrief): string {
   if (brief.packagingMode === 'label') return ASK_LABEL.dimensionsMm as string
@@ -69,6 +70,12 @@ export function askRetryCopy(brief: DesignBrief, key: AwaitingKey, lastAnswer: s
   if (key === 'packagingMode') {
     return `${said} yüzeyi belirlemedi. “kutu”, “etiket” ya da “kutu ve etiket” yaz; şişe/kavanoz için etiket, karton için kutu doğru seçim.`
   }
+  if (key === 'productName') {
+    return `${said} ürün adı olarak oturmadı. Markadan ayrı yaz — örn. “Noir”, “Serum 30 ml”. “örnek” dersen lockup’ta yalnız marka kalır.`
+  }
+  if (key === 'barcode') {
+    return `${said} barkod olarak okunmadı. 8–14 hane GTIN yaz veya “örnek” de.`
+  }
   if (key === 'colors') {
     return `${said} yön olarak okunmadı. Renk, ruh veya bir cümle hikâye yaz — örn. “bej ve koyu yeşil, editorial”, “siyah altın lüks”. Paleti üründen kurmamı istiyorsan “örnek” de.`
   }
@@ -85,7 +92,8 @@ export function nextMissing(brief: DesignBrief): AwaitingKey | null {
     if (key === 'packagingMode' && !brief.packagingMode) return key
     if (key === 'sector' && !brief.sector.trim()) return key
     if (key === 'brandName' && !brief.brandName.trim()) return key
-    if (key === 'dimensionsMm' && !hasUserDims(brief) && !acceptedDimsDefault(brief)) return key
+    if (key === 'productName' && !brief.productName.trim() && !brief.productSkipped) return key
+    if (key === 'barcode' && !brief.barcode.trim() && !brief.barcodeDefaulted) return key
   }
   if (!hasDirectionSignal(brief) && !acceptedDirectionDefault(brief)) return 'colors'
   if (!brief.templateId) return 'templateId'

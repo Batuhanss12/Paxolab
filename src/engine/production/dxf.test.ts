@@ -28,6 +28,8 @@ describe('buildDielineDxf', () => {
     const dxf = buildDielineDxf(model)
     expect(dxf).toContain('CUT')
     expect(dxf).toContain('CREASE')
+    expect(dxf).toContain('LAYER')
+    expect(dxf).toContain('TABLE')
     expect(dxf).toContain('LWPOLYLINE')
     expect(dxf).toContain('LINE')
     // closed polyline flag (group 70 = 1)

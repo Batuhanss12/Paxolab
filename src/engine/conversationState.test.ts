@@ -29,12 +29,12 @@ describe('TEST A — conversational input becomes a sourced brief', () => {
 
     const classes = classifyBriefFields(brief)
     expect(classes.known).toEqual(expect.arrayContaining(['brandName', 'sector', 'packagingMode', 'colors']))
-    expect(classes.blocking).toEqual(['dimensionsMm'])
+    expect(classes.blocking).toEqual(['productName', 'barcode'])
   })
 })
 
 describe('TEST B — missing information and the asked/answered ledger', () => {
-  it('asks for dimensions once when they block the dieline and records the ask', () => {
+  it('asks for the product name once and records the ask', () => {
     const turn = runConversation({
       text: LUMA_EN,
       attachments: [],
@@ -44,13 +44,13 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       state: emptyConversationState(),
     })
     expect(turn.shouldGenerate).toBe(false)
-    expect(turn.awaiting).toBe('dimensionsMm')
-    expect(turn.replies.join(' ')).toMatch(/ölçü|L×W×H/i)
-    expect(turn.state?.asked.dimensionsMm).toBe(1)
+    expect(turn.awaiting).toBe('productName')
+    expect(turn.replies.join(' ')).toMatch(/ürün/i)
+    expect(turn.state?.asked.productName).toBe(1)
     expect(turn.state?.turns).toBe(1)
   })
 
-  it('does not ask a defaultable question more than MAX_ASK times — it accepts the system default and moves on', () => {
+  it('accepts an örnek barcode skip and opens the structure picker', () => {
     let turn = runConversation({
       text: LUMA_EN,
       attachments: [],
@@ -59,21 +59,17 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       hasDesign: false,
       state: emptyConversationState(),
     })
-    for (let i = 1; i < MAX_ASK; i++) {
-      turn = runConversation({
-        text: 'Marka Luma, kozmetik serum.',
-        attachments: [],
-        brief: turn.brief,
-        awaiting: turn.awaiting,
-        hasDesign: false,
-        state: turn.state,
-      })
-      expect(turn.awaiting).toBe('dimensionsMm')
-    }
-    expect(turn.state?.asked.dimensionsMm).toBe(MAX_ASK)
-
+    turn = runConversation({
+      text: 'Noir',
+      attachments: [],
+      brief: turn.brief,
+      awaiting: turn.awaiting,
+      hasDesign: false,
+      state: turn.state,
+    })
+    expect(turn.awaiting).toBe('barcode')
     const settled = runConversation({
-      text: 'Marka Luma, kozmetik serum.',
+      text: 'örnek',
       attachments: [],
       brief: turn.brief,
       awaiting: turn.awaiting,
@@ -83,12 +79,10 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
     expect(settled.shouldGenerate).toBe(false)
     expect(settled.showTemplates).toBe(true)
     expect(settled.awaiting).toBe('templateId')
-    expect(settled.brief.dimsDefaulted).toBe(true)
-    expect(settled.brief.provenance?.dimensionsMm?.source).toBe('SYSTEM_DEFAULT')
-    expect(settled.state?.asked.dimensionsMm).toBe(MAX_ASK)
+    expect(settled.brief.barcodeDefaulted).toBe(true)
   })
 
-  it('marks an answered question and never re-asks it', () => {
+  it('marks an answered product name and never re-asks it', () => {
     const asked = runConversation({
       text: LUMA_EN,
       attachments: [],
@@ -98,7 +92,7 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       state: emptyConversationState(),
     })
     const answered = runConversation({
-      text: '60 x 40 x 120',
+      text: 'Noir',
       attachments: [],
       brief: asked.brief,
       awaiting: asked.awaiting,
@@ -106,11 +100,10 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       state: asked.state,
     })
     expect(answered.shouldGenerate).toBe(false)
-    expect(answered.showTemplates).toBe(true)
-    expect(answered.awaiting).toBe('templateId')
-    expect(answered.brief.dimensionsMm).toEqual({ L: 60, W: 40, H: 120 })
-    expect(answered.state?.answered).toContain('dimensionsMm')
-    expect(answered.state?.asked.dimensionsMm).toBe(1)
+    expect(answered.awaiting).toBe('barcode')
+    expect(answered.brief.productName).toBe('Noir')
+    expect(answered.state?.answered).toContain('productName')
+    expect(answered.state?.asked.productName).toBe(1)
   })
 
   it('brand has no safe default, so it stays a question', () => {

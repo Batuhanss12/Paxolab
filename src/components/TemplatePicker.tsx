@@ -7,9 +7,9 @@ import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
 
 type TemplatePickerProps = {
   brief: DesignBrief
+  onSelect: (templateId: string, dims: DimensionsMm) => void
   onPick: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
-  /** Dieline tab already paints DielinePreview — do not mount a second net. */
   livePreview?: boolean
 }
 
@@ -17,7 +17,7 @@ function dimsFor(brief: DesignBrief, template: FormaTemplate): DimensionsMm {
   return estimateCartonMm(brief.volume, brief, template) ?? template.defaultsMm
 }
 
-export function TemplatePicker({ brief, onPick, onDims, livePreview = true }: TemplatePickerProps) {
+export function TemplatePicker({ brief, onSelect, onPick, onDims, livePreview = true }: TemplatePickerProps) {
   const offer = recommendStructures(brief)
   const ranked = offer.all.filter((row) => row.eligible)
   const rankById = new Map(ranked.map((row, i) => [row.templateId, { ...row, rank: i }]))
@@ -49,6 +49,7 @@ export function TemplatePicker({ brief, onPick, onDims, livePreview = true }: Te
     <div className="templates">
       <p className="eyebrow">Yapı seçimi</p>
       <h2>{brief.packagingMode === 'label' ? 'Uygun etiket yapıları' : 'Uygun kutu yapıları'}</h2>
+      <p className="templates__hint">Standart ölçü kartta yazar. Seç, L×W×H’yi değiştir, sonra başlat.</p>
       {cards.length === 0 && <p className="templates__empty">Bu sektör için kutu şablonu yok.</p>}
       <div className="templates__grid">
         {cards.map((t: FormaTemplate) => {
@@ -59,12 +60,11 @@ export function TemplatePicker({ brief, onPick, onDims, livePreview = true }: Te
               key={t.id}
               type="button"
               className={`tcard ${brief.templateId === t.id ? 'is-active' : ''}`}
-              onClick={() => onPick(t.id, cardDims)}
+              onClick={() => onSelect(t.id, cardDims)}
             >
               <strong>{t.title}</strong>
               <span>
                 {cardDims.L}×{cardDims.W || '—'}×{cardDims.H} mm
-                {brief.volume && !brief.volumeDefaulted ? ' · ml tahmini' : ''}
               </span>
               {meta && meta.rank < 3 && (
                 <p className="tcard__reason">{meta.reason}</p>
@@ -75,30 +75,24 @@ export function TemplatePicker({ brief, onPick, onDims, livePreview = true }: Te
       </div>
       {selected && (
         <div className="templates__live">
-          {livePreview && (
-            <p className="templates__legend">
-              <span className="templates__swatch templates__swatch--cut">Kesim</span>
-              <span className="templates__swatch templates__swatch--crease">Kırım</span>
-              <span className="templates__swatch templates__swatch--perf">Yırtma</span>
-            </p>
-          )}
           <div className="templates__dims">
             <label>
               L
-              <input type="number" value={dims.L || ''} onChange={(e) => setNum('L', e.target.value)} />
+              <input type="number" min={10} value={dims.L || ''} onChange={(e) => setNum('L', e.target.value)} />
             </label>
             {selected.packagingMode === 'box' && (
               <label>
                 W
-                <input type="number" value={dims.W || ''} onChange={(e) => setNum('W', e.target.value)} />
+                <input type="number" min={8} value={dims.W || ''} onChange={(e) => setNum('W', e.target.value)} />
               </label>
             )}
             <label>
               H
-              <input type="number" value={dims.H || ''} onChange={(e) => setNum('H', e.target.value)} />
+              <input type="number" min={10} value={dims.H || ''} onChange={(e) => setNum('H', e.target.value)} />
             </label>
-            <button type="button" className="ghost-btn" onClick={() => onPick(selected.id, dims)}>
-              Motoru çalıştır
+            <span className="templates__dims-unit">mm</span>
+            <button type="button" className="ghost-btn templates__start" onClick={() => onPick(selected.id, dims)}>
+              Tasarımı başlat
             </button>
           </div>
           {livePreview && <div className="templates__svg" dangerouslySetInnerHTML={{ __html: live }} />}

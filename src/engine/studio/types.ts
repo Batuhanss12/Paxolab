@@ -145,6 +145,8 @@ export type DirectionHints = {
   avoidArchetypes?: StudioArchetype[]
   avoidBackgrounds?: BackgroundFamily[]
   source?: DirectionSource
+  /** Why the archetype was pinned — used by C6 explanation grounding. */
+  pinSource?: 'visual' | 'sector' | 'user' | 'family'
 }
 
 export type PlacedBox = {

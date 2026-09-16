@@ -27,6 +27,7 @@ import {
 } from './projectStore'
 import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
+import { applyVetoToHints } from './engine/studio/family'
 import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
@@ -291,7 +292,8 @@ export default function App() {
             avoid: nextBrief.avoidMotifs,
           }).catch(() => null),
         ])
-        const familyLocked = !!nextBrief.studioFamily || !!result?.overridePatch?.direction?.archetype
+        const vetoed = nextBrief.avoidStudioFamilies ?? []
+        const familyLocked = !!nextBrief.studioFamily || !!result?.overridePatch?.direction?.archetype || vetoed.length > 0
         const next = engine.generate({
           brief: nextBrief,
           prev: designRef.current,
@@ -301,9 +303,12 @@ export default function App() {
             ...result?.overridePatch,
             ...(llmDirection
               ? {
-                  direction: familyLocked
-                    ? { ...llmDirection, ...result?.overridePatch?.direction, source: result?.overridePatch?.direction?.source ?? 'family' }
-                    : { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' as const },
+                  direction: applyVetoToHints(
+                    familyLocked
+                      ? { ...llmDirection, ...result?.overridePatch?.direction, source: result?.overridePatch?.direction?.source ?? 'family' }
+                      : { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' as const },
+                    vetoed,
+                  ),
                 }
               : {}),
           },
@@ -439,6 +444,20 @@ export default function App() {
     [pending, phase, process, prompt],
   )
 
+  const onSelectTemplate = useCallback((templateId: string, dims: DimensionsMm) => {
+    const tmpl = getTemplate(templateId)
+    const next = {
+      ...briefRef.current,
+      templateId,
+      dimensionsMm: dims,
+      dimsDefaulted: true,
+      packagingMode: briefRef.current.packagingMode || tmpl?.packagingMode || 'box',
+    }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
+    dispatch({ type: 'awaiting', awaiting: 'templateId' })
+  }, [])
+
   const onPickTemplate = useCallback(
     (templateId: string, dims: DimensionsMm) => {
       const tmpl = getTemplate(templateId)
@@ -452,7 +471,7 @@ export default function App() {
       dispatch({ type: 'brief', brief: next })
       dispatch({ type: 'phase', phase: 'workspace' })
       const result = runConversation({
-        text: 'şablon seçildi',
+        text: 'başlat',
         attachments: [],
         brief: next,
         awaiting: 'templateId',
@@ -576,6 +595,7 @@ export default function App() {
           onUndo={onUndo}
           onRedo={onRedo}
           showTemplates={showTemplates}
+          onSelectTemplate={onSelectTemplate}
           onPickTemplate={onPickTemplate}
           onDims={onDims}
           onStyle={onStyle}

@@ -859,11 +859,70 @@ h2 {
   display: flex;
   gap: 14px;
   align-items: center;
+  flex-wrap: wrap;
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 24px;
+}
+
+.dim-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 4px 8px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dim-strip__label,
+.dim-strip__unit {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dim-strip label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.dim-strip input {
+  width: 52px;
+  background: #0c0c0c;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 6px;
+  color: #eee;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.templates__hint {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.templates__dims-unit {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.templates__start {
+  margin-left: 4px;
 }
 
 .pill {

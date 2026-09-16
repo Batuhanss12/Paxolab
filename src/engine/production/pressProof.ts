@@ -153,6 +153,8 @@ export function buildPressProofPack(sku: PressProofSku): PressProofPack {
   const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
   const shop = shopNotes(sku, spec)
   const files: PressProofFile[] = [
+    { name: `${slug}-knife.svg`, data: bundle.knife },
+    { name: `${slug}-knife.dxf`, data: bundle.dxf },
     { name: `${slug}-dieline.svg`, data: bundle.dieline },
     { name: `${slug}-dieline.dxf`, data: bundle.dxf },
     { name: `${slug}-dieline.pdf`, data: encodePdfBytes(buildDielinePdf(spec.dieline, slug)) },

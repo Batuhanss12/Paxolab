@@ -44,6 +44,7 @@ type WorkspaceProps = {
   onUndo: () => void
   onRedo: () => void
   showTemplates: boolean
+  onSelectTemplate: (templateId: string, dims: DimensionsMm) => void
   onPickTemplate: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
   onStyle: (style: StyleType) => void
@@ -125,6 +126,7 @@ export function Workspace({
   onUndo,
   onRedo,
   showTemplates,
+  onSelectTemplate,
   onPickTemplate,
   onDims,
   onStyle,
@@ -285,13 +287,13 @@ export function Workspace({
               </div>
             )}
             {!generating && !design && showTemplates && (
-              <TemplatePicker brief={brief} onPick={onPickTemplate} onDims={onDims} />
+              <TemplatePicker brief={brief} onSelect={onSelectTemplate} onPick={onPickTemplate} onDims={onDims} />
             )}
             {!generating && tab === 'konusma' && design && (
               <ConversationBrief messages={messages} design={design} />
             )}
             {!generating && tab === 'vektor' && design && (
-              <Preview2D design={design} attachments={allAttachments} />
+              <Preview2D design={design} attachments={allAttachments} onDims={onDims} />
             )}
             {!generating && tab === 'karsilastir' && design && (
               <ComparePreview current={design} previous={designHistory.at(-1)} />

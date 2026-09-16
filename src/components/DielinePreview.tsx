@@ -20,17 +20,11 @@ export function DielinePreview({ design }: DielinePreviewProps) {
     <div className="preview-stage">
       <div className="preview-stage__meta">
         <span>{labelSet ? 'Etiket seti' : 'Açılım'}</span>
-        <span>{labelSet ? 'Ön + Arka' : 'Kesim · kırım · yırtma'}</span>
         <span>
           {design.layout.widthMm} × {design.layout.depthMm || '—'} × {design.layout.heightMm} mm
         </span>
         {design.dieline.consistent ? <span className="pill">Tutarlı</span> : <span className="pill pill--warn">Panel hatası</span>}
       </div>
-      <p className="templates__legend preview-stage__legend">
-        <span className="templates__swatch templates__swatch--cut">Kesim düz</span>
-        <span className="templates__swatch templates__swatch--crease">Kırım kesik</span>
-        <span className="templates__swatch templates__swatch--perf">Yırtma</span>
-      </p>
       <div className="preview-stage__canvas preview-stage__canvas--wide">
         <div className="dieline-svg" dangerouslySetInnerHTML={{ __html: svg }} />
       </div>

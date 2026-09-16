@@ -2,7 +2,7 @@
 
 **Tarih:** 16 Eyl 2026  
 **Ürün:** Grapxor / Paxolab  
-**Durum:** C0–C5 kapandı. Sıradaki C6 (stüdyo konuşması).  
+**Durum:** C0–C6 kapandı. Sıradaki C7 (öğrenme halkası).  
 **Önceki program:** S0–S9 kapandı (`docs/STUDIO_STAGE_AUDIT.md`). Bu belge *sohbet → brief → yön → yapı → öğrenme* dilimidir.
 
 Kilit (değişmez): **LLM SVG çizmez. Packfy / SAM / YOLO / raster-to-SVG / image-gen yok. 29 katalog freeze durur. 18 stüdyo yüz hash bilinçli güncellenmedikçe durur. Learning Gate global’i otomatik açmaz. FOGRA/CMYK yok.**
@@ -46,17 +46,17 @@ S9 sonrası üretim dürüst. Sohbet ve yön hâlâ **sektör şablonuna** yakı
 
 | Eksen | /5 | Kanıt |
 |---|---:|---|
-| Sohbet (direktör, sihirbaz değil) | **2.0** | `ASK_CRITICAL` 4 alan; App `openingReply` ilk cevabı ezer |
-| Brief kapsamı | **2.0** | Renk, hikâye, kutu tipi, yasal metin sorulmaz; `isCoreReady` = marka + yüzey |
-| Yapı / dieline seçimi | **1.5** | 30 aktif şablon; sohbet `showTemplates: false`; picker yalnız `!design` |
-| Yön (brief → arketip) | **2.5** | `sectorFit * 0.5` + `hintsFromBrief` pin; renk/mermer sonradan yama |
+| Sohbet (direktör, sihirbaz değil) | **3.0** | C6: why / veto / vary mevcut yön state’ine bağlı; intake C2 |
+| Brief kapsamı | **2.5** | C2+ ürün/barkod; ölçü picker’da; yön veto listesi brief’te |
+| Yapı / dieline seçimi | **3.5** | C5 ranking + offer; picker ölçü sonra başlat |
+| Yön (brief → arketip) | **3.5** | C3 skor + C6 veto pin-skip; why grounded |
 | Copy anatomisi | **3.5** | C4: user/brief/bank; slogan lockup’a iner; kategori/chip hâlâ bank |
 | Öğrenme | **2.5** | S7 UI var; generate `runLearningCycle` çağırmaz |
 | LLM orkestrasyon | **2.5** | Fail-open; `brief-extract` yapı/şablon bilmez |
 | Freeze / determinizm | **4.5** | 29 kit + 18 stüdyo hash |
 | Üretim dürüstlüğü | **3.5** | S9: exportOk, 3 mm, PDF/X-4 sRGB iddiası, font subset notu |
 
-**Stüdyo sohbet olgunluğu: ~2.4 / 5.** Yüzey painter S5–S6 seviyesinde; giriş kapısı S1 sihirbazında.
+**Stüdyo sohbet olgunluğu: ~3.1 / 5.** C6 why/veto/vary yön state’ine iniyor. C7 öğrenme halkası kapalı.
 
 ---
 
@@ -148,7 +148,7 @@ S7 panel `runLearningCycle` çalıştırır. `FormaLocalEngine.generate` çağı
 
 | ID | Gap | Neden önemli |
 |---|---|---|
-| C-A | `createPlan` stüdyoda hâlâ hesaplanır, yüzeyi boyamaz | Critic/skor kit dilinde; kullanıcı “neden bu yön”e kit cevabı alır |
+| C-A | `createPlan` stüdyoda hâlâ hesaplanır, yüzeyi boyamaz | Critic/skor kit dilinde; C6 why stüdyo direction claim’leriyle cevaplar |
 | C-B | `StyleBar` lüks/modern/eco kostüm; stüdyo temperament yok | U1 park — iterasyon “6 yeni tasarım” top-3 kardeş havuzu |
 | C-C | `variationIndex % pool.slice(0,3)` | “Başka yön” çoğunlukla aynı ailenin kardeşi |
 | C-D | Referans görsel (logo dışında) painter’a inmez | Attachment `referans` kaydı; palet/DNA çıkarılmaz (CV yasak — sadece brief ipucu) |
@@ -186,7 +186,7 @@ Bir faz kapanmadan sonrakine atlama. Her faz: kod + test + `docs/STUDIO_CHAT_Cn.
 | **C3** | Brief-ağırlıklı yön | `hintsFromBrief` pin zayıflar; renk+ruh+hikâye arketip seçer; sektör prior; 18 hash yalnız bilinçli | Yüksek | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C3.md` (hash değişmedi) |
 | **C4** | Copy brief’ten | Bank fallback; kullanıcı satırı/hikâye/claim kazanır | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C4.md` |
 | **C5** | Yapı zekâsı | Ürün fiziği → 3 yapı + gerekçe (parfüm tuck, atıştırmalık tepsi, kargo mailer) | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C5.md` |
-| **C6** | Stüdyo konuşması | “Neden bu yön”; veto; vary tam havuz; critic TR | Orta | Bekler |
+| **C6** | Stüdyo konuşması | “Neden bu yön”; veto; vary tam havuz; critic TR | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C6.md` |
 | **C7** | Öğrenme halkası | Generate sonrası observation; user/brand auto eşik; global insan; boş = baseline | Orta | Bekler |
 | **C8** | LLM brief+yön | Extract’e yapı/renk/hikâye; fail-open; SVG yok | Düşük | Bekler |
 
@@ -235,5 +235,7 @@ Yapılacak:
 |---|---|
 | C0 | bu belge + canvas |
 | C1…C8 | `docs/STUDIO_CHAT_Cn.md` — diff özeti, test komutu, tarayıcı notu |
+
+C6 notu: why/veto/vary `decideDirection` + `avoidStudioFamilies` üzerinden; C5 yapı katmanı ayrı durur. C7 yok.
 
 Durum tablosu §5 her kapanışta güncellenir.
