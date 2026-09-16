@@ -4,7 +4,8 @@
  * studio preflight can reason about collisions and type sizes without parsing SVG.
  */
 import { barcodeSvg } from '../barcode'
-import { iconEmark, iconFlammable, iconGlassFork, iconKeepDry, iconPao, iconRecycle, iconThisWayUp, iconWeee } from '../artwork/icons'
+import { iconEmark, iconFlammable, iconGlassFork, iconKeepAway, iconKeepDry, iconLeaflet, iconPao, iconRecycle, iconThisWayUp, iconWeee } from '../artwork/icons'
+import { perfumeAssetMark } from '../marks/perfumeAssets'
 import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
@@ -489,6 +490,15 @@ export function benefitColumn(ledger: Ledger, _d: DesignDirection, x: number, y:
 
 export type Section = { title: string; body: string; edit?: string }
 
+/** Readable legal type that still clips inside `room` instead of colliding with the footer. */
+export function legalTypeSize(panelW: number, room: number, kind: 'box' | 'label' | 'aside' = 'box'): number {
+  const cap = kind === 'label' ? 1.95 : kind === 'aside' ? 1.7 : 1.85
+  const floor = kind === 'aside' ? 1.3 : kind === 'label' ? 1.45 : 1.4
+  const byWidth = panelW * (kind === 'label' ? 0.023 : kind === 'aside' ? 0.021 : 0.024)
+  const byRoom = Math.max(0, room) * (kind === 'aside' ? 0.16 : 0.12)
+  return Math.max(floor, Math.min(cap, byWidth, byRoom > 0 ? byRoom : floor))
+}
+
 /** Small legal column: bold spaced header + wrapped body, stacked. Returns the bottom edge. */
 export function legalColumn(
   ledger: Ledger,
@@ -500,7 +510,7 @@ export function legalColumn(
   color: string,
   opts: { size?: number; titleColor?: string; anchor?: 'start' | 'middle'; maxLines?: number } = {},
 ): { markup: string; bottom: number } {
-  const size = opts.size ?? 1.45
+  const size = opts.size ?? 1.7
   const lineH = size * 1.32
   const anchor = opts.anchor ?? 'start'
   const tx = anchor === 'middle' ? x + w / 2 : x
@@ -522,7 +532,7 @@ export function legalColumn(
     const lines = wrapByWidth(s.body, w, size, 'sans', Math.min(opts.maxLines ?? 12, room))
     for (const line of lines) {
       const base = cy + size
-      section += textEl({ x: tx, y: base, text: line, size, face: 'sans', fill: color, anchor, opacity: 0.92 })
+      section += textEl({ x: tx, y: base, text: line, size, face: 'sans', fill: color, anchor, weight: 600 })
       ledger.text('legal', tx, base, textWidth(line, size, 'sans'), size, anchor)
       cy = base + size * 0.36
     }
@@ -587,7 +597,7 @@ export function netQuantity(ledger: Ledger, cx: number, baseline: number, text: 
   return `<g data-art="net-quantity" data-edit="volume">${textEl({ x: cx, y: baseline, text, size, face: 'sans', fill: color, anchor, tracking: size * 0.06 })}</g>`
 }
 
-export type PictoKind = 'recycle' | 'pao' | 'flammable' | 'emark' | 'glassfork' | 'weee' | 'keepdry' | 'thiswayup'
+export type PictoKind = 'recycle' | 'pao' | 'flammable' | 'emark' | 'glassfork' | 'weee' | 'keepdry' | 'thiswayup' | 'keepaway' | 'leaflet'
 
 export function pictogramsFor(d: DesignDirection): PictoKind[] {
   switch (d.sector) {
@@ -611,19 +621,48 @@ export function pictogramsFor(d: DesignDirection): PictoKind[] {
   }
 }
 
-export function pictogramRow(ledger: Ledger, x: number, y: number, s: number, kinds: PictoKind[], color: string, paoMonths = '12M', gap?: number): { markup: string; w: number } {
-  const g = gap ?? s * 0.35
+/** Back / dieline strip: perfume uses the PARFUM İCON pack; other sectors keep their regulatory set. */
+export function pictogramsForBack(d: DesignDirection): PictoKind[] {
+  if (d.sector === 'perfume') return ['flammable', 'keepaway', 'pao', 'leaflet']
+  return pictogramsFor(d)
+}
+
+function drawPicto(k: PictoKind, x: number, y: number, s: number, color: string, paoMonths: string, quality: boolean): string {
+  if (quality) {
+    if (k === 'flammable') return perfumeAssetMark('ic1', x, y, s, color, paoMonths)
+    if (k === 'keepaway') return perfumeAssetMark('ic2', x, y, s, color, paoMonths)
+    if (k === 'pao') return perfumeAssetMark('ic3', x, y, s, color, paoMonths)
+    if (k === 'leaflet') return perfumeAssetMark('ic4', x, y, s, color, paoMonths)
+  }
+  if (k === 'recycle') return iconRecycle(x, y, s, color)
+  if (k === 'pao') return iconPao(x, y, s, color, paoMonths)
+  if (k === 'flammable') return iconFlammable(x, y, s, color)
+  if (k === 'keepaway') return iconKeepAway(x, y, s, color)
+  if (k === 'leaflet') return iconLeaflet(x, y, s, color)
+  if (k === 'emark') return iconEmark(x, y, s, color)
+  if (k === 'glassfork') return iconGlassFork(x, y, s, color)
+  if (k === 'weee') return iconWeee(x, y, s, color)
+  if (k === 'keepdry') return iconKeepDry(x, y, s, color)
+  if (k === 'thiswayup') return iconThisWayUp(x, y, s, color)
+  return ''
+}
+
+export function pictogramRow(
+  ledger: Ledger,
+  x: number,
+  y: number,
+  s: number,
+  kinds: PictoKind[],
+  color: string,
+  paoMonths = '12M',
+  opts: { gap?: number; quality?: boolean } = {},
+): { markup: string; w: number } {
+  const g = opts.gap ?? s * 0.35
+  const quality = opts.quality === true
   let out = ''
   let cx = x
   for (const k of kinds) {
-    if (k === 'recycle') out += iconRecycle(cx, y, s, color)
-    else if (k === 'pao') out += iconPao(cx, y, s, color, paoMonths)
-    else if (k === 'flammable') out += iconFlammable(cx, y, s, color)
-    else if (k === 'emark') out += iconEmark(cx, y, s, color)
-    else if (k === 'glassfork') out += iconGlassFork(cx, y, s, color)
-    else if (k === 'weee') out += iconWeee(cx, y, s, color)
-    else if (k === 'keepdry') out += iconKeepDry(cx, y, s, color)
-    else if (k === 'thiswayup') out += iconThisWayUp(cx, y, s, color)
+    out += drawPicto(k, cx, y, s, color, paoMonths, quality)
     ledger.add('element', `picto-${k}`, cx, y, s, s)
     cx += s + g
   }

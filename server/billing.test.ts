@@ -5,7 +5,7 @@ import path from 'node:path'
 import { createApp } from './app.ts'
 import { openDb, type FormaDb } from './db.ts'
 import { STARTING_CREDITS } from './credits.ts'
-import { CREDIT_PACKS, PLANS } from './billing/catalog.ts'
+import { CREDIT_PACKS } from './billing/catalog.ts'
 
 describe('Phase 8 billing (mock)', () => {
   let db: FormaDb
@@ -78,10 +78,13 @@ describe('Phase 8 billing (mock)', () => {
     const plansRes = await app.request('/api/billing/plans')
     expect(plansRes.status).toBe(200)
     const plansBody = await json(plansRes)
-    const plans = plansBody.plans as { id: string; monthlyCredits: number; displayOnly: boolean }[]
-    expect(plans).toHaveLength(PLANS.length)
-    expect(plans.find((p) => p.id === 'pro')?.monthlyCredits).toBe(200)
-    expect(plans.find((p) => p.id === 'pro')?.displayOnly).toBe(true)
+    const plans = plansBody.plans as { id: string; monthlyCredits: number; displayOnly: boolean; priceTry: number; unlimited?: boolean }[]
+    expect(plans.map((p) => p.id)).toEqual(['baslangic', 'plus', 'pro', 'studio', 'agency'])
+    expect(plans.find((p) => p.id === 'baslangic')?.monthlyCredits).toBe(500)
+    expect(plans.find((p) => p.id === 'baslangic')?.priceTry).toBe(699)
+    expect(plans.find((p) => p.id === 'plus')?.monthlyCredits).toBe(1500)
+    expect(plans.find((p) => p.id === 'agency')?.unlimited).toBe(true)
+    expect(plans.find((p) => p.id === 'pro')?.displayOnly).toBe(false)
   })
 
   it('mock checkout → complete → balance increases; double complete no double grant', async () => {

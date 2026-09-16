@@ -10,6 +10,13 @@ export type PublicUser = {
   name: string | null
   role: string
   created_at: string
+  auth_provider: string
+}
+
+export const OAUTH_PASSWORD_PREFIX = 'oauth:'
+
+export function isOauthPasswordHash(stored: string): boolean {
+  return stored.startsWith(OAUTH_PASSWORD_PREFIX)
 }
 
 export type AuthVars = {
@@ -49,6 +56,7 @@ export function toPublicUser(row: UserRow): PublicUser {
     name: row.name,
     role: row.role,
     created_at: row.created_at,
+    auth_provider: row.auth_provider ?? 'password',
   }
 }
 

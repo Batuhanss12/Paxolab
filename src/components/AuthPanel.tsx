@@ -3,21 +3,19 @@ import { ApiError, loadAuth, saveAuth, type AuthState, type AuthUser } from '../
 import * as authApi from '../api/auth'
 import { getBalance } from '../api/credits'
 import { getHealth } from '../api/health'
-import { BillingPanel } from './BillingPanel'
-import { UserDashboard } from './UserDashboard'
-import { AdminDashboard } from './AdminDashboard'
-
-type DashboardView = 'none' | 'user' | 'admin'
 
 type AuthPanelProps = {
   onAuthChange?: (user: AuthUser | null) => void
   compact?: boolean
-  /** Bump after reserve/commit/refund so balance refreshes. */
   creditsRefreshKey?: number
-  /** Load a cloud project into the studio. */
   onLoadProject?: (projectId: string) => void | Promise<void>
   /** @deprecated Marketing deep-link; ignored — auth lives on the site. */
   initialMode?: 'login' | 'register'
+}
+
+function siteUrl(path: string): string {
+  const base = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:3000'
+  return `${base}${path}`
 }
 
 function stripQueryParam(key: string) {
@@ -53,7 +51,6 @@ export function AuthPanel({
   onAuthChange,
   compact = true,
   creditsRefreshKey = 0,
-  onLoadProject,
 }: AuthPanelProps) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     const fromHandoff = tryConsumeHandoff()
@@ -64,17 +61,22 @@ export function AuthPanel({
   const [apiDown, setApiDown] = useState(false)
   const [busy, setBusy] = useState(false)
   const [balance, setBalance] = useState<number | null>(null)
-  const [billingOpen, setBillingOpen] = useState(false)
-  const [dashboardView, setDashboardView] = useState<DashboardView>('none')
 
   useEffect(() => {
-    // Legacy marketing ?auth=login|register — strip without opening UI.
     stripQueryParam('auth')
   }, [])
 
   useEffect(() => {
     onAuthChange?.(user)
   }, [user, onAuthChange])
+
+  useEffect(() => {
+    if (!user) return
+    if (typeof window === 'undefined') return
+    if (window.location.hash === '#billing') {
+      window.location.href = siteUrl('/hesap/credits')
+    }
+  }, [user])
 
   useEffect(() => {
     let cancelled = false
@@ -125,8 +127,6 @@ export function AuthPanel({
       await authApi.logout()
       setUser(null)
       setBalance(null)
-      setDashboardView('none')
-      setBillingOpen(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Çıkış başarısız.')
     } finally {
@@ -135,50 +135,23 @@ export function AuthPanel({
   }
 
   if (user) {
+    const isAdmin = user.role === 'admin'
     return (
       <div className={`auth-panel ${compact ? 'auth-panel--compact' : ''}`}>
         {balance !== null && (
-          <button
-            type="button"
-            className="auth-panel__credits"
-            title="Kredi bakiyesi — yüklemek için tıkla"
-            onClick={() => setBillingOpen(true)}
-          >
+          <a className="auth-panel__credits" href={siteUrl('/hesap/credits')} title="Kredi paneli">
             {balance} kr
-          </button>
+          </a>
         )}
-        <button
-          type="button"
-          className="ghost-btn"
-          onClick={() => {
-            setDashboardView('user')
-            setBillingOpen(false)
-          }}
-          title="Hesap paneli"
-        >
-          Hesabım
-        </button>
-        {user.role === 'admin' && (
-          <button
-            type="button"
-            className="ghost-btn"
-            onClick={() => {
-              setDashboardView('admin')
-              setBillingOpen(false)
-            }}
-            title="Admin paneli"
-          >
-            Admin
-          </button>
+        {isAdmin ? (
+          <a className="ghost-btn" href={siteUrl('/admin')} title="Yönetim paneli">
+            Yönetim
+          </a>
+        ) : (
+          <a className="ghost-btn" href={siteUrl('/hesap')} title="Müşteri paneli">
+            Panel
+          </a>
         )}
-        <button
-          type="button"
-          className="ghost-btn"
-          onClick={() => setBillingOpen(true)}
-          title="Kredi yükle"
-        >
-          Kredi yükle
-        </button>
         <span className="auth-panel__email" title={user.email}>
           {user.email}
         </span>
@@ -191,34 +164,10 @@ export function AuthPanel({
             API kapalı — bakiye ve bulut senkronu durakladı.
           </span>
         )}
-        <BillingPanel
-          open={billingOpen}
-          onClose={() => setBillingOpen(false)}
-          onBalanceChange={(b) => {
-            setBalance(b)
-            setBillingOpen(false)
-          }}
-        />
-        <UserDashboard
-          open={dashboardView === 'user'}
-          user={user}
-          onClose={() => setDashboardView('none')}
-          onOpenBilling={() => {
-            setDashboardView('none')
-            setBillingOpen(true)
-          }}
-          onLoadProject={onLoadProject}
-          onBalanceChange={setBalance}
-        />
-        <AdminDashboard
-          open={dashboardView === 'admin'}
-          onClose={() => setDashboardView('none')}
-        />
       </div>
     )
   }
 
-  // Guest: quiet label only — no Giriş / Kayıt (auth lives on marketing site).
   return (
     <div className={`auth-panel ${compact ? 'auth-panel--compact' : ''}`}>
       <span className="auth-panel__guest" title="Giriş yapmadan yerel ve sınırsız">

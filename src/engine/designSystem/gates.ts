@@ -173,8 +173,14 @@ export function evaluateDesignGates(
     (system.sector === 'food' || system.sector === 'electronics') &&
     recipe.requiredMarks.some((m) => perfumeOnly.has(m) && (m === 'flammable' || (m === 'pao' && system.sector === 'food')))
   const art = spec.artwork?.layers.map((l) => `${l.panelId}\n${l.markup}`).join('\n') ?? ''
-  const vbLeak = PERFUME_VIEWBOXES.some((vb) => art.includes(vb))
-  const sectorLeak = system.sector !== 'perfume' && vbLeak
+  const vbHits = PERFUME_VIEWBOXES.filter((vb) => art.includes(vb))
+  const allowedVb =
+    system.sector === 'perfume'
+      ? PERFUME_VIEWBOXES
+      : system.sector === 'cream' || system.sector === 'serum' || system.sector === 'baby'
+        ? ['986.01']
+        : []
+  const sectorLeak = vbHits.some((vb) => !allowedVb.includes(vb))
   const labelFaceLeak =
     spec.kind === 'label' &&
     (spec.artwork?.layers ?? []).some(

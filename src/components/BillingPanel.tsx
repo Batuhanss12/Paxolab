@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  checkout,
-  listPacks,
   listPlans,
   mockComplete,
   getSubscription,
   subscribe,
   cancelSubscription,
-  type CreditPack,
   type PlanMeta,
   type SubscriptionInfo,
 } from '../api/billing'
@@ -20,23 +17,20 @@ type BillingPanelProps = {
 }
 
 export function BillingPanel({ open, onClose, onBalanceChange: _onBalanceChange }: BillingPanelProps) {
-  const [packs, setPacks] = useState<CreditPack[]>([])
   const [plans, setPlans] = useState<PlanMeta[]>([])
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null)
-  const [busyPack, setBusyPack] = useState<string | null>(null)
   const [busyPlan, setBusyPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    void Promise.all([listPacks(), listPlans(), getSubscription().catch(() => null)])
-      .then(([p, pl, sub]) => {
-        setPacks(p)
+    void Promise.all([listPlans(), getSubscription().catch(() => null)])
+      .then(([pl, sub]) => {
         setPlans(pl)
         setSubscription(sub?.subscription ?? null)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Paketler yüklenemedi.')
+        setError(err instanceof Error ? err.message : 'Planlar yüklenemedi.')
       })
   }, [])
 
@@ -46,29 +40,6 @@ export function BillingPanel({ open, onClose, onBalanceChange: _onBalanceChange 
     setNote(null)
     load()
   }, [open, load])
-
-  async function onBuy(pack: CreditPack) {
-    if (!loadAuth()?.token) {
-      setError('Kredi yüklemek için giriş yapın.')
-      return
-    }
-    setBusyPack(pack.id)
-    setError(null)
-    setNote(null)
-    try {
-      const result = await checkout(pack.id)
-      if (result.mode === 'mock') {
-        window.location.assign(result.paymentPageUrl)
-        return
-      }
-      window.open(result.paymentPageUrl, '_blank', 'noopener,noreferrer')
-      setNote('Ödeme sayfası açıldı. Tamamlayınca bakiyeniz güncellenir.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ödeme başlatılamadı.')
-    } finally {
-      setBusyPack(null)
-    }
-  }
 
   async function onSubscribe(planId: string) {
     setBusyPlan(planId)
@@ -103,16 +74,16 @@ export function BillingPanel({ open, onClose, onBalanceChange: _onBalanceChange 
   if (!open) return null
 
   return (
-    <div className="billing-panel" role="dialog" aria-label="Kredi yükle">
+    <div className="billing-panel" role="dialog" aria-label="Planlar">
       <div className="billing-panel__head">
-        <strong>Kredi yükle</strong>
+        <strong>Planlar</strong>
         <button type="button" className="ghost-btn" onClick={onClose}>
           Kapat
         </button>
       </div>
 
       <p className="billing-panel__hint">
-        iyzico sandbox / mock — gerçek ücret alınmaz. Anahtar yoksa mock ödeme kullanılır.
+        Aylık abonelik. İlk tasarım 117 kredi, revizyon ve değişiklik 3 kredi.
       </p>
 
       {subscription && (
@@ -134,35 +105,18 @@ export function BillingPanel({ open, onClose, onBalanceChange: _onBalanceChange 
         </div>
       )}
 
-      <ul className="billing-panel__packs">
-        {packs.map((pack) => (
-          <li key={pack.id} className="billing-panel__pack">
-            <div>
-              <div className="billing-panel__pack-label">{pack.label}</div>
-              <div className="billing-panel__pack-price">
-                {pack.priceTry.toFixed(2)} TRY
-              </div>
-            </div>
-            <button
-              type="button"
-              className="ghost-btn billing-panel__buy"
-              disabled={busyPack !== null}
-              onClick={() => void onBuy(pack)}
-            >
-              {busyPack === pack.id ? '…' : 'Kredi yükle'}
-            </button>
-          </li>
-        ))}
-      </ul>
-
       <div className="billing-panel__plans">
         <div className="billing-panel__plans-title">Planlar</div>
         <ul>
           {plans.map((plan) => (
             <li key={plan.id} className="billing-panel__plan">
               <div>
-                <strong>{plan.label}</strong> — {plan.monthlyCredits} kr/ay
-                {plan.priceTry > 0 ? ` · ${plan.priceTry} TRY` : ' · ücretsiz'}
+                <strong>{plan.label}</strong> —{' '}
+                {plan.unlimited
+                  ? 'sınırsız tasarım'
+                  : `${plan.monthlyCredits} kr/ay`}
+                {plan.priceTry > 0 ? ` · ${plan.priceTry} TL` : ' · ücretsiz'}
+                {plan.unitPriceTry ? ` · ${plan.unitPriceTry.toFixed(2)} TL/kr` : ''}
                 {plan.displayOnly ? ' · yakında' : ''}
                 <div className="billing-panel__plan-desc">{plan.description}</div>
               </div>

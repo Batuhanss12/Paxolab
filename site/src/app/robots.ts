@@ -21,7 +21,20 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: nonProd
       ? { userAgent: "*", disallow: "/" }
-      : { userAgent: "*", allow: "/" },
+      : {
+          userAgent: "*",
+          allow: "/",
+          disallow: [
+            "/hesap",
+            "/firma",
+            "/admin",
+            "/auth/",
+            "/en/account",
+            "/en/company",
+            "/en/admin",
+            "/en/auth/",
+          ],
+        },
     sitemap: nonProd ? undefined : `${SITE_URL}/sitemap.xml`,
   };
 }

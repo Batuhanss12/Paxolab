@@ -158,4 +158,50 @@ describe('DNA leftovers 1–5', () => {
     const spec = generate(perfume({ productName: '' }))
     expect(spec.copy.product).toBe('')
   })
+
+  it('back legal body is larger and a step heavier without changing wrap face', () => {
+    const spec = generate(coffee())
+    const back = spec.artwork.layers.find((row) => row.panelId === 'back')?.markup ?? ''
+    expect(back).toMatch(/data-art="legal-column"/)
+    const usage = back.match(/<g data-edit="usage">([\s\S]*?)<\/g>/)?.[1] ?? ''
+    expect(usage).toMatch(/font-weight="600"/)
+    expect(usage).not.toMatch(/opacity="0.92"/)
+    const bodySize = Number(usage.match(/font-weight="600" font-size="([0-9.]+)"/)?.[1] ?? 0)
+    expect(bodySize).toBeGreaterThanOrEqual(1.7)
+    expect(back).toMatch(/data-edit="warnings"/)
+  })
+
+  it('back pictograms use PARFUM İCON assets at the same slot size, not on food', () => {
+    const serum = generate({
+      ...emptyBrief(),
+      brandName: 'Rebull',
+      productName: 'Noir',
+      sector: 'kozmetik',
+      subProduct: 'serum',
+      packagingMode: 'box',
+      templateId: 'fm-cos-tuck-serum',
+      dimensionsMm: { L: 70, W: 35, H: 120 },
+      styleType: 'minimal',
+      colors: 'siyah',
+      volume: '30 ml',
+    })
+    const serumBack = serum.artwork.layers.find((row) => row.panelId === 'back')?.markup ?? ''
+    expect(serumBack).toMatch(/data-art="pictograms"/)
+    expect(serumBack).toMatch(/viewBox="0 0 986\.01/)
+    expect(serumBack).not.toMatch(/viewBox="0 0 2004\.78/)
+    const marks = serum.preflight.items.find((row) => row.id === 'ds-marks')
+    expect(marks?.status).toBe('pass')
+
+    const scent = generate(perfume({ productName: 'Sauvage' }))
+    const perfumeBack = scent.artwork.layers.find((row) => row.panelId === 'back')?.markup ?? ''
+    expect(perfumeBack).toMatch(/viewBox="0 0 2004\.78/)
+    expect(perfumeBack).toMatch(/viewBox="0 0 1004\.2/)
+    expect(perfumeBack).toMatch(/viewBox="0 0 986\.01/)
+    expect(perfumeBack).toMatch(/viewBox="0 0 1433\.45/)
+
+    const food = generate(coffee())
+    const foodBack = food.artwork.layers.find((row) => row.panelId === 'back')?.markup ?? ''
+    expect(foodBack).not.toMatch(/viewBox="0 0 2004\.78/)
+    expect(foodBack).not.toMatch(/viewBox="0 0 986\.01/)
+  })
 })

@@ -12,6 +12,7 @@ import {
   cornerBrackets,
   hairline,
   legalColumn,
+  legalTypeSize,
   markKindFor,
   monogramLockup,
   netQuantity,
@@ -21,7 +22,7 @@ import {
   paintMark,
   paragraph,
   pictogramRow,
-  pictogramsFor,
+  pictogramsForBack,
   productStack,
   qrPlaceholder,
   qualityBadge,
@@ -275,9 +276,9 @@ export function paintBoxBack(ctx: LayoutCtx): string {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
     parts.push(row.markup)
     y = row.bottom + 2.5
-    const tableSize = Math.max(1.2, Math.min(1.45, w * 0.018))
+    const tableSize = Math.max(1.3, Math.min(1.58, w * 0.02))
     // leave room for at least the usage / warnings block under the table
-    const tableLimit = footTop - Math.max(9, (footTop - y) * 0.35)
+    const tableLimit = footTop - Math.max(14, (footTop - y) * 0.42)
     if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
       const tableW = Math.min(w - m * 2, Math.max(28, (w - m * 2) * 0.58))
       const table = nutritionTable(ledger, m, y, tableW, hdr.nutrition, nutritionRows(d.locale, blob), ink, tableSize, tableLimit)
@@ -288,7 +289,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
         const right = legalColumn(ledger, rx, y, w - m - rx, table.bottom, [
           { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
           { title: hdr.storage, body: usageLine('food', d.locale) },
-        ], ink, { size: Math.max(1.15, Math.min(1.4, w * 0.017)), titleColor: ink })
+        ], ink, { size: legalTypeSize(w, table.bottom - y, 'aside'), titleColor: ink })
         parts.push(right.markup)
         y = Math.max(table.bottom, right.bottom) + 1.5
       } else {
@@ -315,13 +316,13 @@ export function paintBoxBack(ctx: LayoutCtx): string {
     { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]
-  const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: Math.max(1.2, Math.min(1.5, w * 0.019)), anchor: 'middle', titleColor: accent === ink ? ink : accent })
+  const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: legalTypeSize(w, footTop - y), anchor: 'middle', titleColor: accent === ink ? ink : accent })
   parts.push(legal.markup)
   // footer: pictos left, volume middle, barcode right
   const rowY = h - m - barH - 5.5
   const picS = Math.max(3.8, Math.min(5.5, barH * 0.62))
-  const pics = pictogramsFor(d).slice(0, 4)
-  const pic = pictogramRow(ledger, m, rowY + (barH - picS) / 2 - 1.6, picS, pics, ink, ctx.paoMonths)
+  const pics = pictogramsForBack(d).slice(0, 4)
+  const pic = pictogramRow(ledger, m, rowY + (barH - picS) / 2 - 1.6, picS, pics, ink, ctx.paoMonths, { quality: true })
   parts.push(pic.markup)
   const barW = Math.min(w * 0.4, 30)
   const barX = w - m - barW

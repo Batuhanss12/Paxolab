@@ -4,6 +4,7 @@ import {
   createSession,
   deleteSession,
   hashPassword,
+  isOauthPasswordHash,
   newId,
   requireAuth,
   toPublicUser,
@@ -13,6 +14,9 @@ import {
   type AuthVars,
   type PublicUser,
 } from './auth.ts'
+import { mountGoogleAuth } from './googleAuthRoutes.ts'
+import { createOrgRoutes } from './orgRoutes.ts'
+import { getOrganization, listAllOrganizations, listMembers, resolveBillingUserId } from './orgs.ts'
 import type { FormaDb, ProjectRow, UserRow } from './db.ts'
 import {
   adjustCredits,
@@ -27,7 +31,8 @@ import {
   costForCatalog,
   type MeteredOperation,
 } from './credits.ts'
-import { CREDIT_PACKS, PLANS } from './billing/catalog.ts'
+import { CREDIT_PACKS } from './billing/catalog.ts'
+import { SUBSCRIPTION_PLANS } from './billing/plansCatalog.ts'
 import {
   createPendingOrder,
   fulfillPaidOrder,
@@ -76,6 +81,7 @@ import {
   cancelSubscription,
   renewSubscription,
   upsertPlan,
+  userHasUnlimitedDesigns,
 } from './credit/subscriptions.ts'
 import { recordLlmCost, listLlmCosts, llmCostSummary } from './credit/llmCost.ts'
 import { recordEvent, listUserEvents } from './credit/events.ts'
@@ -134,7 +140,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     cors({
       origin: corsOriginChecker,
       allowHeaders: ['Content-Type', 'Authorization'],
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   )
 
@@ -214,7 +220,13 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       return c.json({ error: 'E-posta ve şifre gerekli.' }, 400)
     }
     const row = db.prepare(`SELECT * FROM users WHERE email = ?`).get(email) as UserRow | undefined
-    if (!row || !verifyPassword(password, row.password_hash)) {
+    if (!row) {
+      return c.json({ error: 'E-posta veya şifre hatalı.' }, 401)
+    }
+    if (isOauthPasswordHash(row.password_hash) && row.auth_provider === 'google') {
+      return c.json({ error: 'Bu hesap Google ile giriş yapıyor.' }, 401)
+    }
+    if (!verifyPassword(password, row.password_hash)) {
       return c.json({ error: 'E-posta veya şifre hatalı.' }, 401)
     }
     const token = createSession(db, row.id)
@@ -229,6 +241,9 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
   app.get('/api/auth/me', requireAuth(db), (c) => {
     return c.json({ user: c.get('user') as PublicUser })
   })
+
+  mountGoogleAuth(app, db)
+  app.route('/api/orgs', createOrgRoutes(db))
 
   const projects = new Hono<AppEnv>()
   projects.use('*', requireAuth(db))
@@ -331,7 +346,14 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   credits.get('/balance', (c) => {
     const user = c.get('user') as PublicUser
-    return c.json({ balance: getBalance(db, user.id), currency: 'credits' })
+    const billingUserId = resolveBillingUserId(db, user.id)
+    return c.json({
+      balance: getBalance(db, billingUserId),
+      personalBalance: getBalance(db, user.id),
+      currency: 'credits',
+      unlimited: userHasUnlimitedDesigns(db, billingUserId),
+      billingUserId,
+    })
   })
 
   credits.get('/transactions', (c) => {
@@ -801,14 +823,20 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
   })
 
   app.get('/api/billing/plans', (c) => {
+    const plans = listPlans(db)
     return c.json({
-      plans: PLANS.map((p) => ({
+      plans: plans.map((p) => ({
         id: p.id,
         label: p.label,
         monthlyCredits: p.monthlyCredits,
-        priceTry: p.priceTry,
-        displayOnly: p.displayOnly,
-        description: p.description,
+        priceTry: p.monthlyPrice,
+        displayOnly: false,
+        description: p.description ?? '',
+        currency: p.currency,
+        rolloverPolicy: p.rolloverPolicy,
+        unlimited: p.unlimited,
+        unitPriceTry: SUBSCRIPTION_PLANS.find((row) => row.id === p.id)?.unitPriceTry ??
+          (p.monthlyCredits > 0 ? Math.round((p.monthlyPrice / p.monthlyCredits) * 100) / 100 : null),
       })),
     })
   })
@@ -1060,9 +1088,10 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
   })
 
   admin.get('/users', (c) => {
+    const q = (c.req.query('q') ?? '').trim().toLowerCase()
     const rows = db
       .prepare(
-        `SELECT u.id, u.email, u.name, u.role, u.created_at,
+        `SELECT u.id, u.email, u.name, u.role, u.created_at, u.auth_provider,
                 COALESCE(w.balance, 0) AS balance
          FROM users u
          LEFT JOIN wallets w ON w.user_id = u.id
@@ -1074,18 +1103,28 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       name: string | null
       role: string
       created_at: string
+      auth_provider: string | null
       balance: number
     }[]
-    return c.json({
-      users: rows.map((r) => ({
+    const users = rows
+      .filter((r) => {
+        if (!q) return true
+        return (
+          r.email.toLowerCase().includes(q) ||
+          (r.name ?? '').toLowerCase().includes(q) ||
+          r.id.toLowerCase().includes(q)
+        )
+      })
+      .map((r) => ({
         id: r.id,
         email: r.email,
         name: r.name,
         role: r.role,
         created_at: r.created_at,
+        auth_provider: r.auth_provider ?? 'password',
         balance: r.balance,
-      })),
-    })
+      }))
+    return c.json({ users })
   })
 
   admin.get('/stats', (c) => {
@@ -1101,11 +1140,13 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         `SELECT COALESCE(SUM(amount), 0) AS total FROM credit_transactions WHERE kind = 'grant'`,
       )
       .get() as { total: number }
+    const organizations = (db.prepare(`SELECT COUNT(*) AS n FROM organizations`).get() as { n: number }).n
     return c.json({
       users,
       projects,
       paidOrders,
       totalCreditsGranted: grantsRow.total,
+      organizations,
     })
   })
 
@@ -1137,6 +1178,50 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       if (mapped) return c.json({ error: mapped.error }, mapped.status)
       throw err
     }
+  })
+
+  admin.patch('/users/:id', async (c) => {
+    const adminUser = c.get('user') as PublicUser
+    const targetId = c.req.param('id')
+    let body: { role?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    if (body.role !== 'admin' && body.role !== 'user') {
+      return c.json({ error: "role 'admin' veya 'user' olmalı." }, 400)
+    }
+    const target = db.prepare(`SELECT id, role FROM users WHERE id = ?`).get(targetId) as
+      | { id: string; role: string }
+      | undefined
+    if (!target) return c.json({ error: 'Kullanıcı bulunamadı.' }, 404)
+    if (target.role === 'admin' && body.role === 'user') {
+      const admins = (db.prepare(`SELECT COUNT(*) AS n FROM users WHERE role = 'admin'`).get() as { n: number }).n
+      if (admins <= 1) {
+        return c.json({ error: 'Son admin düşürülemez.' }, 400)
+      }
+      if (targetId === adminUser.id) {
+        return c.json({ error: 'Kendi admin rolünüzü kaldıramazsınız.' }, 400)
+      }
+    }
+    db.prepare(`UPDATE users SET role = ? WHERE id = ?`).run(body.role, targetId)
+    const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(targetId) as UserRow
+    return c.json({ user: toPublicUser(row) })
+  })
+
+  admin.get('/orgs', (c) => {
+    return c.json({ organizations: listAllOrganizations(db) })
+  })
+
+  admin.get('/orgs/:id', (c) => {
+    const org = getOrganization(db, c.req.param('id'))
+    if (!org) return c.json({ error: 'Firma bulunamadı.' }, 404)
+    const summary = listAllOrganizations(db).find((o) => o.id === org.id)
+    return c.json({
+      organization: summary ?? org,
+      members: listMembers(db, org.id),
+    })
   })
 
   admin.get('/orders', (c) => {
@@ -1340,6 +1425,262 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : 'Yenileme başarısız.' }, 400)
     }
+  })
+
+  function adminLimit(raw: string | undefined, fallback = 100): number {
+    const n = raw ? Number(raw) : fallback
+    return Number.isFinite(n) ? Math.min(Math.max(1, Math.floor(n)), 500) : fallback
+  }
+
+  admin.get('/users/:id', (c) => {
+    const userId = c.req.param('id')
+    const userRow = db
+      .prepare(
+        `SELECT id, email, name, role, created_at, auth_provider FROM users WHERE id = ?`,
+      )
+      .get(userId) as
+      | { id: string; email: string; name: string | null; role: string; created_at: string; auth_provider: string | null }
+      | undefined
+    if (!userRow) return c.json({ error: 'Kullanıcı bulunamadı.' }, 404)
+    const balance = getBalance(db, userId)
+    const summary = bucketSummary(db, userId)
+    const sub = getActiveSubscription(db, userId)
+    const plan = sub ? getPlan(db, sub.planId) : undefined
+    const projects = db
+      .prepare(
+        `SELECT id, title, created_at, updated_at FROM projects WHERE user_id = ? ORDER BY updated_at DESC`,
+      )
+      .all(userId) as { id: string; title: string; created_at: string; updated_at: string }[]
+    const reservations = db
+      .prepare(
+        `SELECT id, amount, status, operation, created_at, finalized_at FROM credit_reservations
+         WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
+      )
+      .all(userId) as {
+      id: string
+      amount: number
+      status: string
+      operation: string
+      created_at: string
+      finalized_at: string | null
+    }[]
+    return c.json({
+      user: {
+        ...userRow,
+        auth_provider: userRow.auth_provider ?? 'password',
+      },
+      balance,
+      buckets: summary,
+      reservedCredits: reservations
+        .filter((r) => r.status === 'pending' || r.status === 'reserved')
+        .reduce((sum, r) => sum + r.amount, 0),
+      subscription: sub
+        ? {
+            id: sub.id,
+            planId: sub.planId,
+            planLabel: plan?.label ?? sub.planId,
+            status: sub.status,
+            currentPeriodEnd: sub.currentPeriodEnd,
+            monthlyCredits: plan?.monthlyCredits ?? 0,
+          }
+        : null,
+      projects,
+      reservations,
+      ledger: listTransactions(db, userId, 50).map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        amount: row.amount,
+        balanceAfter: row.balance_after,
+        createdAt: row.created_at,
+      })),
+      orders: listOrdersForUser(db, userId, 30).map((row) => ({
+        id: row.id,
+        pack_id: row.pack_id,
+        credits: row.credits,
+        amount_try: row.amount_try,
+        currency: row.currency,
+        status: row.status,
+        created_at: row.created_at,
+      })),
+      operations: listUserOperations(db, userId, 50),
+    })
+  })
+
+  admin.get('/projects', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const rows = db
+      .prepare(
+        `SELECT p.id, p.user_id, p.title, p.created_at, p.updated_at, u.email AS ownerEmail
+         FROM projects p
+         JOIN users u ON u.id = p.user_id
+         ORDER BY p.updated_at DESC
+         LIMIT ?`,
+      )
+      .all(limit) as {
+      id: string
+      user_id: string
+      title: string
+      created_at: string
+      updated_at: string
+      ownerEmail: string
+    }[]
+    return c.json({ projects: rows })
+  })
+
+  admin.get('/projects/:id', (c) => {
+    const id = c.req.param('id')
+    const row = db.prepare(`SELECT * FROM projects WHERE id = ?`).get(id) as ProjectRow | undefined
+    if (!row) return c.json({ error: 'Proje bulunamadı.' }, 404)
+    const owner = db
+      .prepare(`SELECT id, email, name, role FROM users WHERE id = ?`)
+      .get(row.user_id) as { id: string; email: string; name: string | null; role: string } | undefined
+    return c.json({
+      project: { ...projectFull(row), userId: row.user_id },
+      owner: owner ?? null,
+      sessions: listSessions(db, id),
+      usage: projectUsage(db, id),
+    })
+  })
+
+  admin.get('/sessions', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const rows = db
+      .prepare(
+        `SELECT s.id, s.project_id, s.user_id, s.title, s.status, s.created_at, s.updated_at,
+                u.email AS ownerEmail, p.title AS projectTitle
+         FROM design_sessions s
+         JOIN users u ON u.id = s.user_id
+         JOIN projects p ON p.id = s.project_id
+         WHERE s.status != 'deleted'
+         ORDER BY s.updated_at DESC
+         LIMIT ?`,
+      )
+      .all(limit) as {
+      id: string
+      project_id: string
+      user_id: string
+      title: string
+      status: string
+      created_at: string
+      updated_at: string
+      ownerEmail: string
+      projectTitle: string
+    }[]
+    return c.json({ sessions: rows })
+  })
+
+  admin.get('/sessions/:id', (c) => {
+    const session = getSession(db, c.req.param('id'))
+    if (!session) return c.json({ error: 'Oturum bulunamadı.' }, 404)
+    const owner = db
+      .prepare(`SELECT id, email, name FROM users WHERE id = ?`)
+      .get(session.userId) as { id: string; email: string; name: string | null } | undefined
+    return c.json({
+      session,
+      owner: owner ?? null,
+      operations: listSessionOperations(db, session.id),
+    })
+  })
+
+  admin.get('/subscriptions', (c) => {
+    const rows = db
+      .prepare(
+        `SELECT s.id, s.user_id, s.plan_id, s.status, s.current_period_start, s.current_period_end,
+                s.next_renewal_at, s.cancelled_at, s.created_at, s.updated_at,
+                u.email AS ownerEmail, p.label AS planLabel, p.monthly_credits AS monthlyCredits,
+                p.monthly_price AS monthlyPrice
+         FROM subscriptions s
+         JOIN users u ON u.id = s.user_id
+         JOIN subscription_plans p ON p.id = s.plan_id
+         ORDER BY s.updated_at DESC`,
+      )
+      .all() as Record<string, unknown>[]
+    return c.json({ subscriptions: rows })
+  })
+
+  admin.get('/reservations', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const status = (c.req.query('status') ?? '').trim()
+    const rows = status
+      ? (db
+          .prepare(
+            `SELECT r.id, r.user_id, r.amount, r.status, r.operation, r.created_at, r.finalized_at, u.email AS ownerEmail
+             FROM credit_reservations r
+             JOIN users u ON u.id = r.user_id
+             WHERE r.status = ?
+             ORDER BY r.created_at DESC
+             LIMIT ?`,
+          )
+          .all(status, limit) as Record<string, unknown>[])
+      : (db
+          .prepare(
+            `SELECT r.id, r.user_id, r.amount, r.status, r.operation, r.created_at, r.finalized_at, u.email AS ownerEmail
+             FROM credit_reservations r
+             JOIN users u ON u.id = r.user_id
+             ORDER BY r.created_at DESC
+             LIMIT ?`,
+          )
+          .all(limit) as Record<string, unknown>[])
+    return c.json({ reservations: rows })
+  })
+
+  admin.get('/events', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const type = (c.req.query('type') ?? '').trim()
+    const rows = type
+      ? (db
+          .prepare(
+            `SELECT e.id, e.user_id, e.event_type, e.operation_id, e.reservation_id, e.project_id,
+                    e.session_id, e.amount, e.created_at, u.email AS ownerEmail
+             FROM credit_events e
+             JOIN users u ON u.id = e.user_id
+             WHERE e.event_type = ?
+             ORDER BY e.created_at DESC
+             LIMIT ?`,
+          )
+          .all(type, limit) as Record<string, unknown>[])
+      : (db
+          .prepare(
+            `SELECT e.id, e.user_id, e.event_type, e.operation_id, e.reservation_id, e.project_id,
+                    e.session_id, e.amount, e.created_at, u.email AS ownerEmail
+             FROM credit_events e
+             JOIN users u ON u.id = e.user_id
+             ORDER BY e.created_at DESC
+             LIMIT ?`,
+          )
+          .all(limit) as Record<string, unknown>[])
+    return c.json({ events: rows })
+  })
+
+  admin.get('/operations', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const rows = db
+      .prepare(
+        `SELECT o.id, o.session_id, o.project_id, o.user_id, o.operation_id, o.credit_cost, o.status,
+                o.feedback_text, o.classified_operation, o.created_at, o.completed_at,
+                u.email AS ownerEmail
+         FROM design_operations o
+         JOIN users u ON u.id = o.user_id
+         ORDER BY o.created_at DESC
+         LIMIT ?`,
+      )
+      .all(limit) as Record<string, unknown>[]
+    return c.json({ operations: rows })
+  })
+
+  admin.get('/refunds', (c) => {
+    const limit = adminLimit(c.req.query('limit'), 200)
+    const rows = db
+      .prepare(
+        `SELECT r.id, r.user_id, r.reservation_id, r.order_id, r.amount, r.reason, r.admin_user_id, r.created_at,
+                u.email AS ownerEmail
+         FROM refunds r
+         JOIN users u ON u.id = r.user_id
+         ORDER BY r.created_at DESC
+         LIMIT ?`,
+      )
+      .all(limit) as Record<string, unknown>[]
+    return c.json({ refunds: rows })
   })
 
   app.route('/api/admin', admin)

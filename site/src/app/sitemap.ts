@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
-import { EN_ROUTES, LOCALE_PAIRS, getLanguageAlternates } from "@/lib/i18n";
+import { EN_ROUTES, LOCALE_PAIRS, getLanguageAlternates, isPrivatePath } from "@/lib/i18n";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const seen = new Set<string>();
 
   for (const pair of LOCALE_PAIRS) {
+    if (isPrivatePath(pair.tr) || isPrivatePath(pair.en)) continue;
     for (const path of [pair.tr, pair.en]) {
       if (seen.has(path)) continue;
       seen.add(path);

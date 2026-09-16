@@ -131,4 +131,52 @@ describe('Phase 9 admin + user orders', () => {
     const { user: other } = await register('other@forma.test')
     expect(other.role).toBe('user')
   })
+
+  it('admin can load user detail, projects, sessions, subscriptions, events', async () => {
+    const member = await register('detail@forma.test', 'Detail')
+    db.prepare(`UPDATE users SET role = 'admin' WHERE email = ?`).run('detail@forma.test')
+    const headers = member.auth
+
+    const created = await app.request('/api/projects', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ title: 'Admin inspect', payload: { ok: true } }),
+    })
+    expect(created.status).toBe(201)
+    const createdBody = await json(created)
+    const project = createdBody.project as { id: string }
+
+    const detail = await app.request(`/api/admin/users/${member.user.id}`, { headers })
+    expect(detail.status).toBe(200)
+    const detailBody = await json(detail)
+    expect((detailBody.user as { email: string }).email).toBe('detail@forma.test')
+    expect((detailBody.projects as { id: string }[]).some((p) => p.id === project.id)).toBe(true)
+
+    const projects = await app.request('/api/admin/projects', { headers })
+    expect(projects.status).toBe(200)
+    const projectsBody = await json(projects)
+    expect((projectsBody.projects as { id: string }[]).some((p) => p.id === project.id)).toBe(true)
+
+    const projectDetail = await app.request(`/api/admin/projects/${project.id}`, { headers })
+    expect(projectDetail.status).toBe(200)
+    const projectBody = await json(projectDetail)
+    expect((projectBody.owner as { email: string }).email).toBe('detail@forma.test')
+
+    const sessions = await app.request('/api/admin/sessions', { headers })
+    expect(sessions.status).toBe(200)
+    expect(Array.isArray((await json(sessions)).sessions)).toBe(true)
+
+    const subs = await app.request('/api/admin/subscriptions', { headers })
+    expect(subs.status).toBe(200)
+    const events = await app.request('/api/admin/events', { headers })
+    expect(events.status).toBe(200)
+    const ops = await app.request('/api/admin/operations', { headers })
+    expect(ops.status).toBe(200)
+    const reservations = await app.request('/api/admin/reservations', { headers })
+    expect(reservations.status).toBe(200)
+
+    const outsider = await register('outsider@forma.test')
+    const forbidden = await app.request('/api/admin/projects', { headers: outsider.auth })
+    expect(forbidden.status).toBe(403)
+  })
 })

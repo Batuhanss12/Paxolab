@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { localeFromPath } from "@/lib/i18n";
-import { login, register, studioHandoffUrl } from "@/lib/auth";
+import { getCreditBalance, googleAuthUrl, login, register, studioHandoffUrl } from "@/lib/auth";
+import { adminHref, customerHref } from "@/lib/panelPaths";
 
 export type AuthModalMode = "login" | "register";
 
@@ -33,6 +34,9 @@ const copy = {
     success: "Başarılı!",
     openStudio: "Stüdyoya git",
     close: "Kapat",
+    credits: "kredi",
+    google: "Google ile devam et",
+    or: "veya e-posta",
   },
   en: {
     loginTitle: "Log in",
@@ -50,11 +54,15 @@ const copy = {
     success: "Success!",
     openStudio: "Open studio",
     close: "Close",
+    credits: "credits",
+    google: "Continue with Google",
+    or: "or email",
   },
 } as const;
 
 export function AuthModal({ open, mode, onClose, onModeChange, locale: localeProp }: Props) {
   const pathname = usePathname() || "/";
+  const router = useRouter();
   const locale = localeProp ?? localeFromPath(pathname);
   const t = copy[locale === "en" ? "en" : "tr"];
   const titleId = useId();
@@ -65,6 +73,12 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -72,6 +86,7 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
       setBusy(false);
       setDone(false);
       setPassword("");
+      setBalance(null);
       return;
     }
     setDone(false);
@@ -87,7 +102,7 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -95,11 +110,16 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
     setBusy(true);
     try {
       if (mode === "register") {
-        await register({ email, password, name: name.trim() || undefined });
+        const state = await register({ email, password, name: name.trim() || undefined });
+        setBalance(await getCreditBalance(state.token));
+        onClose();
+        router.push(state.user.role === "admin" ? adminHref(locale) : customerHref(locale));
       } else {
-        await login(email, password);
+        const state = await login(email, password);
+        setBalance(await getCreditBalance(state.token));
+        onClose();
+        router.push(state.user.role === "admin" ? adminHref(locale) : customerHref(locale));
       }
-      setDone(true);
       setPassword("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "İşlem başarısız.");
@@ -122,6 +142,11 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
         {done ? (
           <div className="space-y-4 text-center">
             <p className="font-display text-2xl text-cream">{t.success}</p>
+            {balance !== null && (
+              <p className="text-sm text-copper">
+                {balance} {t.credits}
+              </p>
+            )}
             <a
               href={studioHandoffUrl()}
               className="inline-flex w-full items-center justify-center rounded-full bg-cream px-5 py-2.5 text-sm font-semibold text-ink-975 transition hover:bg-cream-soft"
@@ -157,6 +182,20 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
                 {t.close}
               </button>
             </div>
+
+            <a
+              href={googleAuthUrl(locale === "en" ? "/en/auth/callback" : "/auth/callback")}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-cream/15 bg-ink-975 px-5 py-2.5 text-sm font-medium text-cream transition hover:border-cream/30"
+            >
+              <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden>
+                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z" />
+                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+                <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.7 13.5-4.7l-6.2-5.2C29.2 36 26.7 37 24 37c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.3 44 24 44z" />
+                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.5 5.6-6.6 6.9l6.2 5.2C38.9 36.3 44 31 44 24c0-1.2-.1-2.3-.4-3.5z" />
+              </svg>
+              {t.google}
+            </a>
+            <p className="text-center text-[11px] uppercase tracking-[0.18em] text-cream/30">{t.or}</p>
 
             {mode === "register" && (
               <div>
@@ -241,6 +280,5 @@ export function AuthModal({ open, mode, onClose, onModeChange, locale: localePro
     </div>
   );
 
-  if (typeof document === "undefined") return null;
   return createPortal(panel, document.body);
 }

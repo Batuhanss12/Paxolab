@@ -7,6 +7,7 @@ export type AdminUser = {
   role: string
   created_at: string
   balance: number
+  auth_provider?: string
 }
 
 export type AdminStats = {
@@ -14,6 +15,7 @@ export type AdminStats = {
   projects: number
   paidOrders: number
   totalCreditsGranted: number
+  organizations?: number
 }
 
 export type AdminOrder = {
@@ -185,4 +187,27 @@ export async function patchAdminOperation(
     { method: 'PATCH', body: patch },
   )
   return data.operation
+}
+
+export async function patchAdminUserRole(userId: string, role: 'admin' | 'user'): Promise<{ id: string; role: string }> {
+  const data = await apiRequest<{ user: { id: string; role: string } }>(`/api/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: { role },
+  })
+  return data.user
+}
+
+export type AdminOrg = {
+  id: string
+  name: string
+  slug: string
+  memberCount: number
+  seatLimit: number
+  planLabel: string | null
+  unlimited: boolean
+}
+
+export async function listAdminOrgs(): Promise<AdminOrg[]> {
+  const data = await apiRequest<{ organizations: AdminOrg[] }>('/api/admin/orgs')
+  return data.organizations
 }

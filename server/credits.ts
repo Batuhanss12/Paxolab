@@ -1,16 +1,19 @@
 import type { FormaDb } from './db.ts'
+import { STARTING_CREDIT_GRANT, INITIAL_DESIGN_COST, REVISION_COST, EXPORT_COST } from './billing/plansCatalog.ts'
+import { resolveBillingUserId } from './orgs.ts'
+import { userHasUnlimitedDesigns } from './credit/subscriptions.ts'
 import { newId } from './auth.ts'
 import { resolveOperation, legacyToCatalog, activeCostVersion } from './credit/catalog.ts'
 import { grantToBucket, debitFromBuckets, refundToBuckets, bucketSummary } from './credit/buckets.ts'
 import { recordEvent } from './credit/events.ts'
 
-/** Starting grant on register (Phase 7). Payments come in Phase 8. */
-export const STARTING_CREDITS = 50
+/** Signup grant covers one first design and one revision. */
+export const STARTING_CREDITS = STARTING_CREDIT_GRANT
 
 export const CREDIT_COSTS = {
-  generate: 3,
-  revise: 2,
-  export_zip: 1,
+  generate: INITIAL_DESIGN_COST,
+  revise: REVISION_COST,
+  export_zip: EXPORT_COST,
 } as const
 
 export type CreditOperation = keyof typeof CREDIT_COSTS
@@ -44,6 +47,7 @@ export type CreditReservationRow = {
   client_request_id: string | null
   created_at: string
   finalized_at: string | null
+  billing_user_id?: string | null
 }
 
 export class CreditsError extends Error {
@@ -57,6 +61,14 @@ export class CreditsError extends Error {
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+function billingUserId(db: FormaDb, actorId: string): string {
+  try {
+    return resolveBillingUserId(db, actorId)
+  } catch {
+    return actorId
+  }
 }
 
 export function costFor(operation: MeteredOperation): number {
@@ -184,7 +196,8 @@ export function reserveCredits(
           db.exec('ROLLBACK')
           throw new CreditsError(409, 'Bu istek için rezervasyon iade edilmiş.')
         }
-        const balance = getBalanceUnlocked(db, userId)
+        const billTo = existing.billing_user_id || userId
+        const balance = getBalanceUnlocked(db, billTo)
         db.exec('COMMIT')
         return {
           reservationId: existing.id,
@@ -196,41 +209,47 @@ export function reserveCredits(
       }
     }
 
+    const billTo = billingUserId(db, userId)
+    const unlimited = userHasUnlimitedDesigns(db, billTo)
+    const charge = unlimited ? 0 : amount
+
     const wallet = db
       .prepare(`SELECT balance FROM wallets WHERE user_id = ?`)
-      .get(userId) as { balance: number } | undefined
+      .get(billTo) as { balance: number } | undefined
     if (!wallet) {
       db.exec('ROLLBACK')
       throw new CreditsError(404, 'Cüzdan bulunamadı.')
     }
-    if (wallet.balance < amount) {
+    if (wallet.balance < charge) {
       db.exec('ROLLBACK')
       throw new CreditsError(402, 'Krediniz yetersiz')
     }
 
     const now = nowIso()
     const reservationId = newId()
-    const newBalance = wallet.balance - amount
+    const newBalance = wallet.balance - charge
 
     // Phase 10: debit from buckets (sub-ledger) following consumption policy
-    try {
-      debitFromBuckets(db, userId, amount)
-    } catch {
-      // If buckets don't exist yet (legacy wallet without buckets),
-      // skip bucket debit — wallet debit is still authoritative.
-      // This preserves backward compatibility with pre-Phase 10 wallets.
+    if (charge > 0) {
+      try {
+        debitFromBuckets(db, billTo, charge)
+      } catch {
+        // If buckets don't exist yet (legacy wallet without buckets),
+        // skip bucket debit — wallet debit is still authoritative.
+        // This preserves backward compatibility with pre-Phase 10 wallets.
+      }
     }
 
     db.prepare(
       `INSERT INTO credit_reservations
-         (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at)
-       VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL)`,
-    ).run(reservationId, userId, amount, operation, clientId, now)
+         (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at, billing_user_id)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL, ?)`,
+    ).run(reservationId, userId, charge, operation, clientId, now, billTo)
 
     db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
       newBalance,
       now,
-      userId,
+      billTo,
     )
 
     db.prepare(
@@ -238,11 +257,11 @@ export function reserveCredits(
        VALUES (?, ?, 'reserve', ?, ?, ?, ?, ?)`,
     ).run(
       newId(),
-      userId,
-      -amount,
+      billTo,
+      -charge,
       newBalance,
       reservationId,
-      JSON.stringify({ operation, clientRequestId: clientId }),
+      JSON.stringify({ operation, clientRequestId: clientId, actorUserId: userId }),
       now,
     )
 
@@ -253,7 +272,7 @@ export function reserveCredits(
         eventType: 'credit_reservation_created',
         operationId: operation,
         reservationId,
-        amount: -amount,
+        amount: -charge,
         meta: { clientRequestId: clientId },
       })
     } catch { /* events are best-effort */ }
@@ -261,7 +280,7 @@ export function reserveCredits(
     db.exec('COMMIT')
     return {
       reservationId,
-      amount,
+      amount: charge,
       balance: newBalance,
       operation,
       idempotent: false,
@@ -312,7 +331,8 @@ export function reserveCreditsForCatalog(
           db.exec('ROLLBACK')
           throw new CreditsError(409, 'Bu istek için rezervasyon iade edilmiş.')
         }
-        const balance = getBalanceUnlocked(db, userId)
+        const billTo = existing.billing_user_id || userId
+        const balance = getBalanceUnlocked(db, billTo)
         db.exec('COMMIT')
         return {
           reservationId: existing.id,
@@ -326,27 +346,33 @@ export function reserveCreditsForCatalog(
       }
     }
 
+    const billTo = billingUserId(db, userId)
+    const unlimited = userHasUnlimitedDesigns(db, billTo)
+    const charge = unlimited ? 0 : amount
+
     const wallet = db
       .prepare(`SELECT balance FROM wallets WHERE user_id = ?`)
-      .get(userId) as { balance: number } | undefined
+      .get(billTo) as { balance: number } | undefined
     if (!wallet) {
       db.exec('ROLLBACK')
       throw new CreditsError(404, 'Cüzdan bulunamadı.')
     }
-    if (wallet.balance < amount) {
+    if (wallet.balance < charge) {
       db.exec('ROLLBACK')
       throw new CreditsError(402, 'Krediniz yetersiz')
     }
 
     const now = nowIso()
     const reservationId = newId()
-    const newBalance = wallet.balance - amount
+    const newBalance = wallet.balance - charge
 
     // Debit from buckets
-    try {
-      debitFromBuckets(db, userId, amount)
-    } catch {
-      /* legacy wallet without buckets — wallet debit is authoritative */
+    if (charge > 0) {
+      try {
+        debitFromBuckets(db, billTo, charge)
+      } catch {
+        /* legacy wallet without buckets — wallet debit is authoritative */
+      }
     }
 
     // Store with legacy operation mapping for backward compat
@@ -356,14 +382,14 @@ export function reserveCreditsForCatalog(
 
     db.prepare(
       `INSERT INTO credit_reservations
-         (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at)
-       VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL)`,
-    ).run(reservationId, userId, amount, legacyOp, clientId, now)
+         (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at, billing_user_id)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL, ?)`,
+    ).run(reservationId, userId, charge, legacyOp, clientId, now, billTo)
 
     db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
       newBalance,
       now,
-      userId,
+      billTo,
     )
 
     db.prepare(
@@ -371,8 +397,8 @@ export function reserveCreditsForCatalog(
        VALUES (?, ?, 'reservation', ?, ?, ?, ?, ?)`,
     ).run(
       newId(),
-      userId,
-      -amount,
+      billTo,
+      -charge,
       newBalance,
       reservationId,
       JSON.stringify({
@@ -382,6 +408,7 @@ export function reserveCreditsForCatalog(
         costVersionId,
         projectId: context?.projectId ?? null,
         sessionId: context?.sessionId ?? null,
+        actorUserId: userId,
       }),
       now,
     )
@@ -395,7 +422,7 @@ export function reserveCreditsForCatalog(
         reservationId,
         projectId: context?.projectId ?? null,
         sessionId: context?.sessionId ?? null,
-        amount: -amount,
+        amount: -charge,
         meta: { clientRequestId: clientId, costVersionId },
       })
     } catch { /* events are best-effort */ }
@@ -403,7 +430,7 @@ export function reserveCreditsForCatalog(
     db.exec('COMMIT')
     return {
       reservationId,
-      amount,
+      amount: charge,
       balance: newBalance,
       operation: legacyOp,
       idempotent: false,
@@ -454,7 +481,8 @@ export function commitReservation(db: FormaDb, userId: string, reservationId: st
     }
 
     const now = nowIso()
-    const balance = getBalanceUnlocked(db, userId)
+    const billTo = res.billing_user_id || userId
+    const balance = getBalanceUnlocked(db, billTo)
 
     db.prepare(
       `UPDATE credit_reservations SET status = 'committed', finalized_at = ? WHERE id = ?`,
@@ -523,9 +551,10 @@ export function refundReservation(
     }
 
     const now = nowIso()
+    const billTo = res.billing_user_id || userId
     const wallet = db
       .prepare(`SELECT balance FROM wallets WHERE user_id = ?`)
-      .get(userId) as { balance: number } | undefined
+      .get(billTo) as { balance: number } | undefined
     if (!wallet) {
       db.exec('ROLLBACK')
       throw new CreditsError(404, 'Cüzdan bulunamadı.')
@@ -535,7 +564,7 @@ export function refundReservation(
 
     // Phase 10: refund to buckets (sub-ledger)
     try {
-      refundToBuckets(db, userId, res.amount)
+      refundToBuckets(db, billTo, res.amount)
     } catch {
       /* legacy wallet without buckets — wallet credit is authoritative */
     }
@@ -547,7 +576,7 @@ export function refundReservation(
     db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
       newBalance,
       now,
-      userId,
+      billTo,
     )
 
     db.prepare(
@@ -555,13 +584,14 @@ export function refundReservation(
        VALUES (?, ?, 'refund', ?, ?, ?, ?, ?)`,
     ).run(
       newId(),
-      userId,
+      billTo,
       res.amount,
       newBalance,
       reservationId,
       JSON.stringify({
         operation: res.operation,
         reason: reason ?? 'generation_failed',
+        actorUserId: userId,
       }),
       now,
     )

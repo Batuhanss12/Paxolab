@@ -15,6 +15,8 @@ export type PlanMeta = {
   priceTry: number
   displayOnly: boolean
   description: string
+  unlimited?: boolean
+  unitPriceTry?: number | null
 }
 
 export type CheckoutResponse = {

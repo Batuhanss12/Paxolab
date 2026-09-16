@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getContent } from "@/content";
 import { localeFromPath } from "@/lib/i18n";
-import { loadAuth, studioHandoffUrl } from "@/lib/auth";
+import { AUTH_EVENT, loadAuth, studioHandoffUrl } from "@/lib/auth";
 import { STUDIO_URL, STUDIO_BILLING_URL } from "@/lib/site";
 
 type Props = {
   href?: "studio" | "billing";
   children?: React.ReactNode;
   className?: string;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "none";
 };
 
 const variants: Record<NonNullable<Props["variant"]>, string> = {
@@ -21,6 +21,7 @@ const variants: Record<NonNullable<Props["variant"]>, string> = {
     "inline-flex items-center justify-center rounded-full border border-cream/20 bg-ink-900/80 px-6 py-2.5 text-sm font-medium text-cream/90 transition hover:border-cream/40 hover:bg-ink-850 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream",
   ghost:
     "inline-flex items-center justify-center text-sm font-medium text-cream/70 transition hover:text-cream",
+  none: "inline-flex items-center justify-center transition",
 };
 
 export function StudioLink({
@@ -36,13 +37,18 @@ export function StudioLink({
   const [url, setUrl] = useState(fallback);
 
   useEffect(() => {
-    const auth = loadAuth();
-    if (auth?.token) {
-      const base = studioHandoffUrl();
-      setUrl(href === "billing" ? `${base}#billing` : base);
-    } else {
-      setUrl(fallback);
+    function sync() {
+      const auth = loadAuth();
+      if (auth?.token) {
+        const base = studioHandoffUrl();
+        setUrl(href === "billing" ? `${base}#billing` : base);
+      } else {
+        setUrl(fallback);
+      }
     }
+    sync();
+    window.addEventListener(AUTH_EVENT, sync);
+    return () => window.removeEventListener(AUTH_EVENT, sync);
   }, [href, fallback]);
 
   return (

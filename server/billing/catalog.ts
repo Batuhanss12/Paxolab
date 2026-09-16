@@ -42,6 +42,7 @@ export const CREDIT_PACKS: readonly CreditPack[] = [
   },
 ] as const
 
+/** @deprecated Public `/api/billing/plans` reads Phase 10 `subscription_plans`. Kept for older fixtures. */
 export const PLANS: readonly PlanMeta[] = [
   {
     id: 'free',

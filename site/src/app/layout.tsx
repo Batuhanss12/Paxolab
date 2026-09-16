@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { getContent } from "@/content";
 import { SITE_URL } from "@/lib/site";
+import { SiteChrome } from "@/components/SiteChrome";
 import "./globals.css";
 
 const brand = getContent("tr").brand;
@@ -52,9 +51,7 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${fraunces.variable} flex min-h-screen flex-col antialiased`}
       >
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

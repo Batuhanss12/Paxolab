@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { syncBillingCatalog } from './billing/syncCatalog.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,6 +15,8 @@ export type UserRow = {
   name: string | null
   created_at: string
   role: string
+  auth_provider?: string
+  google_sub?: string | null
 }
 
 export type SessionRow = {
@@ -58,6 +61,7 @@ export type CreditReservationRow = {
   client_request_id: string | null
   created_at: string
   finalized_at: string | null
+  billing_user_id?: string | null
 }
 
 export type CreditBucketRow = {
@@ -84,6 +88,7 @@ export type SubscriptionPlanRow = {
   enabled: number
   display_order: number
   description: string | null
+  unlimited?: number
   created_at: string
   updated_at: string
 }
@@ -482,6 +487,80 @@ export function migrate(db: DatabaseSync): void {
 
     CREATE INDEX IF NOT EXISTS idx_refunds_user ON refunds(user_id, created_at DESC);
   `)
+  try {
+    db.exec(`ALTER TABLE subscription_plans ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0`)
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'password'`)
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN google_sub TEXT`)
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL`,
+    )
+  } catch {
+    /* index already exists */
+  }
+  try {
+    db.exec(`ALTER TABLE credit_reservations ADD COLUMN billing_user_id TEXT`)
+  } catch {
+    /* column already exists */
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS organization_members (
+      org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role TEXT NOT NULL DEFAULT 'member',
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (org_id, user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_org_members_user ON organization_members(user_id);
+
+    CREATE TABLE IF NOT EXISTS organization_invites (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      email TEXT NOT NULL COLLATE NOCASE,
+      role TEXT NOT NULL DEFAULT 'member',
+      token TEXT NOT NULL UNIQUE,
+      invited_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      accepted_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_org_invites_org ON organization_invites(org_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS oauth_states (
+      id TEXT PRIMARY KEY,
+      next_url TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS oauth_handoffs (
+      id TEXT PRIMARY KEY,
+      session_token TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+  `)
 }
 
 /** Seed default operation catalog, cost versions, and subscription plans if empty. */
@@ -491,19 +570,19 @@ export function seedDefaults(db: DatabaseSync): void {
   if (opCount === 0) {
     const ops = [
       ['brief_generation', 'Brief Oluşturma', 'Tasarım briefini doğal dilden üretir.', 1, 'discovery', 1, 0, 0, 1],
-      ['design_exploration', 'Tasarım Keşfi', 'Brieften ilk tasarım adaylarını üretir.', 5, 'discovery', 1, 1, 1, 1],
-      ['initial_design', 'İlk Tasarım', 'Proje için ilk tasarımı üretir.', 5, 'creation', 1, 1, 1, 1],
-      ['alternative_design', 'Alternatif Tasarım', 'Mevcut brieften kontrollü alternatif üretir.', 4, 'creation', 1, 1, 1, 1],
-      ['new_direction', 'Yeni Yön', 'Yaratıcı yönü değiştirerek yeni konsept üretir.', 7, 'creation', 1, 1, 1, 1],
-      ['micro_revision', 'Mikro Revizyon', 'Küçük metin/renk/düzeltme değişikliği.', 1, 'revision', 1, 1, 0, 1],
-      ['focused_revision', 'Odaklı Revizyon', 'Tek bir alana odaklı revizyon.', 2, 'revision', 1, 1, 0, 1],
+      ['design_exploration', 'Tasarım Keşfi', 'Brieften ilk tasarım adaylarını üretir.', 117, 'discovery', 1, 1, 1, 1],
+      ['initial_design', 'İlk Tasarım', 'Proje için ilk tasarımı üretir.', 117, 'creation', 1, 1, 1, 1],
+      ['alternative_design', 'Alternatif Tasarım', 'Mevcut brieften kontrollü alternatif üretir.', 3, 'creation', 1, 1, 1, 1],
+      ['new_direction', 'Yeni Yön', 'Yaratıcı yönü değiştirerek yeni konsept üretir.', 3, 'creation', 1, 1, 1, 1],
+      ['micro_revision', 'Mikro Revizyon', 'Küçük metin/renk/düzeltme değişikliği.', 3, 'revision', 1, 1, 0, 1],
+      ['focused_revision', 'Odaklı Revizyon', 'Tek bir alana odaklı revizyon.', 3, 'revision', 1, 1, 0, 1],
       ['structural_revision', 'Yapısal Revizyon', 'Kompozisyon ve hiyerarşiyi değiştirir.', 3, 'revision', 1, 1, 1, 1],
-      ['creative_revision', 'Yaratıcı Revizyon', 'Yaratıcı yönü kısmen değiştirir.', 5, 'revision', 1, 1, 1, 1],
-      ['full_art_direction_revision', 'Tam Sanat Yönü Revizyonu', 'Tam sanat yönünü yeniden üretir.', 7, 'revision', 1, 1, 1, 1],
-      ['typography_refinement', 'Tipografi İyileştirme', 'Tipografi ve font ayarları.', 2, 'refinement', 1, 1, 0, 1],
-      ['color_refinement', 'Renk İyileştirme', 'Renk paleti ayarları.', 2, 'refinement', 1, 1, 0, 1],
-      ['composition_refinement', 'Kompozisyon İyileştirme', 'Düzen ve kompozisyon ayarları.', 2, 'refinement', 1, 1, 0, 1],
-      ['asset_refinement', 'Görsel İyileştirme', 'Hero/görsel öğeleri ayarlar.', 2, 'refinement', 1, 1, 0, 1],
+      ['creative_revision', 'Yaratıcı Revizyon', 'Yaratıcı yönü kısmen değiştirir.', 3, 'revision', 1, 1, 1, 1],
+      ['full_art_direction_revision', 'Tam Sanat Yönü Revizyonu', 'Tam sanat yönünü yeniden üretir.', 3, 'revision', 1, 1, 1, 1],
+      ['typography_refinement', 'Tipografi İyileştirme', 'Tipografi ve font ayarları.', 3, 'refinement', 1, 1, 0, 1],
+      ['color_refinement', 'Renk İyileştirme', 'Renk paleti ayarları.', 3, 'refinement', 1, 1, 0, 1],
+      ['composition_refinement', 'Kompozisyon İyileştirme', 'Düzen ve kompozisyon ayarları.', 3, 'refinement', 1, 1, 0, 1],
+      ['asset_refinement', 'Görsel İyileştirme', 'Hero/görsel öğeleri ayarlar.', 3, 'refinement', 1, 1, 0, 1],
       ['final_refinement', 'Son İyileştirme', 'Üretime hazır son iyileştirme.', 3, 'refinement', 1, 1, 1, 1],
       ['final_export', 'Son Export', 'Üretim-ready export paketi.', 1, 'export', 1, 0, 1, 1],
     ] as const
@@ -525,23 +604,5 @@ export function seedDefaults(db: DatabaseSync): void {
     }
   }
 
-  const planCount = (db.prepare(`SELECT COUNT(*) AS n FROM subscription_plans`).get() as { n: number }).n
-  if (planCount === 0) {
-    const plans = [
-      ['free', 'Free', 0, 'TRY', 50, 3, 1, 'none', 0, 1, 1, 0, 'Kayıtta 50 başlangıç kredisi.'],
-      ['starter', 'Starter', 199, 'TRY', 150, 10, 3, 'partial', 50, 1, 1, 1, 'Aylık 150 kredi, kısmi rollover.'],
-      ['professional', 'Professional', 399, 'TRY', 400, 50, 10, 'partial', 100, 1, 1, 2, 'Aylık 400 kredi, kısmi rollover.'],
-      ['studio', 'Studio', 999, 'TRY', 1200, 999, 50, 'full', 999, 1, 1, 3, 'Aylık 1200 kredi, tam rollover.'],
-    ] as const
-
-    const insertPlan = db.prepare(
-      `INSERT INTO subscription_plans
-       (id, label, monthly_price, currency, monthly_credits, max_projects, max_active_sessions,
-        rollover_policy, rollover_max, topup_eligible, enabled, display_order, description, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    for (const p of plans) {
-      insertPlan.run(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], now, now)
-    }
-  }
+  syncBillingCatalog(db)
 }

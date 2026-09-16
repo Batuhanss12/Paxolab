@@ -10,6 +10,7 @@ export type AuthUser = {
   name: string | null;
   role: string;
   created_at: string;
+  auth_provider?: string;
 };
 
 export type AuthState = {
@@ -30,13 +31,36 @@ export function loadAuth(): AuthState | null {
   }
 }
 
+export const AUTH_EVENT = "grapxor-auth-changed";
+
+function notifyAuthChanged(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_EVENT));
+}
+
 export function saveAuth(state: AuthState | null): void {
   if (typeof localStorage === "undefined") return;
   if (!state) {
     localStorage.removeItem(STORAGE_KEY);
-    return;
+  } else {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  notifyAuthChanged();
+}
+
+export async function logout(): Promise<void> {
+  const auth = loadAuth();
+  if (auth?.token) {
+    try {
+      await fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+    } catch {
+      /* local clear still happens */
+    }
+  }
+  saveAuth(null);
 }
 
 async function parseAuthResponse(res: Response): Promise<AuthState> {
@@ -102,4 +126,46 @@ export function studioHandoffUrl(_pathOrStudioRoot?: string): string {
     ? btoa(unescape(encodeURIComponent(json)))
     : Buffer.from(json, "utf-8").toString("base64");
   return `${STUDIO_URL}?handoff=${encodeURIComponent(b64)}`;
+}
+
+export async function getCreditBalance(token: string): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/credits/balance`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { balance?: number };
+    return typeof data.balance === "number" ? data.balance : null;
+  } catch {
+    return null;
+  }
+}
+
+export function googleAuthUrl(nextPath: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const next = `${origin}${nextPath}`;
+  return `${API_URL}/api/auth/google?next=${encodeURIComponent(next)}`;
+}
+
+export async function exchangeHandoff(id: string): Promise<AuthState> {
+  const res = await fetch(`${API_URL}/api/auth/handoff`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  const state = await parseAuthResponse(res);
+  saveAuth(state);
+  return state;
+}
+
+export async function googleStatus(): Promise<{
+  configured: boolean;
+  redirectUri: string;
+  origins: string[];
+}> {
+  const res = await fetch(`${API_URL}/api/auth/google/status`, { cache: "no-store" });
+  if (!res.ok) {
+    return { configured: false, redirectUri: `${API_URL}/api/auth/google/callback`, origins: [] };
+  }
+  return (await res.json()) as { configured: boolean; redirectUri: string; origins: string[] };
 }

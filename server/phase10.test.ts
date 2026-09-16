@@ -4,6 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { createApp } from './app.ts'
 import { openDb, getDb, type FormaDb } from './db.ts'
+import { STARTING_CREDITS } from './credits.ts'
+import { INITIAL_DESIGN_COST } from './billing/plansCatalog.ts'
 import type { Hono } from 'hono'
 
 let db: FormaDb
@@ -111,9 +113,9 @@ describe('Phase 10 credit economy', () => {
         balance: number
         buckets: { included: number; purchased: number; bonus: number; total: number }
       }
-      expect(data.balance).toBe(50)
-      expect(data.buckets.bonus).toBe(50)
-      expect(data.buckets.total).toBe(50)
+      expect(data.balance).toBe(STARTING_CREDITS)
+      expect(data.buckets.bonus).toBe(STARTING_CREDITS)
+      expect(data.buckets.total).toBe(STARTING_CREDITS)
     })
 
     it('debit from buckets on reserve follows consumption policy', async () => {
@@ -126,14 +128,14 @@ describe('Phase 10 credit economy', () => {
       })
       expect(res.status).toBe(200)
       const reserve = await res.json() as { reservationId: string; balance: number }
-      expect(reserve.balance).toBe(47)
+      expect(reserve.balance).toBe(STARTING_CREDITS - INITIAL_DESIGN_COST)
 
       // Check buckets
       const creditsRes = await app.request('/api/billing/credits', {
         headers: authHeaders(reg.token),
       })
       const credits = await creditsRes.json() as { buckets: { bonus: number } }
-      expect(credits.buckets.bonus).toBe(47)
+      expect(credits.buckets.bonus).toBe(STARTING_CREDITS - INITIAL_DESIGN_COST)
     })
   })
 
@@ -157,8 +159,8 @@ describe('Phase 10 credit economy', () => {
         costVersionId: string | null
       }
       expect(data.operationId).toBe('initial_design')
-      expect(data.amount).toBe(5)
-      expect(data.balance).toBe(45)
+      expect(data.amount).toBe(117)
+      expect(data.balance).toBe(3)
     })
 
     it('is idempotent with clientRequestId', async () => {
@@ -185,15 +187,12 @@ describe('Phase 10 credit economy', () => {
 
     it('rejects insufficient balance', async () => {
       const reg = await register(app, 'insuff@test.local')
-      // Exhaust credits by reserving many operations
-      for (let i = 0; i < 16; i++) {
-        await app.request('/api/credits/reserve', {
-          method: 'POST',
-          headers: authHeaders(reg.token),
-          body: JSON.stringify({ operation: 'generate', clientRequestId: `exhaust-${i}` }),
-        })
-      }
-      // 50 - 16*3 = 2 credits left, need 3 for generate
+      const first = await app.request('/api/credits/reserve', {
+        method: 'POST',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ operation: 'generate', clientRequestId: 'exhaust-0' }),
+      })
+      expect(first.status).toBe(200)
       const res = await app.request('/api/credits/reserve', {
         method: 'POST',
         headers: authHeaders(reg.token),
@@ -210,14 +209,14 @@ describe('Phase 10 credit economy', () => {
       const res = await app.request('/api/billing/subscribe', {
         method: 'POST',
         headers: authHeaders(reg.token),
-        body: JSON.stringify({ planId: 'starter' }),
+        body: JSON.stringify({ planId: 'baslangic' }),
       })
       expect(res.status).toBe(201)
       const data = await res.json() as { subscription: { planId: string; status: string } }
-      expect(data.subscription.planId).toBe('starter')
+      expect(data.subscription.planId).toBe('baslangic')
       expect(data.subscription.status).toBe('active')
 
-      // Check balance increased (50 starting + 150 monthly)
+      // Check balance increased (120 starting + 500 monthly)
       const creditsRes = await app.request('/api/billing/credits', {
         headers: authHeaders(reg.token),
       })
@@ -225,9 +224,9 @@ describe('Phase 10 credit economy', () => {
         balance: number
         buckets: { included: number; bonus: number }
       }
-      expect(credits.balance).toBe(200)
-      expect(credits.buckets.included).toBe(150)
-      expect(credits.buckets.bonus).toBe(50)
+      expect(credits.balance).toBe(620)
+      expect(credits.buckets.included).toBe(500)
+      expect(credits.buckets.bonus).toBe(120)
     })
 
     it('cancels a subscription', async () => {
@@ -235,7 +234,7 @@ describe('Phase 10 credit economy', () => {
       await app.request('/api/billing/subscribe', {
         method: 'POST',
         headers: authHeaders(reg.token),
-        body: JSON.stringify({ planId: 'starter' }),
+        body: JSON.stringify({ planId: 'baslangic' }),
       })
       const res = await app.request('/api/billing/cancel', {
         method: 'POST',
@@ -373,8 +372,8 @@ describe('Phase 10 credit economy', () => {
         balance: number
         buckets: { included: number; purchased: number; bonus: number }
       }
-      expect(data.balance).toBe(50)
-      expect(data.buckets.bonus).toBe(50)
+      expect(data.balance).toBe(STARTING_CREDITS)
+      expect(data.buckets.bonus).toBe(STARTING_CREDITS)
     })
 
     it('admin can view user ledger', async () => {
@@ -438,7 +437,7 @@ describe('Phase 10 credit economy', () => {
       })
       expect(res.status).toBe(200)
       const data = await res.json() as { balance: number }
-      expect(data.balance).toBe(60)
+      expect(data.balance).toBe(STARTING_CREDITS + 10)
 
       // Check ledger has manual_admin_adjustment
       const ledgerRes = await app.request(`/api/admin/users/${reg.user.id}/ledger`, {
@@ -470,7 +469,7 @@ describe('Phase 10 credit economy', () => {
       })
       expect(completeRes.status).toBe(200)
       const complete = await completeRes.json() as { balance: number; creditsGranted: number }
-      expect(complete.balance).toBe(100) // 50 starting + 50 purchased
+      expect(complete.balance).toBe(STARTING_CREDITS + 50) // starting + pack_50
       expect(complete.creditsGranted).toBe(50)
 
       // Check bucket breakdown
@@ -481,7 +480,7 @@ describe('Phase 10 credit economy', () => {
         buckets: { purchased: number; bonus: number }
       }
       expect(credits.buckets.purchased).toBe(50)
-      expect(credits.buckets.bonus).toBe(50)
+      expect(credits.buckets.bonus).toBe(STARTING_CREDITS)
     })
 
     it('duplicate payment does not grant duplicate credits', async () => {
@@ -506,7 +505,7 @@ describe('Phase 10 credit economy', () => {
       })
       const second = await secondRes.json() as { balance: number; alreadyPaid: boolean }
       expect(second.alreadyPaid).toBe(true)
-      expect(second.balance).toBe(100) // Not 150
+      expect(second.balance).toBe(STARTING_CREDITS + 50)
     })
   })
 
@@ -519,7 +518,7 @@ describe('Phase 10 credit economy', () => {
       await app.request('/api/billing/subscribe', {
         method: 'POST',
         headers: authHeaders(reg.token),
-        body: JSON.stringify({ planId: 'starter' }),
+        body: JSON.stringify({ planId: 'baslangic' }),
       })
 
       // 2. Check balance (50 + 150 = 200)
@@ -527,7 +526,7 @@ describe('Phase 10 credit economy', () => {
         headers: authHeaders(reg.token),
       })
       const credits = await creditsRes.json() as { balance: number }
-      expect(credits.balance).toBe(200)
+      expect(credits.balance).toBe(STARTING_CREDITS + 500)
 
       // 3. Create a project
       const projRes = await app.request('/api/projects', {
@@ -558,7 +557,7 @@ describe('Phase 10 credit economy', () => {
       })
       expect(reserveRes.status).toBe(200)
       const reserve = await reserveRes.json() as { reservationId: string; balance: number }
-      expect(reserve.balance).toBe(195) // 200 - 5
+      expect(reserve.balance).toBe(STARTING_CREDITS + 500 - INITIAL_DESIGN_COST)
 
       // 6. Commit the reservation
       const commitRes = await app.request('/api/credits/commit', {
@@ -580,7 +579,7 @@ describe('Phase 10 credit economy', () => {
       })
       expect(adminCreditsRes.status).toBe(200)
       const adminCredits = await adminCreditsRes.json() as { balance: number }
-      expect(adminCredits.balance).toBe(195)
+      expect(adminCredits.balance).toBe(STARTING_CREDITS + 500 - INITIAL_DESIGN_COST)
 
       // 9. Admin can see billing overview
       const overviewRes = await app.request('/api/admin/billing/overview', {
@@ -595,9 +594,9 @@ describe('Phase 10 credit economy', () => {
   describe('Concurrency protection', () => {
     it('prevents overspending with concurrent reservations', async () => {
       const reg = await register(app, 'concur@test.local')
-      // 50 credits, each generate costs 3, so max 16 successful
+      // 120 credits, each generate costs 117, so max 1 successful
       const promises: Promise<Response>[] = []
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 8; i++) {
         promises.push(
           app.request('/api/credits/reserve', {
             method: 'POST',
@@ -609,16 +608,14 @@ describe('Phase 10 credit economy', () => {
       const results = await Promise.all(promises)
       const ok = results.filter((r) => r.status === 200)
       const fail = results.filter((r) => r.status === 402)
-      // 16 successful (16*3=48), 4 fail (only 2 credits left)
-      expect(ok.length).toBe(16)
-      expect(fail.length).toBe(4)
+      expect(ok.length).toBe(1)
+      expect(fail.length).toBe(7)
 
-      // Final balance should be 2
       const creditsRes = await app.request('/api/billing/credits', {
         headers: authHeaders(reg.token),
       })
       const credits = await creditsRes.json() as { balance: number }
-      expect(credits.balance).toBe(2)
+      expect(credits.balance).toBe(STARTING_CREDITS - INITIAL_DESIGN_COST)
     })
   })
 })

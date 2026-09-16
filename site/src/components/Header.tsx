@@ -2,26 +2,192 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getContent } from "@/content";
 import { getAlternatePath, localeFromPath } from "@/lib/i18n";
 import { AuthModal, type AuthModalMode } from "@/components/AuthModal";
+import {
+  AUTH_EVENT,
+  getCreditBalance,
+  loadAuth,
+  logout,
+  studioHandoffUrl,
+  type AuthState,
+} from "@/lib/auth";
+import { STUDIO_URL } from "@/lib/site";
+import { adminHref as adminPath, customerHref } from "@/lib/panelPaths";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthModalMode>("login");
+  const [session, setSession] = useState<AuthState | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [studioUrl, setStudioUrl] = useState(STUDIO_URL);
   const pathname = usePathname() || "/";
   const locale = localeFromPath(pathname);
   const { brand, nav } = getContent(locale);
   const trHref = getAlternatePath(pathname, "tr");
   const enHref = getAlternatePath(pathname, "en");
+  const creditsHref = customerHref(locale, "credits");
+  const accountHref = customerHref(locale);
+  const adminHref = adminPath(locale);
+  const accountLabel = locale === "en" ? "Customer panel" : "Müşteri Paneli";
+  const adminLabel = locale === "en" ? "Admin" : "Yönetim";
+  const creditsLabel = locale === "en" ? "credits" : "kredi";
+  const logoutLabel = locale === "en" ? "Log out" : "Çıkış";
+  const isAdmin = session?.user.role === "admin";
+
+  function refreshSession() {
+    const next = loadAuth();
+    setSession(next);
+    setStudioUrl(next?.token ? studioHandoffUrl() : STUDIO_URL);
+    if (!next?.token) {
+      setBalance(null);
+      return;
+    }
+    void getCreditBalance(next.token).then(setBalance);
+  }
+
+  useEffect(() => {
+    refreshSession();
+    window.addEventListener(AUTH_EVENT, refreshSession);
+    return () => window.removeEventListener(AUTH_EVENT, refreshSession);
+  }, []);
 
   function openAuth(mode: AuthModalMode) {
     setAuthMode(mode);
     setAuthOpen(true);
     setOpen(false);
   }
+
+  async function onLogout() {
+    await logout();
+    setOpen(false);
+  }
+
+  const sessionControls = session ? (
+    <>
+      {!isAdmin && balance !== null && (
+        <Link
+          href={creditsHref}
+          className="hidden rounded-full border border-white/[0.08] px-3 py-1.5 text-[13px] text-copper sm:inline-flex"
+          title={creditsLabel}
+        >
+          {balance} {creditsLabel}
+        </Link>
+      )}
+      {isAdmin ? (
+        <Link
+          href={adminHref}
+          className="hidden px-2 py-1.5 text-[13px] font-medium text-copper/80 transition hover:text-copper sm:inline-flex"
+        >
+          {adminLabel}
+        </Link>
+      ) : (
+        <Link
+          href={accountHref}
+          className="hidden px-2 py-1.5 text-[13px] font-medium text-cream/60 transition hover:text-cream sm:inline-flex"
+        >
+          {accountLabel}
+        </Link>
+      )}
+      <a
+        href={studioUrl}
+        className="hidden rounded-full bg-cream px-4 py-1.5 text-[13px] font-semibold text-ink-975 transition hover:bg-cream-soft sm:inline-flex"
+        rel="noopener noreferrer"
+      >
+        {nav.openStudio}
+      </a>
+      <button
+        type="button"
+        onClick={() => void onLogout()}
+        className="relative z-10 hidden cursor-pointer px-2 py-1.5 text-[13px] font-medium text-cream/60 transition hover:text-cream sm:inline-flex"
+      >
+        {logoutLabel}
+      </button>
+    </>
+  ) : (
+    <>
+      <button
+        type="button"
+        onClick={() => openAuth("login")}
+        className="relative z-10 hidden cursor-pointer px-2 py-1.5 text-[13px] font-medium text-cream/60 transition hover:text-cream sm:inline-flex"
+      >
+        {nav.logIn}
+      </button>
+      <button
+        type="button"
+        onClick={() => openAuth("register")}
+        className="relative z-10 hidden cursor-pointer rounded-full bg-cream px-4 py-1.5 text-[13px] font-semibold text-ink-975 transition hover:bg-cream-soft sm:inline-flex"
+      >
+        {nav.signUp}
+      </button>
+    </>
+  );
+
+  const mobileSession = session ? (
+    <>
+      {!isAdmin && balance !== null && (
+        <Link
+          href={creditsHref}
+          className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-copper"
+          onClick={() => setOpen(false)}
+        >
+          {balance} {creditsLabel}
+        </Link>
+      )}
+      {isAdmin ? (
+        <Link
+          href={adminHref}
+          className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-copper"
+          onClick={() => setOpen(false)}
+        >
+          {adminLabel}
+        </Link>
+      ) : (
+        <Link
+          href={accountHref}
+          className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-cream/80"
+          onClick={() => setOpen(false)}
+        >
+          {accountLabel}
+        </Link>
+      )}
+      <a
+        href={studioUrl}
+        className="rounded-full bg-cream px-4 py-2.5 text-center text-sm font-semibold text-ink-975"
+        rel="noopener noreferrer"
+        onClick={() => setOpen(false)}
+      >
+        {nav.openStudio}
+      </a>
+      <button
+        type="button"
+        className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-cream/80"
+        onClick={() => void onLogout()}
+      >
+        {logoutLabel}
+      </button>
+    </>
+  ) : (
+    <>
+      <button
+        type="button"
+        className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-cream/80"
+        onClick={() => openAuth("login")}
+      >
+        {nav.logIn}
+      </button>
+      <button
+        type="button"
+        className="rounded-full bg-cream px-4 py-2.5 text-center text-sm font-semibold text-ink-975"
+        onClick={() => openAuth("register")}
+      >
+        {nav.signUp}
+      </button>
+    </>
+  );
 
   return (
     <header className="sticky top-0 z-50 isolate border-b border-white/[0.06] bg-ink-950/80 backdrop-blur-xl">
@@ -87,20 +253,7 @@ export function Header() {
             </Link>
           </div>
 
-          <button
-            type="button"
-            onClick={() => openAuth("login")}
-            className="relative z-10 hidden cursor-pointer px-2 py-1.5 text-[13px] font-medium text-cream/60 transition hover:text-cream sm:inline-flex"
-          >
-            {nav.logIn}
-          </button>
-          <button
-            type="button"
-            onClick={() => openAuth("register")}
-            className="relative z-10 hidden cursor-pointer rounded-full bg-cream px-4 py-1.5 text-[13px] font-semibold text-ink-975 transition hover:bg-cream-soft sm:inline-flex"
-          >
-            {nav.signUp}
-          </button>
+          {sessionControls}
 
           <button
             type="button"
@@ -141,20 +294,7 @@ export function Header() {
               </Link>
             ))}
             <div className="mt-3 flex flex-col gap-2 border-t border-white/[0.06] pt-3 sm:hidden">
-              <button
-                type="button"
-                className="rounded-full border border-white/[0.12] px-4 py-2.5 text-center text-sm text-cream/80"
-                onClick={() => openAuth("login")}
-              >
-                {nav.logIn}
-              </button>
-              <button
-                type="button"
-                className="rounded-full bg-cream px-4 py-2.5 text-center text-sm font-semibold text-ink-975"
-                onClick={() => openAuth("register")}
-              >
-                {nav.signUp}
-              </button>
+              {mobileSession}
             </div>
           </nav>
         </div>

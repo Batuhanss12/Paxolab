@@ -1,4 +1,5 @@
 import type { Locale } from "@/content/types";
+import { swapAppLocale } from "@/lib/panelPaths";
 
 /** TR root ↔ EN /en pairs. /kvkk shares EN privacy with /gizlilik. */
 export const LOCALE_PAIRS: { tr: string; en: string }[] = [
@@ -37,6 +38,10 @@ export const LOCALE_PAIRS: { tr: string; en: string }[] = [
   { tr: "/etiket-ve-kutu-ne-zaman-birlikte", en: "/en/when-to-use-label-and-box-together" },
   { tr: "/e-ticaret-kutusu-tasarimi", en: "/en/ecommerce-box-design" },
   { tr: "/sise-wrap-etiket", en: "/en/bottle-wrap-label" },
+  { tr: "/hesap", en: "/en/account" },
+  { tr: "/firma", en: "/en/company" },
+  { tr: "/admin", en: "/en/admin" },
+  { tr: "/auth/callback", en: "/en/auth/callback" },
 ];
 
 const trToEn = new Map<string, string>();
@@ -59,6 +64,8 @@ export function localeFromPath(pathname: string): Locale {
 
 export function getAlternatePath(path: string, target: Locale): string {
   const normalized = path === "" ? "/" : path;
+  const swapped = swapAppLocale(normalized, target);
+  if (swapped) return swapped;
   if (target === "en") {
     return trToEn.get(normalized) ?? (normalized.startsWith("/en") ? normalized : "/en");
   }
@@ -80,11 +87,29 @@ export function getLanguageAlternates(path: string): {
   };
 }
 
+export function isPrivatePath(path: string): boolean {
+  return (
+    path === "/hesap" ||
+    path.startsWith("/hesap/") ||
+    path === "/firma" ||
+    path === "/admin" ||
+    path.startsWith("/admin/") ||
+    path === "/auth/callback" ||
+    path === "/en/account" ||
+    path.startsWith("/en/account/") ||
+    path === "/en/company" ||
+    path === "/en/admin" ||
+    path.startsWith("/en/admin/") ||
+    path === "/en/auth/callback"
+  );
+}
+
 /** Unique sitemap entries: skip duplicate EN when multiple TR map to same EN. */
 export function sitemapPaths(): { tr: string; en: string }[] {
   const seenEn = new Set<string>();
   const out: { tr: string; en: string }[] = [];
   for (const pair of LOCALE_PAIRS) {
+    if (isPrivatePath(pair.tr) || isPrivatePath(pair.en)) continue;
     if (pair.tr === "/kvkk") {
       // Include TR /kvkk; EN privacy already covered by /gizlilik pair
       out.push({ tr: pair.tr, en: pair.en });

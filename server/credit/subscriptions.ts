@@ -28,6 +28,7 @@ export type Plan = {
   enabled: boolean
   displayOrder: number
   description: string | null
+  unlimited: boolean
 }
 
 export type Subscription = {
@@ -62,6 +63,7 @@ function rowToPlan(row: SubscriptionPlanRow): Plan {
     enabled: row.enabled === 1,
     displayOrder: row.display_order,
     description: row.description,
+    unlimited: row.unlimited === 1 || row.id === 'agency',
   }
 }
 
@@ -110,6 +112,14 @@ export function getActiveSubscription(db: FormaDb, userId: string): Subscription
     .prepare(`SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1`)
     .get(userId) as SubscriptionRow | undefined
   return row ? rowToSubscription(row) : undefined
+}
+
+/** Agency (and any unlimited plan) skips credit debit while the subscription is active. */
+export function userHasUnlimitedDesigns(db: FormaDb, userId: string): boolean {
+  const sub = getActiveSubscription(db, userId)
+  if (!sub) return false
+  const plan = getPlan(db, sub.planId)
+  return Boolean(plan?.unlimited)
 }
 
 /**
@@ -345,6 +355,7 @@ export function upsertPlan(
     if (patch.enabled !== undefined) { sets.push('enabled = ?'); args.push(patch.enabled ? 1 : 0) }
     if (patch.displayOrder !== undefined) { sets.push('display_order = ?'); args.push(patch.displayOrder) }
     if (patch.description !== undefined) { sets.push('description = ?'); args.push(patch.description) }
+    if (patch.unlimited !== undefined) { sets.push('unlimited = ?'); args.push(patch.unlimited ? 1 : 0) }
     if (sets.length === 0) return existing
     sets.push('updated_at = ?')
     args.push(now)
@@ -352,8 +363,8 @@ export function upsertPlan(
     db.prepare(`UPDATE subscription_plans SET ${sets.join(', ')} WHERE id = ?`).run(...args)
   } else {
     db.prepare(
-      `INSERT INTO subscription_plans (id, label, monthly_price, currency, monthly_credits, max_projects, max_active_sessions, rollover_policy, rollover_max, topup_eligible, enabled, display_order, description, created_at, updated_at)
-       VALUES (?, ?, ?, 'TRY', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO subscription_plans (id, label, monthly_price, currency, monthly_credits, max_projects, max_active_sessions, rollover_policy, rollover_max, topup_eligible, enabled, display_order, description, unlimited, created_at, updated_at)
+       VALUES (?, ?, ?, 'TRY', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       planId,
       patch.label ?? planId,
@@ -367,6 +378,7 @@ export function upsertPlan(
       patch.enabled === false ? 0 : 1,
       patch.displayOrder ?? 0,
       patch.description ?? null,
+      patch.unlimited ? 1 : 0,
       now,
       now,
     )

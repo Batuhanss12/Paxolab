@@ -73,7 +73,7 @@ describe('Phase 7 credit metering', () => {
     expect(typeof reserveBody.reservationId).toBe('string')
 
     const mid = await json(await app.request('/api/credits/balance', { headers: auth }))
-    expect(mid.balance).toBe(47)
+    expect(mid.balance).toBe(STARTING_CREDITS - CREDIT_COSTS.generate)
 
     const commit = await app.request('/api/credits/commit', {
       method: 'POST',
@@ -83,7 +83,7 @@ describe('Phase 7 credit metering', () => {
     expect(commit.status).toBe(200)
     const commitBody = await json(commit)
     expect(commitBody.status).toBe('committed')
-    expect(commitBody.balance).toBe(47)
+    expect(commitBody.balance).toBe(STARTING_CREDITS - CREDIT_COSTS.generate)
 
     const txs = await json(await app.request('/api/credits/transactions?limit=10', { headers: auth }))
     const kinds = (txs.transactions as { kind: string }[]).map((t) => t.kind)
@@ -165,7 +165,7 @@ describe('Phase 7 credit metering', () => {
       await app.request('/api/credits/reserve', {
         method: 'POST',
         headers: auth,
-        body: JSON.stringify({ operation: 'generate' }),
+        body: JSON.stringify({ operation: 'revise' }),
       }),
     )
     const r1 = await app.request('/api/credits/refund', {

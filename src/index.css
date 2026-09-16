@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@300;500;600;700&display=swap');
 
 :root {
   --bg: #000000;
@@ -114,6 +114,7 @@ h2 {
   color: var(--muted);
   white-space: nowrap;
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .ghost-btn:hover {
@@ -2267,6 +2268,9 @@ h2 {
   border-radius: 999px;
   padding: 2px 8px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .auth-panel__guest {
@@ -2568,6 +2572,32 @@ h2 {
 
 .dash-panel--admin {
   width: min(860px, 96vw);
+}
+
+.dash-panel--wide {
+  width: min(980px, 96vw);
+}
+
+.dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dash-tab {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dash-tab--on {
+  background: var(--cream, #f5f0e6);
+  color: #111;
+  border-color: transparent;
 }
 
 .dash-panel__head {

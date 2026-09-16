@@ -13,6 +13,7 @@ import {
   cornerBrackets,
   hairline,
   legalColumn,
+  legalTypeSize,
   markKindFor,
   monogramLockup,
   netQuantity,
@@ -22,6 +23,7 @@ import {
   paragraph,
   pictogramRow,
   pictogramsFor,
+  pictogramsForBack,
   productBadge,
   productBadgeHeight,
   productStack,
@@ -453,7 +455,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: tSize * 0.12, extra: 'data-edit="product"' }))
   ledger.text('back-title', w / 2, m + tSize, textWidth(title, tSize, 'sans-heavy', tSize * 0.12), tSize, 'middle')
   parts.push(hairline(m, m + tSize * 1.8, w - m, d.palette.accent, 0.8, 0.22))
-  const pics = pictogramsFor(d).slice(0, 3)
+  const pics = pictogramsForBack(d).slice(0, 3)
   const vs = Math.max(1.6, Math.min(2.2, w * 0.026))
   const volW = d.volumeLine ? textWidth(d.volumeLine, vs, 'sans', vs * 0.06) : 0
   const slot = fitLabelBarcode({ w, h, margin: m, picCount: pics.length, leftExtra: volW ? volW + 2.2 : 0 })
@@ -465,7 +467,6 @@ export function paintLabelBack(ctx: LayoutCtx): string {
     { title: hdr.producer, body: copy.manufacturer, edit: 'manufacturer' },
     { title: hdr.address, body: copy.address, edit: 'address' },
   ]
-  const legalSize = Math.max(1.25, Math.min(1.6, w * 0.017))
   const titleColor = d.palette.accent === ink ? ink : vivid ? ink : d.palette.accent
   let legalTop = m + tSize * 2.4
   let legalX = m
@@ -473,7 +474,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   const food = d.sector === 'food' || d.sector === 'beverage'
   if (food) {
     const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
-    const tableSize = Math.max(1.15, Math.min(1.4, w * 0.015))
+    const tableSize = Math.max(1.28, Math.min(1.55, w * 0.018))
     const rows = nutritionRows(d.locale, blob)
     if (w - m * 2 >= 56) {
       const tableW = Math.max(26, (w - m * 2) * 0.42)
@@ -486,9 +487,10 @@ export function paintLabelBack(ctx: LayoutCtx): string {
       legalTop = table.bottom + 1.5
     }
   }
+  const legalSize = legalTypeSize(w, footTop - 1.5 - legalTop, 'label')
   const legal = legalColumn(ledger, legalX, legalTop, legalW, footTop - 1.5, sections, ink, { size: legalSize, anchor: food && legalW < w - m * 2 ? 'start' : 'middle', titleColor })
   parts.push(legal.markup)
-  parts.push(pictogramRow(ledger, slot.picX, slot.picY, slot.picS, pics, ink, ctx.paoMonths).markup)
+  parts.push(pictogramRow(ledger, slot.picX, slot.picY, slot.picS, pics, ink, ctx.paoMonths, { quality: true }).markup)
   parts.push(barcodeBlock(ledger, slot.x, slot.y, slot.w, slot.barsH, copy.barcode, ink, !isDark(bg), slot.captionSize))
   if (d.volumeLine) {
     const picW = pics.length * slot.picS + (pics.length - 1) * slot.picS * 0.35

@@ -96,6 +96,23 @@ export type SiteContent = {
     title: string;
     lead: string;
     note: string;
+    chooseTitle: string;
+    periodMonthly: string;
+    periodYearly: string;
+    periodYearlySoon: string;
+    perMonth: string;
+    perCredit: string;
+    unlimitedLabel: string;
+    includedTitle: string;
+    firstDesignHint: string;
+    planCards: {
+      id: string;
+      label: string;
+      badge?: string;
+      highlight?: "popular" | "value" | "enterprise";
+      features: string[];
+      cta: string;
+    }[];
     packs: {
       id: string;
       credits: number;
