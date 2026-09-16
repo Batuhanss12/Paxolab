@@ -9,6 +9,7 @@ import { parseIntent } from '../iterate/parseIntent'
 import {
   decideDirection,
   hintsFromBrief,
+  slimDirectionOffer,
   type DirectionClaim,
   type DirectionDecision,
 } from './direction'
@@ -19,7 +20,7 @@ import {
   hintsFromFamily,
   hintsFromVeto,
 } from './family'
-import type { DirectionHints, StudioFamily, StudioSurface, Temperament } from './types'
+import type { DirectionHints, StudioDirectionOffer, StudioFamily, StudioSurface, Temperament } from './types'
 
 export type DirectionTalkKind = 'why' | 'veto' | 'vary' | 'pin'
 
@@ -138,6 +139,10 @@ export function inspectStudioDirection(brief: DesignBrief, extras: DirectionHint
     },
     hints: assembleStudioHints(brief, surface, extras),
   })
+}
+
+export function inspectStudioDirectionOffer(brief: DesignBrief, extras: DirectionHints[] = []): StudioDirectionOffer {
+  return slimDirectionOffer(inspectStudioDirection(brief, extras).offer)
 }
 
 export function explainStudioDirection(brief: DesignBrief, extras: DirectionHints[] = []): {

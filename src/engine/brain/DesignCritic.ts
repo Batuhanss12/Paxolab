@@ -12,6 +12,8 @@
 import type { PreflightReport } from '../../types'
 import type { CompositionSearchDebug } from '../artwork/compositionCandidates'
 import { STUDIO_FLOOR_TEXT_MM, STUDIO_MIN_TEXT_MM } from '../studio/studioPreflight'
+import { studioCriticActions } from '../studio/studioCritic'
+import type { Temperament } from '../studio/types'
 import type { CritiqueReport } from './CritiqueEngine'
 import type { StructuredFeedback } from './DesignDecisionLog'
 import type { DesignPlan } from './DesignPlan'
@@ -89,6 +91,7 @@ export type StudioLedgerEvidence = {
   collisions: string[]
   outOfBounds: string[]
   minTextMm: number
+  temperament?: Temperament
 }
 
 export function critiqueDesign(input: {
@@ -135,13 +138,19 @@ export function critiqueDesign(input: {
     }
   } else {
     const ledger = input.studioLedger
+    const c6 =
+      studioCriticActions({
+        collisions: ledger.collisions,
+        outOfBounds: ledger.outOfBounds,
+        temperament: ledger.temperament ?? 'dark-luxe',
+      })[0]?.kind ?? 'vary'
     for (const hit of ledger.collisions.slice(0, 6)) {
       push({
         category: 'composition',
         target: 'placement',
         severity: 'error',
         issue: `Stüdyo ledger çarpışma: ${hit}`,
-        suggestedDirection: 'separate',
+        suggestedDirection: c6,
         evidence: { source: 'studioLedger', topic: 'collision', detail: hit },
       })
     }
@@ -151,7 +160,7 @@ export function critiqueDesign(input: {
         target: 'fit',
         severity: 'error',
         issue: `Stüdyo ledger taşma: ${hit}`,
-        suggestedDirection: 'fit',
+        suggestedDirection: c6,
         evidence: { source: 'studioLedger', topic: 'text-overflow', detail: hit },
       })
     }
@@ -161,7 +170,7 @@ export function critiqueDesign(input: {
         target: 'type_size',
         severity: 'error',
         issue: `En küçük metin ${ledger.minTextMm.toFixed(2)} mm — bası eşiğinin altında.`,
-        suggestedDirection: 'enlarge',
+        suggestedDirection: 'preflight',
         evidence: { source: 'studioLedger', topic: 'type-fit', score: ledger.minTextMm },
       })
     } else if (ledger.minTextMm > 0 && ledger.minTextMm < STUDIO_MIN_TEXT_MM) {
@@ -170,7 +179,7 @@ export function critiqueDesign(input: {
         target: 'type_size',
         severity: 'warn',
         issue: `En küçük metin ${ledger.minTextMm.toFixed(2)} mm — ${STUDIO_MIN_TEXT_MM} mm hedefin altında.`,
-        suggestedDirection: 'enlarge',
+        suggestedDirection: 'preflight',
         evidence: { source: 'studioLedger', topic: 'type-fit', score: ledger.minTextMm },
       })
     }
@@ -192,17 +201,47 @@ export function critiqueDesign(input: {
   return out
 }
 
-/** A finding as StructuredFeedback so the Brain / learning loop treat it like a revision signal. */
+/** A finding as StructuredFeedback so the Brain / learning loop treat it like a revision signal.
+ *  Studio ledger rows only enter this channel when they map to a C6 button (quieter / vary). */
 export function critiqueAsFeedback(critiques: DesignCritique[]): StructuredFeedback[] {
-  return critiques
-    .filter((c) => c.severity !== 'info')
-    .map((c) => ({
-      type: c.category,
-      target: c.target,
-      direction: c.suggestedDirection,
-      strength: c.severity === 'error' ? 'high' : 'medium',
-      raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
-    }))
+  const rows = critiques.flatMap((c) => {
+    if (c.severity === 'info') return []
+    if (c.evidence.source === 'studioLedger') {
+      if (c.suggestedDirection === 'quieter') {
+        return [
+          {
+            type: 'brand_fit' as const,
+            target: 'character',
+            direction: 'strengthen',
+            strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+            raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
+          },
+        ]
+      }
+      if (c.suggestedDirection === 'vary') {
+        return [
+          {
+            type: 'composition' as const,
+            target: 'layout',
+            direction: 'vary',
+            strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+            raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
+          },
+        ]
+      }
+      return []
+    }
+    return [
+      {
+        type: c.category,
+        target: c.target,
+        direction: c.suggestedDirection,
+        strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+        raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
+      },
+    ]
+  })
+  return rows.filter((row, i) => rows.findIndex((other) => other.type === row.type && other.target === row.target && other.direction === row.direction) === i)
 }
 
 export function worstSeverity(critiques: DesignCritique[]): CritiqueSeverity | 'none' {

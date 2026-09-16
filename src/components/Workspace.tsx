@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
 import { learnedPreferenceLine } from '../engine/brain'
+import { directionOfferLine } from '../engine/studio/directionOffer'
+import { studioProcessSummary } from '../engine/studio/faceCaption'
+import { studioCriticOffer } from '../engine/studio/studioCritic'
 import { Chat } from './Chat'
 import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
@@ -65,6 +68,7 @@ function ConversationBrief({
   messages: ChatMessage[]
   design: DesignSpec | null
 }) {
+  const summary = design ? studioProcessSummary(design) : ''
   return (
     <div className="brief-log">
       <p className="eyebrow">Konuşma özeti</p>
@@ -78,7 +82,7 @@ function ConversationBrief({
       </ol>
       {design && (
         <p className="brief-log__note">
-          {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
+          {summary ? `${summary}. ` : ''}
           Grapxor motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
         </p>
       )}
@@ -87,18 +91,19 @@ function ConversationBrief({
   )
 }
 
-/** Spoken design-process trail: critic findings + learned preferences. No JSON, no geometry. */
+/** Spoken design-process trail: C6 critic offer + learned preferences. No JSON, no geometry. */
 function DesignProcessNote({ design }: { design: DesignSpec }) {
-  const findings = (design.designCritique ?? []).filter((row) => row.severity !== 'info')
-  const learned = learnedPreferenceLine(design.appliedKnowledge)
+  const learned = learnedPreferenceLine(design.appliedKnowledge, { studio: Boolean(design.studio) })
   const studio = design.studio?.direction
-  if (!findings.length && !learned && !studio) return null
-  const top = findings.slice(0, 2).map((row) => row.issue.replace(/\.$/, '')).join(' · ')
+  const criticLine = studioCriticOffer(design.studio?.critic ?? [])
+  const offerLine = directionOfferLine(design.studio?.offer)
+  if (!criticLine && !learned && !studio && !offerLine) return null
   const anatomy = studio?.rationale?.[0]
   return (
     <p className="brief-log__note">
       {studio ? `Stüdyo: ${studio.archetype.replace(/-/g, ' ')} · ${studio.background}${anatomy ? ` — ${anatomy}` : ''}. ` : ''}
-      {findings.length ? `Kritik ${findings.length} not aldı${top ? `: ${top}` : ''}. ` : studio ? '' : 'Kritik temiz. '}
+      {offerLine ? `${offerLine} ` : ''}
+      {criticLine ? `${criticLine} ` : ''}
       {learned}
     </p>
   )

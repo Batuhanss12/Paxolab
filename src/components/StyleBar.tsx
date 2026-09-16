@@ -1,4 +1,4 @@
-import type { DesignBrief, DesignSpec, DimensionsMm, StyleType } from '../types'
+import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { STYLE_OPTIONS } from '../engine/styles'
 
 type StyleBarProps = {
@@ -72,7 +72,7 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary, className, va
         <button type="button" className="style-bar__vary" onClick={onVary}>
           6 yeni tasarım
           <span className="style-bar__vary-set">
-            Set {(design.designPlan?.variationIndex ?? 0) + 1}/6
+            {design.studio ? studioFaceLabel(design) : `Set ${(design.designPlan?.variationIndex ?? 0) + 1}/6`}
           </span>
         </button>
       )}

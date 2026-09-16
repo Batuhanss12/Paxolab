@@ -39,7 +39,7 @@ export function parseFeedback(text: string): StructuredFeedback[] {
   if (/çok\s*boş|too\s*(empty|sparse)|boş\s*kalmış/i.test(t)) {
     push(out, { type: 'composition', target: 'density', direction: 'increase', strength, raw })
   }
-  if (/çok\s*(dolu|sıkışık|kalabalık)|too\s*(busy|dense|crowded)/i.test(t)) {
+  if (/çok\s*(dolu|sıkışık|kalabalık|yoğun)|fazla\s*(dolu|sıkışık|kalabalık|yoğun)|too\s*(busy|dense|crowded)|(?:yön|yüzey|tasarım).{0,16}yoğun/i.test(t)) {
     push(out, { type: 'composition', target: 'density', direction: 'decrease', strength, raw })
   }
   if (/çok\s*hava|too\s*much\s*air|whitespace/i.test(t) && /azalt|less|düşür/i.test(t)) {

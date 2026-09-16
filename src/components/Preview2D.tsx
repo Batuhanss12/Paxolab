@@ -1,4 +1,4 @@
-import type { Attachment, DesignSpec, DimensionsMm } from '../types'
+import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { renderFrontSvg } from '../engine/artwork/composeArtwork'
 import { artworkFromDocument } from '../engine/document'
 
@@ -25,11 +25,7 @@ export function Preview2D({ design, onDims }: Preview2DProps) {
     <div className="preview-stage">
       <div className="preview-stage__meta">
         <span>Rev {design.revision}</span>
-        {design.designPlan ? (
-          <span>
-            Set {design.designPlan.variationIndex + 1} · {design.designPlan.heroGraphic.family}
-          </span>
-        ) : null}
+        {design.designPlan || design.studio ? <span>{studioFaceLabel(design)}</span> : null}
         <span>{design.artwork.language}</span>
         {design.overrides.printReady && !design.preflight.blocking && <span className="pill">Baskı kapısı açık</span>}
         <div className="dim-strip" aria-label="Ölçü">

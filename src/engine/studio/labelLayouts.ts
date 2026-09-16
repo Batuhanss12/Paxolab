@@ -18,6 +18,7 @@ import {
   netQuantity,
   nutritionTable,
   nutritionTableHeight,
+  paintMark,
   paragraph,
   pictogramRow,
   pictogramsFor,
@@ -31,12 +32,13 @@ import {
   stackedWords,
   thinDoubleFrame,
   titleCard,
+  STUDIO_MIN_LOGO_R,
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, usageLine } from './copyBank'
-import { cityLine, isLandscape, isTiny, marginFor, seamMark, type LayoutCtx } from './layoutContext'
+import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, type LayoutCtx } from './layoutContext'
 import { Ledger, fitSize, textEl, textWidth, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
 
@@ -62,7 +64,7 @@ function cardOnArt(ctx: LayoutCtx): string {
   const m = marginFor(w, h)
   const landscape = isLandscape(w, h)
   const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
-  const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.42)
+  const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.42, identOf(ctx))
   parts.push(pill.markup)
   const ink = d.palette.ink
   // bottom-left reserve: pictograms + net quantity (measured first so the card block can avoid it)
@@ -86,14 +88,14 @@ function cardOnArt(ctx: LayoutCtx): string {
   const sentenceSize = Math.max(1.6, Math.min(2.3, cardW * 0.045))
   const sentenceText = d.taglineLine || copy.tagline
   const probe = new Ledger(ledger.panel)
-  const pCard = titleCard(probe, d, cardX, 0, cardW, copy.product, d.categoryLine, { prefix: d.productPrefix })
+  const pCard = titleCard(probe, d, cardX, 0, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
   const pBand = claimBand(probe, d, cardX, pCard.bottom, cardW, d.chips[0] ?? d.categoryLine)
   const pSentence = paragraph(probe, cardX, pBand.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle')
   const blockH = pSentence.bottom
   const wanted = landscape ? pill.box.y + pill.box.h + h * 0.12 : ctx.hasBack ? h * 0.36 : Math.max(legalBottom + 2, h * 0.44)
   const blockBottomLimit = landscape ? h - m : reserveTop - 2.5
   const cardY = Math.max(pill.box.y + pill.box.h + 2, Math.min(wanted, blockBottomLimit - blockH))
-  const card = titleCard(ledger, d, cardX, cardY, cardW, copy.product, d.categoryLine, { prefix: d.productPrefix })
+  const card = titleCard(ledger, d, cardX, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
   parts.push(card.markup)
   const band = claimBand(ledger, d, cardX, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
   parts.push(band.markup)
@@ -120,7 +122,7 @@ function marbleFrame(ctx: LayoutCtx): string {
   const bx = m * 1.6
   const bw = w - bx * 2
   const by = h * 0.1
-  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 10) })
+  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 10) }))
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
@@ -129,7 +131,7 @@ function marbleFrame(ctx: LayoutCtx): string {
   parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, d.categoryLine, catSize, ink, bw))
   // product at the foot: script prefix + heavy product
   const productTop = h * 0.7
-  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) })
+  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
   parts.push(stack.markup)
   if (d.volumeLine) {
     const size = Math.max(2, Math.min(2.8, w * 0.032))
@@ -154,8 +156,8 @@ function diagonalSplit(ctx: LayoutCtx): string {
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const first = words.length > 1 ? words.slice(0, -1).join(' ') : ''
   const last = words[words.length - 1] ?? ''
-  const titleMax = Math.min(landscape ? 7.5 : 8.5, colW * 0.17)
-  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8, 'sans-heavy', 0.02))
+  const titleMax = Math.min(landscape ? 7.5 : 8.5, colW * 0.17) * ctx.titleScale
+  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
   let y = m + tSize
   if (first) {
     parts.push(textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 }))
@@ -201,7 +203,7 @@ function diagonalSplit(ctx: LayoutCtx): string {
   const rw = landscape ? w - rx - m : w - m * 2
   const rcx = rx + rw / 2
   const rTop = landscape ? m : legalBottom + 2
-  const mono = monogramLockup(ledger, d, rcx, rTop, copy.brand, rw * 0.6, accent)
+  const mono = monogramLockup(ledger, d, rcx, rTop, copy.brand, rw * 0.6, accent, identOf(ctx))
   parts.push(mono.markup)
   parts.push(brandMark('leaf', rcx, mono.bottom + 4, 2.2, mix(accent, '#3f8a3a', 0.4)))
   ledger.add('element', 'leaf-mark', rcx - 2.4, mono.bottom + 1.6, 4.8, 4.8)
@@ -213,7 +215,7 @@ function diagonalSplit(ctx: LayoutCtx): string {
     parts.push(spacedLine(ledger, rcx, catBase, d.categoryLine, 1.7, accent, rw))
     if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
   } else {
-    const stack = productStack(ledger, d, rcx, mono.bottom + 9, rw, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(6.8, rw * 0.13) })
+    const stack = productStack(ledger, d, rcx, mono.bottom + 9, rw, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(6.8, rw * 0.13) }))
     parts.push(stack.markup)
     const chipText = d.chips[1] ?? d.chips[0] ?? 'PROFESSIONAL'
     const chipSize = 1.6
@@ -246,9 +248,9 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   }
   // brand mark + brand
   const r = Math.min(w * 0.1, 6)
-  parts.push(brandMark(markKindFor(d), w / 2, m + r, r, ink, copy.brand))
-  ledger.add('element', 'brand-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2)
-  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4, 2.2, 'sans-heavy', 0.12)
+  parts.push(paintMark(markKindFor(d), w / 2, m + r, r, ink, copy.brand, identOf(ctx)))
+  ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'brand-logo' : 'brand-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2)
+  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
   const brandY = m + r * 2 + brandSize * 1.4
   parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: brandSize * 0.12 }))
   ledger.text('brand', w / 2, brandY, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, 'sans-heavy', brandSize * 0.12), brandSize, 'middle')
@@ -256,9 +258,9 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const a = words.length > 1 ? words.slice(0, Math.ceil(words.length / 2)).join(' ') : words[0]
   const b = words.length > 1 ? words.slice(Math.ceil(words.length / 2)).join(' ') : ''
-  const titleMax = Math.min(7.5, w * 0.11)
+  const titleMax = Math.min(7.5, w * 0.11) * ctx.titleScale
   const full = b ? `${a} ${b}` : a
-  const size = fitSize(full, w - m * 2, titleMax, 2.6, 'sans-heavy', 0.1)
+  const size = fitSize(full, w - m * 2, titleMax, 2.6 * ctx.titleScale, 'sans-heavy', 0.1)
   const track = size * 0.1
   const wa = textWidth(a, size, 'sans-light', track)
   const wb = b ? textWidth(` ${b}`, size, 'sans-heavy', track) : 0
@@ -294,19 +296,19 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
   const parts: string[] = [paintBackground('wave', w, h, d.palette, d.seed, { uid: ctx.uid })]
   const ink = d.palette.ink
   const accent = d.palette.accent
-  const lock = stackedLockup(ledger, d, w / 2, m * 1.5, w - m * 2, copy.brand, '', {
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.5, w - m * 2, copy.brand, '', withIdent(ctx, {
     color: ink,
     mark: true,
     markColor: accent,
     brandMax: Math.min(11, w * 0.16),
-  })
+  }))
   parts.push(lock.markup)
   parts.push(spacedLine(ledger, w / 2, lock.bottom + 2.6, d.categoryLine, Math.max(1.5, Math.min(2.2, w * 0.03)), ink, w - m * 2))
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.08, w - m * 2, copy.product, {
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.08, w - m * 2, copy.product, withIdent(ctx, {
     color: ink,
     accent,
     max: Math.min(8, w * 0.11),
-  })
+  }))
   parts.push(stack.markup)
   if (d.volumeLine) {
     parts.push(netQuantity(ledger, w / 2, h - m * 0.9, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
@@ -348,17 +350,17 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
     parts.push(arch.outline(accent))
     ledger.add('ground', 'window', winX, winY, winW, winH)
     const badgeW = winW * 0.78
-    const badgeH = productBadgeHeight(d, badgeW, copy.product, d.categoryLine, d.volumeLine)
-    const badge = productBadge(ledger, d, winX + winW / 2, winY + winH - badgeH * badgeOverlap, badgeW, copy.product, d.categoryLine, d.volumeLine)
+    const badgeH = productBadgeHeight(d, badgeW, copy.product, d.categoryLine, d.volumeLine, ctx.titleScale)
+    const badge = productBadge(ledger, d, winX + winW / 2, winY + winH - badgeH * badgeOverlap, badgeW, copy.product, d.categoryLine, d.volumeLine, ctx.titleScale)
     parts.push(badge.markup)
     return badge
   }
   if (landscape) {
     const colW = w * 0.46 - m
     const colCx = m + colW / 2
-    const lock = stackedLockup(ledger, d, colCx, m * 1.4, colW, copy.brand, '', { mark: true, markKind: 'mountain', markColor: accent, color: ink, brandMax: Math.min(opts.brandMax ?? 9, colW * 0.16) })
+    const lock = stackedLockup(ledger, d, colCx, m * 1.4, colW, copy.brand, '', withIdent(ctx, { mark: true, markKind: 'mountain', markColor: accent, color: ink, brandMax: Math.min(opts.brandMax ?? 9, colW * 0.16) }))
     parts.push(lock.markup)
-    const preSize = Math.max(2, Math.min(3.2, colW * 0.07))
+    const preSize = Math.max(2, Math.min(3.2, colW * 0.07)) * ctx.titleScale
     parts.push(textEl({ x: colCx, y: lock.bottom + preSize * 0.9, text: prefix, size: preSize, face: 'serif-italic', fill: d.palette.accent2, anchor: 'middle', italic: true }))
     ledger.text('prefix', colCx, lock.bottom + preSize * 0.9, textWidth(prefix, preSize, 'serif-italic'), preSize, 'middle')
     const winX = w * 0.5
@@ -371,16 +373,16 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
     const foot = h - m * 0.9
     if (foot - chipY > 3.5) parts.push(spacedLine(ledger, colCx, foot, d.taglineLine, 1.4, d.palette.muted, colW))
   } else {
-    const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', { mark: true, markKind: 'mountain', markColor: accent, color: ink, brandMax: Math.min(opts.brandMax ?? 9, w * 0.13) })
+    const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', withIdent(ctx, { mark: true, markKind: 'mountain', markColor: accent, color: ink, brandMax: Math.min(opts.brandMax ?? 9, w * 0.13) }))
     parts.push(lock.markup)
-    const preSize = Math.max(2, Math.min(3.4, w * 0.045))
+    const preSize = Math.max(2, Math.min(3.4, w * 0.045)) * ctx.titleScale
     parts.push(textEl({ x: w / 2, y: lock.bottom + preSize * 0.9, text: prefix, size: preSize, face: 'serif-italic', fill: d.palette.accent2, anchor: 'middle', italic: true }))
     ledger.text('prefix', w / 2, lock.bottom + preSize * 0.9, textWidth(prefix, preSize, 'serif-italic'), preSize, 'middle')
     // reserve the foot: badge overhang + chips + tagline, then let the window fill the rest
     const winX = m * 1.6
     const winW = w - winX * 2
     const winY = lock.bottom + preSize * 2
-    const badgeH = productBadgeHeight(d, winW * 0.78, copy.product, d.categoryLine, d.volumeLine)
+    const badgeH = productBadgeHeight(d, winW * 0.78, copy.product, d.categoryLine, d.volumeLine, ctx.titleScale)
     const footNeed = badgeH * 0.45 + 3.4 + chipSize * 1.2 + 4.2
     const winH = Math.max(winW * 0.55, h - m * 1.1 - footNeed - winY)
     const badge = window(winX, winY, winW, winH, 0.55)
@@ -406,9 +408,9 @@ function inkPanel(ctx: LayoutCtx): string {
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.8))
-  const lock = stackedLockup(ledger, d, w / 2, m * 1.8, w - m * 3, copy.brand, cityLine(ctx.brief), { color: ink, markColor: accent, brandMax: Math.min(10, w * 0.14) })
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.8, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(10, w * 0.14) }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.06, w - m * 3, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.13) })
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.06, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.13) }))
   parts.push(stack.markup)
   // stacked tagline
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.6, 'sans', 3, 0.5)
@@ -458,7 +460,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.5, d.palette.accent, 0.7))
   const hdr = backHeaders(d.locale)
   const title = copy.product.toLocaleUpperCase('tr')
-  const tSize = fitSize(title, w - m * 2, 4.2, 2.2, 'sans-heavy', 0.12)
+  const tSize = fitSize(title, w - m * 2, 4.2 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
   parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: tSize * 0.12 }))
   ledger.text('back-title', w / 2, m + tSize, textWidth(title, tSize, 'sans-heavy', tSize * 0.12), tSize, 'middle')
   parts.push(hairline(m, m + tSize * 1.8, w - m, d.palette.accent, 0.8, 0.22))

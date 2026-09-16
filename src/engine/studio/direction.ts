@@ -8,8 +8,19 @@ import type { CopyLocale, DesignBrief, Palette, StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
 import { claimChip, copyBankFor, isGenericTagline, refineBenefits, refineCategory, volumeLine } from './copyBank'
+import { familyOf } from './family'
 import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
-import type { DesignDirection, DirectionHints, StudioArchetype, StudioPalette, StudioSurface, Temperament, CopySource } from './types'
+import type {
+  CopySource,
+  DesignDirection,
+  DirectionHints,
+  StudioArchetype,
+  StudioDirectionOffer,
+  StudioFamily,
+  StudioPalette,
+  StudioSurface,
+  Temperament,
+} from './types'
 
 export type DirectionInput = {
   brief: DesignBrief
@@ -375,6 +386,36 @@ export type DirectionDecision = {
   scores: DirectionScoreRow[]
   claims: DirectionClaim[]
   winnerId: StudioArchetype
+  offer: DirectionOffer
+}
+
+export type DirectionCandidate = {
+  index: number
+  family: StudioFamily
+  direction: DesignDirection
+  score: number
+  selected: boolean
+}
+
+export type DirectionOffer = {
+  candidates: DirectionCandidate[]
+  selectedIndex: number
+}
+
+type ScoredDna = {
+  dna: ArchetypeDna
+  score: number
+  parts: ArchetypeScoreParts
+}
+
+type RankedPool = {
+  hints: DirectionHints
+  temperamentGuess: Temperament
+  scored: ScoredDna[]
+  scores: DirectionScoreRow[]
+  ranked: ScoredDna[]
+  pool: ScoredDna[]
+  pick: ScoredDna
 }
 
 function groundedClaims(
@@ -438,12 +479,11 @@ function groundedClaims(
   return claims
 }
 
-export function decideDirection(input: DirectionInput): DirectionDecision {
+function rankDirectionPool(input: DirectionInput): RankedPool {
   const hints = mergeHints(input.hints)
-  const { brief, sector, style, surface, locale } = input
-  const temperamentGuess = hints.temperament ?? temperamentFor(sector, style, input.palette, brief)
+  const temperamentGuess = hints.temperament ?? temperamentFor(input.sector, input.style, input.palette, input.brief)
   const avoided = new Set(hints.avoidArchetypes ?? [])
-  const scored = archetypesFor(surface)
+  const scored = archetypesFor(input.surface)
     .map((dna) => {
       const row = scoreArchetype(dna, input, temperamentGuess, hints)
       return { dna, score: row.score, parts: row.parts }
@@ -456,15 +496,29 @@ export function decideDirection(input: DirectionInput): DirectionDecision {
   const ranked = eligible.length ? eligible : scored
   const pool = ranked.slice(0, 3)
   const pick = pinned ?? pool[input.variationIndex % Math.max(1, pool.length)] ?? ranked[0] ?? scored[0]
-  const dna = pick.dna
-  const temperament: Temperament = dna.temperaments.includes(temperamentGuess) ? temperamentGuess : (hints.temperament ?? dna.temperaments[0])
+  return { hints, temperamentGuess, scored, scores, ranked, pool, pick }
+}
+
+function materializeDirection(
+  input: DirectionInput,
+  dna: ArchetypeDna,
+  hints: DirectionHints,
+  temperamentGuess: Temperament,
+  variationIndex: number,
+): DesignDirection {
+  const { brief, sector, surface, locale } = input
+  const temperament: Temperament = dna.temperaments.includes(temperamentGuess)
+    ? temperamentGuess
+    : (hints.temperament ?? dna.temperaments[0])
   const background =
     hints.background && dna.backgrounds.includes(hints.background)
       ? hints.background
-      : dna.backgrounds.filter((b) => !hints.avoidBackgrounds?.includes(b))[Math.floor(input.variationIndex / 3) % Math.max(1, dna.backgrounds.length)] ?? dna.backgrounds[0]
+      : dna.backgrounds.filter((b) => !hints.avoidBackgrounds?.includes(b))[
+          Math.floor(variationIndex / 3) % Math.max(1, dna.backgrounds.length)
+        ] ?? dna.backgrounds[0]
   const palette = studioPalette(input.palette, temperament)
   const bank = copyBankFor(brief, sector, locale)
-  const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${input.variationIndex}`)
+  const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${variationIndex}`)
   const category = hints.categoryLine || refineCategory(brief, sector, locale) || bank.category
   const chipsFromBrief = claimChip(brief, bank.chips[0])
   const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
@@ -475,9 +529,12 @@ export function decideDirection(input: DirectionInput): DirectionDecision {
       ? [chipsFromBrief, selected.tagline].filter((c, i, a) => c && a.indexOf(c) === i).slice(0, 2)
       : [chipsFromBrief, ...bank.chips.filter((c) => c !== chipsFromBrief)].slice(0, 2)
   const productPrefix =
-    hints.productPrefix ?? (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans' ? bank.prefixes[input.variationIndex % bank.prefixes.length] : '')
+    hints.productPrefix ??
+    (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans'
+      ? bank.prefixes[variationIndex % bank.prefixes.length]
+      : '')
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
-  const direction: DesignDirection = {
+  return {
     surface,
     archetype: dna.id as StudioArchetype,
     background,
@@ -501,17 +558,79 @@ export function decideDirection(input: DirectionInput): DirectionDecision {
     sector,
     locale,
   }
-  const winner = scores.find((row) => row.id === direction.archetype) ?? {
-    id: direction.archetype,
-    score: pick.score,
-    parts: pick.parts,
+}
+
+function familyFor(archetype: StudioArchetype): StudioFamily {
+  return familyOf(archetype) ?? 'marble'
+}
+
+export function slimDirectionOffer(offer: DirectionOffer): StudioDirectionOffer {
+  return {
+    selectedIndex: offer.selectedIndex,
+    candidates: offer.candidates.map((row) => ({
+      index: row.index,
+      family: row.family,
+      archetype: row.direction.archetype,
+      background: row.direction.background,
+      temperament: row.direction.temperament,
+      score: row.score,
+      selected: row.selected,
+    })),
   }
-  const runner = scores.find((row) => row.id !== winner.id)
+}
+
+export function directionOffer(
+  input: DirectionInput,
+  ranked = rankDirectionPool(input),
+  painted?: DesignDirection,
+): DirectionOffer {
+  const winnerId = ranked.pick.dna.id as StudioArchetype
+  let rows = ranked.pool
+  if (!rows.some((row) => row.dna.id === winnerId)) {
+    rows = [ranked.pick, ...rows.filter((row) => row.dna.id !== winnerId)].slice(0, 3)
+  }
+  const candidates: DirectionCandidate[] = rows.map((row, i) => {
+    const selected = row.dna.id === winnerId
+    const direction = selected
+      ? (painted && painted.archetype === winnerId
+          ? painted
+          : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, input.variationIndex))
+      : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, 0)
+    return {
+      index: i + 1,
+      family: familyFor(direction.archetype),
+      direction,
+      score: row.score,
+      selected,
+    }
+  })
+  return {
+    candidates,
+    selectedIndex: candidates.find((row) => row.selected)?.index ?? 1,
+  }
+}
+
+export function decideDirection(input: DirectionInput): DirectionDecision {
+  const ranked = rankDirectionPool(input)
+  const direction = materializeDirection(
+    input,
+    ranked.pick.dna,
+    ranked.hints,
+    ranked.temperamentGuess,
+    input.variationIndex,
+  )
+  const winner = ranked.scores.find((row) => row.id === direction.archetype) ?? {
+    id: direction.archetype,
+    score: ranked.pick.score,
+    parts: ranked.pick.parts,
+  }
+  const runner = ranked.scores.find((row) => row.id !== winner.id)
   return {
     direction,
-    scores,
-    claims: groundedClaims(input, hints, winner, runner),
+    scores: ranked.scores,
+    claims: groundedClaims(input, ranked.hints, winner, runner),
     winnerId: direction.archetype,
+    offer: directionOffer(input, ranked, direction),
   }
 }
 

@@ -48,6 +48,7 @@ describe('Learning UI snapshot', () => {
     expect(learningSnapshot().pendingHuman).toEqual([])
     expect(learningSnapshot().active).toHaveLength(1)
     expect(learnedPreferenceLine([rule.id])).toBe('Öğrendim: kahvede marble frame arketipi tercih.')
+    expect(learnedPreferenceLine([rule.id], { studio: true })).toBe('Öğrendim: kahvede marble frame arketipi tercih.')
   })
 
   it('describes closed-vocabulary recommendations and lets a human reject a pending rule', () => {
@@ -60,6 +61,7 @@ describe('Learning UI snapshot', () => {
       by: 'test',
     })
     expect(describeKnowledgeRule(rule)).toContain('global')
+    expect(describeKnowledgeRule(rule)).toContain('stüdyo yüzünü boyamaz')
     expect(rejectKnowledge(rule.id)).toBe(true)
     expect(learningSnapshot().pendingHuman).toEqual([])
     expect(learningSnapshot().empty).toBe(true)

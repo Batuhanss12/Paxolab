@@ -369,6 +369,8 @@ export default function App() {
           awaiting: awaitingRef.current,
           hasDesign: !!designRef.current,
           state: stateRef.current.conversation,
+          studioCritic: designRef.current?.studio?.critic,
+          directionOffer: designRef.current?.studio?.offer,
         })
 
         briefRef.current = result.brief

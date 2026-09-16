@@ -6,7 +6,6 @@ import {
   barcodeBlock,
   benefitColumn,
   benefitRow,
-  brandMark,
   brandPill,
   chip,
   claimBand,
@@ -19,6 +18,7 @@ import {
   notesTable,
   nutritionTable,
   nutritionTableHeight,
+  paintMark,
   paragraph,
   pictogramRow,
   pictogramsFor,
@@ -31,13 +31,14 @@ import {
   thinDoubleFrame,
   titleCard,
   verticalBrand,
+  STUDIO_MIN_LOGO_R,
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageLine } from './copyBank'
 import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
-import { cityLine, marginFor, type LayoutCtx } from './layoutContext'
+import { cityLine, identOf, marginFor, withIdent, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
 
@@ -66,9 +67,9 @@ function darkLandscape(ctx: LayoutCtx): string {
   parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { uid: ctx.uid, span: 0.66 }))
   const ink = d.palette.ink
   const accent = d.palette.accent
-  const lock = stackedLockup(ledger, d, w / 2, h * 0.08, w - m * 2, copy.brand, '', { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent })
+  const lock = stackedLockup(ledger, d, w / 2, h * 0.08, w - m * 2, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.015, w - m * 2, copy.product, { color: accent, accent, category: d.categoryLine, max: Math.min(6.5, w * 0.085) })
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.015, w - m * 2, copy.product, withIdent(ctx, { color: accent, accent, category: d.categoryLine, max: Math.min(6.5, w * 0.085) }))
   parts.push(stack.markup)
   // tagline above the foot
   const tagY = h * 0.86
@@ -96,9 +97,9 @@ function inkWashFront(ctx: LayoutCtx): string {
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.85))
-  const lock = stackedLockup(ledger, d, w / 2, m * 2, w - m * 3, copy.brand, cityLine(ctx.brief), { color: ink, markColor: accent, brandMax: Math.min(11, w * 0.16) })
+  const lock = stackedLockup(ledger, d, w / 2, m * 2, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(11, w * 0.16) }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.05, w - m * 3, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.14) })
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.05, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.14) }))
   parts.push(stack.markup)
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.5, 'sans', 3, 0.5)
   const tag = stackedWords(ledger, w / 2, stack.bottom + h * 0.05, tagWords, 1.6, ink, w * 0.55)
@@ -125,12 +126,12 @@ function marbleFront(ctx: LayoutCtx): string {
   const bx = m * 1.6
   const bw = w - bx * 2
   const by = h * 0.09
-  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 11) })
+  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 11) }))
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
   parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, d.categoryLine, 1.5, ink, bw))
-  const stack = productStack(ledger, d, w / 2, h * 0.7, w - m * 2, copy.product, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) })
+  const stack = productStack(ledger, d, w / 2, h * 0.7, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
   parts.push(stack.markup)
   if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
   return parts.join('')
@@ -141,11 +142,11 @@ function botanicalCardFront(ctx: LayoutCtx): string {
   const m = marginFor(w, h)
   const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
   const ink = d.palette.ink
-  const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6)
+  const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6, identOf(ctx))
   parts.push(pill.markup)
   const cardW = w - m * 2
   const cardY = Math.max(pill.box.y + pill.box.h + h * 0.14, h * 0.4)
-  const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, { prefix: d.productPrefix })
+  const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
   parts.push(card.markup)
   const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
   parts.push(band.markup)
@@ -162,18 +163,18 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const ink = d.palette.ink
   const accent = d.palette.accent
   // brand small top-left, monogram top-right
-  const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4, 1.8, 'sans-heavy', 0.2)
+  const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4 * ctx.titleScale, 1.8 * ctx.titleScale, 'sans-heavy', 0.2)
   parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2 }))
   ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, 'sans-heavy', bSize * 0.2), bSize)
-  const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent)
+  const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent, identOf(ctx))
   parts.push(mono.markup)
   // product light + heavy, left aligned, mid
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const first = words.length > 1 ? words.slice(0, -1).join(' ') : ''
   const last = words[words.length - 1] ?? ''
   const colW = w - m * 2
-  const titleMax = Math.min(9, colW * 0.16)
-  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8, 'sans-heavy', 0.02))
+  const titleMax = Math.min(9, colW * 0.16) * ctx.titleScale
+  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
   let y = Math.max(mono.bottom + 6, h * 0.42)
   if (first) {
     parts.push(textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 }))
@@ -239,9 +240,9 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.55, accent, 0.8))
   const hdr = backHeaders(d.locale)
   // header lockup
-  const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', { color: ink, markColor: accent, brandMax: Math.min(7, w * 0.1) })
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(7, w * 0.1) }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + 1, w - m * 3, copy.product, { color: ink, accent, category: d.categoryLine, max: Math.min(4.6, w * 0.065) })
+  const stack = productStack(ledger, d, w / 2, lock.bottom + 1, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(4.6, w * 0.065) }))
   parts.push(stack.markup)
   let y = stack.bottom + 3
   // story
@@ -360,7 +361,7 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   const colW = w - m * 1.6
   if (arche === 'landscape-window' && full) {
     // Anadolu Bal side: brand small, "DOĞADAN SOFRANIZA" words, benefit column with icons
-    const lock = stackedLockup(ledger, d, w / 2, m, colW, copy.brand, '', { color: ink, brandMax: Math.min(4.6, w * 0.16), markColor: d.palette.accent })
+    const lock = stackedLockup(ledger, d, w / 2, m, colW, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(4.6, w * 0.16), markColor: d.palette.accent }))
     parts.push(lock.markup)
     const words = stackedWords(ledger, w / 2, lock.bottom + 3, d.manifesto.slice(0, 3), Math.min(2.2, w * 0.075), d.palette.accent2, colW)
     parts.push(words.markup)
@@ -380,8 +381,8 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   if (full) {
     // GUESS / Rebull side: mark top, stacked manifesto middle, brand bottom, spine text along the edge
     const r = Math.min(w * 0.14, 5)
-    parts.push(brandMark(markKindFor(d), w / 2, m + r * 1.2, r, ink, copy.brand))
-    ledger.add('element', 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.4)
+    parts.push(paintMark(markKindFor(d), w / 2, m + r * 1.2, r, ink, copy.brand, identOf(ctx)))
+    ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'side-logo' : 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.4)
     const words = stackedWords(ledger, w / 2, h * 0.36, d.manifesto.slice(0, 4), Math.min(2.4, w * 0.085), ink, colW)
     parts.push(words.markup)
     const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), colW, Math.min(3.6, w * 0.12), 1.6, pairingFaces(d.typePairing).brand, 0.16)
@@ -395,8 +396,8 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   if (compact) {
     // mark on top, brand near the foot, rotated product line between them
     const r = Math.min(w * 0.16, 3.6)
-    parts.push(brandMark(markKindFor(d), w / 2, m + r * 1.1, r, ink, copy.brand))
-    ledger.add('element', 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.2)
+    parts.push(paintMark(markKindFor(d), w / 2, m + r * 1.1, r, ink, copy.brand, identOf(ctx)))
+    ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'side-logo' : 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.2)
     const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), colW, Math.min(2.8, w * 0.12), 1.4, pairingFaces(d.typePairing).brand, 0.14)
     const by = h - m * 1.6
     parts.push(textEl({ x: w / 2, y: by, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: brandSize * 0.14 }))
@@ -428,7 +429,7 @@ export function paintBoxTop(ctx: LayoutCtx, which: 'top' | 'bottom'): string {
   const parts: string[] = [ground(w, h, bg)]
   if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, Math.min(m * 0.5, 1.6), d.palette.accent, 0.7))
   const tall = h >= 14
-  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w - m * 2, Math.min(tall ? 5 : 3.4, h * 0.34), 1.6, pairingFaces(d.typePairing).brand, 0.16)
+  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w - m * 2, Math.min(tall ? 5 : 3.4, h * 0.34) * ctx.titleScale, 1.6 * ctx.titleScale, pairingFaces(d.typePairing).brand, 0.16)
   const by = h / 2 + (tall ? -0.5 : brandSize * 0.35)
   parts.push(textEl({ x: w / 2, y: by, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: brandSize * 0.16 }))
   ledger.text('top-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.16), brandSize, 'middle')

@@ -39,6 +39,11 @@ export function describeRecommendation(rec: KnowledgeRecommendation): string {
   return `${pretty(rec.background)} dokusu ${verb}`
 }
 
+/** Studio painter consumes only archetype/background hints. Kit motif/cue recs do not paint P1. */
+export function paintsStudioFace(rec: KnowledgeRecommendation): boolean {
+  return rec.kind === 'studio-archetype' || rec.kind === 'studio-background'
+}
+
 export function describeCondition(condition: KnowledgeCondition): string {
   const surface = condition.surface === 'label' ? 'etiket' : condition.surface === 'box' ? 'kutu' : undefined
   const bits = [condition.sector, condition.style, surface].filter(Boolean)
@@ -52,15 +57,17 @@ export function describeScope(scope: KnowledgeScope): string {
 }
 
 export function describeKnowledgeRule(rule: DesignKnowledgeRule): string {
-  return `${describeScope(rule.scope)}: ${describeCondition(rule.condition)} — ${describeRecommendation(rule.recommendation)}`
+  const core = `${describeScope(rule.scope)}: ${describeCondition(rule.condition)} — ${describeRecommendation(rule.recommendation)}`
+  return paintsStudioFace(rule.recommendation) ? core : `${core} (kit; stüdyo yüzünü boyamaz)`
 }
 
 /** Spoken process note: "Öğrendim: kahvede marble frame arketipi tercih." */
-export function learnedPreferenceLine(ids: string[] | undefined): string {
+export function learnedPreferenceLine(ids: string[] | undefined, opts: { studio?: boolean } = {}): string {
   if (!ids?.length) return ''
   const phrases = ids
     .map((id) => knowledgeRule(id))
     .filter((rule): rule is DesignKnowledgeRule => Boolean(rule))
+    .filter((rule) => !opts.studio || paintsStudioFace(rule.recommendation))
     .map((rule) => {
       const rec = describeRecommendation(rule.recommendation)
       return rule.condition.sector ? `${rule.condition.sector}de ${rec}` : rec

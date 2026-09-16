@@ -170,7 +170,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
 }
 
 export function isIteration(text: string): boolean {
-  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga/i.test(
+  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga|yoğun|dolu|sıkışık|kalabalık/i.test(
     text,
   )
 }

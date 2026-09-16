@@ -1,6 +1,11 @@
 import type { DesignBrief, DesignSpec, Panel } from '../../types'
 import { Ledger } from './text'
-import type { DesignDirection } from './types'
+import {
+  clampStudioScale,
+  DEFAULT_STUDIO_IDENTITY,
+  type DesignDirection,
+  type StudioIdentity,
+} from './types'
 
 export type LayoutCtx = {
   panel: Panel
@@ -15,11 +20,49 @@ export type LayoutCtx = {
   wrapSeam: boolean
   /** The dieline carries a utility back (labelBack / legal-back) — fronts may drop legal copy. */
   hasBack: boolean
+  logoHref?: string
+  logoScale: number
+  titleScale: number
 }
 
-export function makeCtx(panel: Panel, d: DesignDirection, copy: DesignSpec['copy'], brief: DesignBrief, uid: string, paoMonths: string, wrapSeam = false, hasBack = false): LayoutCtx {
+export function makeCtx(
+  panel: Panel,
+  d: DesignDirection,
+  copy: DesignSpec['copy'],
+  brief: DesignBrief,
+  uid: string,
+  paoMonths: string,
+  wrapSeam = false,
+  hasBack = false,
+  identity: Partial<StudioIdentity> = {},
+): LayoutCtx {
   const product = copy.product.trim() || d.categoryLine
-  return { panel, w: panel.w, h: panel.h, d, copy: { ...copy, product }, brief, uid, ledger: new Ledger(panel), paoMonths, wrapSeam, hasBack }
+  const href = identity.logoHref?.trim()
+  return {
+    panel,
+    w: panel.w,
+    h: panel.h,
+    d,
+    copy: { ...copy, product },
+    brief,
+    uid,
+    ledger: new Ledger(panel),
+    paoMonths,
+    wrapSeam,
+    hasBack,
+    logoHref: href || undefined,
+    logoScale: clampStudioScale(identity.logoScale, DEFAULT_STUDIO_IDENTITY.logoScale),
+    titleScale: clampStudioScale(identity.titleScale, DEFAULT_STUDIO_IDENTITY.titleScale),
+  }
+}
+
+/** Spread onto lockup/stack opts so identity reaches anatomy without extra positional args. */
+export function withIdent<T extends object>(ctx: LayoutCtx, opts: T): T & StudioIdentity {
+  return { ...opts, logoHref: ctx.logoHref, logoScale: ctx.logoScale, titleScale: ctx.titleScale }
+}
+
+export function identOf(ctx: LayoutCtx): StudioIdentity {
+  return { logoHref: ctx.logoHref, logoScale: ctx.logoScale, titleScale: ctx.titleScale }
 }
 
 /** Landscape face: wider than tall by a clear margin. Layouts switch to two columns. */

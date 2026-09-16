@@ -78,6 +78,7 @@ export {
   initLearning,
   listObservations,
   observeFeedback,
+  observeCritic,
   observeOutcome,
   patternConfidence,
   rejectKnowledge,
@@ -94,6 +95,7 @@ export {
   describeScope,
   learnedPreferenceLine,
   learningSnapshot,
+  paintsStudioFace,
 } from './learningUi'
 export type { LearningSnapshot } from './learningUi'
 export { applyKnowledgeToBrief, matchingKnowledge } from './applyKnowledge'

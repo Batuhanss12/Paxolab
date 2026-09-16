@@ -57,11 +57,19 @@ export async function studioDirectionWithLlm(input: {
     `Colors: ${input.colors || '(none)'}`,
     `Avoid: ${(input.avoid ?? []).join(', ') || '(none)'}`,
   ].join('\n')
-  const parsed = await provider.generateStructured<LlmDirection>({
-    task: 'studio-direct',
-    system: SYSTEM_PROMPT,
-    user,
-    timeoutMs: 7000,
-  })
-  return sanitizeStudioDirection(parsed)
+  try {
+  try {
+    const parsed = await provider.generateStructured<LlmDirection>({
+      task: 'studio-direct',
+      system: SYSTEM_PROMPT,
+      user,
+      timeoutMs: 7000,
+    })
+    return sanitizeStudioDirection(parsed)
+  } catch {
+    return null
+  }
+} catch {
+    return null
+  }
 }

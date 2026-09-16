@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { DesignSpec } from '../types'
+import { studioProcessSummary } from '../engine/studio/faceCaption'
 import { downloadZip } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
 
@@ -11,6 +11,7 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
   const [exportNote, setExportNote] = useState('')
   const passed = design.preflight.items.filter((i) => i.status === 'pass').length
   const blocked = design.preflight.blocking
+  const summary = studioProcessSummary(design)
 
   function onZip() {
     const ok = downloadZip(design)
@@ -33,7 +34,7 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       </header>
 
       <p className="prod__lead">
-        {design.designPlan?.summaryTr ? `${design.designPlan.summaryTr}. ` : ''}
+        {summary ? `${summary}. ` : ''}
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
           : design.overrides.printReady

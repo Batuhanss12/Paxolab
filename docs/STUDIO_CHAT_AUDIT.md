@@ -2,7 +2,7 @@
 
 **Tarih:** 16 Eyl 2026  
 **Ürün:** Grapxor / Paxolab  
-**Durum:** C0–C6 kapandı. Sıradaki C7 (öğrenme halkası).  
+**Durum:** C0–C8 kapandı. Design Intelligence Reality Audit: `docs/PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md` (FRAGMENTED snapshot). D0/D1 logo+ölçek: `docs/STUDIO_D1.md`. D2 critic→C6: `docs/STUDIO_D2.md`.  
 **Önceki program:** S0–S9 kapandı (`docs/STUDIO_STAGE_AUDIT.md`). Bu belge *sohbet → brief → yön → yapı → öğrenme* dilimidir.
 
 Kilit (değişmez): **LLM SVG çizmez. Packfy / SAM / YOLO / raster-to-SVG / image-gen yok. 29 katalog freeze durur. 18 stüdyo yüz hash bilinçli güncellenmedikçe durur. Learning Gate global’i otomatik açmaz. FOGRA/CMYK yok.**
@@ -51,8 +51,8 @@ S9 sonrası üretim dürüst. Sohbet ve yön hâlâ **sektör şablonuna** yakı
 | Yapı / dieline seçimi | **3.5** | C5 ranking + offer; picker ölçü sonra başlat |
 | Yön (brief → arketip) | **3.5** | C3 skor + C6 veto pin-skip; why grounded |
 | Copy anatomisi | **3.5** | C4: user/brief/bank; slogan lockup’a iner; kategori/chip hâlâ bank |
-| Öğrenme | **2.5** | S7 UI var; generate `runLearningCycle` çağırmaz |
-| LLM orkestrasyon | **2.5** | Fail-open; `brief-extract` yapı/şablon bilmez |
+| Öğrenme | **3.5** | C7: observe sonrası user/brand auto eşik; global insan; empty = baseline |
+| LLM orkestrasyon | **3.5** | C8: allowlist extract + kapalı direction; SVG/geometry drop; fail-open |
 | Freeze / determinizm | **4.5** | 29 kit + 18 stüdyo hash |
 | Üretim dürüstlüğü | **3.5** | S9: exportOk, 3 mm, PDF/X-4 sRGB iddiası, font subset notu |
 
@@ -134,13 +134,13 @@ Bu **yanlış değil referans DNA** (TASARIM REF). Yanlış olan: brief (renk, h
 
 İlk yüz “tamam” görünür; stüdyo kararı eksik brief’ten gelir.
 
-### 2.7 Öğrenme generate’e bağlı değil
+### 2.7 Öğrenme halkası (C7)
 
-S7 panel `runLearningCycle` çalıştırır. `FormaLocalEngine.generate` çağırmaz (bilinçli, freeze). Sonuç: rating/export observation birikir; kural **insan paneli olmadan** sohbeti değiştirmez. “Zamanla gelişsin” kapısı var, halka sohbette kapalı.
+`observeFeedback` / `observeOutcome` sonrası `runLearningCycle({ approve: 'automated' })`. User/brand eşikte açılır; global validated kalır. Empty store golden/kit baseline. S7 panel hâlâ human global onayı.
 
-### 2.8 LLM brief-extract yapıyı bilmiyor
+### 2.8 LLM brief + yön (C8)
 
-`nlu.ts` SYSTEM_PROMPT: marka, sektör, yüzey, renk, ruh — **structureId / template / kutu tipi yok**. Endpoint kapalıysa `null`. Fail-open doğru; canlıyken de yapı çıkmaz.
+`extractBriefWithLlm` allowlist; `templateId` / ölçü / SVG düşer. `studioDirectionWithLlm` kapalı enum. Endpoint yok veya hata → heuristic generate. Yapı hâlâ C5.
 
 ---
 
@@ -187,8 +187,8 @@ Bir faz kapanmadan sonrakine atlama. Her faz: kod + test + `docs/STUDIO_CHAT_Cn.
 | **C4** | Copy brief’ten | Bank fallback; kullanıcı satırı/hikâye/claim kazanır | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C4.md` |
 | **C5** | Yapı zekâsı | Ürün fiziği → 3 yapı + gerekçe (parfüm tuck, atıştırmalık tepsi, kargo mailer) | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C5.md` |
 | **C6** | Stüdyo konuşması | “Neden bu yön”; veto; vary tam havuz; critic TR | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C6.md` |
-| **C7** | Öğrenme halkası | Generate sonrası observation; user/brand auto eşik; global insan; boş = baseline | Orta | Bekler |
-| **C8** | LLM brief+yön | Extract’e yapı/renk/hikâye; fail-open; SVG yok | Düşük | Bekler |
+| **C7** | Öğrenme halkası | Generate sonrası observation; user/brand auto eşik; global insan; boş = baseline | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C7.md` |
+| **C8** | LLM brief+yön | Extract’e yapı/renk/hikâye; fail-open; SVG yok | Düşük | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C8.md` |
 
 Park: yeni DNA (referans klasörü olmadan), FOGRA, A/B, RL, foto plaka.
 
@@ -236,6 +236,10 @@ Yapılacak:
 | C0 | bu belge + canvas |
 | C1…C8 | `docs/STUDIO_CHAT_Cn.md` — diff özeti, test komutu, tarayıcı notu |
 
-C6 notu: why/veto/vary `decideDirection` + `avoidStudioFamilies` üzerinden; C5 yapı katmanı ayrı durur. C7 yok.
+C6 notu: why/veto/vary `decideDirection` + `avoidStudioFamilies` üzerinden; C5 yapı katmanı ayrı durur.
+
+C7 notu: mevcut Learning Gate sohbet feedback’ine bağlandı. Yeni motor yok.
+
+C8 notu: LLM yalnız structured brief/yön. Painter, C5, C6, C7 deterministic. Reality Audit başlamadı.
 
 Durum tablosu §5 her kapanışta güncellenir.

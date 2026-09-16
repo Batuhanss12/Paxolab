@@ -42,7 +42,7 @@ export type KnowledgeRecommendation =
 
 export type KnowledgeState = 'candidate' | 'validated' | 'active' | 'deprecated' | 'rejected'
 
-export type KnowledgeSource = 'user_feedback' | 'outcome' | 'manual'
+export type KnowledgeSource = 'user_feedback' | 'outcome' | 'manual' | 'critic'
 
 export type KnowledgeTransition = {
   at: number

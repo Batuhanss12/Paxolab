@@ -3,14 +3,18 @@ export { composeStudioArtwork } from './composeStudioArtwork'
 export {
   decideDirection,
   describeDirection,
+  directionOffer,
   hashSeed,
   hintsFromBrief,
   resolveDirection,
   resolveStudioCopy,
+  slimDirectionOffer,
   studioPalette,
+  type DirectionCandidate,
   type DirectionClaim,
   type DirectionDecision,
   type DirectionInput,
+  type DirectionOffer,
 } from './direction'
 export { applyStudioPreflight, STUDIO_MIN_TEXT_MM, STUDIO_FLOOR_TEXT_MM } from './studioPreflight'
 export {
@@ -29,8 +33,12 @@ export {
   assembleStudioHints,
   explainStudioDirection,
   inspectStudioDirection,
+  inspectStudioDirectionOffer,
   parseDirectionTalk,
 } from './directionTalk'
+export { APPLY_STUDIO_CRITIC, studioCriticActions, studioCriticOffer, talkForCritic } from './studioCritic'
+export { describeDirectionOffer, directionOfferLine, parseDirectionChoice } from './directionOffer'
+export { studioFaceLabel, studioProcessSummary } from './faceCaption'
 export {
   ALL_ARCHETYPES,
   ALL_BACKGROUNDS,

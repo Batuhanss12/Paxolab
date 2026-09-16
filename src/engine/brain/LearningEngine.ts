@@ -213,6 +213,36 @@ export function observeFeedback(log: DesignDecisionLog, feedback: StructuredFeed
     }
   })
   void persist()
+  afterObservation()
+  return out
+}
+
+/** Studio ledger → C6-shaped feedback. Does not avoid the current archetype (quieter/vary keep the family). */
+export function observeCritic(log: DesignDecisionLog, feedback: StructuredFeedback[], ctx: ObserveContext = {}): Observation[] {
+  void hydrate()
+  const at = Date.now()
+  const out: Observation[] = []
+  const condition = conditionOf(log)
+  feedback.forEach((fb, index) => {
+    const recommendation = feedbackRecommendation(fb)
+    for (const scope of scopesFor(ctx.brandKey ?? log.brief.brandKey ?? '', ctx.userId ?? 'local')) {
+      const row: Observation = {
+        id: `${log.designId}:${log.revision}:critic${index}:${scopeKey(scope)}`,
+        at,
+        designId: log.designId,
+        scope,
+        condition,
+        signal: 'critic',
+        feedback: { type: fb.type, target: fb.target, direction: fb.direction },
+        recommendation,
+        support: 1,
+      }
+      pushObservation(row)
+      out.push(row)
+    }
+  })
+  void persist()
+  afterObservation()
   return out
 }
 
@@ -274,6 +304,7 @@ export function observeOutcome(log: DesignDecisionLog, ctx: ObserveContext = {})
     })
   }
   void persist()
+  afterObservation()
   return out
 }
 
@@ -336,7 +367,11 @@ export function deriveKnowledgeCandidates(patterns: LearningPattern[] = aggregat
         recommendation: pattern.recommendation,
         confidence: patternConfidence(pattern),
         sampleCount: pattern.sampleCount,
-        source: pattern.evidence.some((id) => /:out\d/.test(id)) ? 'outcome' : 'user_feedback',
+        source: pattern.evidence.some((id) => /:out\d/.test(id))
+          ? 'outcome'
+          : pattern.evidence.some((id) => /:critic/.test(id))
+            ? 'critic'
+            : 'user_feedback',
         evidence: pattern.evidence,
       }),
     )
@@ -420,4 +455,13 @@ export function runLearningCycle(opts: { approve?: 'none' | 'automated' | 'human
     }
   }
   return { candidates, validated, activated }
+}
+
+/** User/brand may activate at threshold. Global stays validated until a human. Empty store is a no-op. */
+function afterObservation(): void {
+  try {
+    runLearningCycle({ approve: 'automated' })
+  } catch {
+    /* learning never blocks generate */
+  }
 }

@@ -318,6 +318,8 @@ export type EngineResult = {
   state?: import('./engine/conversationState').ConversationState
   /** C5 ranked structure families. Absent on ask/hint turns. */
   structureOffer?: import('./engine/catalog/structureRecommend').StructureRecommendation
+  /** D3 ranked studio directions. User picks “2. yön”; critic does not. */
+  directionOffer?: import('./engine/studio/types').StudioDirectionOffer
 }
 
 export type DesignRating = {

@@ -31,8 +31,12 @@ import {
   applyDirectionTalk,
   explainStudioDirection,
   inspectStudioDirection,
+  inspectStudioDirectionOffer,
   parseDirectionTalk,
 } from './studio/directionTalk'
+import { APPLY_STUDIO_CRITIC, talkForCritic } from './studio/studioCritic'
+import { describeDirectionOffer, parseDirectionChoice } from './studio/directionOffer'
+import type { StudioCriticOffer, StudioDirectionOffer } from './studio/types'
 import { familyOf, hintsFromFamily, hintsFromVeto, applyVetoToHints } from './studio/family'
 
 export { askCopy, nextMissing } from './conversationAsk'
@@ -62,6 +66,12 @@ function withUnderstanding(
   return mergeBrief(brief, understanding.patch)
 }
 
+function directionFollowup(brief: DesignBrief): { extra: string[]; directionOffer: StudioDirectionOffer } {
+  const directionOffer = inspectStudioDirectionOffer(brief)
+  const line = describeDirectionOffer(directionOffer)
+  return { extra: line ? [line] : [], directionOffer }
+}
+
 function generateResult(brief: DesignBrief, ack?: string, text = '', state?: ConversationState): EngineResult {
   const offer = recommendStructures(brief)
   const tmpl =
@@ -80,13 +90,16 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
       ? ' Kutu ve etiket istedin; önce kutuyu çiziyorum. Etiket için “etiketi de üret” yaz.'
       : ''
   const structure = describeStructureOffer(next, tmpl, pinned)
+  const directionOffer = inspectStudioDirectionOffer(next)
+  const directionLine = describeDirectionOffer(directionOffer)
   return {
     brief: next,
     awaiting: null,
     replies: [
       `${briefing}${dual} ${structure} Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.`,
       'Yönü konuşarak iterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “etiketi de üret”.',
-    ],
+      directionLine,
+    ].filter(Boolean),
     shouldGenerate: true,
     showTemplates: false,
     overridePatch: studioGeneratePatch(next),
@@ -95,6 +108,7 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
     feedback: parseFeedback(text),
     state,
     structureOffer: pinned,
+    directionOffer,
   }
 }
 
@@ -208,6 +222,10 @@ export function runConversation(input: {
   hasDesign: boolean
   /** Asked / answered ledger. Omit for stateless callers (tests, template pick). */
   state?: ConversationState
+  /** Ledger C6 offers from the current studio face. */
+  studioCritic?: StudioCriticOffer[]
+  /** D3 ranked directions from the current studio face. */
+  directionOffer?: StudioDirectionOffer
 }): EngineResult {
   const text = input.text.trim()
   let state = noteTurn(input.state ?? emptyConversationState())
@@ -255,6 +273,52 @@ export function runConversation(input: {
     return generateResult(labelBrief, `${directionBriefing(labelBrief)} Şişe etiketini kuruyorum.`, text, state)
   }
 
+  const listedOffer = input.directionOffer ?? inspectStudioDirectionOffer(input.brief)
+  const directionPick = input.hasDesign ? parseDirectionChoice(text, listedOffer.candidates.length) : null
+  if (directionPick) {
+    const hit = listedOffer.candidates[directionPick - 1]
+    if (hit) {
+      if (hit.selected) {
+        return {
+          brief: input.brief,
+          awaiting: input.awaiting,
+          replies: [`Zaten ${hit.index}. yön (${hit.family}) üzerindeyiz.`],
+          shouldGenerate: false,
+          showTemplates: false,
+          overridePatch: {},
+          copyPatch: {},
+          note: 'direction-same',
+          state,
+          directionOffer: listedOffer,
+        }
+      }
+      const applied = applyDirectionTalk(
+        input.brief,
+        {
+          kind: 'pin',
+          vetoFamilies: [],
+          pinFamily: hit.family,
+          note: `${hit.index}. yönü seçtim: ${hit.family} (${hit.archetype}).`,
+        },
+        text,
+      )
+      const follow = directionFollowup(applied.brief)
+      return {
+        brief: applied.brief,
+        awaiting: null,
+        replies: [applied.note, ...follow.extra],
+        shouldGenerate: true,
+        showTemplates: false,
+        overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
+        copyPatch: {},
+        note: 'direction-pick',
+        feedback: parseFeedback(text),
+        state,
+        directionOffer: follow.directionOffer,
+      }
+    }
+  }
+
   const currentFamily =
     input.brief.studioFamily ??
     (input.hasDesign ? familyOf(inspectStudioDirection(input.brief).direction.archetype) : undefined)
@@ -288,10 +352,11 @@ export function runConversation(input: {
         state,
       }
     }
+    const follow = directionFollowup(applied.brief)
     return {
       brief: applied.brief,
       awaiting: null,
-      replies: [applied.note],
+      replies: [applied.note, ...follow.extra],
       shouldGenerate: true,
       showTemplates: false,
       overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
@@ -299,6 +364,42 @@ export function runConversation(input: {
       note: talk.kind,
       feedback: parseFeedback(text),
       state,
+      directionOffer: follow.directionOffer,
+    }
+  }
+
+  if (input.hasDesign && APPLY_STUDIO_CRITIC.test(text)) {
+    const action = input.studioCritic?.[0]
+    if (!action) {
+      return {
+        brief: input.brief,
+        awaiting: input.awaiting,
+        replies: ['Kritik C6 önerisi yok — ledger temiz.'],
+        shouldGenerate: false,
+        showTemplates: false,
+        overridePatch: {},
+        copyPatch: {},
+        note: 'critic-idle',
+        state,
+      }
+    }
+    const applied = applyDirectionTalk(input.brief, talkForCritic(action.kind), action.utterance)
+    const follow = directionFollowup(applied.brief)
+    return {
+      brief: applied.brief,
+      awaiting: null,
+      replies: [`Kritik önerisi: ${action.reason}. ${applied.note}`, ...follow.extra],
+      shouldGenerate: true,
+      showTemplates: false,
+      overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
+      copyPatch: {},
+      note: 'critic-apply',
+      feedback:
+        action.kind === 'quieter'
+          ? [{ type: 'brand_fit', target: 'character', direction: 'strengthen', strength: 'high', raw: 'critic-apply:quieter' }]
+          : [{ type: 'composition', target: 'layout', direction: 'vary', strength: 'medium', raw: 'critic-apply:vary' }],
+      state,
+      directionOffer: follow.directionOffer,
     }
   }
 

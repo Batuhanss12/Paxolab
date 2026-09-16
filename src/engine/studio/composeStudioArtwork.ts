@@ -10,9 +10,10 @@ import { languageId } from '../artwork/languages'
 import { paintBoxBack, paintBoxFlap, paintBoxFront, paintBoxSide, paintBoxTop, paintGlue, paintPlain } from './boxLayouts'
 import { paintLabelBack, paintLabelFace } from './labelLayouts'
 import { makeCtx } from './layoutContext'
+import { studioCriticActions } from './studioCritic'
 import { dnaFor } from './referenceDna'
 import { studioFontStyle } from './text'
-import type { DesignDirection, StudioPanelReport, StudioReport } from './types'
+import type { DesignDirection, StudioIdentity, StudioPanelReport, StudioReport } from './types'
 
 export type StudioComposeInput = {
   brief: DesignBrief
@@ -20,6 +21,7 @@ export type StudioComposeInput = {
   copy: DesignSpec['copy']
   direction: DesignDirection
   system: DesignSystem
+  identity?: Partial<StudioIdentity>
 }
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
@@ -30,7 +32,7 @@ function wrap(panel: Panel, direction: DesignDirection, inner: string, role: str
 }
 
 export function composeStudioArtwork(input: StudioComposeInput): { artwork: ArtworkModel; report: StudioReport } {
-  const { brief, dieline, copy, direction, system } = input
+  const { brief, dieline, copy, direction, system, identity } = input
   const paoMonths = system.markRecipe?.paoMonths ?? '12M'
   const reports: StudioPanelReport[] = []
   let sideIndex = 0
@@ -39,7 +41,7 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
   const layers = dieline.panels.map((panel) => {
     const uid = `st-${panel.id}-${(direction.seed % 9973).toString(36)}`
     const kind = nativeKindFor(panel)
-    const ctx = makeCtx(panel, direction, copy, brief, uid, paoMonths, system.wrapSeam && (panel.id === 'label' || kind === 'hero-front'), hasBack)
+    const ctx = makeCtx(panel, direction, copy, brief, uid, paoMonths, system.wrapSeam && (panel.id === 'label' || kind === 'hero-front'), hasBack, identity)
     let inner = ''
     let role: StudioPanelReport['archetype'] = 'plain'
     if (direction.surface === 'label') {
@@ -89,6 +91,7 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
     outOfBounds,
     minTextMm: sizes.length ? Math.min(...sizes) : 0,
     anatomy: dnaFor(direction.archetype, direction.surface).anatomy,
+    critic: studioCriticActions({ collisions, outOfBounds, temperament: direction.temperament }),
   }
   return {
     artwork: {

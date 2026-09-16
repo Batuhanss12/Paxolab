@@ -1,4 +1,4 @@
-import type { DesignSpec } from '../types'
+import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { renderFrontSvg } from '../engine/artwork/renderArtwork'
 import { artworkFromDocument } from '../engine/document'
 
@@ -21,8 +21,7 @@ function DesignCard({ design, label }: { design: DesignSpec; label: string }) {
         }}
       />
       <small>
-        {design.designPlan?.heroGraphic.family ?? 'none'} · {design.designPlan?.composition.lockup ?? 'center'} · set{' '}
-        {(design.designPlan?.variationIndex ?? 0) + 1}
+        {studioFaceLabel(design)}
       </small>
     </article>
   )

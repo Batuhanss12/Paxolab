@@ -109,7 +109,7 @@ describe('Learning Gate — raw feedback → observation → candidate → valid
     expect(cycle.candidates.some((id) => id.startsWith('brand:'))).toBe(true)
     expect(cycle.candidates.some((id) => id.startsWith('user:'))).toBe(true)
     expect(cycle.candidates.some((id) => id.startsWith('global'))).toBe(false)
-    expect(cycle.activated.length).toBeGreaterThan(0)
+    expect(activeKnowledge().length).toBeGreaterThan(0)
     expect(activeKnowledge().every((rule) => rule.scope.level !== 'global')).toBe(true)
     expect(knowledgeVersion()).toBeGreaterThan(0)
 
@@ -179,12 +179,13 @@ describe('Learning Gate — raw feedback → observation → candidate → valid
   })
 
   it('active knowledge shapes future briefs as KNOWLEDGE_DERIVED, scoped to the brand, and rollback removes it', () => {
+    const baseline = engine.generate({ brief: lumaBrief() })
+    expect(baseline.appliedKnowledge).toBeUndefined()
+
     let spec: DesignSpec | undefined
     for (let i = 0; i < LEARNING_THRESHOLDS.minSamples.brand; i++) {
       spec = engine.generate({ brief: lumaBrief(), prev: spec, feedback: TOO_CLASSIC })
     }
-    const baseline = engine.generate({ brief: lumaBrief() })
-    expect(baseline.appliedKnowledge).toBeUndefined()
 
     runLearningCycle({ approve: 'automated' })
     const activeVersion = knowledgeVersion()

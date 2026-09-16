@@ -4,7 +4,9 @@ import {
   applyPlanToSystem,
   captureGenerateDecision,
   createPlan,
+  critiqueAsFeedback,
   critiquePlan,
+  observeCritic,
   observeFeedback,
   repairPlan,
   scoreDesign,
@@ -24,7 +26,7 @@ import { resolveCopyLocale } from './copyLocale'
 import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
-import { applyStudioPreflight, assembleStudioHints, composeStudioArtwork, familyOf, resolveDirection, type StudioReport } from './studio'
+import { applyStudioPreflight, assembleStudioHints, composeStudioArtwork, decideDirection, familyOf, slimDirectionOffer, type StudioReport } from './studio'
 import { studioHintsFromKnowledge } from './brain/studioKnowledge'
 import { mergeLlmCopy } from './llm/copyLlm'
 
@@ -138,7 +140,9 @@ export class FormaLocalEngine implements EnginePort {
       blankCanvas,
       backgroundTreatment: blankFace?.finish.backgroundTreatment,
     })
-    if (designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
+    const studioOn = !!overrides.studio
+    // Kit lockup only. Studio type scale is identity unless the user asked to resize.
+    if (!studioOn && designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
       overrides.titleScale = 1.1
     }
 
@@ -156,7 +160,6 @@ export class FormaLocalEngine implements EnginePort {
       heightMm: dieline.dimensions.H,
     }
 
-    const studioOn = !!overrides.studio
     const hero = findHeroPanel(dieline.panels)
     const studioKnowledge = studioOn ? studioHintsFromKnowledge(brief) : null
     const paint = (plan: typeof designPlan) => {
@@ -169,7 +172,7 @@ export class FormaLocalEngine implements EnginePort {
       if (studioOn) {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
         const surface = kind === 'label' ? 'label' : 'box'
-        const direction = resolveDirection({
+        const decided = decideDirection({
           brief: planBrief,
           sector: resolveSector(brief),
           style,
@@ -185,9 +188,21 @@ export class FormaLocalEngine implements EnginePort {
             ...(overrides.direction ? [overrides.direction] : []),
           ]),
         })
-        const composed = composeStudioArtwork({ brief, dieline, copy, direction, system })
+        const direction = decided.direction
+        const composed = composeStudioArtwork({
+          brief,
+          dieline,
+          copy,
+          direction,
+          system,
+          identity: {
+            logoHref: input.logoHref,
+            logoScale: overrides.logoScale,
+            titleScale: overrides.titleScale,
+          },
+        })
         artwork = composed.artwork
-        studio = composed.report
+        studio = { ...composed.report, offer: slimDirectionOffer(decided.offer) }
       } else {
         artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
       }
@@ -262,16 +277,31 @@ export class FormaLocalEngine implements EnginePort {
           }
         : undefined,
       studioLedger: pack.studio
-        ? { collisions: pack.studio.collisions, outOfBounds: pack.studio.outOfBounds, minTextMm: pack.studio.minTextMm }
+        ? {
+            collisions: pack.studio.collisions,
+            outOfBounds: pack.studio.outOfBounds,
+            minTextMm: pack.studio.minTextMm,
+            temperament: pack.studio.direction.temperament,
+          }
         : undefined,
       directionFromLlm: pack.studio?.direction.source === 'llm',
     })
     if (decision && input.feedback?.length) {
-      // Revision talk becomes learning evidence — observation only, never a rule.
+      // Observation → candidate → validate; user/brand may auto-activate. Global stays human.
       try {
         observeFeedback(decision, input.feedback)
       } catch {
         /* learning is an enhancement */
+      }
+    }
+    if (decision && studioOn) {
+      const criticFb = critiqueAsFeedback(decision.critiques).filter((row) => row.raw?.includes('studioLedger'))
+      if (criticFb.length) {
+        try {
+          observeCritic(decision, criticFb)
+        } catch {
+          /* critic learning is an enhancement */
+        }
       }
     }
 

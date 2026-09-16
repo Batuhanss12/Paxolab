@@ -38,8 +38,8 @@ export function applyStudioPreflight(base: PreflightReport, report: StudioReport
     },
     {
       id: 'asset-family',
-      label: 'Asset family',
-      detail: `studio · ${report.direction.archetype} · ${report.direction.background}`,
+      label: 'Stüdyo DNA',
+      detail: `${report.direction.archetype} · ${report.direction.background} — kit asset language değil`,
       status: 'pass',
     },
     {

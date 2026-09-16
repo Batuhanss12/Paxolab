@@ -149,5 +149,10 @@ describe('Design Critic — structured findings, no SVG mutation', () => {
       ]),
     )
     expect(findings.some((row) => row.target === 'collision' && row.evidence.source === 'preflight')).toBe(false)
+    expect(findings.find((row) => row.evidence.topic === 'collision')?.suggestedDirection).toBe('quieter')
+    expect(findings.find((row) => row.evidence.topic === 'type-fit')?.suggestedDirection).toBe('preflight')
+    const feedback = critiqueAsFeedback(findings)
+    expect(feedback).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'brand_fit', direction: 'strengthen', raw: expect.stringContaining('studioLedger') })]))
+    expect(feedback.some((row) => row.direction === 'preflight' || row.direction === 'enlarge')).toBe(false)
   })
 })

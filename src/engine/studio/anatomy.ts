@@ -9,7 +9,14 @@ import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { Ledger, fitSize, pairingFaces, textEl, textWidth, wrapByWidth, type Face } from './text'
-import type { BenefitIcon, BenefitItem, DesignDirection, StudioPalette } from './types'
+import {
+  clampStudioScale,
+  type BenefitIcon,
+  type BenefitItem,
+  type DesignDirection,
+  type StudioIdentity,
+  type StudioPalette,
+} from './types'
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
 
@@ -69,6 +76,35 @@ export function brandMark(kind: MarkKind, cx: number, cy: number, r: number, col
   }
 }
 
+/** Below this radius the slot stays a vector mark even when a user logo is present. */
+export const STUDIO_MIN_LOGO_R = 2.5
+
+function escapeHref(href: string): string {
+  return href.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
+}
+
+/** Centered user logo. Replaces the vector monogram/mark when the brief carries a file. */
+export function brandLogo(cx: number, cy: number, r: number, href: string): string {
+  const s = r * 2
+  return `<image data-art="brand-logo" href="${escapeHref(href)}" x="${f(cx - s / 2)}" y="${f(cy - s / 2)}" width="${f(s)}" height="${f(s)}" preserveAspectRatio="xMidYMid meet" />`
+}
+
+/** Vector mark, or the user logo when href is present and the slot is large enough. */
+export function paintMark(
+  kind: MarkKind,
+  cx: number,
+  cy: number,
+  r: number,
+  color: string,
+  initials = 'A',
+  identity?: Partial<StudioIdentity>,
+): string {
+  const href = identity?.logoHref?.trim()
+  const scale = clampStudioScale(identity?.logoScale)
+  if (href && r >= STUDIO_MIN_LOGO_R) return brandLogo(cx, cy, r * scale, href)
+  return brandMark(kind, cx, cy, r, color, initials)
+}
+
 export function markKindFor(direction: DesignDirection): MarkKind {
   const s = direction.sector
   if (s === 'beverage') return 'drop'
@@ -109,21 +145,37 @@ export function stackedLockup(
   maxW: number,
   brand: string,
   sub: string,
-  opts: { color?: string; mark?: boolean; markColor?: string; brandMax?: number; brandMin?: number; markKind?: MarkKind } = {},
+  opts: {
+    color?: string
+    mark?: boolean
+    markColor?: string
+    brandMax?: number
+    brandMin?: number
+    markKind?: MarkKind
+    logoHref?: string
+    logoScale?: number
+    titleScale?: number
+  } = {},
 ): LockupResult {
   const faces = pairingFaces(d.typePairing)
   const color = opts.color ?? d.palette.ink
   const brandUpper = d.typePairing === 'script-accent/sans-heavy' ? brand : brand.toLocaleUpperCase('tr')
   const tracking = d.typePairing === 'spaced-serif/spaced-sans' ? 0.16 : d.typePairing === 'serif-display/sans-meta' ? 0.08 : 0.02
-  const brandMax = opts.brandMax ?? Math.min(maxW * 0.16, 11)
-  const size = fitSize(brandUpper, maxW, brandMax, opts.brandMin ?? 2.4, faces.brand, tracking)
+  const titleScale = clampStudioScale(opts.titleScale)
+  const brandMax = (opts.brandMax ?? Math.min(maxW * 0.16, 11)) * titleScale
+  const size = fitSize(brandUpper, maxW, brandMax, (opts.brandMin ?? 2.4) * titleScale, faces.brand, tracking)
   let y = top
   let out = ''
-  if (opts.mark) {
+  const href = opts.logoHref?.trim()
+  if (opts.mark || href) {
     const r = Math.max(2.2, size * 0.75)
-    out += brandMark(opts.markKind ?? markKindFor(d), cx, y + r, r, opts.markColor ?? d.palette.accent, brand)
-    ledger.add('element', 'brand-mark', cx - r * 1.3, y, r * 2.6, r * 2)
-    y += r * 2 + size * 0.55
+    const paintLogo = Boolean(href && r >= STUDIO_MIN_LOGO_R)
+    if (opts.mark || paintLogo) {
+      const painted = paintLogo ? r * clampStudioScale(opts.logoScale) : r
+      out += paintMark(opts.markKind ?? markKindFor(d), cx, y + painted, r, opts.markColor ?? d.palette.accent, brand, opts)
+      ledger.add('element', paintLogo ? 'brand-logo' : 'brand-mark', cx - painted * 1.3, y, painted * 2.6, painted * 2)
+      y += painted * 2 + size * 0.55
+    }
   }
   const baseline = y + size * 0.82
   out += textEl({ x: cx, y: baseline, text: brandUpper, size, face: faces.brand, fill: color, anchor: 'middle', tracking: size * tracking })
@@ -150,23 +202,42 @@ export function brandPill(
   top: number,
   brand: string,
   maxW: number,
+  ident: Partial<StudioIdentity> = {},
 ): { markup: string; box: { x: number; y: number; w: number; h: number } } {
   const faces = pairingFaces(d.typePairing)
-  const size = fitSize(brand, maxW - 6, 5.2, 2.2, 'sans-heavy', -0.02)
+  const titleScale = clampStudioScale(ident.titleScale)
+  const size = fitSize(brand, maxW - 6, 5.2 * titleScale, 2.2 * titleScale, 'sans-heavy', -0.02)
   const textW = textWidth(brand, size, 'sans-heavy', -size * 0.02)
   const padX = size * 0.9
   const w = textW + padX * 2
   const h = size * 1.9
   const x = right - w
   const rx = h / 2
-  const markup = `<g data-art="lockup" data-lockup="pill"><rect x="${f(x)}" y="${f(top)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />${textEl({ x: x + w / 2, y: top + h * 0.68, text: brand, size, face: faces.brand === 'sans-heavy' ? 'sans-heavy' : faces.brand, fill: d.palette.cardInk, anchor: 'middle', tracking: -size * 0.02 })}</g>`
+  let markup = `<g data-art="lockup" data-lockup="pill"><rect x="${f(x)}" y="${f(top)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />${textEl({ x: x + w / 2, y: top + h * 0.68, text: brand, size, face: faces.brand === 'sans-heavy' ? 'sans-heavy' : faces.brand, fill: d.palette.cardInk, anchor: 'middle', tracking: -size * 0.02 })}</g>`
   ledger.add('container', 'brand-pill', x, top, w, h)
   ledger.text('brand', x + w / 2, top + h * 0.68, textW, size, 'middle')
+  const href = ident.logoHref?.trim()
+  if (href) {
+    const r = (h / 2) * clampStudioScale(ident.logoScale)
+    const cx = Math.max(r + 0.4, x - r - 1.2)
+    const cy = top + h / 2
+    markup = `${brandLogo(cx, cy, r, href)}${markup}`
+    ledger.add('element', 'brand-logo', cx - r, cy - r, r * 2, r * 2)
+  }
   return { markup, box: { x, y: top, w, h } }
 }
 
 /** Monogram + brand under it (Capelli Fellici right column). */
-export function monogramLockup(ledger: Ledger, _d: DesignDirection, cx: number, top: number, brand: string, maxW: number, color: string): LockupResult {
+export function monogramLockup(
+  ledger: Ledger,
+  _d: DesignDirection,
+  cx: number,
+  top: number,
+  brand: string,
+  maxW: number,
+  color: string,
+  ident: Partial<StudioIdentity> = {},
+): LockupResult {
   const initials = brand
     .split(/\s+/)
     .filter(Boolean)
@@ -174,11 +245,21 @@ export function monogramLockup(ledger: Ledger, _d: DesignDirection, cx: number, 
     .join('')
     .slice(0, 2)
     .toLocaleUpperCase('en-US')
-  const monoSize = Math.min(maxW * 0.42, 16)
+  const titleScale = clampStudioScale(ident.titleScale)
+  const logoScale = clampStudioScale(ident.logoScale)
+  const href = ident.logoHref?.trim()
+  const monoSize = Math.min(maxW * 0.42, 16) * (href ? logoScale : 1)
   const baseline = top + monoSize * 0.85
-  let out = textEl({ x: cx, y: baseline, text: initials, size: monoSize, face: 'serif', fill: color, anchor: 'middle', tracking: -monoSize * 0.06 })
-  ledger.text('monogram', cx, baseline, textWidth(initials, monoSize, 'serif', -monoSize * 0.06), monoSize, 'middle')
-  const brandSize = fitSize(brand.toLocaleUpperCase('tr'), maxW, 2.8, 1.6, 'sans', 0.3)
+  let out = ''
+  if (href) {
+    const r = monoSize * 0.48
+    out = brandLogo(cx, top + r, r, href)
+    ledger.add('element', 'brand-logo', cx - r, top, r * 2, r * 2)
+  } else {
+    out = textEl({ x: cx, y: baseline, text: initials, size: monoSize, face: 'serif', fill: color, anchor: 'middle', tracking: -monoSize * 0.06 })
+    ledger.text('monogram', cx, baseline, textWidth(initials, monoSize, 'serif', -monoSize * 0.06), monoSize, 'middle')
+  }
+  const brandSize = fitSize(brand.toLocaleUpperCase('tr'), maxW, 2.8 * titleScale, 1.6 * titleScale, 'sans', 0.3)
   const bBase = baseline + brandSize * 1.7
   const track = brandSize * 0.3
   out += textEl({ x: cx, y: bBase, text: brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans', fill: color, anchor: 'middle', tracking: track })
@@ -198,17 +279,29 @@ export function productStack(
   top: number,
   maxW: number,
   product: string,
-  opts: { color?: string; accent?: string; prefix?: string; category?: string; max?: number; anchor?: 'middle' | 'start'; upper?: boolean } = {},
+  opts: {
+    color?: string
+    accent?: string
+    prefix?: string
+    category?: string
+    max?: number
+    anchor?: 'middle' | 'start'
+    upper?: boolean
+    titleScale?: number
+    logoHref?: string
+    logoScale?: number
+  } = {},
 ): ProductLines {
   const faces = pairingFaces(d.typePairing)
   const color = opts.color ?? d.palette.ink
   const accent = opts.accent ?? d.palette.accent
   const anchor = opts.anchor ?? 'middle'
+  const titleScale = clampStudioScale(opts.titleScale)
   const x = cx
   let y = top
   let out = ''
   if (opts.prefix) {
-    const pSize = Math.min((opts.max ?? 8) * 0.78, 6.4)
+    const pSize = Math.min((opts.max ?? 8) * 0.78, 6.4) * titleScale
     const face: Face = faces.prefix
     const base = y + pSize * 0.9
     out += textEl({ x, y: base, text: opts.prefix, size: pSize, face, fill: accent, anchor, italic: face === 'serif-italic' })
@@ -216,9 +309,9 @@ export function productStack(
     y = base + pSize * 0.3
   }
   const text = opts.upper === false ? product : product.toLocaleUpperCase('tr')
-  const lines = wrapByWidth(text, maxW, 1, faces.product, 2).length > 1 && textWidth(text, opts.max ?? 8, faces.product) > maxW ? splitTitle(text) : [text]
-  const max = opts.max ?? 8
-  const size = Math.min(...lines.map((l) => fitSize(l, maxW, max, 2.6, faces.product, faces.product === 'sans-heavy' ? 0.02 : 0.06)))
+  const lines = wrapByWidth(text, maxW, 1, faces.product, 2).length > 1 && textWidth(text, (opts.max ?? 8) * titleScale, faces.product) > maxW ? splitTitle(text) : [text]
+  const max = (opts.max ?? 8) * titleScale
+  const size = Math.min(...lines.map((l) => fitSize(l, maxW, max, 2.6 * titleScale, faces.product, faces.product === 'sans-heavy' ? 0.02 : 0.06)))
   const track = size * (faces.product === 'sans-heavy' ? 0.02 : 0.06)
   for (const line of lines) {
     const base = y + size * 0.95
@@ -255,29 +348,27 @@ export function titleCard(
   w: number,
   product: string,
   category: string,
-  opts: { prefix?: string } = {},
+  opts: { prefix?: string; titleScale?: number; logoHref?: string; logoScale?: number } = {},
 ): { markup: string; bottom: number } {
   const pad = Math.max(2.2, w * 0.07)
   const inner = w - pad * 2
-  const probe = new Ledger(ledger.panel)
-  const stack = productStack(probe, d, x + w / 2, y + pad, inner, product, {
+  const stackOpts = {
     color: d.palette.cardInk,
     accent: d.palette.cardInk,
     prefix: opts.prefix,
     category,
     max: Math.min(9, inner * 0.16),
-  })
+    titleScale: opts.titleScale,
+    logoHref: opts.logoHref,
+    logoScale: opts.logoScale,
+  }
+  const probe = new Ledger(ledger.panel)
+  const stack = productStack(probe, d, x + w / 2, y + pad, inner, product, stackOpts)
   const h = stack.bottom - y + pad * 0.9
   const rx = Math.min(3, w * 0.08)
   const card = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />`
   ledger.add('container', 'title-card', x, y, w, h)
-  const real = productStack(ledger, d, x + w / 2, y + pad, inner, product, {
-    color: d.palette.cardInk,
-    accent: d.palette.cardInk,
-    prefix: opts.prefix,
-    category,
-    max: Math.min(9, inner * 0.16),
-  })
+  const real = productStack(ledger, d, x + w / 2, y + pad, inner, product, stackOpts)
   return { markup: `<g data-art="title-card">${card}${real.markup}</g>`, bottom: y + h }
 }
 
@@ -610,13 +701,14 @@ export function notesTable(ledger: Ledger, x: number, y: number, w: number, head
 
 /* ----------------------------------------------------------------- badges */
 
-function badgeMetrics(d: DesignDirection, w: number, product: string, sub: string, volume: string) {
+function badgeMetrics(d: DesignDirection, w: number, product: string, sub: string, volume: string, titleScale = 1) {
   const pad = Math.max(1.6, Math.min(2.4, w * 0.06))
   const inner = w - pad * 2
   const faces = pairingFaces(d.typePairing)
+  const scale = clampStudioScale(titleScale)
   const title = product.toLocaleUpperCase('tr')
-  const lines = textWidth(title, 5, faces.brand) > inner ? splitTitle(title) : [title]
-  const size = Math.min(...lines.map((l) => fitSize(l, inner, Math.min(5.4, w * 0.14), 2.4, faces.brand, 0.06)))
+  const lines = textWidth(title, 5 * scale, faces.brand) > inner ? splitTitle(title) : [title]
+  const size = Math.min(...lines.map((l) => fitSize(l, inner, Math.min(5.4, w * 0.14) * scale, 2.4 * scale, faces.brand, 0.06)))
   const subSize = Math.max(1.35, Math.min(size * 0.36, 2))
   const volSize = Math.max(1.8, size * 0.55)
   const h = pad * 1.4 + lines.length * size * 1.15 + (sub ? subSize * 2.2 : 0) + (volume ? volSize * 1.8 : 0) + pad
@@ -624,13 +716,13 @@ function badgeMetrics(d: DesignDirection, w: number, product: string, sub: strin
 }
 
 /** Height a product badge of width `w` will take — lets layouts reserve room before painting. */
-export function productBadgeHeight(d: DesignDirection, w: number, product: string, sub: string, volume: string): number {
-  return badgeMetrics(d, w, product, sub, volume).h
+export function productBadgeHeight(d: DesignDirection, w: number, product: string, sub: string, volume: string, titleScale = 1): number {
+  return badgeMetrics(d, w, product, sub, volume, titleScale).h
 }
 
 /** Dark rounded product badge with gold border (Anadolu Bal). */
-export function productBadge(ledger: Ledger, d: DesignDirection, cx: number, y: number, w: number, product: string, sub: string, volume: string): { markup: string; bottom: number } {
-  const { pad, faces, lines, size, subSize, volSize, h } = badgeMetrics(d, w, product, sub, volume)
+export function productBadge(ledger: Ledger, d: DesignDirection, cx: number, y: number, w: number, product: string, sub: string, volume: string, titleScale = 1): { markup: string; bottom: number } {
+  const { pad, faces, lines, size, subSize, volSize, h } = badgeMetrics(d, w, product, sub, volume, titleScale)
   const x = cx - w / 2
   const ink = d.palette.accent2
   let out = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(Math.min(2.6, w * 0.06))}" fill="${ink}" stroke="${d.palette.accent}" stroke-width="0.34" />`

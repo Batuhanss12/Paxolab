@@ -174,6 +174,31 @@ export type StudioPanelReport = {
   minTextMm: number
 }
 
+export type StudioCriticKind = 'quieter' | 'vary'
+
+/** C6 button the ledger recommends. Talk is reconstructed with talkForCritic(kind). */
+export type StudioCriticOffer = {
+  kind: StudioCriticKind
+  utterance: string
+  reason: string
+}
+
+/** One scored DesignDirection from decideDirection's ranked pool. User picks; critic does not. */
+export type StudioDirectionCandidate = {
+  index: number
+  family: StudioFamily
+  archetype: StudioArchetype
+  background: BackgroundFamily
+  temperament: Temperament
+  score: number
+  selected: boolean
+}
+
+export type StudioDirectionOffer = {
+  candidates: StudioDirectionCandidate[]
+  selectedIndex: number
+}
+
 export type StudioReport = {
   direction: DesignDirection
   panels: StudioPanelReport[]
@@ -182,8 +207,26 @@ export type StudioReport = {
   minTextMm: number
   /** Face + back + side anatomy that was painted (for the process note). */
   anatomy: string[]
+  /** Ledger → C6 quieter/vary. Empty when the face is clean. */
+  critic: StudioCriticOffer[]
+  /** Ranked sibling directions. The painted face is `direction`; this is not a multi-paint. */
+  offer?: StudioDirectionOffer
 }
 
 export type StudioInput = {
   palette: Palette
+}
+
+/** User mark + type scale consumed by studio painters. Scale 1 is identity (golden faces unchanged). */
+export type StudioIdentity = {
+  logoHref?: string
+  logoScale: number
+  titleScale: number
+}
+
+export const DEFAULT_STUDIO_IDENTITY: StudioIdentity = { logoScale: 1, titleScale: 1 }
+
+export function clampStudioScale(n: number | undefined, fallback = 1): number {
+  if (n == null || !Number.isFinite(n) || n <= 0) return fallback
+  return Math.max(0.55, Math.min(2.2, n))
 }
