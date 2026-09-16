@@ -29,6 +29,7 @@ const ASK_LABEL: Partial<Record<AwaitingKey, string>> = {
   productName: 'Ön etiket hattı nedir (markadan farklı — örn. Noir)? Yoksa “örnek” yazın.',
   volume: 'Ön yüzde hacim yazılsın mı — örneğin 50 ml? “örnek” veya “yok” yazabilirsiniz.',
   dimensionsMm: 'Etiket ölçüsü nedir (genişlik × yükseklik mm)? “şablon” yazman yeterli.',
+  templateId: 'Sağda etiket formatı: sarımlı şişe veya düz. En × boy ayarla, sonra “Etiketi başlat”. “örnek” önerilen formatı kullanır.',
 }
 
 /** Ask before the structure picker. Ölçü şablonda; chat’te sorulmaz. */

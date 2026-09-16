@@ -57,6 +57,15 @@ export function applyExtraction(
   }
   if (awaiting === 'copyLocale') delete extracted.copyLocale
   if (brief.copyLocale && awaiting !== 'copyLocale') delete extracted.copyLocale
+  if (
+    !brief.packagingMode &&
+    !assigned.packagingMode &&
+    !extracted.packagingMode &&
+    (extracted.sector || extracted.subProduct || assigned.sector) &&
+    !/etiket|label|wrap/i.test(text)
+  ) {
+    extracted.packagingMode = 'box'
+  }
   let next = mergeBrief(mergeBrief(brief, assigned), extracted)
   if (awaiting === 'dimensionsMm') {
     const dims = parseDimensions(text)

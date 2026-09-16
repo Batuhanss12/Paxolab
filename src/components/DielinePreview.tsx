@@ -19,9 +19,11 @@ export function DielinePreview({ design }: DielinePreviewProps) {
   return (
     <div className="preview-stage">
       <div className="preview-stage__meta">
-        <span>{labelSet ? 'Etiket seti' : 'Açılım'}</span>
+        <span>{labelSet ? 'Ön + arka etiket seti' : 'Açılım'}</span>
         <span>
-          {design.layout.widthMm} × {design.layout.depthMm || '—'} × {design.layout.heightMm} mm
+          {labelSet
+            ? `${design.layout.widthMm} × ${design.layout.heightMm} mm`
+            : `${design.layout.widthMm} × ${design.layout.depthMm || '—'} × ${design.layout.heightMm} mm`}
         </span>
         {design.dieline.consistent ? <span className="pill">Tutarlı</span> : <span className="pill pill--warn">Panel hatası</span>}
       </div>

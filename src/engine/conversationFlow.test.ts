@@ -200,4 +200,25 @@ describe('chat flow from the screenshot', () => {
     expect(last.brief.brandName).toBe('Luma')
     expect(last.replies.join(' ')).not.toMatch(/70x35x140/)
   })
+
+  it('etiket-only brief opens a format picker, not carton structures', () => {
+    const last = replay(['Luma parfüm etiketi siyah altın', 'Noir', 'örnek']).at(-1)!.result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.brief.packagingMode).toBe('label')
+    expect(last.awaiting).toBe('templateId')
+    expect(last.replies.join(' ')).toMatch(/sarımlı|format|etiket/i)
+    expect(last.replies.join(' ')).not.toMatch(/tuck|mailer/i)
+    expect(last.structureOffer?.candidates.every((row) => row.structureId === 'wrap-label' || row.structureId === 'flat-label')).toBe(true)
+  })
+
+  it('after a box, etiketi de üret opens the label format picker without replacing the carton path', () => {
+    const last = replay(['Luma parfüm kutusu siyah altın', 'Noir', 'örnek', 'başlat', 'etiketi de üret']).at(-1)!.result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.brief.packagingMode).toBe('label')
+    expect(last.brief.deliverables).toEqual(['box', 'label'])
+    expect(last.replies.join(' ')).toMatch(/sarımlı|format/i)
+    expect(last.replies.join(' ')).not.toMatch(/tuck|mailer/i)
+  })
 })

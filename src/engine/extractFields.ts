@@ -202,10 +202,6 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   if (/diyagonal|diagonal|antrasit/i.test(raw)) colors.push('Antrasit')
   if (colors.length) patch.colors = [...new Set(colors)].join(' · ')
 
-  if (!patch.packagingMode && (patch.sector || patch.subProduct) && !/etiket|label|wrap/i.test(raw)) {
-    patch.packagingMode = 'box'
-  }
-
   const spokenCopy = extractSpokenCopy(raw)
   if (spokenCopy.copyOverrides) patch.copyOverrides = spokenCopy.copyOverrides
   if (spokenCopy.story) patch.story = spokenCopy.story

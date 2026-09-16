@@ -137,6 +137,14 @@ function groundedReason(
 ): string {
   const label = row.title
   const d = brief.dimensionsMm
+  if (mode === 'label') {
+    if (hasStructurePhysics(brief) && (d.L || d.H)) {
+      return `Etiket ${d.L}×${d.H} mm — ${label} varsayılanı ${row.defaultsMm.L}×${row.defaultsMm.H} mm.`
+    }
+    if (brief.subProduct && fits.product >= 0.7) return `${brief.subProduct} için katalogda ${label} ailesi var.`
+    if (brief.sector && fits.product >= 0.5) return `${brief.sector} yüzeyinde ${label} aktif katalog yapısı.`
+    return `${label} etiket yüzeyinde aktif.`
+  }
   if (hasStructurePhysics(brief)) {
     if (kind === 'portrait' && PORTRAIT_FAMILIES.has(row.structureId)) {
       return `${d.H} mm yüksekliğindeki dar form (${d.L}×${d.W || '—'}×${d.H} mm) için dikey ön yüz; ${label} katalog varsayılanı ${row.defaultsMm.L}×${row.defaultsMm.W}×${row.defaultsMm.H} mm.`

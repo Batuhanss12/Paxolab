@@ -101,6 +101,7 @@ describe('CHAT-1 conversation understanding', () => {
       hasDesign: false,
     })
     expect(both.brief.packagingMode).toBe('box')
+    expect(both.brief.deliverables).toEqual(['box', 'label'])
     expect(understandUtterance('Kutu + Etiket', emptyBrief()).deliverables).toEqual(['box', 'label'])
 
     const typed = runConversation({
@@ -112,6 +113,24 @@ describe('CHAT-1 conversation understanding', () => {
     })
     expect(typed.brief.packagingMode).toBe('box')
     expect(typed.brief.brandName).toBe('Luma')
+
+    const labelChip = runConversation({
+      text: 'Etiket',
+      attachments: [],
+      brief: emptyBrief(),
+      awaiting: null,
+      hasDesign: false,
+    })
+    const labelProduct = runConversation({
+      text: 'Luma parfüm Noir siyah altın',
+      attachments: [],
+      brief: labelChip.brief,
+      awaiting: labelChip.awaiting,
+      hasDesign: false,
+    })
+    expect(labelChip.brief.packagingMode).toBe('label')
+    expect(labelProduct.brief.packagingMode).toBe('label')
+    expect(labelProduct.brief.brandName).toBe('Luma')
     expect(typed.brief.sector).toMatch(/kozmetik|parfüm/)
     expect(typed.shouldGenerate).toBe(false)
     expect(typed.awaiting).not.toBe('barcode')
@@ -219,10 +238,13 @@ describe('CHAT-1 conversation understanding', () => {
       awaiting: null,
       hasDesign: true,
     })
-    expect(label.shouldGenerate).toBe(true)
+    expect(label.shouldGenerate).toBe(false)
+    expect(label.showTemplates).toBe(true)
     expect(label.brief.packagingMode).toBe('label')
-    expect(label.brief.templateId.length).toBeGreaterThan(0)
-    expect(label.replies.join(' ')).toMatch(/etiket/i)
+    expect(label.brief.templateId).toBe('')
+    expect(label.brief.deliverables).toEqual(['box', 'label'])
+    expect(label.replies.join(' ')).toMatch(/sarımlı|format/i)
+    expect(label.replies.join(' ')).not.toMatch(/tuck|mailer/i)
   })
 
   it('“etiketi de üret” carries the box studio family onto the label generate', () => {
@@ -239,7 +261,8 @@ describe('CHAT-1 conversation understanding', () => {
       awaiting: null,
       hasDesign: true,
     })
-    expect(label.shouldGenerate).toBe(true)
+    expect(label.shouldGenerate).toBe(false)
+    expect(label.showTemplates).toBe(true)
     expect(label.brief.packagingMode).toBe('label')
     expect(label.brief.studioFamily).toBe('marble')
     expect(label.overridePatch.direction?.archetype).toBe('marble-frame')

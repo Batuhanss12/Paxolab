@@ -18,9 +18,10 @@ describe('structureOffer', () => {
     expect(templateIdFromUtterance('şablon', 'box')).toBe('')
   })
 
-  it('names the chosen grammar and offers siblings', () => {
-    const text = describeStructureOffer({ ...emptyBrief(), packagingMode: 'box', sector: 'kozmetik' })
-    expect(text).toMatch(/Yapı:/)
-    expect(text).toMatch(/tuck|mailer|sleeve/i)
+  it('names label format without carton grammar', () => {
+    const text = describeStructureOffer({ ...emptyBrief(), packagingMode: 'label', sector: 'kozmetik', subProduct: 'parfüm' })
+    expect(text).toMatch(/Format:/)
+    expect(text).toMatch(/sarımlı|düz|wrap|etiket/i)
+    expect(text).not.toMatch(/tuck|mailer|sleeve/i)
   })
 })

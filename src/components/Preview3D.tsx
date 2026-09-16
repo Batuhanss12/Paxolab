@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
-import type { Attachment, DesignSpec } from '../types'
+import type { Attachment, BottleShape, DesignSpec } from '../types'
 import { monogram } from '../engine/artwork/copy'
 import { facePanelId, renderPanelSvg, type BoxFace } from '../engine/artwork/renderArtwork'
+import { recommendBottleShape } from '../engine/label/bottleShape'
+import { BottlePreview } from './BottlePreview'
 
 type Preview3DProps = {
   design: DesignSpec
   attachments: Attachment[]
+  bottleShape?: BottleShape | null
+  onBottleShape?: (shape: BottleShape) => void
 }
 
 function faceArt(design: DesignSpec, face: BoxFace): string {
@@ -42,8 +46,16 @@ function Face({
   )
 }
 
-export function Preview3D({ design, attachments }: Preview3DProps) {
-  const { palette: p, copy, overrides, kind, layout } = design
+export function Preview3D({ design, attachments, bottleShape, onBottleShape }: Preview3DProps) {
+  if (design.kind === 'label') {
+    const shape = bottleShape ?? recommendBottleShape(design.brief)
+    return <BottlePreview design={design} shape={shape} onShape={(next) => onBottleShape?.(next)} />
+  }
+  return <CartonPreview3D design={design} attachments={attachments} />
+}
+
+function CartonPreview3D({ design, attachments }: { design: DesignSpec; attachments: Attachment[] }) {
+  const { palette: p, copy, overrides, layout } = design
   const [rot, setRot] = useState({ x: -18, y: 32 })
   const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null)
   const auto = useRef(true)
@@ -72,11 +84,10 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
 
   const logo = attachments.find((a) => a.kind === 'logo') ?? attachments[0]
   const mark = monogram(copy.brand)
-  const isLabel = kind === 'label'
   const scale = Math.min(280 / Math.max(layout.widthMm, 1), 320 / Math.max(layout.heightMm, 1))
   const widthPx = Math.max(120, Math.round(layout.widthMm * scale))
   const heightPx = Math.max(150, Math.round(layout.heightMm * scale))
-  const depthPx = isLabel ? 16 : Math.max(18, Math.min(96, Math.round((layout.depthMm || 28) * scale)))
+  const depthPx = Math.max(18, Math.min(96, Math.round((layout.depthMm || 28) * scale)))
   const boxStyle = {
     transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
     '--box-w': `${widthPx}px`,
@@ -94,11 +105,12 @@ export function Preview3D({ design, attachments }: Preview3DProps) {
     <div className="preview-stage">
       <div className="preview-stage__meta">
         <span>Sürükleyerek döndür</span>
-        <span>{isLabel ? 'Etiket hacmi' : 'Tuck / tepsi hacmi'}</span>
+        <span>Tuck / tepsi hacmi</span>
       </div>
       <div className="scene" onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null }}>
         <div
-          className={`box3d ${isLabel ? 'box3d--card' : ''}`}
+          className="box3d"
+          data-preview="carton"
           style={boxStyle}
         >
           <Face

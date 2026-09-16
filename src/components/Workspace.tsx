@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
+import type { Attachment, BottleShape, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
+import { isDualDeliverable } from '../engine/conversationUnderstand'
+import type { SurfaceView } from '../appState'
 import { learnedPreferenceLine } from '../engine/brain'
 import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
 import { directionOfferLine } from '../engine/studio/directionOffer'
@@ -11,6 +13,7 @@ import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
 import { DielinePreview } from './DielinePreview'
 import { InputsPanel } from './InputsPanel'
+import { LabelFormatPicker } from './LabelFormatPicker'
 import { Preview2D } from './Preview2D'
 import { Preview3D } from './Preview3D'
 import { ProductionInfo } from './ProductionInfo'
@@ -60,6 +63,13 @@ type WorkspaceProps = {
   syncNote?: string | null
   creditsRefreshKey?: number
   onLoadProject?: (projectId: string) => void | Promise<void>
+  boxDesign?: DesignSpec | null
+  labelDesign?: DesignSpec | null
+  surfaceView?: SurfaceView
+  onSurfaceView?: (surface: SurfaceView) => void
+  bottleShape?: BottleShape | null
+  onBottleShape?: (shape: BottleShape) => void
+  onStartLabel?: () => void
 }
 
 function ConversationBrief({
@@ -144,10 +154,28 @@ export function Workspace({
   syncNote,
   creditsRefreshKey = 0,
   onLoadProject,
+  boxDesign = null,
+  labelDesign = null,
+  surfaceView = 'box',
+  onSurfaceView,
+  bottleShape = null,
+  onBottleShape,
+  onStartLabel,
 }: WorkspaceProps) {
-  const showPreview = !!design || generating || showTemplates
-  const showTabs = !!design
+  const dualFromChat = messages.some((m) =>
+    /kutu\s*(ve|ile|\+)\s*(şişe\s*)?etiket|(etiket|label)\s*(ve|ile|\+)\s*kutu/i.test(m.content),
+  )
+  const dualIntent =
+    dualFromChat ||
+    isDualDeliverable(brief) ||
+    Boolean(boxDesign && (labelDesign || brief.packagingMode === 'label' || brief.deliverables?.includes('label')))
+  const labelPicker = showTemplates && brief.packagingMode === 'label'
+  const boxPicker = showTemplates && brief.packagingMode !== 'label' && !design
+  const showPicker = labelPicker || boxPicker
+  const showPreview = !!design || generating || showTemplates || !!boxDesign
+  const showTabs = !!design && !showPicker
   const showStyles = !!design || showTemplates || isCoreReady(brief)
+  const viewingLabel = Boolean(labelPicker || design?.kind === 'label' || surfaceView === 'label')
   const [toolsMenu, setToolsMenu] = useState<ToolsMenu>('none')
   const toolsRef = useRef<HTMLDivElement>(null)
 
@@ -183,10 +211,41 @@ export function Workspace({
                 className={`tabs__btn ${tab === t.id ? 'is-active' : ''}`}
                 onClick={() => onTab(t.id)}
               >
-                {t.id === 'dieline' && design?.kind === 'label' ? 'Etiket seti' : t.label}
+                {t.id === 'dieline' && design?.kind === 'label' ? 'Set' : t.label}
               </button>
             ))}
           </nav>
+        )}
+        {(dualIntent || (boxDesign && labelDesign)) && (
+          <div className="surface-switch" role="group" aria-label="Yüzey">
+            <span className="surface-switch__intent">Kutu + etiket</span>
+            <button
+              type="button"
+              className={!viewingLabel && boxDesign ? 'is-active' : ''}
+              disabled={!boxDesign}
+              onClick={() => onSurfaceView?.('box')}
+            >
+              Kutu
+            </button>
+            {labelDesign ? (
+              <button
+                type="button"
+                className={viewingLabel ? 'is-active' : ''}
+                onClick={() => onSurfaceView?.('label')}
+              >
+                Etiket
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={labelPicker ? 'is-active' : ''}
+                disabled={!boxDesign}
+                onClick={() => onStartLabel?.()}
+              >
+                {labelPicker ? 'Etiket formatı' : 'Etiket üret'}
+              </button>
+            )}
+          </div>
         )}
 
         <div className="topbar__right">
@@ -292,23 +351,31 @@ export function Workspace({
                 <p>Grapxor motoru çalışıyor</p>
               </div>
             )}
-            {!generating && !design && showTemplates && (
+            {!generating && showPicker && brief.packagingMode === 'label' && (
+              <LabelFormatPicker brief={brief} onSelect={onSelectTemplate} onPick={onPickTemplate} onDims={onDims} />
+            )}
+            {!generating && showPicker && brief.packagingMode !== 'label' && (
               <TemplatePicker brief={brief} onSelect={onSelectTemplate} onPick={onPickTemplate} onDims={onDims} />
             )}
-            {!generating && tab === 'konusma' && design && (
+            {!generating && !showPicker && tab === 'konusma' && design && (
               <ConversationBrief messages={messages} design={design} />
             )}
-            {!generating && tab === 'vektor' && design && (
+            {!generating && !showPicker && tab === 'vektor' && design && (
               <Preview2D design={design} attachments={allAttachments} onDims={onDims} />
             )}
-            {!generating && tab === 'karsilastir' && design && (
-              <ComparePreview current={design} previous={designHistory.at(-1)} />
+            {!generating && !showPicker && tab === 'karsilastir' && design && (
+              <ComparePreview current={design} previous={designHistory.filter((d) => d.kind === design.kind).at(-1)} />
             )}
-            {!generating && tab === 'dieline' && design && <DielinePreview design={design} />}
-            {!generating && tab === 'onizleme3d' && design && (
-              <Preview3D design={design} attachments={allAttachments} />
+            {!generating && !showPicker && tab === 'dieline' && design && <DielinePreview design={design} />}
+            {!generating && !showPicker && tab === 'onizleme3d' && design && (
+              <Preview3D
+                design={design}
+                attachments={allAttachments}
+                bottleShape={bottleShape}
+                onBottleShape={onBottleShape}
+              />
             )}
-            {!generating && tab === 'uretim' && design && <ProductionInfo design={design} />}
+            {!generating && !showPicker && tab === 'uretim' && design && <ProductionInfo design={design} />}
           </section>
         )}
       </div>

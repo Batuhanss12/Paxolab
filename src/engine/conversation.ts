@@ -1,4 +1,4 @@
-import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, EngineResult } from '../types'
+import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, EngineResult, PackagingMode } from '../types'
 import { getTemplate, pickTemplate } from './catalog/catalog'
 import { describeStructureOffer, STRUCTURE_LABEL, templateIdFromUtterance } from './catalog/structureOffer'
 import { parseOfferChoice, recommendStructures } from './catalog/structureRecommend'
@@ -92,11 +92,15 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
   const structure = describeStructureOffer(next, tmpl, pinned)
   const directionOffer = inspectStudioDirectionOffer(next)
   const directionLine = describeDirectionOffer(directionOffer)
+  const isLabel = next.packagingMode === 'label'
+  const produce = isLabel
+    ? 'Ön ve arka etiket seti çıkarılıyor. 3D’de şişe üzerinde görürsün.'
+    : 'Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.'
   return {
     brief: next,
     awaiting: null,
     replies: [
-      `${briefing}${dual} ${structure} Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.`,
+      `${briefing}${dual} ${structure} ${produce}`,
       'Yönü konuşarak iterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “etiketi de üret”.',
       directionLine,
     ].filter(Boolean),
@@ -127,12 +131,15 @@ function offerStructureResult(brief: DesignBrief, ack?: string, state?: Conversa
     isDualDeliverable(next) && next.packagingMode !== 'label'
       ? ' Kutu ve etiket istedin; önce kutuyu çizeceğim. Etiket için “etiketi de üret” yaz.'
       : ''
+  const isLabel = next.packagingMode === 'label'
   return {
     brief: next,
     awaiting: 'templateId',
     replies: [
-      `${briefing}${dual} Brief hazır. Uygun yapılar sağda — kartı seç, ölçüyü orada ayarla, sonra tasarımı başlat.`,
-      top ? `Yapı: önerilen ${topLabel}.` : '',
+      isLabel
+        ? `${briefing} Brief hazır. Sağda etiket formatı — sarımlı şişe veya düz. Eni ve boyu ayarla, sonra etiketi başlat.`
+        : `${briefing}${dual} Brief hazır. Uygun yapılar sağda — kartı seç, ölçüyü orada ayarla, sonra tasarımı başlat.`,
+      top ? (isLabel ? `Format: önerilen ${topLabel}.` : `Yapı: önerilen ${topLabel}.`) : '',
       lines.join('\n'),
     ].filter(Boolean),
     shouldGenerate: false,
@@ -169,11 +176,14 @@ function selectStructureResult(brief: DesignBrief, templateId: string, text: str
   }
   const offer = recommendStructures(next)
   const label = tmpl ? (STRUCTURE_LABEL[tmpl.structureId] ?? tmpl.title) : templateId
+  const isLabel = next.packagingMode === 'label'
   return {
     brief: next,
     awaiting: 'templateId',
     replies: [
-      `${label} seçildi. Şablon ölçüsü ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştir, sonra “Tasarımı başlat”.`,
+      isLabel
+        ? `${label} seçildi. Etiket ${dims.L}×${dims.H} mm — sağda değiştir, sonra “Etiketi başlat”.`
+        : `${label} seçildi. Şablon ölçüsü ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştir, sonra “Tasarımı başlat”.`,
     ],
     shouldGenerate: false,
     showTemplates: true,
@@ -269,8 +279,17 @@ export function runConversation(input: {
   }
 
   if (input.hasDesign && wantsCompanionLabel(text) && input.brief.packagingMode !== 'label') {
-    const labelBrief = { ...input.brief, packagingMode: 'label' as const, templateId: '' }
-    return generateResult(labelBrief, `${directionBriefing(labelBrief)} Şişe etiketini kuruyorum.`, text, state)
+    const labelBrief = {
+      ...input.brief,
+      packagingMode: 'label' as const,
+      templateId: '',
+      deliverables: ['box', 'label'] as PackagingMode[],
+    }
+    return offerStructureResult(
+      labelBrief,
+      `${directionBriefing(labelBrief)} Kutu duruyor. Şimdi etiket formatını seç — sarımlı şişe veya düz.`,
+      state,
+    )
   }
 
   const listedOffer = input.directionOffer ?? inspectStudioDirectionOffer(input.brief)

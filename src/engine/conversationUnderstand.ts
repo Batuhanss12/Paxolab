@@ -121,7 +121,15 @@ export function understandUtterance(
     const english = englishBrandOf(text)
     if (english) patch.brandName = english
   }
-  if (!patch.packagingMode && DUAL_SURFACE.test(text)) patch.packagingMode = 'box'
+  if (!brief.packagingMode && !patch.packagingMode && DUAL_SURFACE.test(text)) patch.packagingMode = 'box'
+  if (
+    !brief.packagingMode &&
+    !patch.packagingMode &&
+    (patch.sector || patch.subProduct) &&
+    !/etiket|label|wrap/i.test(text)
+  ) {
+    patch.packagingMode = 'box'
+  }
   if (directorCue && !patch.directorCue) {
     patch.directorCue = directorCue
     inferred.push('directorCue')

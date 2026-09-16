@@ -23,7 +23,7 @@ export const MODE_RULES: ModeRule[] = [
   { re: /takviye\s*kut|vitamin\s*kut|ilaç\s*kut/i, mode: 'box', sector: 'sağlık', sub: 'takviye' },
   { re: /bebek\s*(ürün|bakım).*kut/i, mode: 'box', sector: 'bebek', sub: 'bakım' },
   { re: /içecek\s*(etiket|şişe)|kombucha|meyve suyu/i, mode: 'label', sector: 'içecek' },
-  { re: /kutu\s*ambalaj|\bkutu\b|\bbox\b/i, mode: 'box' },
+  { re: /kutu\s*ambalaj|\bkutu(?:su|sunu|sun|ya|yu|da|dan)?\b|\bbox(?:es)?\b/i, mode: 'box' },
   { re: /etiket|label|wrap/i, mode: 'label' },
 ]
 

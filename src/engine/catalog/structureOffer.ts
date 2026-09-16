@@ -76,6 +76,9 @@ export function describeStructureOffer(brief: DesignBrief, template?: FormaTempl
       return `${name} (${row.reason})`
     })
   const alt = others.length ? ` Ayrıca: ${others.join('; ')}.` : ''
+  if (tmpl.packagingMode === 'label') {
+    return `Format: ${label} (${tmpl.title})${why}.${alt} Sarımlı veya düz yazarak değiştirebilirsin.`
+  }
   return `Yapı: ${label} (${tmpl.title})${why}.${alt} Yapıyı değiştirmek için “2. yapı” / “mailer” / “sleeve” yaz.`
 }
 

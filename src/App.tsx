@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { appReducer, createInitialAppState } from './appState'
+import { appReducer, createInitialAppState, prevForSurface, surfaceKind, type SurfaceView } from './appState'
 import { Landing } from './components/Landing'
 import { MockPayPage } from './components/BillingPanel'
 import { Workspace } from './components/Workspace'
@@ -28,7 +28,8 @@ import {
 import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
 import { applyVetoToHints } from './engine/studio/family'
-import type { Attachment, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
+import { recommendBottleShape } from './engine/label/bottleShape'
+import type { Attachment, BottleShape, ChatMessage, DesignBrief, DimensionsMm, StyleType } from './types'
 
 const engine = getEngine()
 
@@ -75,6 +76,10 @@ export default function App() {
     brief,
     awaiting,
     design,
+    boxDesign,
+    labelDesign,
+    surfaceView,
+    bottleShape,
     designHistory,
     designFuture,
     typing,
@@ -241,7 +246,9 @@ export default function App() {
   ) => {
     dispatch({ type: 'generation.start' })
     const attemptId = uid()
-    const hasPrev = !!designRef.current
+    const wantedKind = surfaceKind(nextBrief)
+    const prev = prevForSurface(stateRef.current, wantedKind)
+    const hasPrev = !!prev
     const auth = loadAuth()
 
     const finishFail = (message: string) => {
@@ -278,25 +285,32 @@ export default function App() {
         await new Promise((r) => window.setTimeout(r, 720))
 
         const logo = attachRef.current.find((a) => a.kind === 'logo') ?? attachRef.current[0]
-        const surface = nextBrief.packagingMode === 'label' ? 'label' : 'box'
+        const surface = wantedKind
+        const briefForEngine =
+          surface === 'label' && !nextBrief.bottleShape
+            ? { ...nextBrief, bottleShape: recommendBottleShape(nextBrief) }
+            : nextBrief
+        if (briefForEngine.bottleShape && briefForEngine.bottleShape !== stateRef.current.bottleShape) {
+          dispatch({ type: 'bottleShape', shape: briefForEngine.bottleShape })
+        }
         const [llmCopy, llmDirection] = await Promise.all([
-          generateCopyWithLlm(nextBrief).catch(() => null),
+          generateCopyWithLlm(briefForEngine).catch(() => null),
           studioDirectionWithLlm({
-            brand: nextBrief.brandName,
-            product: nextBrief.productName,
-            sector: nextBrief.sector,
-            subProduct: nextBrief.subProduct,
-            style: nextBrief.styleType,
+            brand: briefForEngine.brandName,
+            product: briefForEngine.productName,
+            sector: briefForEngine.sector,
+            subProduct: briefForEngine.subProduct,
+            style: briefForEngine.styleType,
             surface,
-            colors: nextBrief.colors,
-            avoid: nextBrief.avoidMotifs,
+            colors: briefForEngine.colors,
+            avoid: briefForEngine.avoidMotifs,
           }).catch(() => null),
         ])
-        const vetoed = nextBrief.avoidStudioFamilies ?? []
-        const familyLocked = !!nextBrief.studioFamily || !!result?.overridePatch?.direction?.archetype || vetoed.length > 0
+        const vetoed = briefForEngine.avoidStudioFamilies ?? []
+        const familyLocked = !!briefForEngine.studioFamily || !!result?.overridePatch?.direction?.archetype || vetoed.length > 0
         const next = engine.generate({
-          brief: nextBrief,
-          prev: designRef.current,
+          brief: briefForEngine,
+          prev,
           overridePatch: {
             blankCanvas: false,
             studio: true,
@@ -367,10 +381,10 @@ export default function App() {
           attachments: files,
           brief: mergedBrief,
           awaiting: awaitingRef.current,
-          hasDesign: !!designRef.current,
+          hasDesign: designRef.current?.kind === surfaceKind(mergedBrief),
           state: stateRef.current.conversation,
-          studioCritic: designRef.current?.studio?.critic,
-          directionOffer: designRef.current?.studio?.offer,
+          studioCritic: designRef.current?.kind === surfaceKind(mergedBrief) ? designRef.current?.studio?.critic : undefined,
+          directionOffer: designRef.current?.kind === surfaceKind(mergedBrief) ? designRef.current?.studio?.offer : undefined,
         })
 
         briefRef.current = result.brief
@@ -492,7 +506,8 @@ export default function App() {
     const next = { ...briefRef.current, dimensionsMm: dims }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
-    if (!designRef.current) return
+    if (stateRef.current.showTemplates) return
+    if (!designRef.current || designRef.current.kind !== surfaceKind(next)) return
     window.clearTimeout(dimTimer.current)
     dimTimer.current = window.setTimeout(() => {
       runGenerate(briefRef.current)
@@ -505,7 +520,8 @@ export default function App() {
     dispatch({ type: 'brief', brief: next })
     awaitingRef.current = awaitingRef.current === 'styleType' ? null : awaitingRef.current
     dispatch({ type: 'awaiting', awaiting: awaitingRef.current })
-    if (!designRef.current) return
+    if (stateRef.current.showTemplates) return
+    if (!designRef.current || designRef.current.kind !== surfaceKind(next)) return
     dispatch({
       type: 'messages.add',
       messages: [{ id: uid(), role: 'assistant', content: `Ruh hali ${styleLabel(style)} — boş tuvalden yeniden kuruldu.` }],
@@ -514,7 +530,7 @@ export default function App() {
   }, [runGenerate])
 
   const onVary = useCallback(() => {
-    if (!designRef.current) return
+    if (!designRef.current || designRef.current.kind !== surfaceKind(briefRef.current)) return
     const nextIndex = (designRef.current.designPlan?.variationIndex ?? 0) + 1
     dispatch({
       type: 'messages.add',
@@ -545,6 +561,30 @@ export default function App() {
     briefRef.current = next.brief
     dispatch({ type: 'history.redo' })
   }, [designFuture])
+
+  const onSurfaceView = useCallback((surface: SurfaceView) => {
+    const next = surface === 'label' ? stateRef.current.labelDesign : stateRef.current.boxDesign
+    dispatch({ type: 'surfaceView', surface })
+    if (next) {
+      designRef.current = next
+      briefRef.current = next.brief
+      awaitingRef.current = null
+    }
+  }, [])
+
+  const onStartLabel = useCallback(() => {
+    if (stateRef.current.labelDesign) {
+      onSurfaceView('label')
+      return
+    }
+    if (stateRef.current.showTemplates && briefRef.current.packagingMode === 'label') return
+    send('etiketi de üret')
+  }, [onSurfaceView, send])
+
+  const onBottleShape = useCallback((shape: BottleShape) => {
+    briefRef.current = { ...briefRef.current, bottleShape: shape }
+    dispatch({ type: 'bottleShape', shape })
+  }, [])
 
   // Phase 8 mock payment page (no keys / tests)
   const mockPayMatch =
@@ -609,6 +649,13 @@ export default function App() {
           syncNote={syncNote}
           creditsRefreshKey={creditsRefreshKey}
           onLoadProject={onLoadCloudProject}
+          boxDesign={boxDesign}
+          labelDesign={labelDesign}
+          surfaceView={surfaceView}
+          onSurfaceView={onSurfaceView}
+          bottleShape={bottleShape}
+          onBottleShape={onBottleShape}
+          onStartLabel={onStartLabel}
         />
       )}
     </div>

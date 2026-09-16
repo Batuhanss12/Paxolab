@@ -1070,6 +1070,196 @@ h2 {
   transform: rotateX(-90deg) translateZ(calc(var(--box-h, 300px) / 2));
 }
 
+.surface-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #0a0a0a;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 4px 3px 10px;
+  flex-shrink: 0;
+}
+
+.surface-switch__intent {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-right: 6px;
+  white-space: nowrap;
+}
+
+.surface-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.surface-switch button.is-active {
+  color: var(--fg);
+  background: #1a1a1a;
+}
+
+.surface-switch button:disabled {
+  opacity: 0.35;
+}
+
+.label-face-toggle,
+.bottle-switch {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.label-face-toggle button,
+.bottle-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.label-face-toggle button.is-active,
+.bottle-switch button.is-active {
+  color: var(--fg);
+  background: #1a1a1a;
+}
+
+.bottle3d {
+  position: relative;
+  transform-style: preserve-3d;
+  height: calc(var(--actuator-h, 0px) + var(--cap-h, 18px) + var(--neck-h, 32px) + var(--collar-h, 0px) + var(--body-h, 160px));
+  width: calc(var(--radius, 40px) * 2);
+}
+
+.bottle3d__ring {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  transform-style: preserve-3d;
+}
+
+.bottle3d__ring--actuator { top: 0; }
+.bottle3d__ring--cap { top: var(--actuator-h, 10px); }
+.bottle3d__ring--neck { top: calc(var(--actuator-h, 10px) + var(--cap-h, 30px)); }
+.bottle3d__ring--collar { top: calc(var(--actuator-h, 10px) + var(--cap-h, 30px) + var(--neck-h, 20px) - 2px); }
+
+.bottle3d--square .bottle3d__cap,
+.bottle3d--square .bottle3d__neck {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateZ(8px);
+  background: linear-gradient(90deg, var(--glass-dark), var(--glass), var(--glass-dark));
+}
+
+.bottle3d--square .bottle3d__cap {
+  top: 0;
+  height: var(--cap-h, 18px);
+  width: 42%;
+  border-radius: 2px;
+  background: #1a1a1a;
+}
+
+.bottle3d--square .bottle3d__neck {
+  top: var(--cap-h, 18px);
+  height: var(--neck-h, 32px);
+  width: 28%;
+  border-radius: 2px;
+}
+
+.bottle3d__body {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--actuator-h, 0px) + var(--cap-h, 18px) + var(--neck-h, 32px) + var(--collar-h, 0px));
+  width: 0;
+  height: var(--body-h, 156px);
+  transform-style: preserve-3d;
+}
+
+.bottle3d--square .bottle3d__body {
+  top: calc(var(--cap-h, 18px) + var(--neck-h, 32px));
+}
+
+.bottle3d__seg {
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  background: var(--glass);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.12);
+}
+
+.bottle3d__seg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.22));
+}
+
+.bottle3d__seg-art {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+
+.bottle3d__seg-art > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bottle3d__square {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--cap-h, 18px) + var(--neck-h, 32px) + 12px);
+  transform: translateX(-50%);
+  transform-style: preserve-3d;
+}
+
+.bottle3d__sq {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--glass);
+  backface-visibility: hidden;
+}
+
+.bottle3d__sq > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.bottle3d__sq--front { transform: translateZ(calc(var(--sq-d, 40px) / 2)); }
+.bottle3d__sq--back { transform: rotateY(180deg) translateZ(calc(var(--sq-d, 40px) / 2)); }
+.bottle3d__sq--right {
+  width: var(--sq-d, 40px);
+  left: calc((100% - var(--sq-d, 40px)) / 2);
+  transform: rotateY(90deg) translateZ(calc(var(--label-w, 90px) * 0.46));
+  background: var(--glass-dark);
+}
+.bottle3d__sq--left {
+  width: var(--sq-d, 40px);
+  left: calc((100% - var(--sq-d, 40px)) / 2);
+  transform: rotateY(-90deg) translateZ(calc(var(--label-w, 90px) * 0.46));
+  background: var(--glass-dark);
+}
+
+.templates--label .tcard__thumb {
+  background: #0c0c0c;
+}
+
 /* ——— Production ——— */
 .prod {
   padding: 40px 48px 64px;

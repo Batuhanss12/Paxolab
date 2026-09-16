@@ -81,8 +81,13 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
     return {}
   }
   if (awaiting === 'packagingMode') {
-    if (/etiket|label/i.test(cleaned) && !/kutu|box/i.test(cleaned)) return { packagingMode: 'label' }
-    return { packagingMode: 'box' }
+    if (/kutu.+(etiket|label)|(etiket|label).+kutu|\+/i.test(cleaned)) {
+      return { packagingMode: 'box', deliverables: ['box', 'label'] }
+    }
+    if (/etiket|label/i.test(cleaned) && !/kutu|box/i.test(cleaned)) {
+      return { packagingMode: 'label', deliverables: ['label'] }
+    }
+    return { packagingMode: 'box', deliverables: ['box'] }
   }
   if (awaiting === 'copyLocale') {
     return { copyLocale: parseCopyLocale(cleaned) ?? (/en|eng|english|ingiliz/i.test(cleaned) ? 'en' : 'tr') }

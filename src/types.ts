@@ -8,6 +8,8 @@ export type Attachment = {
 }
 
 export type PackagingMode = 'box' | 'label'
+/** Label 3D vessel only — never used for carton dieline/3D. */
+export type BottleShape = 'cylinder' | 'square'
 export type StyleType = 'luxury' | 'modern' | 'minimal' | 'eco' | 'playful' | 'classic'
 /** Customer-facing copy language. Not ArtworkModel.language (that is a palette id). */
 export type CopyLocale = 'tr' | 'en'
@@ -103,6 +105,8 @@ export type DesignBrief = {
   avoidMotifs?: string[]
   /** Requested surfaces from conversation. Catalog omits this. Engine paints one at a time. */
   deliverables?: PackagingMode[]
+  /** Label 3D bottle. Catalog omits. Does not change carton 3D. */
+  bottleShape?: BottleShape
   /**
    * Studio visual family (marble, botanical, line-scene…). Catalog omits this.
    * Companion generate (“etiketi de üret”) reads it so box and label stay in the same DNA.
