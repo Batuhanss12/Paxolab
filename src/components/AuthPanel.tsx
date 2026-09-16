@@ -36,7 +36,7 @@ function tryConsumeHandoff(): AuthUser | null {
   const handoff = params.get('handoff')
   if (!handoff) return null
   try {
-    const parsed = JSON.parse(atob(handoff)) as AuthState
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(handoff)))) as AuthState
     if (parsed?.token && parsed?.user?.email) {
       saveAuth(parsed)
       stripQueryParam('handoff')

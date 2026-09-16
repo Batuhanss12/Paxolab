@@ -60,6 +60,139 @@ export type CreditReservationRow = {
   finalized_at: string | null
 }
 
+export type CreditBucketRow = {
+  id: string
+  user_id: string
+  bucket_type: string
+  balance: number
+  expires_at: string | null
+  source_ref: string | null
+  created_at: string
+}
+
+export type SubscriptionPlanRow = {
+  id: string
+  label: string
+  monthly_price: number
+  currency: string
+  monthly_credits: number
+  max_projects: number | null
+  max_active_sessions: number | null
+  rollover_policy: string
+  rollover_max: number
+  topup_eligible: number
+  enabled: number
+  display_order: number
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SubscriptionRow = {
+  id: string
+  user_id: string
+  plan_id: string
+  status: string
+  current_period_start: string
+  current_period_end: string | null
+  next_renewal_at: string | null
+  cancelled_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CreditOperationCatalogRow = {
+  id: string
+  operation_id: string
+  display_name: string
+  description: string
+  credit_cost: number
+  category: string
+  enabled: number
+  refundable: number
+  requires_confirmation: number
+  free_tier_allowed: number
+  created_at: string
+  updated_at: string
+}
+
+export type CreditCostVersionRow = {
+  id: string
+  operation_id: string
+  credit_cost: number
+  effective_from: string
+  effective_to: string | null
+  created_at: string
+}
+
+export type DesignSessionRow = {
+  id: string
+  project_id: string
+  user_id: string
+  title: string
+  brief_json: string | null
+  intent_json: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export type DesignOperationRow = {
+  id: string
+  session_id: string
+  project_id: string
+  user_id: string
+  operation_id: string
+  credit_cost: number
+  cost_version_id: string | null
+  reservation_id: string | null
+  status: string
+  outcome_json: string | null
+  feedback_text: string | null
+  classified_operation: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+export type LlmCostRecordRow = {
+  id: string
+  operation_id: string | null
+  design_operation_id: string | null
+  user_id: string | null
+  provider: string | null
+  model: string | null
+  input_tokens: number | null
+  output_tokens: number | null
+  estimated_cost_usd: number | null
+  request_id: string | null
+  created_at: string
+}
+
+export type CreditEventRow = {
+  id: string
+  user_id: string
+  event_type: string
+  operation_id: string | null
+  reservation_id: string | null
+  project_id: string | null
+  session_id: string | null
+  design_operation_id: string | null
+  amount: number | null
+  meta_json: string | null
+  created_at: string
+}
+
+export type RefundRow = {
+  id: string
+  user_id: string
+  reservation_id: string | null
+  order_id: string | null
+  amount: number
+  reason: string
+  admin_user_id: string | null
+  created_at: string
+}
+
 export function defaultDbPath(): string {
   return path.join(__dirname, 'data', 'forma.sqlite')
 }
@@ -76,6 +209,7 @@ export function openDb(dbPath: string = defaultDbPath()): DatabaseSync {
   }
   db.exec('PRAGMA foreign_keys = ON')
   migrate(db)
+  seedDefaults(db)
   return db
 }
 
@@ -173,5 +307,241 @@ export function migrate(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_payment_orders_token
       ON payment_orders(iyzico_token)
       WHERE iyzico_token IS NOT NULL;
+
+    -- ===== Phase 10 credit economy =====
+
+    -- Credit buckets: sub-ledger that reconciles with wallets.balance.
+    -- bucket_type: 'included' (monthly subscription), 'purchased' (top-up), 'bonus' (admin/promo)
+    CREATE TABLE IF NOT EXISTS credit_buckets (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      bucket_type TEXT NOT NULL CHECK (bucket_type IN ('included','purchased','bonus')),
+      balance INTEGER NOT NULL DEFAULT 0,
+      expires_at TEXT,
+      source_ref TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_credit_buckets_user
+      ON credit_buckets(user_id, bucket_type);
+
+    -- Configurable subscription plans (admin-managed)
+    CREATE TABLE IF NOT EXISTS subscription_plans (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      monthly_price REAL NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'TRY',
+      monthly_credits INTEGER NOT NULL DEFAULT 0,
+      max_projects INTEGER,
+      max_active_sessions INTEGER,
+      rollover_policy TEXT NOT NULL DEFAULT 'none',
+      rollover_max INTEGER NOT NULL DEFAULT 0,
+      topup_eligible INTEGER NOT NULL DEFAULT 1,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      display_order INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    -- User subscriptions
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      plan_id TEXT NOT NULL REFERENCES subscription_plans(id),
+      status TEXT NOT NULL DEFAULT 'active',
+      current_period_start TEXT NOT NULL,
+      current_period_end TEXT,
+      next_renewal_at TEXT,
+      cancelled_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+
+    -- Configurable credit operation catalog
+    CREATE TABLE IF NOT EXISTS credit_operation_catalog (
+      id TEXT PRIMARY KEY,
+      operation_id TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      credit_cost INTEGER NOT NULL DEFAULT 0,
+      category TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      refundable INTEGER NOT NULL DEFAULT 1,
+      requires_confirmation INTEGER NOT NULL DEFAULT 0,
+      free_tier_allowed INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    -- Credit cost versioning: historical operations preserve cost at execution time
+    CREATE TABLE IF NOT EXISTS credit_cost_versions (
+      id TEXT PRIMARY KEY,
+      operation_id TEXT NOT NULL,
+      credit_cost INTEGER NOT NULL,
+      effective_from TEXT NOT NULL,
+      effective_to TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_cost_versions_operation
+      ON credit_cost_versions(operation_id, effective_from DESC);
+
+    -- Design sessions belong to projects
+    CREATE TABLE IF NOT EXISTS design_sessions (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      brief_json TEXT,
+      intent_json TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_design_sessions_project
+      ON design_sessions(project_id, updated_at DESC);
+
+    -- Design operations within sessions
+    CREATE TABLE IF NOT EXISTS design_operations (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES design_sessions(id) ON DELETE CASCADE,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      operation_id TEXT NOT NULL,
+      credit_cost INTEGER NOT NULL,
+      cost_version_id TEXT,
+      reservation_id TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      outcome_json TEXT,
+      feedback_text TEXT,
+      classified_operation TEXT,
+      created_at TEXT NOT NULL,
+      completed_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_design_operations_session
+      ON design_operations(session_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_design_operations_user
+      ON design_operations(user_id, created_at DESC);
+
+    -- Internal LLM cost tracking (admin only, never affects user balance)
+    CREATE TABLE IF NOT EXISTS llm_cost_records (
+      id TEXT PRIMARY KEY,
+      operation_id TEXT,
+      design_operation_id TEXT,
+      user_id TEXT,
+      provider TEXT,
+      model TEXT,
+      input_tokens INTEGER,
+      output_tokens INTEGER,
+      estimated_cost_usd REAL,
+      request_id TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_llm_cost_records_operation
+      ON llm_cost_records(operation_id, created_at DESC);
+
+    -- Structured credit events for analytics/audit
+    CREATE TABLE IF NOT EXISTS credit_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      operation_id TEXT,
+      reservation_id TEXT,
+      project_id TEXT,
+      session_id TEXT,
+      design_operation_id TEXT,
+      amount INTEGER,
+      meta_json TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_credit_events_user
+      ON credit_events(user_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_credit_events_type
+      ON credit_events(event_type, created_at DESC);
+
+    -- Refund records (separate from ledger; ledger entry is the financial record)
+    CREATE TABLE IF NOT EXISTS refunds (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reservation_id TEXT,
+      order_id TEXT,
+      amount INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      admin_user_id TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_refunds_user ON refunds(user_id, created_at DESC);
   `)
+}
+
+/** Seed default operation catalog, cost versions, and subscription plans if empty. */
+export function seedDefaults(db: DatabaseSync): void {
+  const now = new Date().toISOString()
+  const opCount = (db.prepare(`SELECT COUNT(*) AS n FROM credit_operation_catalog`).get() as { n: number }).n
+  if (opCount === 0) {
+    const ops = [
+      ['brief_generation', 'Brief Oluşturma', 'Tasarım briefini doğal dilden üretir.', 1, 'discovery', 1, 0, 0, 1],
+      ['design_exploration', 'Tasarım Keşfi', 'Brieften ilk tasarım adaylarını üretir.', 5, 'discovery', 1, 1, 1, 1],
+      ['initial_design', 'İlk Tasarım', 'Proje için ilk tasarımı üretir.', 5, 'creation', 1, 1, 1, 1],
+      ['alternative_design', 'Alternatif Tasarım', 'Mevcut brieften kontrollü alternatif üretir.', 4, 'creation', 1, 1, 1, 1],
+      ['new_direction', 'Yeni Yön', 'Yaratıcı yönü değiştirerek yeni konsept üretir.', 7, 'creation', 1, 1, 1, 1],
+      ['micro_revision', 'Mikro Revizyon', 'Küçük metin/renk/düzeltme değişikliği.', 1, 'revision', 1, 1, 0, 1],
+      ['focused_revision', 'Odaklı Revizyon', 'Tek bir alana odaklı revizyon.', 2, 'revision', 1, 1, 0, 1],
+      ['structural_revision', 'Yapısal Revizyon', 'Kompozisyon ve hiyerarşiyi değiştirir.', 3, 'revision', 1, 1, 1, 1],
+      ['creative_revision', 'Yaratıcı Revizyon', 'Yaratıcı yönü kısmen değiştirir.', 5, 'revision', 1, 1, 1, 1],
+      ['full_art_direction_revision', 'Tam Sanat Yönü Revizyonu', 'Tam sanat yönünü yeniden üretir.', 7, 'revision', 1, 1, 1, 1],
+      ['typography_refinement', 'Tipografi İyileştirme', 'Tipografi ve font ayarları.', 2, 'refinement', 1, 1, 0, 1],
+      ['color_refinement', 'Renk İyileştirme', 'Renk paleti ayarları.', 2, 'refinement', 1, 1, 0, 1],
+      ['composition_refinement', 'Kompozisyon İyileştirme', 'Düzen ve kompozisyon ayarları.', 2, 'refinement', 1, 1, 0, 1],
+      ['asset_refinement', 'Görsel İyileştirme', 'Hero/görsel öğeleri ayarlar.', 2, 'refinement', 1, 1, 0, 1],
+      ['final_refinement', 'Son İyileştirme', 'Üretime hazır son iyileştirme.', 3, 'refinement', 1, 1, 1, 1],
+      ['final_export', 'Son Export', 'Üretim-ready export paketi.', 1, 'export', 1, 0, 1, 1],
+    ] as const
+
+    const insertOp = db.prepare(
+      `INSERT INTO credit_operation_catalog
+       (id, operation_id, display_name, description, credit_cost, category, enabled, refundable, requires_confirmation, free_tier_allowed, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const insertVersion = db.prepare(
+      `INSERT INTO credit_cost_versions
+       (id, operation_id, credit_cost, effective_from, effective_to, created_at)
+       VALUES (?, ?, ?, ?, NULL, ?)`,
+    )
+    for (const op of ops) {
+      const id = `cat_${op[0]}`
+      insertOp.run(id, op[0], op[1], op[2], op[3], op[4], op[5], op[6], op[7], op[8], now, now)
+      insertVersion.run(`ver_${op[0]}_v1`, op[0], op[3], now, now)
+    }
+  }
+
+  const planCount = (db.prepare(`SELECT COUNT(*) AS n FROM subscription_plans`).get() as { n: number }).n
+  if (planCount === 0) {
+    const plans = [
+      ['free', 'Free', 0, 'TRY', 50, 3, 1, 'none', 0, 1, 1, 0, 'Kayıtta 50 başlangıç kredisi.'],
+      ['starter', 'Starter', 199, 'TRY', 150, 10, 3, 'partial', 50, 1, 1, 1, 'Aylık 150 kredi, kısmi rollover.'],
+      ['professional', 'Professional', 399, 'TRY', 400, 50, 10, 'partial', 100, 1, 1, 2, 'Aylık 400 kredi, kısmi rollover.'],
+      ['studio', 'Studio', 999, 'TRY', 1200, 999, 50, 'full', 999, 1, 1, 3, 'Aylık 1200 kredi, tam rollover.'],
+    ] as const
+
+    const insertPlan = db.prepare(
+      `INSERT INTO subscription_plans
+       (id, label, monthly_price, currency, monthly_credits, max_projects, max_active_sessions,
+        rollover_policy, rollover_max, topup_eligible, enabled, display_order, description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    for (const p of plans) {
+      insertPlan.run(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], now, now)
+    }
+  }
 }

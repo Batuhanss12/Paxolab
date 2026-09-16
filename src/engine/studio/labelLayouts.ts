@@ -25,7 +25,6 @@ import {
   productBadge,
   productBadgeHeight,
   productStack,
-  qrPlaceholder,
   qualityBadge,
   spacedLine,
   stackedLockup,
@@ -36,8 +35,8 @@ import {
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
-import { darken, isDark, lighten, mix } from './color'
-import { backHeaders, nutritionRows, usageLine } from './copyBank'
+import { darken, isDark, lighten, mix, readableInk } from './color'
+import { backHeaders, claimLine, liveClaim, nutritionRows, usageCopy } from './copyBank'
 import { fitLabelBarcode } from '../barcode'
 import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, type LayoutCtx } from './layoutContext'
 import { Ledger, fitSize, textEl, textWidth, wrapByWidth } from './text'
@@ -48,7 +47,7 @@ const f = (n: number) => (Math.round(n * 100) / 100).toString()
 function legalSections(ctx: LayoutCtx): Section[] {
   const hdr = backHeaders(ctx.d.locale)
   return [
-    { title: hdr.usage, body: usageLine(ctx.d.sector, ctx.d.locale) },
+    { title: hdr.usage, body: usageCopy(ctx.copy, ctx.d.sector, ctx.d.locale), edit: 'usage' },
     { title: hdr.warnings, body: ctx.copy.warnings, edit: 'warnings' },
     { title: hdr.ingredients, body: ctx.copy.ingredients, edit: 'ingredients' },
   ]
@@ -74,15 +73,7 @@ function cardOnArt(ctx: LayoutCtx): string {
   const volSize = Math.max(2, Math.min(3.2, w * 0.035))
   const vol = d.volumeLine
   const reserveTop = vol ? picY - volSize * 1.9 : picY - 1
-  // legal column only when the label has no utility back — the reference fronts stay clean
-  let legalBottom = m
-  if (!ctx.hasBack) {
-    const colW = landscape ? w * 0.4 : w * 0.46
-    const colBottom = landscape ? reserveTop - 2 : h * 0.4
-    const legal = legalColumn(ledger, m, m + (landscape ? 0 : pill.box.h + 1.5), colW, colBottom, legalSections(ctx), ink, { size: Math.max(1.25, Math.min(1.55, w * 0.016)), titleColor: ink })
-    parts.push(legal.markup)
-    legalBottom = legal.bottom
-  }
+  const bandText = liveClaim(copy, d.chips[0] ?? d.categoryLine)
   // title card + claim band + sentence: measure on a probe ledger, then place the block so it ends above the reserve
   const cardW = landscape ? w * 0.44 : w - m * 2
   const cardX = landscape ? w - m - cardW : m
@@ -90,22 +81,20 @@ function cardOnArt(ctx: LayoutCtx): string {
   const sentenceText = d.taglineLine || copy.tagline
   const probe = new Ledger(ledger.panel)
   const pCard = titleCard(probe, d, cardX, 0, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
-  const pBand = claimBand(probe, d, cardX, pCard.bottom, cardW, d.chips[0] ?? d.categoryLine)
+  const pBand = claimBand(probe, d, cardX, pCard.bottom, cardW, bandText)
   const pSentence = paragraph(probe, cardX, pBand.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle')
   const blockH = pSentence.bottom
-  const wanted = landscape ? pill.box.y + pill.box.h + h * 0.12 : ctx.hasBack ? h * 0.36 : Math.max(legalBottom + 2, h * 0.44)
+  const wanted = landscape ? pill.box.y + pill.box.h + h * 0.12 : h * 0.36
   const blockBottomLimit = landscape ? h - m : reserveTop - 2.5
   const cardY = Math.max(pill.box.y + pill.box.h + 2, Math.min(wanted, blockBottomLimit - blockH))
   const card = titleCard(ledger, d, cardX, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
   parts.push(card.markup)
-  const band = claimBand(ledger, d, cardX, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
+  const band = claimBand(ledger, d, cardX, card.bottom, cardW, bandText, undefined, undefined, 'cta')
   parts.push(band.markup)
   const sentence = paragraph(ledger, cardX, band.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle', false, 'tagline')
   parts.push(sentence.markup)
-  // pictograms + QR + net quantity
   const pic = pictogramRow(ledger, m, picY, picS, pictogramsFor(d).filter((k) => k !== 'flammable').slice(0, 3), ink, ctx.paoMonths)
   parts.push(pic.markup)
-  parts.push(qrPlaceholder(ledger, m + pic.w + 2, picY, picS, ink, d.seed))
   if (vol) parts.push(netQuantity(ledger, m, picY - volSize * 0.9, vol, volSize, ink, 'start'))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
@@ -151,12 +140,15 @@ function marbleFrame(ctx: LayoutCtx): string {
 function diagonalSplit(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('diagonal', w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const parts: string[] = [paintBackground('diagonal', w, h, d.palette, d.seed, { uid: ctx.uid, clearRight: 0.48 })]
   const ink = d.palette.ink
   const accent = d.palette.accent
+  const lockInk = readableInk(d.palette.ground, ink)
   const landscape = isLandscape(w, h)
   const tiny = isTiny(w, h)
-  const colW = landscape ? w * 0.42 : w - m * 2
+  const split = !tiny
+  const colW = split ? w * 0.46 : w - m * 2
+  const chipText = claimLine(copy, d.chips) || 'PROFESSIONAL'
   // left column: light + heavy product title
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const first = words.length > 1 ? words.slice(0, -1).join(' ') : ''
@@ -179,62 +171,51 @@ function diagonalSplit(ctx: LayoutCtx): string {
   parts.push(textEl({ x: m, y, text: d.taglineLine, size: subSize, face: 'sans', fill: d.palette.muted, extra: 'data-edit="tagline"' }))
   ledger.text('sub', m, y, textWidth(d.taglineLine, subSize, 'sans'), subSize)
   y += subSize * 1.6
-  const c = chip(ledger, d, m, y, d.chips[1] ?? d.chips[0] ?? 'PROFESSIONAL', { color: ink, size: Math.max(1.5, subSize * 0.95) })
+  const c = chip(ledger, d, m, y, chipText, { color: ink, size: Math.max(1.5, subSize * 0.95), edit: 'cta' })
   parts.push(c.markup)
   y += c.h + subSize * 1.3
   const catSize = Math.max(1.9, tSize * 0.42)
   parts.push(textEl({ x: m, y, text: d.categoryLine, size: catSize, face: 'sans-heavy', fill: accent, tracking: catSize * 0.12 }))
   ledger.text('category', m, y, textWidth(d.categoryLine, catSize, 'sans-heavy', catSize * 0.12), catSize)
-  y += catSize * 0.9
-  // bottom-left reserve: producer + pictos + QR
+  // bottom-left: pictos only — address / usage / warnings live on the back
   const picS = Math.max(3.6, Math.min(5.2, h * 0.065))
   const picY = h - m - picS
-  const producerTop = tiny ? picY - 1 : picY - 4.2
-  // legal stack under the category (skipped on tiny faces or when a utility back carries it)
-  let legalBottom = y
-  if (!tiny && !ctx.hasBack) {
-    const limit = landscape ? producerTop - 2 : h * 0.62
-    const legal = legalColumn(ledger, m, y, colW, limit, [legalSections(ctx)[2], legalSections(ctx)[0], legalSections(ctx)[1]], ink, { size: Math.max(1.2, Math.min(1.45, w * 0.014)), titleColor: ink })
-    parts.push(legal.markup)
-    legalBottom = legal.bottom
-  }
-  if (!tiny) {
-    const producer = paragraph(ledger, m, producerTop, colW, producerLine(ctx), 1.15, 'sans', d.palette.muted, 2, 'start', false, 'manufacturer')
-    parts.push(producer.markup)
-  }
   const pics = pictogramRow(ledger, m, picY, picS, pictogramsFor(d).filter((k) => k !== 'flammable').slice(0, 3), ink, ctx.paoMonths)
   parts.push(pics.markup)
-  if (!tiny) parts.push(qrPlaceholder(ledger, m + pics.w + 2, picY, picS, ink, d.seed))
-  // right column: monogram lockup, centered title, chip, badge, volume
-  const rx = landscape ? w * 0.52 : m
-  const rw = landscape ? w - rx - m : w - m * 2
+  // right column: true split on both orientations — never overlay the left title
+  const rx = split ? w * 0.52 : m
+  const rw = split ? w - rx - m : w - m * 2
   const rcx = rx + rw / 2
-  const rTop = landscape ? m : legalBottom + 2
-  const mono = monogramLockup(ledger, d, rcx, rTop, copy.brand, rw * 0.6, accent, identOf(ctx))
+  const rTop = m
+  const mono = monogramLockup(ledger, d, rcx, rTop, copy.brand, rw * 0.6, lockInk, identOf(ctx), {
+    maxStackH: Math.min(h * 0.32, landscape ? 24 : 20),
+  })
   parts.push(mono.markup)
-  parts.push(brandMark('leaf', rcx, mono.bottom + 4, 2.2, mix(accent, '#3f8a3a', 0.4)))
-  ledger.add('element', 'leaf-mark', rcx - 2.4, mono.bottom + 1.6, 4.8, 4.8)
+  if (landscape && !tiny) {
+    parts.push(brandMark('leaf', rcx, mono.bottom + 4, 2.2, mix(accent, '#3f8a3a', 0.4)))
+    ledger.add('element', 'leaf-mark', rcx - 2.4, mono.bottom + 1.6, 4.8, 4.8)
+  }
   const volSize = Math.max(2, Math.min(2.8, rw * 0.06))
   const volBase = h - m * 0.6
   if (tiny) {
-    // small jar / sachet: monogram + category + volume; the left column already carries the title
     const catBase = Math.min(mono.bottom + 9, volBase - volSize * 2.2)
     parts.push(spacedLine(ledger, rcx, catBase, d.categoryLine, 1.7, accent, rw))
     if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
-  } else {
+  } else if (landscape) {
     const stack = productStack(ledger, d, rcx, mono.bottom + 9, rw, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(6.8, rw * 0.13) }))
     parts.push(stack.markup)
-    const chipText = d.chips[1] ?? d.chips[0] ?? 'PROFESSIONAL'
     const chipSize = 1.6
     const chipH = chipSize * 1.75
     const badgeH = 2.1 * 2.2
     const roomBelowChip = volBase - volSize * 1.4 - (stack.bottom + 2.2 + chipH)
-    if (roomBelowChip > 2) parts.push(chip(ledger, d, rcx, stack.bottom + 2.2, chipText, { color: ink, size: chipSize, anchor: 'middle' }).markup)
+    if (roomBelowChip > 2) parts.push(chip(ledger, d, rcx, stack.bottom + 2.2, chipText, { color: ink, size: chipSize, anchor: 'middle', edit: 'cta' }).markup)
     if (roomBelowChip > badgeH + 3) {
       const badgeY = stack.bottom + 2.2 + chipH + 3
       const badge = qualityBadge(ledger, d, rcx, badgeY, d.locale === 'en' ? 'PREMIUM QUALITY' : 'PREMIUM KALİTE', d.locale === 'en' ? 'BEST CHOICE' : 'EN İYİ SEÇİM', accent)
       parts.push(badge.markup)
     }
+    if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
+  } else {
     if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
   }
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
@@ -347,7 +328,22 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
   const chipBlock = (cx: number, y: number, span: number) => {
     // two spaced chips around a small mark
     if (chips[0]) parts.push(spacedLine(ledger, cx - span * 0.28, y, chips[0], chipSize, ink, span * 0.42))
-    if (chips[1]) parts.push(spacedLine(ledger, cx + span * 0.28, y, chips[1], chipSize, ink, span * 0.42))
+    if (chips[1]) {
+      parts.push(
+        spacedLine(
+          ledger,
+          cx + span * 0.28,
+          y,
+          claimLine(copy, d.chips),
+          chipSize,
+          ink,
+          span * 0.42,
+          'middle',
+          'sans',
+          d.surface === 'label' ? 'cta' : undefined,
+        ),
+      )
+    }
     parts.push(brandMark(markKind, cx, y - 0.6, 1.6, accent))
     ledger.add('element', 'foot-mark', cx - 1.8, y - 2.4, 3.6, 3.6)
   }
@@ -478,7 +474,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   const slot = fitLabelBarcode({ w, h, margin: m, picCount: pics.length, leftExtra: volW ? volW + 2.2 : 0 })
   const footTop = slot.footTop
   const sections: Section[] = [
-    { title: hdr.usage, body: usageLine(d.sector, d.locale) },
+    { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
     { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
     { title: hdr.producer, body: producerLine(ctx), edit: 'manufacturer' },

@@ -23,6 +23,8 @@ import {
   listTransactions,
   refundReservation,
   reserveCredits,
+  reserveCreditsForCatalog,
+  costForCatalog,
   type MeteredOperation,
 } from './credits.ts'
 import { CREDIT_PACKS, PLANS } from './billing/catalog.ts'
@@ -44,10 +46,43 @@ import {
   publicApiUrl,
   publicFrontendUrl,
 } from './billing/iyzico.ts'
+import {
+  listOperations,
+  resolveOperation,
+  updateOperationCost,
+  updateOperationMeta,
+  type OperationDef,
+} from './credit/catalog.ts'
+import { bucketSummary, listBuckets, reconcileCheck } from './credit/buckets.ts'
+import { classifyFeedback, classifyOperation, toLegacyOperation } from './credit/classify.ts'
+import {
+  createSession as createDesignSession,
+  listSessions,
+  getSession,
+  recordOperation,
+  startOperation,
+  completeOperation,
+  failOperation,
+  listOperations as listSessionOperations,
+  listUserOperations,
+  projectUsage,
+} from './credit/sessions.ts'
+import {
+  listPlans,
+  listAllPlans,
+  getPlan,
+  getActiveSubscription,
+  activateSubscription,
+  cancelSubscription,
+  renewSubscription,
+  upsertPlan,
+} from './credit/subscriptions.ts'
+import { recordLlmCost, listLlmCosts, llmCostSummary } from './credit/llmCost.ts'
+import { recordEvent, listUserEvents } from './credit/events.ts'
 import { bodyLimit } from 'hono/body-limit'
 import {
   BODY_TOO_LARGE_TR,
-  corsOrigins,
+  corsOriginChecker,
   maxBodyBytes,
   rateLimit,
   securityHeaders,
@@ -97,7 +132,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
   app.use(
     '*',
     cors({
-      origin: corsOrigins(),
+      origin: corsOriginChecker,
       allowHeaders: ['Content-Type', 'Authorization'],
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     }),
@@ -429,6 +464,328 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
 
   app.route('/api/credits', credits)
+
+  // ---- Phase 10 credit economy ----
+
+  // Operation catalog (public, no auth needed for listing)
+  app.get('/api/billing/operations', (c) => {
+    const ops = listOperations(db)
+    return c.json({
+      operations: ops.map((op) => ({
+        operationId: op.operationId,
+        displayName: op.displayName,
+        description: op.description,
+        creditCost: op.creditCost,
+        category: op.category,
+        enabled: op.enabled,
+        refundable: op.refundable,
+        requiresConfirmation: op.requiresConfirmation,
+        freeTierAllowed: op.freeTierAllowed,
+      })),
+    })
+  })
+
+  // Quote: get cost for an operation before reserving
+  app.post('/api/design/operations/quote', requireAuth(db), async (c) => {
+    let body: { operation?: string; feedback?: string; hasPriorDesign?: boolean }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+
+    let operationId = body.operation
+    let classified = null as null | { operationId: string; confidence: number; rationale: string; matchedKeywords: string[] }
+
+    // If feedback is provided, classify it
+    if (!operationId && typeof body.feedback === 'string') {
+      const result = classifyOperation(body.feedback, body.hasPriorDesign ?? false)
+      classified = {
+        operationId: result.operationId,
+        confidence: result.confidence,
+        rationale: result.rationale,
+        matchedKeywords: result.matchedKeywords,
+      }
+      operationId = result.operationId
+    }
+
+    if (!operationId) {
+      return c.json({ error: 'operation veya feedback gerekli.' }, 400)
+    }
+
+    try {
+      const def = resolveOperation(db, operationId)
+      return c.json({
+        operationId: def.operationId,
+        displayName: def.displayName,
+        description: def.description,
+        creditCost: def.creditCost,
+        category: def.category,
+        refundable: def.refundable,
+        requiresConfirmation: def.requiresConfirmation,
+        classified,
+      })
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Operasyon bulunamadı.' }, 400)
+    }
+  })
+
+  // Classify feedback (no cost, no reservation)
+  app.post('/api/design/operations/classify', requireAuth(db), async (c) => {
+    let body: { feedback?: string; hasPriorDesign?: boolean }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    if (typeof body.feedback !== 'string') {
+      return c.json({ error: 'feedback gerekli.' }, 400)
+    }
+    const result = classifyOperation(body.feedback, body.hasPriorDesign ?? false)
+    return c.json({
+      operationId: result.operationId,
+      confidence: result.confidence,
+      rationale: result.rationale,
+      matchedKeywords: result.matchedKeywords,
+      legacyOperation: toLegacyOperation(result.operationId),
+    })
+  })
+
+  // Catalog-based reserve (Phase 10)
+  app.post('/api/design/operations/reserve', requireAuth(db), async (c) => {
+    const user = c.get('user') as PublicUser
+    let body: {
+      operation?: string
+      clientRequestId?: string
+      projectId?: string
+      sessionId?: string
+      feedbackText?: string
+    }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    if (!body.operation) {
+      return c.json({ error: 'operation gerekli.' }, 400)
+    }
+    try {
+      const result = reserveCreditsForCatalog(
+        db,
+        user.id,
+        body.operation,
+        body.clientRequestId ?? null,
+        {
+          projectId: body.projectId,
+          sessionId: body.sessionId,
+          feedbackText: body.feedbackText,
+        },
+      )
+      return c.json({
+        reservationId: result.reservationId,
+        amount: result.amount,
+        balance: result.balance,
+        operationId: result.catalogOperationId,
+        costVersionId: result.costVersionId,
+        idempotent: result.idempotent,
+      })
+    } catch (err) {
+      const mapped = asCreditsHttp(err)
+      if (mapped) return c.json({ error: mapped.error }, mapped.status)
+      throw err
+    }
+  })
+
+  // Commit (reuse existing /api/credits/commit — works for both legacy and catalog)
+
+  // Release/refund (reuse existing /api/credits/refund)
+
+  // Balance breakdown with buckets
+  app.get('/api/billing/credits', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const balance = getBalance(db, user.id)
+    const summary = bucketSummary(db, user.id)
+    const sub = getActiveSubscription(db, user.id)
+    return c.json({
+      balance,
+      currency: 'credits',
+      buckets: summary,
+      subscription: sub
+        ? {
+            planId: sub.planId,
+            status: sub.status,
+            currentPeriodEnd: sub.currentPeriodEnd,
+            nextRenewalAt: sub.nextRenewalAt,
+          }
+        : null,
+    })
+  })
+
+  // Subscription endpoints
+  app.get('/api/billing/subscription', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const sub = getActiveSubscription(db, user.id)
+    if (!sub) return c.json({ subscription: null })
+    const plan = getPlan(db, sub.planId)
+    return c.json({
+      subscription: {
+        id: sub.id,
+        planId: sub.planId,
+        planLabel: plan?.label ?? sub.planId,
+        status: sub.status,
+        currentPeriodStart: sub.currentPeriodStart,
+        currentPeriodEnd: sub.currentPeriodEnd,
+        nextRenewalAt: sub.nextRenewalAt,
+        cancelledAt: sub.cancelledAt,
+        monthlyCredits: plan?.monthlyCredits ?? 0,
+      },
+    })
+  })
+
+  app.post('/api/billing/subscribe', requireAuth(db), async (c) => {
+    const user = c.get('user') as PublicUser
+    let body: { planId?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    if (!body.planId) {
+      return c.json({ error: 'planId gerekli.' }, 400)
+    }
+    try {
+      const sub = activateSubscription(db, user.id, body.planId)
+      return c.json({ subscription: sub }, 201)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Abonelik başlatılamadı.' }, 400)
+    }
+  })
+
+  app.post('/api/billing/cancel', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const sub = cancelSubscription(db, user.id)
+    if (!sub) return c.json({ error: 'Aktif abonelik bulunamadı.' }, 404)
+    return c.json({ subscription: sub })
+  })
+
+  // Usage: user's design operations
+  app.get('/api/billing/usage', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const limitRaw = c.req.query('limit')
+    const limit = limitRaw ? Number(limitRaw) : 50
+    const ops = listUserOperations(db, user.id, Number.isFinite(limit) ? limit : 50)
+    return c.json({
+      usage: ops.map((op) => ({
+        id: op.id,
+        sessionId: op.sessionId,
+        projectId: op.projectId,
+        operationId: op.operationId,
+        creditCost: op.creditCost,
+        status: op.status,
+        feedbackText: op.feedbackText,
+        classifiedOperation: op.classifiedOperation,
+        createdAt: op.createdAt,
+        completedAt: op.completedAt,
+      })),
+    })
+  })
+
+  // Full ledger (user's credit transactions)
+  app.get('/api/billing/ledger', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const limitRaw = c.req.query('limit')
+    const limit = limitRaw ? Number(limitRaw) : 100
+    const rows = listTransactions(db, user.id, Number.isFinite(limit) ? limit : 100)
+    return c.json({
+      ledger: rows.map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        amount: row.amount,
+        balanceAfter: row.balance_after,
+        refId: row.ref_id,
+        meta: row.meta_json ? (() => { try { return JSON.parse(row.meta_json) } catch { return null } })() : null,
+        createdAt: row.created_at,
+      })),
+    })
+  })
+
+  // Design sessions
+  app.get('/api/projects/:projectId/sessions', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const projectId = c.req.param('projectId')
+    // Verify project ownership
+    const project = db.prepare(`SELECT * FROM projects WHERE id = ? AND user_id = ?`).get(projectId, user.id)
+    if (!project) return c.json({ error: 'Proje bulunamadı.' }, 404)
+    const sessions = listSessions(db, projectId)
+    return c.json({ sessions })
+  })
+
+  app.post('/api/projects/:projectId/sessions', requireAuth(db), async (c) => {
+    const user = c.get('user') as PublicUser
+    const projectId = c.req.param('projectId')
+    const project = db.prepare(`SELECT * FROM projects WHERE id = ? AND user_id = ?`).get(projectId, user.id)
+    if (!project) return c.json({ error: 'Proje bulunamadı.' }, 404)
+    let body: { title?: string; brief?: unknown; intent?: unknown }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    const session = createDesignSession(db, projectId, user.id, body.title ?? 'Yeni oturum', body.brief, body.intent)
+    return c.json({ session }, 201)
+  })
+
+  app.get('/api/projects/:projectId/sessions/:sessionId/operations', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const projectId = c.req.param('projectId')
+    const sessionId = c.req.param('sessionId')
+    const project = db.prepare(`SELECT * FROM projects WHERE id = ? AND user_id = ?`).get(projectId, user.id)
+    if (!project) return c.json({ error: 'Proje bulunamadı.' }, 404)
+    const ops = listSessionOperations(db, sessionId)
+    return c.json({ operations: ops })
+  })
+
+  // Project usage analytics
+  app.get('/api/projects/:projectId/usage', requireAuth(db), (c) => {
+    const user = c.get('user') as PublicUser
+    const projectId = c.req.param('projectId')
+    const project = db.prepare(`SELECT * FROM projects WHERE id = ? AND user_id = ?`).get(projectId, user.id)
+    if (!project) return c.json({ error: 'Proje bulunamadı.' }, 404)
+    const usage = projectUsage(db, projectId)
+    return c.json({ usage })
+  })
+
+  // Record LLM cost (internal, called by design engine)
+  app.post('/api/internal/llm-cost', requireAuth(db), async (c) => {
+    let body: {
+      operationId?: string
+      designOperationId?: string
+      provider?: string
+      model?: string
+      inputTokens?: number
+      outputTokens?: number
+      estimatedCostUsd?: number
+      requestId?: string
+    }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    const user = c.get('user') as PublicUser
+    const record = recordLlmCost(db, {
+      operationId: body.operationId,
+      designOperationId: body.designOperationId,
+      userId: user.id,
+      provider: body.provider,
+      model: body.model,
+      inputTokens: body.inputTokens,
+      outputTokens: body.outputTokens,
+      estimatedCostUsd: body.estimatedCostUsd,
+      requestId: body.requestId,
+    })
+    return c.json({ record }, 201)
+  })
 
   // ---- Phase 8 billing (iyzico sandbox + mock) ----
   app.get('/api/billing/packs', (c) => {
@@ -800,6 +1157,189 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         paid_at: row.paid_at,
       })),
     })
+  })
+
+  // ---- Phase 10 admin endpoints ----
+
+  // Billing overview / dashboard
+  admin.get('/billing/overview', (c) => {
+    const users = (db.prepare(`SELECT COUNT(*) AS n FROM users`).get() as { n: number }).n
+    const activeSubs = (db.prepare(`SELECT COUNT(*) AS n FROM subscriptions WHERE status = 'active'`).get() as { n: number }).n
+    const creditsIssued = (db
+      .prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM credit_transactions WHERE amount > 0 AND kind IN ('grant','subscription_grant','bonus_grant','manual_admin_adjustment')`)
+      .get() as { total: number }).total
+    const creditsConsumed = (db
+      .prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM credit_transactions WHERE amount < 0 AND kind IN ('reserve','reservation','commit')`)
+      .get() as { total: number }).total
+    const creditsPurchased = (db
+      .prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM credit_transactions WHERE kind = 'grant' AND meta_json LIKE '%"reason":"purchase"%'`)
+      .get() as { total: number }).total
+    const creditsRefunded = (db
+      .prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM credit_transactions WHERE kind = 'refund'`)
+      .get() as { total: number }).total
+    const topupRevenue = (db
+      .prepare(`SELECT COALESCE(SUM(amount_try), 0) AS total FROM payment_orders WHERE status = 'paid'`)
+      .get() as { total: number }).total
+    const subRevenue = (db
+      .prepare(`SELECT COALESCE(SUM(p.monthly_price), 0) AS total FROM subscriptions s JOIN subscription_plans p ON s.plan_id = p.id WHERE s.status = 'active'`)
+      .get() as { total: number }).total
+    const failedOps = (db
+      .prepare(`SELECT COUNT(*) AS n FROM design_operations WHERE status = 'failed'`)
+      .get() as { n: number }).n
+    const llmSummary = llmCostSummary(db)
+
+    return c.json({
+      users,
+      activeSubscriptions: activeSubs,
+      creditsIssued,
+      creditsConsumed: Math.abs(creditsConsumed),
+      creditsPurchased,
+      creditsRefunded,
+      topupRevenue,
+      subscriptionRevenue: subRevenue,
+      failedOperations: failedOps,
+      creditUtilization: creditsIssued > 0 ? Math.abs(creditsConsumed) / creditsIssued : 0,
+      llmCosts: llmSummary,
+    })
+  })
+
+  // User detail with credit breakdown
+  admin.get('/users/:id/credits', (c) => {
+    const userId = c.req.param('id')
+    const userRow = db.prepare(`SELECT id, email, name, role, created_at FROM users WHERE id = ?`).get(userId)
+    if (!userRow) return c.json({ error: 'Kullanıcı bulunamadı.' }, 404)
+    const balance = getBalance(db, userId)
+    const summary = bucketSummary(db, userId)
+    const sub = getActiveSubscription(db, userId)
+    return c.json({
+      user: userRow,
+      balance,
+      buckets: summary,
+      subscription: sub
+        ? {
+            planId: sub.planId,
+            status: sub.status,
+            currentPeriodEnd: sub.currentPeriodEnd,
+          }
+        : null,
+    })
+  })
+
+  // User ledger (full transaction history)
+  admin.get('/users/:id/ledger', (c) => {
+    const userId = c.req.param('id')
+    const limitRaw = c.req.query('limit')
+    const limit = limitRaw ? Number(limitRaw) : 200
+    const rows = listTransactions(db, userId, Number.isFinite(limit) ? limit : 200)
+    return c.json({
+      ledger: rows.map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        amount: row.amount,
+        balanceAfter: row.balance_after,
+        refId: row.ref_id,
+        meta: row.meta_json ? (() => { try { return JSON.parse(row.meta_json) } catch { return null } })() : null,
+        createdAt: row.created_at,
+      })),
+    })
+  })
+
+  // Plan management
+  admin.get('/plans', (c) => {
+    return c.json({ plans: listAllPlans(db) })
+  })
+
+  admin.post('/plans', async (c) => {
+    let body: { id?: string; label?: string; monthlyPrice?: number; monthlyCredits?: number; maxProjects?: number; maxActiveSessions?: number; rolloverPolicy?: string; rolloverMax?: number; topupEligible?: boolean; enabled?: boolean; displayOrder?: number; description?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    if (!body.id) return c.json({ error: 'id gerekli.' }, 400)
+    try {
+      const plan = upsertPlan(db, body.id, {
+        label: body.label,
+        monthlyPrice: body.monthlyPrice,
+        monthlyCredits: body.monthlyCredits,
+        maxProjects: body.maxProjects,
+        maxActiveSessions: body.maxActiveSessions,
+        rolloverPolicy: body.rolloverPolicy as 'none' | 'partial' | 'full',
+        rolloverMax: body.rolloverMax,
+        topupEligible: body.topupEligible,
+        enabled: body.enabled,
+        displayOrder: body.displayOrder,
+        description: body.description,
+      })
+      return c.json({ plan }, 201)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Plan güncellenemedi.' }, 400)
+    }
+  })
+
+  admin.patch('/plans/:id', async (c) => {
+    const planId = c.req.param('id')
+    let body: Partial<{ label: string; monthlyPrice: number; monthlyCredits: number; maxProjects: number; maxActiveSessions: number; rolloverPolicy: string; rolloverMax: number; topupEligible: boolean; enabled: boolean; displayOrder: number; description: string }>
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    try {
+      const plan = upsertPlan(db, planId, body)
+      return c.json({ plan })
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Plan güncellenemedi.' }, 400)
+    }
+  })
+
+  // Credit operation catalog management
+  admin.get('/credit-operations', (c) => {
+    return c.json({ operations: listOperations(db) })
+  })
+
+  admin.patch('/credit-operations/:id', async (c) => {
+    const operationId = c.req.param('id')
+    let body: { creditCost?: number; displayName?: string; description?: string; enabled?: boolean; refundable?: boolean; requiresConfirmation?: boolean; freeTierAllowed?: boolean }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    try {
+      if (body.creditCost !== undefined) {
+        updateOperationCost(db, operationId, body.creditCost)
+      }
+      const updated = updateOperationMeta(db, operationId, {
+        displayName: body.displayName,
+        description: body.description,
+        enabled: body.enabled,
+        refundable: body.refundable,
+        requiresConfirmation: body.requiresConfirmation,
+        freeTierAllowed: body.freeTierAllowed,
+      })
+      return c.json({ operation: updated })
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Operasyon güncellenemedi.' }, 400)
+    }
+  })
+
+  // LLM cost records (internal analytics)
+  admin.get('/llm-costs', (c) => {
+    const limitRaw = c.req.query('limit')
+    const limit = limitRaw ? Number(limitRaw) : 100
+    return c.json({ costs: listLlmCosts(db, Number.isFinite(limit) ? limit : 100) })
+  })
+
+  // Renew a subscription (manual trigger for testing)
+  admin.post('/subscriptions/:id/renew', (c) => {
+    const subId = c.req.param('id')
+    try {
+      const result = renewSubscription(db, subId)
+      return c.json(result)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Yenileme başarısız.' }, 400)
+    }
   })
 
   app.route('/api/admin', admin)

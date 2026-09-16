@@ -30,6 +30,8 @@ export type BackgroundOpts = {
   corner?: 'bl' | 'br' | 'tl' | 'tr'
   /** For landscapes: vertical span (0–1 of h) the scene occupies from the bottom. */
   span?: number
+  /** Keep this right-side fraction of the face free of the main stripe (label lockup column). */
+  clearRight?: number
 }
 
 export function paintBackground(family: BackgroundFamily, w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
@@ -242,10 +244,12 @@ export function diagonal(w: number, h: number, pal: StudioPalette, seed: number,
     <linearGradient id="${id}-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(pal.ground, 0.14)}" /><stop offset="1" stop-color="${pal.ground}" /></linearGradient>
   </defs>`
   const parts: string[] = [defs, ground(w, h, pal.ground)]
+  const clear = opts.clearRight ?? 0
+  const maxRight = clear > 0 ? w * (1 - clear) : w
   // main metallic block: parallelogram sweeping from top-centre to bottom-right
-  const shift = w * (0.32 + rng() * 0.1)
-  const x0 = w * (0.36 + rng() * 0.08)
-  const bw = w * (0.16 + k * 0.1)
+  const shift = Math.min(w * (0.32 + rng() * 0.1), Math.max(w * 0.12, maxRight * 0.45))
+  const x0 = Math.min(w * (0.36 + rng() * 0.08), Math.max(w * 0.12, maxRight - w * 0.34))
+  const bw = Math.min(w * (0.16 + k * 0.1), Math.max(w * 0.1, maxRight - x0 - w * 0.06))
   parts.push(`<polygon points="${f(x0)},0 ${f(x0 + bw)},0 ${f(x0 + bw + shift)},${f(h)} ${f(x0 + shift)},${f(h)}" fill="url(#${id}-a)" />`)
   // secondary lighter charcoal block
   const x1 = x0 - w * 0.22

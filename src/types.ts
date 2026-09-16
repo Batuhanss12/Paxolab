@@ -278,6 +278,8 @@ export type DesignSpec = {
     manufacturer: string
     address: string
     cta: string
+    /** Directions / kullanım — back of labels. Empty → copyBank usageLine. */
+    usage?: string
   }
   overrides: DesignOverrides
   generatedAt: number

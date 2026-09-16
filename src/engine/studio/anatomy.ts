@@ -237,6 +237,7 @@ export function monogramLockup(
   maxW: number,
   color: string,
   ident: Partial<StudioIdentity> = {},
+  opts: { maxStackH?: number } = {},
 ): LockupResult {
   const initials = brand
     .split(/\s+/)
@@ -248,7 +249,9 @@ export function monogramLockup(
   const titleScale = clampStudioScale(ident.titleScale)
   const logoScale = clampStudioScale(ident.logoScale)
   const href = ident.logoHref?.trim()
-  const monoSize = Math.min(maxW * 0.42, 16) * (href ? logoScale : 1)
+  const rawMono = Math.min(maxW * 0.42, 16)
+  const capped = opts.maxStackH != null ? Math.min(rawMono, opts.maxStackH * 0.42) : rawMono
+  const monoSize = capped * (href ? logoScale : 1)
   const baseline = top + monoSize * 0.85
   let out = ''
   if (href) {
@@ -260,7 +263,7 @@ export function monogramLockup(
     ledger.text('monogram', cx, baseline, textWidth(initials, monoSize, 'serif', -monoSize * 0.06), monoSize, 'middle')
   }
   const brandSize = fitSize(brand.toLocaleUpperCase('tr'), maxW, 2.8 * titleScale, 1.6 * titleScale, 'sans', 0.3)
-  const bBase = baseline + brandSize * 1.7
+  const bBase = baseline + Math.max(brandSize * 2.35, monoSize * 0.38)
   const track = brandSize * 0.3
   out += textEl({ x: cx, y: bBase, text: brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans', fill: color, anchor: 'middle', tracking: track })
   ledger.text('brand', cx, bBase, textWidth(brand.toLocaleUpperCase('tr'), brandSize, 'sans', track), brandSize, 'middle')
@@ -372,21 +375,22 @@ export function titleCard(
   return { markup: `<g data-art="title-card">${card}${real.markup}</g>`, bottom: y + h }
 }
 
-export function claimBand(ledger: Ledger, d: DesignDirection, x: number, y: number, w: number, text: string, fill?: string, ink?: string): { markup: string; bottom: number } {
+export function claimBand(ledger: Ledger, d: DesignDirection, x: number, y: number, w: number, text: string, fill?: string, ink?: string, optsEdit?: string): { markup: string; bottom: number } {
   const h = Math.max(4.2, w * 0.11)
   const size = fitSize(text, w - 4, h * 0.42, 1.5, 'sans-heavy', 0.12)
   const track = size * 0.12
   const bg = fill ?? darken(d.palette.accent2, 0.12)
   const color = ink ?? d.palette.card
   const base = y + h * 0.64
-  const markup = `<g data-art="claim-band"><rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="${bg}" />${textEl({ x: x + w / 2, y: base, text, size, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: track })}</g>`
+  const edit = optsEdit ? ` data-edit="${optsEdit}"` : ''
+  const markup = `<g data-art="claim-band"${edit}><rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="${bg}" />${textEl({ x: x + w / 2, y: base, text, size, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: track })}</g>`
   ledger.add('container', 'claim-band', x, y, w, h)
   ledger.text('claim', x + w / 2, base, textWidth(text, size, 'sans-heavy', track), size, 'middle')
   return { markup, bottom: y + h }
 }
 
 /** "PROFESSIONAL · STEP 1" style chip: label on a pill, last token inverted. */
-export function chip(ledger: Ledger, d: DesignDirection, x: number, y: number, text: string, opts: { color?: string; fill?: string; size?: number; anchor?: 'start' | 'middle' } = {}): { markup: string; w: number; h: number } {
+export function chip(ledger: Ledger, d: DesignDirection, x: number, y: number, text: string, opts: { color?: string; fill?: string; size?: number; anchor?: 'start' | 'middle'; edit?: string } = {}): { markup: string; w: number; h: number } {
   const size = opts.size ?? 1.9
   const color = opts.color ?? d.palette.ink
   const fill = opts.fill ?? 'none'
@@ -396,7 +400,8 @@ export function chip(ledger: Ledger, d: DesignDirection, x: number, y: number, t
   const w = textW + padX * 2
   const h = size * 1.75
   const left = opts.anchor === 'middle' ? x - w / 2 : x
-  const markup = `<g data-art="chip"><rect x="${f(left)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(h / 2)}" fill="${fill}" stroke="${color}" stroke-width="0.24" />${textEl({ x: left + w / 2, y: y + h * 0.66, text, size, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: track })}</g>`
+  const edit = opts.edit ? ` data-edit="${opts.edit}"` : ''
+  const markup = `<g data-art="chip"${edit}><rect x="${f(left)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(h / 2)}" fill="${fill}" stroke="${color}" stroke-width="0.24" />${textEl({ x: left + w / 2, y: y + h * 0.66, text, size, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: track })}</g>`
   ledger.add('container', 'chip', left, y, w, h)
   ledger.text('chip-text', left + w / 2, y + h * 0.66, textW, size, 'middle')
   return { markup, w, h }

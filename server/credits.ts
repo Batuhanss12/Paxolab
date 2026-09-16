@@ -1,5 +1,8 @@
 import type { FormaDb } from './db.ts'
 import { newId } from './auth.ts'
+import { resolveOperation, legacyToCatalog, activeCostVersion } from './credit/catalog.ts'
+import { grantToBucket, debitFromBuckets, refundToBuckets, bucketSummary } from './credit/buckets.ts'
+import { recordEvent } from './credit/events.ts'
 
 /** Starting grant on register (Phase 7). Payments come in Phase 8. */
 export const STARTING_CREDITS = 50
@@ -57,7 +60,26 @@ function nowIso(): string {
 }
 
 export function costFor(operation: MeteredOperation): number {
+  // Legacy constant is the fallback; catalog is the source of truth when seeded.
   return CREDIT_COSTS[operation]
+}
+
+/**
+ * Resolve cost from the catalog (Phase 10). Falls back to legacy constant
+ * if the catalog is not yet seeded (e.g. during early migration).
+ */
+export function costForCatalog(db: FormaDb, operationId: string): number {
+  try {
+    const def = resolveOperation(db, operationId)
+    return def.creditCost
+  } catch {
+    // Fallback to legacy
+    const legacy = operationId === 'generate' ? CREDIT_COSTS.generate
+      : operationId === 'revise' ? CREDIT_COSTS.revise
+      : operationId === 'export_zip' ? CREDIT_COSTS.export_zip
+      : 0
+    return legacy
+  }
 }
 
 export function getBalance(db: FormaDb, userId: string): number {
@@ -85,6 +107,8 @@ export function createWalletWithGrant(
     db.prepare(
       `INSERT INTO wallets (user_id, balance, updated_at) VALUES (?, ?, ?)`,
     ).run(userId, amount, now)
+    // Phase 10: also create a bonus bucket for the starting grant
+    grantToBucket(db, userId, 'bonus', amount, { sourceRef: 'starting_grant' })
     db.prepare(
       `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
        VALUES (?, ?, 'grant', ?, ?, NULL, ?, ?)`,
@@ -131,6 +155,9 @@ export type ReserveResult = {
 /**
  * Atomic reserve: debit wallet immediately, leave reservation pending until commit/refund.
  * Idempotent when clientRequestId is provided (returns existing pending/committed reservation).
+ *
+ * Phase 10: also debits from credit buckets following the consumption policy,
+ * and records a credit_event for analytics.
  */
 export function reserveCredits(
   db: FormaDb,
@@ -185,6 +212,15 @@ export function reserveCredits(
     const reservationId = newId()
     const newBalance = wallet.balance - amount
 
+    // Phase 10: debit from buckets (sub-ledger) following consumption policy
+    try {
+      debitFromBuckets(db, userId, amount)
+    } catch {
+      // If buckets don't exist yet (legacy wallet without buckets),
+      // skip bucket debit — wallet debit is still authoritative.
+      // This preserves backward compatibility with pre-Phase 10 wallets.
+    }
+
     db.prepare(
       `INSERT INTO credit_reservations
          (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at)
@@ -210,6 +246,18 @@ export function reserveCredits(
       now,
     )
 
+    // Phase 10: record credit event
+    try {
+      recordEvent(db, {
+        userId,
+        eventType: 'credit_reservation_created',
+        operationId: operation,
+        reservationId,
+        amount: -amount,
+        meta: { clientRequestId: clientId },
+      })
+    } catch { /* events are best-effort */ }
+
     db.exec('COMMIT')
     return {
       reservationId,
@@ -217,6 +265,150 @@ export function reserveCredits(
       balance: newBalance,
       operation,
       idempotent: false,
+    }
+  } catch (err) {
+    if (err instanceof CreditsError) throw err
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* ignore */
+    }
+    throw err
+  }
+}
+
+/**
+ * Phase 10: Reserve credits for a catalog operation ID (not legacy).
+ * Uses the catalog to resolve cost and stores the catalog operation ID.
+ */
+export function reserveCreditsForCatalog(
+  db: FormaDb,
+  userId: string,
+  catalogOperationId: string,
+  clientRequestId?: string | null,
+  context?: { projectId?: string; sessionId?: string; feedbackText?: string },
+): ReserveResult & { catalogOperationId: string; costVersionId: string | null } {
+  const def = resolveOperation(db, catalogOperationId)
+  const amount = def.creditCost
+  const clientId =
+    typeof clientRequestId === 'string' && clientRequestId.trim()
+      ? clientRequestId.trim().slice(0, 128)
+      : null
+
+  // Get cost version for historical preservation
+  const costVersion = activeCostVersion(db, def.operationId)
+  const costVersionId = costVersion?.id ?? null
+
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    if (clientId) {
+      const existing = db
+        .prepare(
+          `SELECT * FROM credit_reservations WHERE user_id = ? AND client_request_id = ?`,
+        )
+        .get(userId, clientId) as CreditReservationRow | undefined
+      if (existing) {
+        if (existing.status === 'refunded') {
+          db.exec('ROLLBACK')
+          throw new CreditsError(409, 'Bu istek için rezervasyon iade edilmiş.')
+        }
+        const balance = getBalanceUnlocked(db, userId)
+        db.exec('COMMIT')
+        return {
+          reservationId: existing.id,
+          amount: existing.amount,
+          balance,
+          operation: existing.operation as MeteredOperation,
+          idempotent: true,
+          catalogOperationId: def.operationId,
+          costVersionId,
+        }
+      }
+    }
+
+    const wallet = db
+      .prepare(`SELECT balance FROM wallets WHERE user_id = ?`)
+      .get(userId) as { balance: number } | undefined
+    if (!wallet) {
+      db.exec('ROLLBACK')
+      throw new CreditsError(404, 'Cüzdan bulunamadı.')
+    }
+    if (wallet.balance < amount) {
+      db.exec('ROLLBACK')
+      throw new CreditsError(402, 'Krediniz yetersiz')
+    }
+
+    const now = nowIso()
+    const reservationId = newId()
+    const newBalance = wallet.balance - amount
+
+    // Debit from buckets
+    try {
+      debitFromBuckets(db, userId, amount)
+    } catch {
+      /* legacy wallet without buckets — wallet debit is authoritative */
+    }
+
+    // Store with legacy operation mapping for backward compat
+    const legacyOp = def.operationId === 'initial_design' ? 'generate'
+      : def.category === 'revision' || def.category === 'refinement' ? 'revise'
+      : 'generate'
+
+    db.prepare(
+      `INSERT INTO credit_reservations
+         (id, user_id, amount, status, operation, client_request_id, created_at, finalized_at)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, NULL)`,
+    ).run(reservationId, userId, amount, legacyOp, clientId, now)
+
+    db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
+      newBalance,
+      now,
+      userId,
+    )
+
+    db.prepare(
+      `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
+       VALUES (?, ?, 'reservation', ?, ?, ?, ?, ?)`,
+    ).run(
+      newId(),
+      userId,
+      -amount,
+      newBalance,
+      reservationId,
+      JSON.stringify({
+        operation: def.operationId,
+        legacyOperation: legacyOp,
+        clientRequestId: clientId,
+        costVersionId,
+        projectId: context?.projectId ?? null,
+        sessionId: context?.sessionId ?? null,
+      }),
+      now,
+    )
+
+    // Record credit event
+    try {
+      recordEvent(db, {
+        userId,
+        eventType: 'credit_reservation_created',
+        operationId: def.operationId,
+        reservationId,
+        projectId: context?.projectId ?? null,
+        sessionId: context?.sessionId ?? null,
+        amount: -amount,
+        meta: { clientRequestId: clientId, costVersionId },
+      })
+    } catch { /* events are best-effort */ }
+
+    db.exec('COMMIT')
+    return {
+      reservationId,
+      amount,
+      balance: newBalance,
+      operation: legacyOp,
+      idempotent: false,
+      catalogOperationId: def.operationId,
+      costVersionId,
     }
   } catch (err) {
     if (err instanceof CreditsError) throw err
@@ -281,6 +473,18 @@ export function commitReservation(db: FormaDb, userId: string, reservationId: st
       now,
     )
 
+    // Phase 10: record credit event
+    try {
+      recordEvent(db, {
+        userId,
+        eventType: 'credit_consumption_committed',
+        operationId: res.operation,
+        reservationId,
+        amount: -res.amount,
+        meta: { reservedAmount: res.amount },
+      })
+    } catch { /* events are best-effort */ }
+
     db.exec('COMMIT')
     return { reservationId, status: 'committed', balance }
   } catch (err) {
@@ -329,6 +533,13 @@ export function refundReservation(
 
     const newBalance = wallet.balance + res.amount
 
+    // Phase 10: refund to buckets (sub-ledger)
+    try {
+      refundToBuckets(db, userId, res.amount)
+    } catch {
+      /* legacy wallet without buckets — wallet credit is authoritative */
+    }
+
     db.prepare(
       `UPDATE credit_reservations SET status = 'refunded', finalized_at = ? WHERE id = ?`,
     ).run(now, reservationId)
@@ -354,6 +565,18 @@ export function refundReservation(
       }),
       now,
     )
+
+    // Phase 10: record credit event
+    try {
+      recordEvent(db, {
+        userId,
+        eventType: 'credit_reservation_released',
+        operationId: res.operation,
+        reservationId,
+        amount: res.amount,
+        meta: { reason: reason ?? 'generation_failed' },
+      })
+    } catch { /* events are best-effort */ }
 
     db.exec('COMMIT')
     return { reservationId, status: 'refunded', balance: newBalance }
@@ -399,9 +622,15 @@ export function adjustCredits(
       now,
       targetUserId,
     )
+    // Phase 10: grant to bonus bucket for positive adjustments
+    if (amount > 0) {
+      try {
+        grantToBucket(db, targetUserId, 'bonus', amount, { sourceRef: `admin_adjust:${adminUserId}` })
+      } catch { /* legacy wallet without buckets */ }
+    }
     db.prepare(
       `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
-       VALUES (?, ?, 'adjust', ?, ?, NULL, ?, ?)`,
+       VALUES (?, ?, 'manual_admin_adjustment', ?, ?, NULL, ?, ?)`,
     ).run(
       newId(),
       targetUserId,
@@ -487,6 +716,10 @@ export function grantPurchaseCreditsUnlocked(
     now,
     userId,
   )
+  // Phase 10: grant to purchased bucket
+  try {
+    grantToBucket(db, userId, 'purchased', credits, { sourceRef: orderId })
+  } catch { /* legacy wallet without buckets */ }
   db.prepare(
     `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
      VALUES (?, ?, 'grant', ?, ?, ?, ?, ?)`,

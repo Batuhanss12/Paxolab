@@ -2,6 +2,7 @@
  * D3 direction offer — name the ranked DesignDirection pool in chat.
  * Same pattern as C5 structure offer: user picks, critic does not.
  */
+import { familyTalk } from './family'
 import type { StudioDirectionOffer } from './types'
 
 const ORDINAL: Record<string, number> = {
@@ -33,17 +34,17 @@ export function describeDirectionOffer(offer: StudioDirectionOffer): string {
   if (!offer.candidates.length) return ''
   if (offer.candidates.length === 1) {
     const only = offer.candidates[0]!
-    return `Yön: ${only.family} (${only.archetype}). Tek aday — “2. yön” yok.`
+    return `Bu yüzey ${familyTalk(only.family)}.`
   }
-  const lines = offer.candidates.map((row) => {
-    const mark = row.selected ? ', seçili' : ''
-    return `${row.index}. ${row.family} (${row.archetype}${mark})`
-  })
-  return `Yön adayları: ${lines.join('; ')}. “2. yön” yaz — sen seçersin, critic seçmez.`
+  const current = offer.candidates.find((row) => row.selected) ?? offer.candidates[0]!
+  const rest = offer.candidates.filter((row) => !row.selected)
+  const alts = rest.map((row) => `${row.index}. ${familyTalk(row.family)}`).join(', ')
+  return `Şu an ${familyTalk(current.family)}. Alternatif: ${alts}.`
 }
 
 export function directionOfferLine(offer: StudioDirectionOffer | undefined): string {
   if (!offer || offer.candidates.length < 2) return ''
-  const bits = offer.candidates.map((row) => `${row.index} ${row.family}${row.selected ? ' (seçili)' : ''}`)
-  return `Adaylar (sen seçersin): ${bits.join(' · ')}. “2. yön” yaz.`
+  const current = offer.candidates.find((row) => row.selected)
+  const rest = offer.candidates.filter((row) => !row.selected)
+  return `Şu an ${familyTalk(current?.family)}. Beğenmezsen “${rest[0]?.index}. yön” yaz.`
 }

@@ -96,5 +96,10 @@ export async function register(input: {
 export function studioHandoffUrl(_pathOrStudioRoot?: string): string {
   const auth = loadAuth();
   if (!auth?.token) return STUDIO_URL;
-  return `${STUDIO_URL}?handoff=${encodeURIComponent(btoa(JSON.stringify(auth)))}`;
+  // Unicode-safe base64 (btoa only supports Latin1)
+  const json = JSON.stringify(auth);
+  const b64 = typeof window !== "undefined"
+    ? btoa(unescape(encodeURIComponent(json)))
+    : Buffer.from(json, "utf-8").toString("base64");
+  return `${STUDIO_URL}?handoff=${encodeURIComponent(b64)}`;
 }

@@ -10,7 +10,7 @@ import { composeArtwork } from '../artwork/composeArtwork'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from '../document'
 import { runPreflight } from '../production/preflight'
 import { composeStudioArtwork } from './composeStudioArtwork'
-import { volumeLine } from './copyBank'
+import { isGenericCta, volumeLine } from './copyBank'
 import { applyStudioPreflight } from './studioPreflight'
 import type { DesignDirection } from './types'
 
@@ -25,6 +25,7 @@ export type CopyField =
   | 'manufacturer'
   | 'address'
   | 'cta'
+  | 'usage'
 
 export type CopyPatch = Partial<Pick<DesignSpec['copy'], CopyField>>
 
@@ -38,7 +39,8 @@ export const COPY_FIELD_LIMIT: Record<CopyField, number> = {
   barcode: 14,
   manufacturer: 72,
   address: 96,
-  cta: 48,
+  cta: 56,
+  usage: 240,
 }
 
 export function clampCopyPatch(patch: CopyPatch): CopyPatch {
@@ -70,10 +72,13 @@ function lockedDirection(spec: DesignSpec, copy: DesignSpec['copy']): DesignDire
   const d = spec.studio?.direction
   if (!d) return null
   const locale = spec.copyLocale ?? spec.brief.copyLocale ?? 'tr'
+  const claim = copy.cta.trim()
+  const chips = claim && !isGenericCta(claim) ? [d.chips[0] ?? claim, claim] : d.chips
   return {
     ...d,
     taglineLine: copy.tagline.trim() || d.taglineLine,
     volumeLine: copy.volume.trim() ? volumeLine(copy.volume, locale) : d.volumeLine,
+    chips,
   }
 }
 
@@ -108,7 +113,8 @@ export function recomposeCopy(
     copy.barcode === spec.copy.barcode &&
     copy.manufacturer === spec.copy.manufacturer &&
     copy.address === spec.copy.address &&
-    copy.cta === spec.copy.cta
+    copy.cta === spec.copy.cta &&
+    (copy.usage ?? '') === (spec.copy.usage ?? '')
   ) {
     return spec
   }

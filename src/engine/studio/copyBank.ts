@@ -446,7 +446,28 @@ export function backHeaders(locale: CopyLocale): {
   }
 }
 
-/** Sample usage line per sector (the engine already provides ingredients + warnings). */
+export function isGenericCta(text: string): boolean {
+  return /^(üretime\s*al|send to production)$/i.test(text.trim())
+}
+
+/** Live canvas `cta`, else a painted fallback. Generic production CTAs are not chips. */
+export function liveClaim(copy: { cta?: string }, fallback: string): string {
+  const cta = copy.cta?.trim() ?? ''
+  if (cta && !isGenericCta(cta)) return cta
+  return fallback
+}
+
+/** Claim chip on the face: live canvas `cta`, else bank chips. */
+export function claimLine(copy: { cta?: string }, chips: readonly string[]): string {
+  return liveClaim(copy, chips[1] ?? chips[0] ?? '')
+}
+
+/** Back-of-pack directions: live canvas `usage`, else sector sample. */
+export function usageCopy(copy: { usage?: string }, sector: SectorId, locale: CopyLocale): string {
+  const live = copy.usage?.trim() ?? ''
+  return live || usageLine(sector, locale)
+}
+
 export function usageLine(sector: SectorId, locale: CopyLocale): string {
   const tr = locale !== 'en'
   switch (sector) {

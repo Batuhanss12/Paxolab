@@ -17,6 +17,7 @@ import {
   applyVetoToHints,
   familiesFromUtterance,
   familyOf,
+  familyTalk,
   hintsFromFamily,
   hintsFromVeto,
 } from './family'
@@ -62,8 +63,8 @@ export function parseDirectionTalk(text: string, current?: StudioFamily): Direct
       vetoFamilies: [],
       quieter: QUIETER.test(t),
       note: QUIETER.test(t)
-        ? 'Aileyi koruyorum; yönü daha sakin bir varyasyona alıyorum.'
-        : 'Aileyi koruyorum; aynı yönün kontrollü varyasyonunu uyguluyorum.',
+        ? 'Aynı çizgide kalıyorum, biraz daha sakin.'
+        : 'Aynı çizgide kalıyorum, kontrollü bir varyasyon.',
     }
   }
 
@@ -85,8 +86,29 @@ export function parseDirectionTalk(text: string, current?: StudioFamily): Direct
       vetoFamilies,
       pinFamily,
       note: pinFamily
-        ? `${vetoFamilies[0] ?? 'mevcut yön'} dışlandı; ${pinFamily} ailesine geçiyorum.`
-        : `${vetoFamilies[0] ?? named[0] ?? current ?? 'mevcut yön'} dışlandı; yeni yön seçiyorum.`,
+        ? `${familyTalk(vetoFamilies[0])} bırakıyorum — ${familyTalk(pinFamily)} deniyorum.`
+        : `${familyTalk(vetoFamilies[0] ?? named[0] ?? current)} bırakıyorum, başka bir yöne geçiyorum.`,
+    }
+  }
+
+  const dahaChunk = t.match(/\bdaha\s+\S+/i)?.[0] ?? ''
+  const dahaNamed = familiesFromUtterance(dahaChunk)
+  if (dahaNamed.length) {
+    const pinFamily = dahaNamed.find((family) => family !== current) ?? dahaNamed[0]
+    const leaving = named.filter((family) => family !== pinFamily)
+    if (leaving.length) {
+      return {
+        kind: 'veto',
+        vetoFamilies: leaving,
+        pinFamily,
+        note: `${familyTalk(leaving[0])} bırakıyorum — ${familyTalk(pinFamily)} deniyorum.`,
+      }
+    }
+    return {
+      kind: 'pin',
+      vetoFamilies: [],
+      pinFamily,
+      note: `${familyTalk(pinFamily)} kilitleyerek yeniden çiziyorum.`,
     }
   }
 
@@ -96,7 +118,7 @@ export function parseDirectionTalk(text: string, current?: StudioFamily): Direct
       kind: 'pin',
       vetoFamilies: [],
       pinFamily,
-      note: `Görsel aileyi ${pinFamily} olarak kilitledim.`,
+      note: `${familyTalk(pinFamily)} kilitleyerek yeniden çiziyorum.`,
     }
   }
 
@@ -157,7 +179,7 @@ export function explainStudioDirection(brief: DesignBrief, extras: DirectionHint
   const grounded = real.length
     ? real.map((c) => c.text.replace(/\.$/, '')).join('; ')
     : d.rationale[0] ?? d.archetype
-  const text = `Bu yön ${family} (${d.archetype}): ${grounded}. ${d.temperament} temperament · ${d.background} doku — yüksek kontrastlı tipografi ürün adını öne çıkarıyor.`
+  const text = `Bunu ${familyTalk(family)} tuttum: ${grounded}. Ürün adı önde.`
   return { text, claims: real, decision }
 }
 

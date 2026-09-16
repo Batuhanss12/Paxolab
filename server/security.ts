@@ -170,3 +170,17 @@ export function corsOrigins(): string[] {
   }
   return base
 }
+
+/**
+ * Dynamic CORS origin checker — allows any localhost / 127.0.0.1 origin
+ * (any port) so browser previews and dev proxies work without config changes.
+ * Production origins must be added via FORMA_PUBLIC_URL / FORMA_SITE_URL.
+ */
+export function corsOriginChecker(origin: string | undefined): string | null {
+  if (!origin) return null
+  // Allow any localhost / 127.0.0.1 origin in development
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin
+  // Allow configured production origins
+  if (corsOrigins().includes(origin)) return origin
+  return null
+}

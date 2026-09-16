@@ -498,7 +498,7 @@ export default function App() {
       })
       dispatch({
         type: 'messages.add',
-        messages: [{ id: uid(), role: 'assistant', content: result.replies[0] || 'Motor çalışıyor.' }],
+        messages: [{ id: uid(), role: 'assistant', content: result.replies[0] || 'Çiziyorum.' }],
       })
       runGenerate(next, result)
     },
@@ -547,7 +547,7 @@ export default function App() {
     if (!designRef.current || designRef.current.kind !== surfaceKind(next)) return
     dispatch({
       type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `Ruh hali ${styleLabel(style)} — boş tuvalden yeniden kuruldu.` }],
+      messages: [{ id: uid(), role: 'assistant', content: `${styleLabel(style)} hale çekiyorum — palet ve tipografi sıfırdan.` }],
     })
     runGenerate(next)
   }, [runGenerate])
@@ -561,7 +561,7 @@ export default function App() {
         {
           id: uid(),
           role: 'assistant',
-          content: `Varyasyon seti ${nextIndex + 1} — aynı brief, yeni kahraman / pattern.`,
+          content: 'Aynı brief, yeni bir kompozisyon deniyorum.',
         },
       ],
     })

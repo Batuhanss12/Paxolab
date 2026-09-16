@@ -68,7 +68,7 @@ export function describeStructureOffer(brief: DesignBrief, template?: FormaTempl
   const tmpl = template ?? (brief.templateId ? getTemplate(brief.templateId) : undefined) ?? (rec.selectedTemplateId ? getTemplate(rec.selectedTemplateId) : undefined) ?? pickTemplate(brief)
   const chosen = rec.candidates.find((row) => row.templateId === tmpl.id) ?? rec.candidates[0]
   const label = STRUCTURE_LABEL[tmpl.structureId] ?? tmpl.title
-  const why = chosen?.reason ? ` — ${chosen.reason}` : ''
+  const why = chosen?.reason ? ` — ${chosen.reason.replace(/\.$/, '')}` : ''
   const others = rec.candidates
     .filter((row) => row.templateId !== tmpl.id)
     .map((row) => {

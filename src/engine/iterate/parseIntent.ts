@@ -59,7 +59,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
       }
       if (style === 'eco' && currentStyle === 'eco') overridePatch.directorCue = 'warm-natural'
       if ((style === 'modern' || style === 'playful') && currentStyle === style) overridePatch.directorCue = 'graphic-push'
-      notes.push(`Ruh hali ${style} — boş tuvalden yeniden kuruldu.`)
+      notes.push(`${style} hale çekiyorum — palet ve tipografi sıfırdan.`)
       break
     }
   }
@@ -162,9 +162,9 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
   }
 
   if (/yeniden\s*üret|regenerate|baştan/i.test(text) && notes.length === 0) {
-    notes.push('Motoru aynı brief ile yeniden çalıştırdım.')
+    notes.push('Aynı brief ile yeniden çiziyorum.')
   }
-  if (notes.length === 0) notes.push('İsteği motora ilettim, yüzeyi güncelledim.')
+  if (notes.length === 0) notes.push('İsteği yüzeye uyguluyorum.')
 
   return { overridePatch, copyPatch, briefPatch, note: notes.join(' ') }
 }

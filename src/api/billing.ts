@@ -34,6 +34,78 @@ export type MockCompleteResponse = {
   mode: 'mock'
 }
 
+// Phase 10 types
+
+export type BucketSummary = {
+  included: number
+  purchased: number
+  bonus: number
+  total: number
+}
+
+export type CreditsBreakdown = {
+  balance: number
+  currency: string
+  buckets: BucketSummary
+  subscription: {
+    planId: string
+    status: string
+    currentPeriodEnd: string | null
+    nextRenewalAt: string | null
+  } | null
+}
+
+export type SubscriptionInfo = {
+  id: string
+  planId: string
+  planLabel: string
+  status: string
+  currentPeriodStart: string
+  currentPeriodEnd: string | null
+  nextRenewalAt: string | null
+  cancelledAt: string | null
+  monthlyCredits: number
+}
+
+export type UsageEntry = {
+  id: string
+  sessionId: string
+  projectId: string
+  operationId: string
+  creditCost: number
+  status: string
+  feedbackText: string | null
+  classifiedOperation: string | null
+  createdAt: string
+  completedAt: string | null
+}
+
+export type LedgerEntry = {
+  id: string
+  kind: string
+  amount: number
+  balanceAfter: number
+  refId: string | null
+  meta: unknown
+  createdAt: string
+}
+
+export type PlanConfig = {
+  id: string
+  label: string
+  monthlyPrice: number
+  currency: string
+  monthlyCredits: number
+  maxProjects: number | null
+  maxActiveSessions: number | null
+  rolloverPolicy: string
+  rolloverMax: number
+  topupEligible: boolean
+  enabled: boolean
+  displayOrder: number
+  description: string | null
+}
+
 export async function listPacks(): Promise<CreditPack[]> {
   const data = await apiRequest<{ packs: CreditPack[] }>('/api/billing/packs', { auth: false })
   return data.packs
@@ -75,4 +147,58 @@ export async function listMyOrders(limit = 20): Promise<PaymentOrderSummary[]> {
     `/api/billing/orders?limit=${limit}`,
   )
   return data.orders
+}
+
+// Phase 10 endpoints
+
+export async function getCreditsBreakdown(): Promise<CreditsBreakdown> {
+  return apiRequest<CreditsBreakdown>('/api/billing/credits')
+}
+
+export async function getSubscription(): Promise<{ subscription: SubscriptionInfo | null }> {
+  return apiRequest<{ subscription: SubscriptionInfo | null }>('/api/billing/subscription')
+}
+
+export async function subscribe(planId: string): Promise<{ subscription: SubscriptionInfo }> {
+  return apiRequest<{ subscription: SubscriptionInfo }>('/api/billing/subscribe', {
+    method: 'POST',
+    body: { planId },
+  })
+}
+
+export async function cancelSubscription(): Promise<{ subscription: SubscriptionInfo }> {
+  return apiRequest<{ subscription: SubscriptionInfo }>('/api/billing/cancel', {
+    method: 'POST',
+  })
+}
+
+export async function getUsage(limit = 50): Promise<UsageEntry[]> {
+  const data = await apiRequest<{ usage: UsageEntry[] }>(`/api/billing/usage?limit=${limit}`)
+  return data.usage
+}
+
+export async function getLedger(limit = 100): Promise<LedgerEntry[]> {
+  const data = await apiRequest<{ ledger: LedgerEntry[] }>(`/api/billing/ledger?limit=${limit}`)
+  return data.ledger
+}
+
+export async function listConfiguredPlans(): Promise<PlanConfig[]> {
+  // Public plan listing (from billing/plans)
+  return listPlans().then((plans) =>
+    plans.map((p) => ({
+      id: p.id,
+      label: p.label,
+      monthlyPrice: p.priceTry,
+      currency: 'TRY',
+      monthlyCredits: p.monthlyCredits,
+      maxProjects: null,
+      maxActiveSessions: null,
+      rolloverPolicy: 'none',
+      rolloverMax: 0,
+      topupEligible: true,
+      enabled: !p.displayOnly,
+      displayOrder: 0,
+      description: p.description,
+    })),
+  )
 }

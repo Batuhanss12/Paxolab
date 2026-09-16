@@ -6,9 +6,7 @@ import { isDualDeliverable } from '../engine/conversationUnderstand'
 import type { SurfaceView } from '../appState'
 import { learnedPreferenceLine } from '../engine/brain'
 import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
-import { directionOfferLine } from '../engine/studio/directionOffer'
-import { studioProcessSummary } from '../engine/studio/faceCaption'
-import { studioCriticOffer } from '../engine/studio/studioCritic'
+import { familyOf, familyTalk } from '../engine/studio/family'
 import { Chat } from './Chat'
 import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
@@ -96,8 +94,7 @@ function ConversationBrief({
       </ol>
       {design && (
         <p className="brief-log__note">
-          {summary ? `${summary}. ` : ''}
-          Grapxor motor rev {design.revision} · {STRUCTURE_LABEL[design.structureId] ?? design.structureId}. Soldan konuşarak iterasyon yapın.
+          Rev {design.revision} · {STRUCTURE_LABEL[design.structureId] ?? design.structureId}. Soldan konuşarak devam et.
         </p>
       )}
       {design && <DesignProcessNote design={design} />}
@@ -105,19 +102,15 @@ function ConversationBrief({
   )
 }
 
-/** Spoken design-process trail: C6 critic offer + learned preferences. No JSON, no geometry. */
+/** Short design-process trail. No critic menu, no yön adayları dump. */
 function DesignProcessNote({ design }: { design: DesignSpec }) {
   const learned = learnedPreferenceLine(design.appliedKnowledge, { studio: Boolean(design.studio) })
   const studio = design.studio?.direction
-  const criticLine = studioCriticOffer(design.studio?.critic ?? [])
-  const offerLine = directionOfferLine(design.studio?.offer)
-  if (!criticLine && !learned && !studio && !offerLine) return null
-  const anatomy = studio?.rationale?.[0]
+  const family = studio ? familyOf(studio.archetype, design.brief.studioFamily) : undefined
+  if (!learned && !studio) return null
   return (
     <p className="brief-log__note">
-      {studio ? `Stüdyo: ${studio.archetype.replace(/-/g, ' ')} · ${studio.background}${anatomy ? ` — ${anatomy}` : ''}. ` : ''}
-      {offerLine ? `${offerLine} ` : ''}
-      {criticLine ? `${criticLine} ` : ''}
+      {studio ? `${familyTalk(family)} yüzey. ` : ''}
       {learned}
     </p>
   )
@@ -353,7 +346,7 @@ export function Workspace({
             {generating && (
               <div className="engine-wait">
                 <span className="engine-wait__bar" />
-                <p>Grapxor motoru çalışıyor</p>
+                <p>Çiziyorum</p>
               </div>
             )}
             {!generating && showPicker && brief.packagingMode === 'label' && (

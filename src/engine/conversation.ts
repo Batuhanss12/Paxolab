@@ -35,12 +35,13 @@ import {
   parseDirectionTalk,
 } from './studio/directionTalk'
 import { APPLY_STUDIO_CRITIC, talkForCritic } from './studio/studioCritic'
-import { describeDirectionOffer, parseDirectionChoice } from './studio/directionOffer'
+import { parseDirectionChoice } from './studio/directionOffer'
 import type { StudioCriticOffer, StudioDirectionOffer } from './studio/types'
-import { familyOf, hintsFromFamily, hintsFromVeto, applyVetoToHints } from './studio/family'
+import { familyOf, familyTalk, hintsFromFamily, hintsFromVeto, applyVetoToHints } from './studio/family'
 
 export { askCopy, nextMissing } from './conversationAsk'
 
+/** Spoken start tokens — generate only after the user commits. */
 const START_DESIGN = /^(başlat|çalıştır|üret|tasarla|motor|tasarımı\s*başlat|devam)$/i
 
 function studioGeneratePatch(brief: DesignBrief): Partial<DesignOverrides> {
@@ -66,13 +67,18 @@ function withUnderstanding(
   return mergeBrief(brief, understanding.patch)
 }
 
-function directionFollowup(brief: DesignBrief): { extra: string[]; directionOffer: StudioDirectionOffer } {
-  const directionOffer = inspectStudioDirectionOffer(brief)
-  const line = describeDirectionOffer(directionOffer)
-  return { extra: line ? [line] : [], directionOffer }
+function spokenHead(ack?: string, brief?: DesignBrief): string {
+  const raw = (ack ?? '').trim() || (brief ? directionBriefing(brief) : '')
+  return raw.replace(/ İlk yüzeyi hazırlıyorum\.?$/u, '').replace(/\s+/g, ' ').trim()
 }
 
-function generateResult(brief: DesignBrief, ack?: string, text = '', state?: ConversationState): EngineResult {
+function generateResult(
+  brief: DesignBrief,
+  ack?: string,
+  text = '',
+  state?: ConversationState,
+  pass: 'first' | 'again' = 'first',
+): EngineResult {
   const offer = recommendStructures(brief)
   const tmpl =
     (brief.templateId ? getTemplate(brief.templateId) : undefined) ??
@@ -84,26 +90,32 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
     packagingMode: brief.packagingMode || tmpl.packagingMode,
   }
   const pinned = { ...offer, selectedTemplateId: tmpl.id }
-  const briefing = (ack ?? '').trim() || directionBriefing(next)
   const dual =
     isDualDeliverable(next) && next.packagingMode !== 'label'
       ? ' Kutu ve etiket istedin; önce kutuyu çiziyorum. Etiket için “etiketi de üret” yaz.'
       : ''
   const structure = describeStructureOffer(next, tmpl, pinned)
   const directionOffer = inspectStudioDirectionOffer(next)
-  const directionLine = describeDirectionOffer(directionOffer)
+  const selected = directionOffer.candidates.find((row) => row.selected)
+  const familyBit = selected ? familyTalk(selected.family) : ''
   const isLabel = next.packagingMode === 'label'
-  const produce = isLabel
-    ? 'Ön ve arka etiket seti çıkarılıyor. 3D’de şişe üzerinde görürsün.'
-    : 'Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.'
+  const head = spokenHead(ack, next)
+  let line: string
+  if (pass === 'again') {
+    line = head ? `${head.replace(/\.$/, '')} — yüzeyi yeniliyorum.` : 'Yüzeyi yeniliyorum.'
+  } else {
+    const action = isLabel ? 'Ön ve arka etiketi çiziyorum.' : 'Kutuyu çiziyorum.'
+    const runner = directionOffer.candidates.find((row) => !row.selected)
+    const alt = runner ? ` Beğenmezsen “${runner.index}. yön” yaz.` : ''
+    const familyClause = familyBit ? ` ${familyBit} çizgide.` : ''
+    line = `${head ? `${head.replace(/\.$/, '.') } ` : ''}${action}${familyClause}${dual} ${structure}${alt}`
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
   return {
     brief: next,
     awaiting: null,
-    replies: [
-      `${briefing}${dual} ${structure} ${produce}`,
-      'Yönü konuşarak iterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “etiketi de üret”.',
-      directionLine,
-    ].filter(Boolean),
+    replies: [line],
     shouldGenerate: true,
     showTemplates: false,
     overridePatch: studioGeneratePatch(next),
@@ -124,8 +136,6 @@ function offerStructureResult(brief: DesignBrief, ack?: string, state?: Conversa
     const label = STRUCTURE_LABEL[row.structureId] ?? row.title
     return `${i + 1}. ${label} — ${row.reason}`
   })
-  const top = offer.candidates[0]
-  const topLabel = top ? (STRUCTURE_LABEL[top.structureId] ?? top.title) : ''
   const briefing = ((ack ?? '').trim() || directionBriefing(next)).replace(/ İlk yüzeyi hazırlıyorum\.$/, '')
   const dual =
     isDualDeliverable(next) && next.packagingMode !== 'label'
@@ -137,9 +147,8 @@ function offerStructureResult(brief: DesignBrief, ack?: string, state?: Conversa
     awaiting: 'templateId',
     replies: [
       isLabel
-        ? `${briefing} Brief hazır. Sağda etiket formatı — sarımlı şişe veya düz. Eni ve boyu ayarla, sonra etiketi başlat.`
-        : `${briefing}${dual} Brief hazır. Uygun yapılar sağda — kartı seç, ölçüyü orada ayarla, sonra tasarımı başlat.`,
-      top ? (isLabel ? `Format: önerilen ${topLabel}.` : `Yapı: önerilen ${topLabel}.`) : '',
+        ? `${briefing} Sağda etiket formatı — sarımlı şişe veya düz. Eni ve boyu ayarla, sonra başlat.`
+        : `${briefing}${dual} Uygun yapılar sağda — kartı seç, ölçüyü orada ayarla, sonra tasarımı başlat.`,
       lines.join('\n'),
     ].filter(Boolean),
     shouldGenerate: false,
@@ -250,7 +259,7 @@ export function runConversation(input: {
         templateId: hit.templateId,
         packagingMode: input.brief.packagingMode || (hit.structureId.includes('label') ? ('label' as const) : ('box' as const)),
       }
-      if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state)
+      if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state, 'again')
       return selectStructureResult(next, hit.templateId, text, state)
     }
   }
@@ -262,7 +271,7 @@ export function runConversation(input: {
       templateId: structureId,
       packagingMode: input.brief.packagingMode || (structureId.includes('label') ? 'label' as const : 'box' as const),
     }
-    if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state)
+    if (input.hasDesign) return generateResult(next, directionBriefing(next), text, state, 'again')
     return selectStructureResult(next, structureId, text, state)
   }
 
@@ -301,7 +310,7 @@ export function runConversation(input: {
         return {
           brief: input.brief,
           awaiting: input.awaiting,
-          replies: [`Zaten ${hit.index}. yön (${hit.family}) üzerindeyiz.`],
+          replies: [`Zaten ${hit.index}. yön (${familyTalk(hit.family)}) üzerindeyiz.`],
           shouldGenerate: false,
           showTemplates: false,
           overridePatch: {},
@@ -317,15 +326,15 @@ export function runConversation(input: {
           kind: 'pin',
           vetoFamilies: [],
           pinFamily: hit.family,
-          note: `${hit.index}. yönü seçtim: ${hit.family} (${hit.archetype}).`,
+          note: `${hit.index}. yön: ${familyTalk(hit.family)}.`,
         },
         text,
       )
-      const follow = directionFollowup(applied.brief)
+      const directionOffer = inspectStudioDirectionOffer(applied.brief)
       return {
         brief: applied.brief,
         awaiting: null,
-        replies: [applied.note, ...follow.extra],
+        replies: [applied.note],
         shouldGenerate: true,
         showTemplates: false,
         overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
@@ -333,7 +342,7 @@ export function runConversation(input: {
         note: 'direction-pick',
         feedback: parseFeedback(text),
         state,
-        directionOffer: follow.directionOffer,
+        directionOffer,
       }
     }
   }
@@ -371,11 +380,11 @@ export function runConversation(input: {
         state,
       }
     }
-    const follow = directionFollowup(applied.brief)
+    const directionOffer = inspectStudioDirectionOffer(applied.brief)
     return {
       brief: applied.brief,
       awaiting: null,
-      replies: [applied.note, ...follow.extra],
+      replies: [applied.note],
       shouldGenerate: true,
       showTemplates: false,
       overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
@@ -383,7 +392,7 @@ export function runConversation(input: {
       note: talk.kind,
       feedback: parseFeedback(text),
       state,
-      directionOffer: follow.directionOffer,
+      directionOffer,
     }
   }
 
@@ -393,7 +402,7 @@ export function runConversation(input: {
       return {
         brief: input.brief,
         awaiting: input.awaiting,
-        replies: ['Kritik C6 önerisi yok — ledger temiz.'],
+        replies: ['Yerleşim şu an temiz — ekstra bir sadeleştirme önermiyorum.'],
         shouldGenerate: false,
         showTemplates: false,
         overridePatch: {},
@@ -403,11 +412,11 @@ export function runConversation(input: {
       }
     }
     const applied = applyDirectionTalk(input.brief, talkForCritic(action.kind), action.utterance)
-    const follow = directionFollowup(applied.brief)
+    const directionOffer = inspectStudioDirectionOffer(applied.brief)
     return {
       brief: applied.brief,
       awaiting: null,
-      replies: [`Kritik önerisi: ${action.reason}. ${applied.note}`, ...follow.extra],
+      replies: [`Sıkışan yerleşimi açıyorum. ${applied.note}`],
       shouldGenerate: true,
       showTemplates: false,
       overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
@@ -418,7 +427,7 @@ export function runConversation(input: {
           ? [{ type: 'brand_fit', target: 'character', direction: 'strengthen', strength: 'high', raw: 'critic-apply:quieter' }]
           : [{ type: 'composition', target: 'layout', direction: 'vary', strength: 'medium', raw: 'critic-apply:vary' }],
       state,
-      directionOffer: follow.directionOffer,
+      directionOffer,
     }
   }
 
@@ -476,7 +485,7 @@ export function runConversation(input: {
     return {
       brief,
       awaiting: null,
-      replies: ['İterasyon: “neden bu yön”, “marble istemiyorum”, “daha sakin”, “luxury yap”, “logoyu büyüt”, “baskıya hazırla”.'],
+      replies: ['Bunu bir değişiklik olarak okuyamadım. “daha teknik”, “daha sakin” veya “neden bu yön” yazman yeter.'],
       shouldGenerate: false,
       showTemplates: false,
       overridePatch: {},

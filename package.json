@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:site": "npm --prefix site run dev",
     "server": "tsx server/index.ts",
-    "dev:all": "concurrently -n vite,api -c cyan,magenta \"npm run dev\" \"npm run server\"",
+    "dev:all": "concurrently -n site,studio,api -c green,cyan,magenta \"npm run dev:site\" \"npm run dev\" \"npm run server\"",
     "build": "tsc -b && vite build",
+    "build:site": "npm --prefix site run build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",

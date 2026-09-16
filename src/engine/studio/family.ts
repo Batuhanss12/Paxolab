@@ -44,6 +44,23 @@ const ARCHETYPE_FAMILY: Partial<Record<StudioArchetype, StudioFamily>> = {
   'diagonal-split': 'tech',
 }
 
+/** Spoken family names — chat never dumps the internal key as if it were copy. */
+export const FAMILY_TALK: Record<StudioFamily, string> = {
+  marble: 'mermer',
+  botanical: 'botanik',
+  'line-scene': 'çizgisel sahne',
+  wave: 'dalga',
+  landscape: 'peyzaj',
+  ink: 'mürekkep',
+  'dark-luxe': 'karanlık lüks',
+  tech: 'teknik',
+}
+
+export function familyTalk(family: StudioFamily | string | undefined | null): string {
+  if (family && isStudioFamily(family)) return FAMILY_TALK[family]
+  return 'bu yön'
+}
+
 export function isStudioFamily(value: unknown): value is StudioFamily {
   return typeof value === 'string' && value in STUDIO_FAMILIES
 }

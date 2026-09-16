@@ -140,7 +140,7 @@ User request: "${text}"`
   }
 
   if (parsed.note && notes.length === 0) notes.push(parsed.note.slice(0, 120))
-  if (notes.length === 0) notes.push('İsteği motora ilettim, yüzeyi güncelledim.')
+  if (notes.length === 0) notes.push('İsteği yüzeye uyguluyorum.')
 
   return { overridePatch, copyPatch, briefPatch, note: notes.join(' ') }
 }

@@ -36,7 +36,7 @@ import {
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
-import { backHeaders, nutritionRows, scentPyramid, usageLine } from './copyBank'
+import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
 import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, identOf, marginFor, withIdent, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
@@ -166,7 +166,9 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4 * ctx.titleScale, 1.8 * ctx.titleScale, 'sans-heavy', 0.2)
   parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2, extra: 'data-edit="brand"' }))
   ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, 'sans-heavy', bSize * 0.2), bSize)
-  const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent, identOf(ctx))
+  const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent, identOf(ctx), {
+    maxStackH: Math.min(h * 0.22, 22),
+  })
   parts.push(mono.markup)
   // product light + heavy, left aligned, mid
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
@@ -306,7 +308,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   // legal sections (the gate reads KULLANIM / INGREDIENTS / DIRECTIONS here)
   const sections: Section[] = [
     ...(d.sector === 'food' || d.sector === 'beverage' ? [] : [{ title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' }]),
-    { title: hdr.usage, body: usageLine(d.sector, d.locale) },
+    { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]
   const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: Math.max(1.2, Math.min(1.5, w * 0.019)), anchor: 'middle', titleColor: accent === ink ? ink : accent })

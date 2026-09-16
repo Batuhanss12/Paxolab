@@ -105,7 +105,8 @@ export class FormaLocalEngine implements EnginePort {
       barcode: brief.barcode,
       manufacturer: brief.manufacturerName,
       address: brief.manufacturerAddress,
-      cta: input.copyPatch?.cta || sample.cta,
+      cta: input.copyPatch?.cta || input.prev?.copy.cta || '',
+      usage: input.copyPatch?.usage || input.prev?.copy.usage || '',
     }
     overrides.barcodeVisible = true
 

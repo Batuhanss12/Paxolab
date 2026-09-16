@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AuthUser } from '../api/client'
 import { getBalance, listTransactions, type CreditTransaction } from '../api/credits'
-import { listMyOrders, type PaymentOrderSummary } from '../api/billing'
+import {
+  getCreditsBreakdown,
+  getSubscription,
+  getUsage,
+  listMyOrders,
+  type CreditsBreakdown,
+  type SubscriptionInfo,
+  type UsageEntry,
+  type PaymentOrderSummary,
+} from '../api/billing'
 import {
   deleteProject,
   getProject,
@@ -28,7 +37,10 @@ export function UserDashboard({
   onBalanceChange,
 }: UserDashboardProps) {
   const [balance, setBalance] = useState<number | null>(null)
+  const [breakdown, setBreakdown] = useState<CreditsBreakdown | null>(null)
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null)
   const [txs, setTxs] = useState<CreditTransaction[]>([])
+  const [usage, setUsage] = useState<UsageEntry[]>([])
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [orders, setOrders] = useState<PaymentOrderSummary[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -39,14 +51,20 @@ export function UserDashboard({
     setError(null)
     void Promise.all([
       getBalance(),
+      getCreditsBreakdown().catch(() => null),
+      getSubscription().catch(() => null),
       listTransactions(15),
+      getUsage(20).catch(() => []),
       listProjects(),
       listMyOrders(10).catch(() => [] as PaymentOrderSummary[]),
     ])
-      .then(([bal, transactions, projectList, orderList]) => {
+      .then(([bal, brk, sub, transactions, usageList, projectList, orderList]) => {
         setBalance(bal.balance)
         onBalanceChange?.(bal.balance)
+        setBreakdown(brk)
+        setSubscription(sub?.subscription ?? null)
         setTxs(transactions)
+        setUsage(usageList)
         setProjects(projectList)
         setOrders(orderList)
       })
@@ -66,7 +84,6 @@ export function UserDashboard({
     setError(null)
     setNote(null)
     try {
-      // Ensure project exists / is readable before handing off
       await getProject(id)
       await onLoadProject?.(id)
       setNote('Proje stüdyoya yüklendi.')
@@ -140,6 +157,30 @@ export function UserDashboard({
               Kredi yükle
             </button>
           </div>
+          {breakdown && (
+            <div className="dash-buckets">
+              <div className="dash-bucket">
+                <span className="dash-bucket__label">Aylık dahil</span>
+                <span className="dash-bucket__value">{breakdown.buckets.included}</span>
+              </div>
+              <div className="dash-bucket">
+                <span className="dash-bucket__label">Satın alınan</span>
+                <span className="dash-bucket__value">{breakdown.buckets.purchased}</span>
+              </div>
+              <div className="dash-bucket">
+                <span className="dash-bucket__label">Bonus</span>
+                <span className="dash-bucket__value">{breakdown.buckets.bonus}</span>
+              </div>
+            </div>
+          )}
+          {subscription && (
+            <div className="dash-subscription">
+              <strong>{subscription.planLabel}</strong> planı · {subscription.monthlyCredits} kr/ay
+              {subscription.nextRenewalAt && (
+                <span className="dash-muted"> · yenileme: {formatDate(subscription.nextRenewalAt)}</span>
+              )}
+            </div>
+          )}
           <ul className="dash-list">
             {txs.length === 0 && <li className="dash-muted">Henüz işlem yok.</li>}
             {txs.map((tx) => (
@@ -150,6 +191,21 @@ export function UserDashboard({
                   {tx.amount}
                 </span>
                 <span className="dash-muted">{formatDate(tx.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="dash-section">
+          <h3 className="dash-section__title">Kullanım</h3>
+          <ul className="dash-list">
+            {usage.length === 0 && <li className="dash-muted">Henüz tasarım işlemi yok.</li>}
+            {usage.slice(0, 10).map((u) => (
+              <li key={u.id}>
+                <span className="dash-mono">{u.operationId}</span>
+                <span className="dash-neg">-{u.creditCost} kr</span>
+                <span className="dash-mono">{u.status}</span>
+                <span className="dash-muted">{formatDate(u.createdAt)}</span>
               </li>
             ))}
           </ul>

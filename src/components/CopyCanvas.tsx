@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { DesignSpec } from '../types'
+import { resolveCopyLocale } from '../engine/copyLocale'
+import { resolveSector } from '../engine/designSystem/sector'
+import { liveClaim, usageCopy } from '../engine/studio/copyBank'
 import { COPY_FIELD_LIMIT, type CopyField } from '../engine/studio/recomposeCopy'
 
 type CopyCanvasProps = {
@@ -18,12 +21,14 @@ const GROUPS: { title: string; fields: Array<{ id: CopyField; label: string; row
       { id: 'brand', label: 'Marka' },
       { id: 'product', label: 'Ürün' },
       { id: 'tagline', label: 'Slogan', rows: 2 },
+      { id: 'cta', label: 'Şerit' },
       { id: 'volume', label: 'Miktar' },
     ],
   },
   {
     title: 'Arka yüz',
     fields: [
+      { id: 'usage', label: 'Kullanım', rows: 2 },
       { id: 'ingredients', label: 'İçindekiler', rows: 3 },
       { id: 'warnings', label: 'Uyarı', rows: 3 },
       { id: 'manufacturer', label: 'Üretici' },
@@ -32,6 +37,18 @@ const GROUPS: { title: string; fields: Array<{ id: CopyField; label: string; row
     ],
   },
 ]
+
+function canvasValue(design: DesignSpec, id: CopyField): string {
+  if (id === 'cta') {
+    const chips = design.studio?.direction.chips ?? []
+    return liveClaim(design.copy, chips[1] ?? chips[0] ?? '')
+  }
+  if (id === 'usage') {
+    const sector = design.studio?.direction.sector ?? resolveSector(design.brief)
+    return usageCopy(design.copy, sector, resolveCopyLocale(design.brief))
+  }
+  return design.copy[id] ?? ''
+}
 
 export function CopyCanvas({ design, active, onActive, onChange, onCommit, onClose }: CopyCanvasProps) {
   const root = useRef<HTMLElement>(null)
@@ -64,7 +81,7 @@ export function CopyCanvas({ design, active, onActive, onChange, onCommit, onClo
         <section key={group.title} className="copy-canvas__group">
           <h3>{group.title}</h3>
           {group.fields.map((field) => {
-            const value = design.copy[field.id]
+            const value = canvasValue(design, field.id)
             const rows = field.rows ?? 1
             const selected = active === field.id
             const limit = COPY_FIELD_LIMIT[field.id]

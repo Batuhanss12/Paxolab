@@ -221,4 +221,17 @@ describe('chat flow from the screenshot', () => {
     expect(last.replies.join(' ')).toMatch(/sarımlı|format/i)
     expect(last.replies.join(' ')).not.toMatch(/tuck|mailer/i)
   })
+
+  it('first generate is one designer line, not a command wall', () => {
+    const last = replay(['Luma parfüm kutusu siyah altın', 'Noir', 'örnek', '1. yapı', 'başlat']).at(-1)!.result
+    expect(last.shouldGenerate).toBe(true)
+    expect(last.replies).toHaveLength(1)
+    expect(last.replies[0]).not.toMatch(/İterasyon:|critic seçmez|TASARIM REF|Yön adayları|Motor/)
+  })
+
+  it('idle after a design does not dump the iteration menu', () => {
+    const last = replay(['Luma parfüm kutusu siyah altın', 'Noir', 'örnek', 'başlat', 'hmm']).at(-1)!.result
+    expect(last.replies).toHaveLength(1)
+    expect(last.replies[0]).not.toMatch(/İterasyon:|Yön adayları|critic seçmez|luxury yap|baskıya hazırla/)
+  })
 })

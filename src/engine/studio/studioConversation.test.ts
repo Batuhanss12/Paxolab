@@ -71,6 +71,11 @@ describe('C6 direction talk parser — phrase families, not one hardcoded line',
       vetoFamilies: ['marble'],
       pinFamily: 'tech',
     })
+    expect(parseDirectionTalk('etiket tasarımında ink tasarımından daha teknik bir tasarım yap', 'ink')).toMatchObject({
+      kind: 'veto',
+      vetoFamilies: ['ink'],
+      pinFamily: 'tech',
+    })
   })
 })
 

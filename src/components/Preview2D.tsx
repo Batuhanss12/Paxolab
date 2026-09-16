@@ -35,6 +35,14 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
       })()
     : renderFrontSvg(design.dieline, artwork, design.palette)
   const languageCaption = studioLanguageCaption(design)
+  const BACK_FIELDS: CopyField[] = ['ingredients', 'warnings', 'manufacturer', 'address', 'barcode', 'usage']
+
+  function selectField(field: CopyField | null) {
+    setActive(field)
+    if (!field || !isLabel) return
+    setLabelFace(BACK_FIELDS.includes(field) ? 'back' : 'front')
+    setDockOpen(true)
+  }
 
   function setNum(key: keyof DimensionsMm, value: string) {
     onDims({ ...dims, [key]: Number(value) || 0 })
@@ -47,14 +55,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
       const field = copyFieldFromTarget(event.target)
       if (!field) return
       event.preventDefault()
-      setActive(field)
-      setDockOpen(true)
-      if ((field === 'ingredients' || field === 'warnings' || field === 'manufacturer' || field === 'address' || field === 'barcode') && isLabel) {
-        setLabelFace('back')
-      }
-      if ((field === 'brand' || field === 'product' || field === 'tagline') && isLabel) {
-        setLabelFace('front')
-      }
+      selectField(field)
     }
     root.addEventListener('click', onClick)
     return () => root.removeEventListener('click', onClick)
@@ -132,7 +133,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
           <CopyCanvas
             design={design}
             active={active}
-            onActive={setActive}
+            onActive={selectField}
             onChange={onCopyChange}
             onCommit={() => onCopyCommit?.()}
             onClose={() => setDockOpen(false)}
