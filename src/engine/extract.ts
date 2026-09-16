@@ -46,7 +46,9 @@ export function applyExtraction(
     awaiting === 'manufacturerName' ||
     awaiting === 'manufacturerAddress' ||
     awaiting === 'templateId' ||
-    awaiting === 'copyLocale'
+    awaiting === 'copyLocale' ||
+    awaiting === 'colors' ||
+    awaiting === 'styleType'
   ) {
     delete extracted.brandName
     delete extracted.productName

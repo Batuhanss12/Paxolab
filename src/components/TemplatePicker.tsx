@@ -1,5 +1,6 @@
 import type { DesignBrief, DimensionsMm, FormaTemplate } from '../types'
-import { filterTemplates, getTemplate } from '../engine/catalog/catalog'
+import { getTemplate, pickerTemplates } from '../engine/catalog/catalog'
+import { recommendStructures } from '../engine/catalog/structureRecommend'
 import { estimateCartonMm } from '../engine/catalog/volumeCarton'
 import { buildDieline } from '../engine/dieline/buildDieline'
 import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
@@ -8,14 +9,24 @@ type TemplatePickerProps = {
   brief: DesignBrief
   onPick: (templateId: string, dims: DimensionsMm) => void
   onDims: (dims: DimensionsMm) => void
+  /** Dieline tab already paints DielinePreview — do not mount a second net. */
+  livePreview?: boolean
 }
 
 function dimsFor(brief: DesignBrief, template: FormaTemplate): DimensionsMm {
   return estimateCartonMm(brief.volume, brief, template) ?? template.defaultsMm
 }
 
-export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
-  const cards = filterTemplates(brief)
+export function TemplatePicker({ brief, onPick, onDims, livePreview = true }: TemplatePickerProps) {
+  const offer = recommendStructures(brief)
+  const ranked = offer.all.filter((row) => row.eligible)
+  const rankById = new Map(ranked.map((row, i) => [row.templateId, { ...row, rank: i }]))
+  const rankByStruct = new Map(ranked.map((row, i) => [row.structureId, { ...row, rank: i }]))
+  const cards = [...pickerTemplates(brief)].sort((a, b) => {
+    const as = rankById.get(a.id)?.score ?? rankByStruct.get(a.structureId)?.score ?? -1
+    const bs = rankById.get(b.id)?.score ?? rankByStruct.get(b.structureId)?.score ?? -1
+    return bs - as || a.structureId.localeCompare(b.structureId)
+  })
   const selected = brief.templateId ? getTemplate(brief.templateId) : undefined
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
@@ -25,9 +36,10 @@ export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
         : cards[0]
           ? dimsFor(brief, cards[0])
           : { L: 80, W: 40, H: 120 }
-  const live = selected
-    ? renderDielineSvg(buildDieline(selected.structureId, { ...brief, dimensionsMm: dims }))
-    : ''
+  const live =
+    livePreview && selected
+      ? renderDielineSvg(buildDieline(selected.structureId, { ...brief, dimensionsMm: dims }))
+      : ''
 
   function setNum(key: keyof DimensionsMm, value: string) {
     onDims({ ...dims, [key]: Number(value) || 0 })
@@ -35,12 +47,13 @@ export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
 
   return (
     <div className="templates">
-      <p className="eyebrow">Şablon</p>
-      <h2>Bu sektörün kutuları</h2>
+      <p className="eyebrow">Yapı seçimi</p>
+      <h2>{brief.packagingMode === 'label' ? 'Uygun etiket yapıları' : 'Uygun kutu yapıları'}</h2>
       {cards.length === 0 && <p className="templates__empty">Bu sektör için kutu şablonu yok.</p>}
       <div className="templates__grid">
         {cards.map((t: FormaTemplate) => {
           const cardDims = dimsFor(brief, t)
+          const meta = rankById.get(t.id) ?? rankByStruct.get(t.structureId)
           return (
             <button
               key={t.id}
@@ -53,17 +66,22 @@ export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
                 {cardDims.L}×{cardDims.W || '—'}×{cardDims.H} mm
                 {brief.volume && !brief.volumeDefaulted ? ' · ml tahmini' : ''}
               </span>
+              {meta && meta.rank < 3 && (
+                <p className="tcard__reason">{meta.reason}</p>
+              )}
             </button>
           )
         })}
       </div>
       {selected && (
         <div className="templates__live">
-          <p className="templates__legend">
-            <span className="templates__swatch templates__swatch--cut">Kesim</span>
-            <span className="templates__swatch templates__swatch--crease">Kırım</span>
-            <span className="templates__swatch templates__swatch--perf">Yırtma</span>
-          </p>
+          {livePreview && (
+            <p className="templates__legend">
+              <span className="templates__swatch templates__swatch--cut">Kesim</span>
+              <span className="templates__swatch templates__swatch--crease">Kırım</span>
+              <span className="templates__swatch templates__swatch--perf">Yırtma</span>
+            </p>
+          )}
           <div className="templates__dims">
             <label>
               L
@@ -83,7 +101,7 @@ export function TemplatePicker({ brief, onPick, onDims }: TemplatePickerProps) {
               Motoru çalıştır
             </button>
           </div>
-          <div className="templates__svg" dangerouslySetInnerHTML={{ __html: live }} />
+          {livePreview && <div className="templates__svg" dangerouslySetInnerHTML={{ __html: live }} />}
         </div>
       )}
     </div>

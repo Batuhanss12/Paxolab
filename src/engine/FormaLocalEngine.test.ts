@@ -236,4 +236,18 @@ describe('FormaLocalEngine', () => {
     expect(finished.designHistory[0].revision).toBe(first.revision)
     expect(finished.design?.revision).toBe(second.revision)
   })
+
+  it('maps A60 side-left/right and tucks onto 3D faces with studio art', () => {
+    const design = new FormaLocalEngine().generate({
+      brief: perfumeBrief({ templateId: 'fm-box-ecma-a60' }),
+      overridePatch: { studio: true },
+    })
+    expect(design.dieline.panels.some((p) => p.id === 'side-left')).toBe(true)
+    expect(facePanelId(design.dieline, design.artwork, 'left')).toBe('side-left')
+    expect(facePanelId(design.dieline, design.artwork, 'right')).toBe('side-right')
+    expect(facePanelId(design.dieline, design.artwork, 'top')).toBe('top-tuck')
+    const left = renderPanelSvg(design.dieline, design.artwork, 'side-left', design.palette)
+    expect(left).toContain('data-art="studio"')
+    expect(left).toMatch(/data-role="side"/)
+  })
 })

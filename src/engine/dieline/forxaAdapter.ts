@@ -119,6 +119,7 @@ export function toDielineModel(
       id: panel.id,
       role: roleOf(kind, panel.face),
       kind,
+      face: panel.face,
       x: box.x,
       y: box.y,
       w: box.w,

@@ -373,6 +373,24 @@ h2 {
   min-height: 0;
 }
 
+.dieline-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dieline-pane .templates {
+  flex: 0 0 auto;
+  padding-bottom: 12px;
+}
+
+.dieline-pane .preview-stage {
+  flex: 1 1 auto;
+  min-height: 280px;
+}
+
 /* ——— Topbar design tools (Stil / Girdiler) ——— */
 .topbar-tools {
   position: relative;
@@ -1212,6 +1230,7 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
+  align-items: start;
 }
 
 .tcard {
@@ -1220,6 +1239,8 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 14px 14px 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tcard strong {
@@ -1242,6 +1263,17 @@ h2 {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+.tcard__reason {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tcard.is-active {

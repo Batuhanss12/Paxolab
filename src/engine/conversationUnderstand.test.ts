@@ -118,7 +118,7 @@ describe('CHAT-1 conversation understanding', () => {
     expect(typed.awaiting).not.toBe('barcode')
   })
 
-  it('auto-picks a template and generates after dimensions default, without a barcode gauntlet', () => {
+  it('defaults dimensions then opens the structure picker, without a barcode gauntlet', () => {
     const first = runConversation({
       text: LUMA,
       attachments: [],
@@ -133,15 +133,18 @@ describe('CHAT-1 conversation understanding', () => {
       awaiting: first.awaiting,
       hasDesign: false,
     })
-    expect(second.shouldGenerate).toBe(true)
-    expect(second.brief.templateId.length).toBeGreaterThan(0)
+    expect(second.shouldGenerate).toBe(false)
+    expect(second.showTemplates).toBe(true)
+    expect(second.awaiting).toBe('templateId')
+    expect(second.brief.templateId).toBe('')
+    expect(second.structureOffer?.candidates.length).toBeGreaterThan(0)
     expect(second.brief.deliverables).toEqual(['box', 'label'])
     expect(second.replies.join(' ')).toMatch(/Luma/i)
     expect(second.replies.join(' ')).toMatch(/premium|editorial/i)
     expect(second.replies.join(' ')).toMatch(/etiketi de üret/i)
+    expect(second.replies.join(' ')).toMatch(/Yapı|tuck/i)
     expect(second.overridePatch.directorCue).toBe('luxury-tighten')
     expect(second.overridePatch.studio).toBe(true)
-    expect(second.awaiting).toBeNull()
     expect(second.brief.avoidMotifs).toEqual(
       expect.arrayContaining(['generic-corners', 'heavy-frame', 'generic-ticks', 'dense-pattern']),
     )

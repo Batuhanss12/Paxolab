@@ -89,6 +89,9 @@ export type StudioPalette = {
 
 export type DirectionSource = 'heuristic' | 'llm' | 'knowledge' | 'user' | 'family'
 
+/** Studio tagline origin. Bank is fallback only. */
+export type CopySource = 'user' | 'brief' | 'bank'
+
 export type DesignDirection = {
   surface: StudioSurface
   archetype: StudioArchetype
@@ -108,6 +111,8 @@ export type DesignDirection = {
   categoryLine: string
   /** Short tagline in spaced caps. */
   taglineLine: string
+  /** Where taglineLine came from: user utterance, brief/LLM/sample, or copyBank. */
+  copySource: CopySource
   /** Brand story paragraph for the back. */
   story: string
   /** Net quantity with ℮ and imperial twin: "250 ml ℮ · 8.45 fl.oz". */

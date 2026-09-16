@@ -8,9 +8,6 @@ const CHIPS = [
   { label: 'Kutu', text: 'Kutu' },
   { label: 'Etiket', text: 'Etiket' },
   { label: 'Kutu + Etiket', text: 'Kutu + Etiket' },
-  { label: 'Kozmetik', text: 'Kozmetik kutusu' },
-  { label: 'Kahve', text: 'Kahve kutusu' },
-  { label: 'Elektronik', text: 'Elektronik kutusu' },
   { label: 'Henüz emin değilim', text: 'Henüz emin değilim' },
 ] as const
 
@@ -65,7 +62,7 @@ export function Landing({
         <p className="eyebrow">Talk → Engine → Edit → Print</p>
         <h1 className="landing__title">Ne tasarlamak istiyorsunuz?</h1>
         <p className="landing__sub">
-          Ne tasarlamak istediğini anlat. İstersen birkaç seçenekten de başlayabilirsin.
+          Ne tasarlamak istediğini anlat. Yüzey kutu veya etiket; ürün, marka ve yapıyı sohbette toplarız.
         </p>
 
         <div className="composer composer--hero">
@@ -123,7 +120,7 @@ export function Landing({
           </div>
         </div>
 
-        <p className="chips__hint">İstersen bir yüzey seç — zorunlu değil</p>
+        <p className="chips__hint">İstersen yalnız yüzeyi seç — sektör chip değil</p>
         <div className="chips">
           {CHIPS.map((chip) => (
             <button key={chip.label} type="button" className="chip" onClick={() => onSend(chip.text)}>

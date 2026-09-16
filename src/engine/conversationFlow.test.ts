@@ -69,7 +69,7 @@ describe('chat flow from the screenshot', () => {
     const retry = turns[1].result
     expect(retry.awaiting).toBe('sector')
     expect(retry.replies[0]).not.toBe(first.replies[0])
-    expect(retry.replies[0]).toMatch(/kategoriye oturmadı/)
+    expect(retry.replies[0]).toMatch(/ürüne oturmadı/)
     const answered = replay(['Nox kutu', 'Ürün', 'onarıcı şampuan'])[2].result
     expect(answered.brief.sector).toBe('kozmetik')
     expect(answered.brief.subProduct).toBe('şampuan')
@@ -104,5 +104,87 @@ describe('chat flow from the screenshot', () => {
     expect(kahve.brief.brandName).toBe('')
     expect(kahve.brief.subProduct).toBe('kahve')
     expect(kahve.awaiting).toBe('brandName')
+  })
+
+  it('Kutu chip is surface only and asks for the product, not a brand overwrite', () => {
+    const kutu = replay(['Kutu'])[0].result
+    expect(kutu.brief.packagingMode).toBe('box')
+    expect(kutu.brief.sector).toBe('')
+    expect(kutu.brief.brandName).toBe('')
+    expect(kutu.awaiting).toBe('sector')
+    expect(kutu.replies.join(' ')).toMatch(/ürün/i)
+    expect(kutu.replies.join(' ')).not.toMatch(/Markanın adı nedir/)
+    expect(kutu.replies.join(' ')).not.toMatch(/\bbox\b/)
+  })
+
+  it('opens the structure picker after the brief is complete, without generating', () => {
+    const turns = replay(['Luma parfüm kutusu 70x35x140 siyah altın'])
+    const last = turns.at(-1)!.result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.awaiting).toBe('templateId')
+    expect(last.brief.templateId).toBe('')
+    expect(last.replies.join(' ')).toMatch(/tuck|Yapı/i)
+    expect(last.structureOffer?.candidates.length).toBeGreaterThan(0)
+  })
+
+  it('generates only after the user picks a structure from the offer', () => {
+    const turns = replay(['Luma parfüm kutusu 70x35x140 siyah altın', '1. yapı'])
+    expect(turns[0].result.shouldGenerate).toBe(false)
+    expect(turns[0].result.showTemplates).toBe(true)
+    const last = turns.at(-1)!.result
+    expect(last.shouldGenerate).toBe(true)
+    expect(last.showTemplates).toBe(false)
+    expect(last.brief.templateId.length).toBeGreaterThan(0)
+  })
+
+  it('switches carton grammar when the user names mailer after the offer', () => {
+    const turns = replay(['Luma parfüm kutusu 70x35x140 siyah altın', 'mailer'])
+    const last = turns.at(-1)!.result
+    expect(last.shouldGenerate).toBe(true)
+    expect(last.brief.templateId).toMatch(/mailer/)
+    expect(last.replies.join(' ')).toMatch(/mailer/i)
+  })
+
+  it('asks one optional direction question when colour and mood are missing', () => {
+    const turns = replay(['Luma parfüm kutusu 70x35x140'])
+    const last = turns.at(-1)!.result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.awaiting).toBe('colors')
+    expect(last.replies.join(' ')).toMatch(/renk|duruş|hikâye/i)
+  })
+
+  it('opens the structure picker after the user skips the direction ask', () => {
+    const turns = replay(['Luma parfüm kutusu 70x35x140', 'örnek'])
+    const last = turns.at(-1)!.result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.awaiting).toBe('templateId')
+    expect(last.brief.directionDefaulted).toBe(true)
+    expect(last.replies.join(' ')).toMatch(/Yapı|tuck/i)
+  })
+
+  it('a rich paragraph with colour and mood opens the structure picker in one turn', () => {
+    const last = replay(['Luma parfüm kutusu 70x35x140 siyah altın editorial'])[0].result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.awaiting).toBe('templateId')
+    expect(last.brief.colors).toMatch(/siyah|altın/i)
+    expect(last.brief.styleType).toBe('modern')
+  })
+
+  it('keeps marble as a colour token so direction can override the sector pin', () => {
+    const last = replay(['Nox kulaklık kutusu 90x50x160 mermer altın'])[0].result
+    expect(last.shouldGenerate).toBe(false)
+    expect(last.showTemplates).toBe(true)
+    expect(last.brief.colors).toMatch(/mermer/i)
+    expect(last.brief.sector).toMatch(/elektronik/i)
+  })
+
+  it('does not treat L×W×H as a product name in the director ack', () => {
+    const last = replay(['Luma parfüm kutusu 70x35x140'])[0].result
+    expect(last.brief.productName).toBe('')
+    expect(last.brief.brandName).toBe('Luma')
+    expect(last.replies.join(' ')).not.toMatch(/70x35x140/)
   })
 })

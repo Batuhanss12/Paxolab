@@ -65,7 +65,7 @@ export function sectorHits(template: FormaTemplate, sector: string): boolean {
   return template.sectors.some((s) => overlap(query, keysFor(SECTOR_KEYS, s)))
 }
 
-function productHits(template: FormaTemplate, product: string): boolean {
+export function productHits(template: FormaTemplate, product: string): boolean {
   const query = keysFor(PRODUCT_KEYS, product)
   return template.subProducts.some((s) => {
     if (GENERIC_QUERY.has(norm(s))) return false
@@ -91,6 +91,20 @@ export function filterTemplates(brief: DesignBrief): FormaTemplate[] {
   if (!sectorPool.length) return []
   if (!hasProduct) return sectorPool
   return [...sectorPool].sort((a, b) => Number(productHits(b, product)) - Number(productHits(a, product)))
+}
+
+/** One card per structure family for the current surface. Sector only sorts, it does not hide mailer/sleeve. */
+export function pickerTemplates(brief: DesignBrief): FormaTemplate[] {
+  const mode = brief.packagingMode || 'box'
+  const pool = activeTemplates(true).filter((t) => t.packagingMode === mode)
+  const ranked = brief.sector
+    ? [...pool].sort((a, b) => Number(sectorHits(b, brief.sector)) - Number(sectorHits(a, brief.sector)))
+    : pool
+  const byStruct = new Map<string, FormaTemplate>()
+  for (const t of ranked) {
+    if (!byStruct.has(t.structureId)) byStruct.set(t.structureId, t)
+  }
+  return [...byStruct.values()]
 }
 
 export function getTemplate(id: string): FormaTemplate | undefined {

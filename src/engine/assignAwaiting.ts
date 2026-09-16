@@ -5,16 +5,46 @@
 import type { AwaitingKey, DesignBrief } from '../types'
 import { parseCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
-import { NAME_STOP_RE, SKIP_UTTERANCE, normaliseSectorTypos } from './extractRules'
+import { templateIdFromUtterance } from './catalog/structureOffer'
 import { isGenericProductName, isPaletteName, isSectorOrSurfaceName, looksLikeName, looksLikeSector } from './extractHelpers'
+import { NAME_STOP_RE, SKIP_UTTERANCE, normaliseSectorTypos } from './extractRules'
+import { isSpokenStory, isSpokenTagline } from './extractCopy'
 
 export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Partial<DesignBrief> {
-  if (!awaiting || awaiting === 'templateId') return {}
+  if (!awaiting) return {}
   const cleaned =
     awaiting === 'manufacturerName' || awaiting === 'manufacturerAddress'
       ? text.replace(/^[\s\-–:]+/, '').trim()
       : text.replace(/^[\s\-–:]+/, '').replace(/[?.!]+$/, '').trim()
-  if (!cleaned || cleaned.length > 80) return {}
+  if (!cleaned) return {}
+  if (cleaned.length > 80 && awaiting !== 'colors' && awaiting !== 'styleType') return {}
+  if (awaiting === 'templateId') {
+    if (SKIP_UTTERANCE.test(cleaned) || /^(devam|önerdi[gğ]in|olsun)$/i.test(cleaned)) return {}
+    const id = templateIdFromUtterance(cleaned, '')
+    return id ? { templateId: id } : {}
+  }
+  if (awaiting === 'colors' || awaiting === 'styleType') {
+    if (SKIP_UTTERANCE.test(cleaned) || /^(yok|yoktur|hayır)$/i.test(cleaned)) return { directionDefaulted: true }
+    if (!/[A-Za-zÇĞİÖŞÜçğıöşü#]/.test(cleaned)) return {}
+    if (isSpokenStory(cleaned) || isSpokenStory(text)) {
+      return { directionDefaulted: false, story: isSpokenStory(text) ? text.trim() : cleaned }
+    }
+    if (isSpokenTagline(cleaned) || isSpokenTagline(text)) {
+      return { directionDefaulted: false, copyOverrides: isSpokenTagline(text) ? text.trim().replace(/[?.!]+$/, '') : cleaned }
+    }
+    const style = parseStyle(cleaned)
+    const moodOnly =
+      /^(lüks|luxury|premium|minimal|sade|eco|modern|klasik|classic|editorial|editöryal|çağdaş|contemporary)$/i.test(
+        cleaned,
+      )
+    return {
+      directionDefaulted: false,
+      ...(style ? { styleType: style } : {}),
+      ...(moodOnly ? {} : { colors: cleaned }),
+      ...(cleaned.length > 40 ? { story: cleaned } : {}),
+    }
+  }
+  if (cleaned.length > 80) return {}
   if (awaiting === 'volume') {
     if (SKIP_UTTERANCE.test(cleaned) || /^(yok|yoktur)$/i.test(cleaned)) return { volumeDefaulted: true }
     const vol = cleaned.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|l|gr|g|kg)?/i)
@@ -53,10 +83,6 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
   if (awaiting === 'packagingMode') {
     if (/etiket|label/i.test(cleaned) && !/kutu|box/i.test(cleaned)) return { packagingMode: 'label' }
     return { packagingMode: 'box' }
-  }
-  if (awaiting === 'styleType') {
-    const style = parseStyle(cleaned)
-    return style ? { styleType: style } : { styleType: 'luxury' }
   }
   if (awaiting === 'copyLocale') {
     return { copyLocale: parseCopyLocale(cleaned) ?? (/en|eng|english|ingiliz/i.test(cleaned) ? 'en' : 'tr') }

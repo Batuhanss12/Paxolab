@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DesignBrief } from '../../types'
 import { emptyBrief } from '../fields'
-import { filterTemplates, pickTemplate } from './catalog'
+import { filterTemplates, pickerTemplates, pickTemplate } from './catalog'
 
 function brief(patch: Partial<DesignBrief> = {}) {
   return { ...emptyBrief(), ...patch }
@@ -45,5 +45,17 @@ describe('filterTemplates', () => {
     expect(elec[0]!.id).toBe('fm-elec-tuck-earbuds')
     expect(elec.every((t) => t.sectors.some((s) => /elektronik|teknoloji|e-ticaret/i.test(s)))).toBe(true)
     expect(elec.some((t) => t.id === 'fm-cos-tuck-perfume')).toBe(false)
+  })
+})
+
+describe('pickerTemplates', () => {
+  it('shows one card per structure for the surface, including mailer next to tuck', () => {
+    const cards = pickerTemplates(brief({ sector: 'kozmetik', subProduct: 'parfüm', packagingMode: 'box' }))
+    const structs = cards.map((t) => t.structureId)
+    expect(new Set(structs).size).toBe(structs.length)
+    expect(structs).toContain('tuck-end-box')
+    expect(structs).toContain('mailer-box')
+    expect(structs).toContain('sleeve')
+    expect(cards[0]!.structureId).toBe('tuck-end-box')
   })
 })

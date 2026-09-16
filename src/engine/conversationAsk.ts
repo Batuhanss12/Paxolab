@@ -3,11 +3,11 @@
  * Barcode / manufacturer / SKU / volume are sample defaults, not a gauntlet.
  */
 import type { AwaitingKey, DesignBrief } from '../types'
-import { acceptedDimsDefault, hasUserDims } from './fields'
+import { acceptedDimsDefault, acceptedDirectionDefault, hasDirectionSignal, hasUserDims } from './fields'
 
 const ASK: Partial<Record<AwaitingKey, string>> = {
   packagingMode: 'Kutu mu tasarlıyoruz, etiket mi, yoksa ikisi birden mi?',
-  sector: 'Ürün nedir — kozmetik, gıda, kahve, elektronik?',
+  sector: 'Ne ürünü paketliyoruz — parfüm, serum, kahve, kulaklık, bal? Kategori adını yazmana gerek yok; ürünü söyle.',
   brandName: 'Markanın adı nedir? Tipografide bunu taşıyacağız.',
   productName: 'Ürün hattı veya SKU adı nedir? Marka adı değil — örneğin Noir. Yoksa “örnek” yazın; lockup’ta yalnız marka kalır.',
   volume: 'Hacim nedir — örneğin 50 ml? Bilmiyorsanız “örnek” yazın; Girdiler’de varsayılan diye işaretlerim.',
@@ -19,8 +19,8 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
   manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
   styleType: 'Soldaki ruh hali çipleri ipucu: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik. Kostüm şablonu değil — renk ve motifler brief’ten kurulur.',
   colors:
-    'Renkler nedir — hex veya isim (ör. #1a0a0a · #c9a227, siyah altın)? “yok” derseniz paleti ruh hali ve sektörden türetirim.',
-  templateId: 'Sağdaki şablon kartlarından birini seçin — dieline canlı güncellenir.',
+    'Renk, duruş veya hikâye — bir cümle yeter (ör. siyah · altın, editorial, sessiz yoğunluk). Yoksa paleti üründen kurarım; “örnek” yaz.',
+  templateId: 'Uygun yapılar sağda. Bir kart seç veya “1. yapı” / “mailer” yaz; tasarım ondan sonra başlar. “örnek” dersen önerdiğimle devam ederim.',
   copyLocale: 'Metinler Türkçe mi, İngilizce mi?',
 }
 
@@ -61,13 +61,16 @@ export function askCopy(brief: DesignBrief, key: AwaitingKey): string {
 export function askRetryCopy(brief: DesignBrief, key: AwaitingKey, lastAnswer: string): string {
   const said = lastAnswer.trim().length > 0 && lastAnswer.trim().length <= 40 ? `“${lastAnswer.trim()}”` : 'Bu'
   if (key === 'sector') {
-    return `${said} bir kategoriye oturmadı. Ürünün kendisini yaz, gerisini ben çıkarırım — örn. “cold brew kahve”, “onarıcı şampuan”, “çiçek balı”, “eau de parfum”, “D3 vitamini”, “bebek şampuanı”, “yüzey temizleyici”, “kablosuz kulaklık”.`
+    return `${said} bir ürüne oturmadı. Paketlenen şeyi yaz — örn. “cold brew kahve”, “onarıcı şampuan”, “çiçek balı”, “eau de parfum”, “D3 vitamini”, “bebek şampuanı”, “yüzey temizleyici”, “kablosuz kulaklık”.`
   }
   if (key === 'brandName') {
     return `${said} marka adı olarak okunmadı. Markayı tek başına yaz — örn. “Elite Brew” — istersen tırnak içinde. Ürün hattını ayrıca sorarım.`
   }
   if (key === 'packagingMode') {
     return `${said} yüzeyi belirlemedi. “kutu”, “etiket” ya da “kutu ve etiket” yaz; şişe/kavanoz için etiket, karton için kutu doğru seçim.`
+  }
+  if (key === 'colors') {
+    return `${said} yön olarak okunmadı. Renk, ruh veya bir cümle hikâye yaz — örn. “bej ve koyu yeşil, editorial”, “siyah altın lüks”. Paleti üründen kurmamı istiyorsan “örnek” de.`
   }
   if (key === 'dimensionsMm') {
     return brief.packagingMode === 'label'
@@ -84,6 +87,7 @@ export function nextMissing(brief: DesignBrief): AwaitingKey | null {
     if (key === 'brandName' && !brief.brandName.trim()) return key
     if (key === 'dimensionsMm' && !hasUserDims(brief) && !acceptedDimsDefault(brief)) return key
   }
+  if (!hasDirectionSignal(brief) && !acceptedDirectionDefault(brief)) return 'colors'
   if (!brief.templateId) return 'templateId'
   return null
 }

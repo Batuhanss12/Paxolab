@@ -80,8 +80,9 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       hasDesign: false,
       state: turn.state,
     })
-    expect(settled.shouldGenerate).toBe(true)
-    expect(settled.awaiting).toBeNull()
+    expect(settled.shouldGenerate).toBe(false)
+    expect(settled.showTemplates).toBe(true)
+    expect(settled.awaiting).toBe('templateId')
     expect(settled.brief.dimsDefaulted).toBe(true)
     expect(settled.brief.provenance?.dimensionsMm?.source).toBe('SYSTEM_DEFAULT')
     expect(settled.state?.asked.dimensionsMm).toBe(MAX_ASK)
@@ -104,7 +105,9 @@ describe('TEST B — missing information and the asked/answered ledger', () => {
       hasDesign: false,
       state: asked.state,
     })
-    expect(answered.shouldGenerate).toBe(true)
+    expect(answered.shouldGenerate).toBe(false)
+    expect(answered.showTemplates).toBe(true)
+    expect(answered.awaiting).toBe('templateId')
     expect(answered.brief.dimensionsMm).toEqual({ L: 60, W: 40, H: 120 })
     expect(answered.state?.answered).toContain('dimensionsMm')
     expect(answered.state?.asked.dimensionsMm).toBe(1)

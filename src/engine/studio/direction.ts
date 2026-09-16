@@ -9,7 +9,7 @@ import type { SectorId } from '../designSystem/types'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
 import { claimChip, copyBankFor, isGenericTagline, refineBenefits, refineCategory, volumeLine } from './copyBank'
 import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
-import type { DesignDirection, DirectionHints, StudioArchetype, StudioPalette, StudioSurface, Temperament } from './types'
+import type { DesignDirection, DirectionHints, StudioArchetype, StudioPalette, StudioSurface, Temperament, CopySource } from './types'
 
 export type DirectionInput = {
   brief: DesignBrief
@@ -147,9 +147,9 @@ function scoreArchetype(dna: ArchetypeDna, input: DirectionInput, temperament: T
   const ratio = input.faceH / Math.max(1, input.faceW)
   const aspectFit = dna.aspect === 'any' ? 0.7 : dna.aspect === 'portrait' ? (ratio >= 1.1 ? 1 : 0.3) : ratio <= 0.95 ? 1 : 0.3
   const tempFit = dna.temperaments.includes(temperament) ? 1 : 0.3
-  let score = sectorFit * 0.5 + styleFit * 0.3 + aspectFit * 0.1 + tempFit * 0.1
+  let score = sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18
   score += productFamilyFit(dna.id, input)
-  if (hints.archetype === dna.id) score += 2
+  if (hints.archetype === dna.id) score += hints.source === 'heuristic' ? 0.85 : 2
   if (hints.avoidArchetypes?.includes(dna.id)) score -= 1.5
   if (hints.background && !dna.backgrounds.includes(hints.background)) score -= 0.15
   if (hints.avoidBackgrounds?.length && dna.backgrounds.every((b) => hints.avoidBackgrounds?.includes(b))) score -= 0.6
@@ -159,37 +159,82 @@ function scoreArchetype(dna: ArchetypeDna, input: DirectionInput, temperament: T
 /** TASARIM REF product families → the archetype distilled from that reference. */
 function productFamilyFit(id: string, input: DirectionInput): number {
   const blob = `${input.brief.sector} ${input.brief.subProduct} ${input.brief.productName}`.toLocaleLowerCase('tr')
-  if (/kahve|coffee|espresso|frappe|brew/.test(blob)) return id === 'marble-frame' ? 0.55 : id === 'dark-landscape' ? 0.1 : -0.15
-  if (/\bbal\b|honey|reçel|dağ/.test(blob)) return id === 'landscape-window' || id === 'landscape-badge' ? 0.55 : -0.1
+  if (/kahve|coffee|espresso|frappe|brew/.test(blob)) return id === 'marble-frame' ? 0.22 : id === 'dark-landscape' ? 0.05 : -0.08
+  if (/\bbal\b|honey|reçel|dağ/.test(blob)) return id === 'landscape-window' || id === 'landscape-badge' ? 0.22 : -0.08
   if (/serum|ampul/.test(blob) || input.sector === 'serum') {
-    return id === 'line-scene' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
+    return id === 'line-scene' ? 0.22 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
   }
   if (/bebek|baby/.test(blob) || input.sector === 'baby') {
-    return id === 'line-scene' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
+    return id === 'line-scene' ? 0.22 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
   }
   if (/temizlik|deterjan/.test(blob) || input.sector === 'cleaning') {
-    return id === 'wave-panel' ? 0.55 : id === 'botanical-card' || id === 'card-on-art' ? -0.25 : 0
+    return id === 'wave-panel' ? 0.22 : id === 'botanical-card' || id === 'card-on-art' ? -0.25 : 0
   }
   if (/şampuan|shampoo|krem|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
-    return id === 'botanical-card' || id === 'card-on-art' ? 0.5 : id === 'diagonal-tech' || id === 'diagonal-split' ? 0.15 : 0
+    return id === 'botanical-card' || id === 'card-on-art' ? 0.22 : id === 'diagonal-tech' || id === 'diagonal-split' ? 0.08 : 0
   }
-  if (/parfüm|perfume|eau de/.test(blob)) return id === 'dark-landscape' || id === 'ink-wash' || id === 'ink-panel' ? 0.5 : 0
-  if (/elektronik|kulaklık|earbuds|tech/.test(blob)) return id === 'diagonal-tech' || id === 'diagonal-split' ? 0.5 : -0.1
+  if (/parfüm|perfume|eau de/.test(blob)) return id === 'dark-landscape' || id === 'ink-wash' || id === 'ink-panel' ? 0.22 : 0
+  if (/elektronik|kulaklık|earbuds|tech/.test(blob)) return id === 'diagonal-tech' || id === 'diagonal-split' ? 0.22 : -0.08
   return 0
 }
 
 /**
  * Heuristic art-direction from the brief. Closed vocabulary only — never invents geometry.
+ * Visual words (mermer, botanik, klinik…) override the sector baseline so a coffee DNA
+ * is not glued to electronics, and marble can land on a perfume or tech brief.
  * Conversation / LLM hints overlay this; catalog jobs omit studio so freeze is untouched.
  */
+function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
+  if (/mermer|marble/.test(blob)) {
+    return { archetype: 'marble-frame', background: 'marble', rationale: ['Brief: mermer — sektör pin’inin önüne geçer.'] }
+  }
+  if (/botanik|yaprak|\bleaf\b/.test(blob)) {
+    return {
+      archetype: label ? 'card-on-art' : 'botanical-card',
+      background: 'botanical',
+      temperament: 'vivid-mono',
+      rationale: ['Brief: botanik.'],
+    }
+  }
+  if (/line[\s-]?scene|klinik|çizgisel|line[\s-]?art/.test(blob)) {
+    return {
+      archetype: 'line-scene',
+      background: 'line-scene',
+      temperament: 'clean-clinical',
+      rationale: ['Brief: klinik / çizgisel.'],
+    }
+  }
+  if (/\bdalga\b|\bwave\b/.test(blob)) {
+    return { archetype: 'wave-panel', background: 'wave', temperament: 'clean-clinical', rationale: ['Brief: dalga.'] }
+  }
+  if (/manzara|landscape|mürekkep|\bink\b/.test(blob)) {
+    return {
+      archetype: label ? 'ink-panel' : 'dark-landscape',
+      temperament: 'dark-luxe',
+      rationale: ['Brief: manzara / mürekkep.'],
+    }
+  }
+  if (/diyagonal|diagonal|antrasit/.test(blob)) {
+    return {
+      archetype: label ? 'diagonal-split' : 'diagonal-tech',
+      temperament: 'tech-dark',
+      rationale: ['Brief: diyagonal / antrasit.'],
+    }
+  }
+  return {}
+}
+
 export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: StudioSurface): DirectionHints {
-  const blob = `${brief.sector} ${brief.subProduct} ${brief.productName} ${brief.colors} ${brief.directorCue ?? ''}`.toLocaleLowerCase('tr')
+  const blob = `${brief.sector} ${brief.subProduct} ${brief.productName} ${brief.colors} ${brief.styleType} ${brief.directorCue ?? ''} ${brief.story ?? ''} ${brief.copyOverrides}`.toLocaleLowerCase('tr')
   const label = surface === 'label'
+  const visual = visualOverrideFromBrief(blob, label)
+  if (visual.archetype) return { source: 'heuristic', ...visual }
+
   const hints: DirectionHints = { source: 'heuristic', rationale: [] }
   if (/kahve|coffee|espresso|frappe|brew/.test(blob)) {
     hints.archetype = 'marble-frame'
     hints.background = 'marble'
-    hints.rationale = ['Kahve — Elite Brew mermer + köşe parantez sistemi.']
+    hints.rationale = ['Kahve — Elite Brew mermer + köşe parantez sistemi (sektör prior, brief sözcüğü yok).']
   } else if (/\bbal\b|honey|reçel/.test(blob)) {
     hints.archetype = label ? 'landscape-badge' : 'landscape-window'
     hints.background = 'landscape-meadow'
@@ -221,8 +266,6 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
     hints.temperament = 'tech-dark'
     hints.rationale = ['Elektronik — Capelli diyagonal metalik sistem.']
   }
-  if (/mermer|marble/.test(blob)) hints.background = 'marble'
-  if (/botanik|yaprak|leaf/.test(blob)) hints.background = 'botanical'
   if (sector === 'perfume' && !hints.archetype) {
     hints.archetype = label ? 'ink-panel' : 'dark-landscape'
   }
@@ -243,6 +286,31 @@ function mergeHints(list: DirectionHints[] | undefined): DirectionHints {
     }
   }
   return out
+}
+
+function fitTagline(text: string): string {
+  const t = text.trim()
+  if (t.length <= 42) return t
+  return t.slice(0, 40).replace(/\s+\S*$/, '')
+}
+
+/**
+ * User line → brief/LLM/sample line → copyBank. Bank slogans never beat an explicit user line.
+ */
+export function resolveStudioCopy(input: {
+  brief: DesignBrief
+  spokenTag: string
+  bankTagline: string
+}): { tagline: string; copySource: CopySource } {
+  const user = input.brief.copyOverrides.trim()
+  const spoken = input.spokenTag.trim()
+  if (user && !isGenericTagline(user, input.brief.brandName)) {
+    return { tagline: fitTagline(user), copySource: 'user' }
+  }
+  if (spoken && !isGenericTagline(spoken, input.brief.brandName) && spoken !== input.bankTagline) {
+    return { tagline: fitTagline(spoken), copySource: 'brief' }
+  }
+  return { tagline: input.bankTagline, copySource: 'bank' }
 }
 
 function directionRationale(dna: ArchetypeDna, temperament: Temperament, background: string, palette: StudioPalette): string[] {
@@ -282,11 +350,15 @@ export function resolveDirection(input: DirectionInput): DesignDirection {
   const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${input.variationIndex}`)
   const category = hints.categoryLine || refineCategory(brief, sector, locale) || bank.category
   const chipsFromBrief = claimChip(brief, bank.chips[0])
-  const chips = hints.chips?.length ? hints.chips : [chipsFromBrief, ...bank.chips.filter((c) => c !== chipsFromBrief)].slice(0, 2)
+  const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
+  const selected = resolveStudioCopy({ brief, spokenTag, bankTagline: bank.tagline })
+  const chips = hints.chips?.length
+    ? hints.chips
+    : selected.copySource === 'user'
+      ? [chipsFromBrief, selected.tagline].filter((c, i, a) => c && a.indexOf(c) === i).slice(0, 2)
+      : [chipsFromBrief, ...bank.chips.filter((c) => c !== chipsFromBrief)].slice(0, 2)
   const productPrefix =
     hints.productPrefix ?? (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans' ? bank.prefixes[input.variationIndex % bank.prefixes.length] : '')
-  const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
-  const tagline = (isGenericTagline(spokenTag, brief.brandName) ? '' : spokenTag) || bank.tagline
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
   return {
     surface,
@@ -301,7 +373,8 @@ export function resolveDirection(input: DirectionInput): DesignDirection {
     chips,
     manifesto: hints.manifesto?.length ? hints.manifesto.slice(0, 4) : bank.manifesto,
     categoryLine: category,
-    taglineLine: tagline.length > 42 ? tagline.slice(0, 40).replace(/\s+\S*$/, '') : tagline,
+    taglineLine: selected.tagline,
+    copySource: selected.copySource,
     story: (brief.story?.trim() || bank.story).trim(),
     volumeLine: volumeLine(input.copy.volume, locale),
     productPrefix,

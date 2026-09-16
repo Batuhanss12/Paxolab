@@ -1,0 +1,239 @@
+# Grapxor — Sohbet Stüdyosu Auditi ve Yol Haritası
+
+**Tarih:** 16 Eyl 2026  
+**Ürün:** Grapxor / Paxolab  
+**Durum:** C0–C5 kapandı. Sıradaki C6 (stüdyo konuşması).  
+**Önceki program:** S0–S9 kapandı (`docs/STUDIO_STAGE_AUDIT.md`). Bu belge *sohbet → brief → yön → yapı → öğrenme* dilimidir.
+
+Kilit (değişmez): **LLM SVG çizmez. Packfy / SAM / YOLO / raster-to-SVG / image-gen yok. 29 katalog freeze durur. 18 stüdyo yüz hash bilinçli güncellenmedikçe durur. Learning Gate global’i otomatik açmaz. FOGRA/CMYK yok.**
+
+---
+
+## 0. İstek (teknik çeviri)
+
+Kullanıcı cümlesi: klişe şablon değil; her sektör/üründe brief’e göre farklı yüzey; chat sihirbaz değil, grafik stüdyo direktörü + yapı mühendisi + proje yöneticisi; zamanla kendini geliştirsin.
+
+Kodda bu şu anlama gelir:
+
+| Kullanıcı dili | Motor gerçeği |
+|---|---|
+| “Sabit tasarım üretmesin” | `hintsFromBrief` sektör ismine arketip **pinler** (kahve=mermer, parfüm=manzara, elektronik=diyagonal). Brief renk/ruh/hikâye bunu zor kırar. |
+| “Aynı mimari, farklı ürün” | Painter kapalı sözlükte kalır (DNA + ledger). Değişen **skor ve brief ağırlığıdır**, ikinci motor değil. |
+| “Chat profesyonel çalışsın” | `ASK_CRITICAL` 4 alan + `openingReply` ilk cevabı ezer. Soru sırası sihirbaz. |
+| “Kutu tipi seçilmiyor” | `templateId` `nextMissing`’te var; `runConversation` onu atlar; `pickTemplate` sessiz ilk eşleşmeyi basar; `showTemplates` her zaman `false`. |
+| “Landing’de sektör olmasın” | Chip’ler `Kozmetik / Kahve / Elektronik kutusu` gönderir; sektör yüzeymiş gibi durur. |
+| “Zamanla gelişsin” | Learning Gate + panel var; generate döngü çalıştırmaz. Gözlem birikir, kural açılmaz. |
+
+Hedef mimari (tek painter, tek sohbet):
+
+```
+Utterance
+  → Understanding (ürün, yüzey, marka, renk, ruh, yapı ipucu, yasal örnek)
+  → Studio brief (eksik = tasarımcı sorusu, öneri + onay)
+  → Structure offer (tuck / mailer / sleeve / tepsi / wrap…)  ← kullanıcı görür
+  → Direction (brief ağırlıklı skor; sektör prior, kilit değil)
+  → composeStudioArtwork
+  → Ledger preflight
+  → Karar kaydı + (isteğe bağlı) observation
+  → İnsan: iterasyon / yapı değiştir / öğrenme onayı
+```
+
+---
+
+## 1. Bugünkü olgunluk
+
+S9 sonrası üretim dürüst. Sohbet ve yön hâlâ **sektör şablonuna** yakın.
+
+| Eksen | /5 | Kanıt |
+|---|---:|---|
+| Sohbet (direktör, sihirbaz değil) | **2.0** | `ASK_CRITICAL` 4 alan; App `openingReply` ilk cevabı ezer |
+| Brief kapsamı | **2.0** | Renk, hikâye, kutu tipi, yasal metin sorulmaz; `isCoreReady` = marka + yüzey |
+| Yapı / dieline seçimi | **1.5** | 30 aktif şablon; sohbet `showTemplates: false`; picker yalnız `!design` |
+| Yön (brief → arketip) | **2.5** | `sectorFit * 0.5` + `hintsFromBrief` pin; renk/mermer sonradan yama |
+| Copy anatomisi | **3.5** | C4: user/brief/bank; slogan lockup’a iner; kategori/chip hâlâ bank |
+| Öğrenme | **2.5** | S7 UI var; generate `runLearningCycle` çağırmaz |
+| LLM orkestrasyon | **2.5** | Fail-open; `brief-extract` yapı/şablon bilmez |
+| Freeze / determinizm | **4.5** | 29 kit + 18 stüdyo hash |
+| Üretim dürüstlüğü | **3.5** | S9: exportOk, 3 mm, PDF/X-4 sRGB iddiası, font subset notu |
+
+**Stüdyo sohbet olgunluğu: ~2.4 / 5.** Yüzey painter S5–S6 seviyesinde; giriş kapısı S1 sihirbazında.
+
+---
+
+## 2. Kanıt — kullanıcı şikayetleri
+
+### 2.1 Landing sektörü yüzey sanıyor
+
+`src/components/Landing.tsx` chip’leri:
+
+- Yüzey: Kutu, Etiket, Kutu + Etiket
+- Sektör kılığı: Kozmetik, Kahve, Elektronik (`text: 'Kozmetik kutusu'` …)
+- Metin: “İstersen bir yüzey seç”
+
+`conversationFlow.test.ts` bunu dondurur: `'Kozmetik kutusu'` → `sector: kozmetik`, `awaiting: brandName`.
+
+### 2.2 “Kutu” deyince yalnızca marka soruluyor (cevap-alan uyumsuzluğu)
+
+`nextMissing` sırası: `packagingMode → sector → brandName → dimensionsMm` (`conversationAsk.ts`).
+
+Chip **Kutu** yalnız `packagingMode=box` doldurur. Motor aslında **sektör** sorar.
+
+`App.tsx` ilk turda, marka boşsa, gerçek soruyu `openingReply` ile ezer:
+
+```
+if (first && !result.brief.brandName) {
+  replies[0] = openingReply(user.content)  // "Kutu. Markanın adı nedir?"
+}
+```
+
+`awaiting` hâlâ `sector`. Kullanıcı marka yazar; `assignAwaiting(..., 'sector')` markayı sektör sanmazsa alan boş kalır, soru tekrar eder veya kayar. Sihirbaz hissi buradan.
+
+`openingReply('Kozmetik kutusu')` → “Kozmetik — ambalajın en net yüzeyi. Markanın adı nedir?”
+
+### 2.3 Şablon katalog var, sohbet kullanmıyor
+
+Katalog: **30 aktif** şablon, **15 structureId** (10’u tuck-end), 26 kutu / 4 etiket.
+
+`TemplatePicker` “Bu sektörün kutuları” der, `filterTemplates` sektörle süzgeçler.
+
+`runConversation`:
+
+- `showTemplates` her dönüşte `false`
+- `missing === 'templateId'` generate’e düşer
+- `generateResult` → `pickTemplate` → sektör havuzunun **ilk kartı**
+
+`Workspace.tsx`: picker yalnız `{!generating && !design && showTemplates}`. Generate olduktan sonra yapı kartı görünmez.
+
+`assignAwaiting`: `templateId` için `{}` — “tuck / mailer / sleeve” bekleyen alana yazılmaz.
+
+`extractFields`: kutu tipi sözcüğü yok.
+
+### 2.4 Ölçü alınıyor, yapı alınmıyor
+
+`ASK_CRITICAL` ölçü sorar, yapı sormaz. “şablon” = `dimsDefaulted`, sonra sessiz tuck (parfüm/krem/serum hepsi `tuck-end-box` varsayılanı).
+
+Mailer, sleeve, snap-lock, A60, RSC, pillow, rigid-gift sohbette **önerilmez**.
+
+### 2.5 Sektör = klişe yüz
+
+`hintsFromBrief` (`direction.ts`): kahve→marble-frame, bal→landscape, serum/bebek→line-scene, temizlik→wave, krem→botanical, parfüm→dark-landscape, elektronik→diagonal-tech.
+
+`scoreArchetype`: `sectorFit * 0.5` — sektör yarı ağırlık. `productFamilyFit` aynı pin’i pekiştirir.
+
+Kullanıcı “elektronik kutu ama mermer ve altın” dese bile `if (/mermer/)` yalnız `background` yazar; arketip elektronik pininde kalabilir.
+
+`copyBank` parfüme “EAU DE PARFUM / DOĞA GÜCÜ ATEŞLER” basar. Gıda/elektronik aynı bankanın kendi klişesi.
+
+Bu **yanlış değil referans DNA** (TASARIM REF). Yanlış olan: brief (renk, hikâye, rakip, kanal) DNA’yı **seçemez**; sektör seçer.
+
+### 2.6 Brief yarım, generate yine çalışır
+
+`isCoreReady`: marka + (yüzey **veya** sektör). Ürün hattı, renk, ruh, yapı, ölçü zorunlu değil.
+
+`FormaLocalEngine`: boş `styleType` → `luxury`; boş ölçü → şablon `defaultsMm`; boş barkod/üretici → örnek.
+
+İlk yüz “tamam” görünür; stüdyo kararı eksik brief’ten gelir.
+
+### 2.7 Öğrenme generate’e bağlı değil
+
+S7 panel `runLearningCycle` çalıştırır. `FormaLocalEngine.generate` çağırmaz (bilinçli, freeze). Sonuç: rating/export observation birikir; kural **insan paneli olmadan** sohbeti değiştirmez. “Zamanla gelişsin” kapısı var, halka sohbette kapalı.
+
+### 2.8 LLM brief-extract yapıyı bilmiyor
+
+`nlu.ts` SYSTEM_PROMPT: marka, sektör, yüzey, renk, ruh — **structureId / template / kutu tipi yok**. Endpoint kapalıysa `null`. Fail-open doğru; canlıyken de yapı çıkmaz.
+
+---
+
+## 3. Tespit edilen ek boşluklar (kullanıcı söylemedi)
+
+| ID | Gap | Neden önemli |
+|---|---|---|
+| C-A | `createPlan` stüdyoda hâlâ hesaplanır, yüzeyi boyamaz | Critic/skor kit dilinde; kullanıcı “neden bu yön”e kit cevabı alır |
+| C-B | `StyleBar` lüks/modern/eco kostüm; stüdyo temperament yok | U1 park — iterasyon “6 yeni tasarım” top-3 kardeş havuzu |
+| C-C | `variationIndex % pool.slice(0,3)` | “Başka yön” çoğunlukla aynı ailenin kardeşi |
+| C-D | Referans görsel (logo dışında) painter’a inmez | Attachment `referans` kaydı; palet/DNA çıkarılmaz (CV yasak — sadece brief ipucu) |
+| C-E | Çift teslimat: kutu sonra “etiketi de üret” | Aile kilitli (S4 doğru); chat ikinci yüzeyi proaktif planlamaz |
+| C-F | Girdiler paneli salt okunur | Düzeltme sohbet + StyleBar ölçü; brief edit yok |
+| C-G | Karşılaştır tab stüdyo arketip farkını yazmaz | U2 |
+| C-H | Flap/top sade zemin | D4 — yapı değişince yüz daha boş kalır |
+| C-I | Font metrics `FACE_EM` tahmin | V5 — uzun marka taşar |
+| C-J | QR/GS1 örnek | S9 dürüst; üretim iddiası yok (doğru) |
+| C-K | `isCoreReady` sektörü yüzey sayabilir | `packagingMode \|\| sector` — “kahve” ile yüzey boş generate’e yaklaşır |
+
+---
+
+## 4. Yapılmayacaklar
+
+- LLM’e path / SVG / “şunu çiz”
+- Kit painter’ı silmek veya stüdyoyu katalog job’a zorlamak
+- Knowledge → geometri
+- Global kural otomatik
+- RL / SVG fine-tune
+- Sektör sayısı kadar yeni arketip (yalnız referans + layout)
+- Landing’e 15 kutu tipini wizard kartı olarak dizmek (sohbet önerir, Dieline seçer)
+
+---
+
+## 5. Faz sırası (C0–C8)
+
+Bir faz kapanmadan sonrakine atlama. Her faz: kod + test + `docs/STUDIO_CHAT_Cn.md` kanıt.
+
+| Faz | İçerik | Çıkış kapısı | Risk | Durum |
+|---|---|---|---|---|
+| **C0** | Bu audit | Belge + canvas + kilitler | — | **Kapandı** 16 Eyl |
+| **C1** | Sohbet yüzeyi + yapı teklifi | Chip yalnız kutu/etiket; `openingReply` ezmez; yapı adı sohbette; picker Dieline’de; `tuck/mailer/sleeve` parse | Düşük | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C1.md` |
+| **C2** | Direktör intake | Ürün cümlesi sektörü doldurur; renk/ruh/hikâye isteğe bağlı ama sorulur; tek paragrafta generate | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C2.md` |
+| **C3** | Brief-ağırlıklı yön | `hintsFromBrief` pin zayıflar; renk+ruh+hikâye arketip seçer; sektör prior; 18 hash yalnız bilinçli | Yüksek | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C3.md` (hash değişmedi) |
+| **C4** | Copy brief’ten | Bank fallback; kullanıcı satırı/hikâye/claim kazanır | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C4.md` |
+| **C5** | Yapı zekâsı | Ürün fiziği → 3 yapı + gerekçe (parfüm tuck, atıştırmalık tepsi, kargo mailer) | Orta | **Kapandı** 16 Eyl — `docs/STUDIO_CHAT_C5.md` |
+| **C6** | Stüdyo konuşması | “Neden bu yön”; veto; vary tam havuz; critic TR | Orta | Bekler |
+| **C7** | Öğrenme halkası | Generate sonrası observation; user/brand auto eşik; global insan; boş = baseline | Orta | Bekler |
+| **C8** | LLM brief+yön | Extract’e yapı/renk/hikâye; fail-open; SVG yok | Düşük | Bekler |
+
+Park: yeni DNA (referans klasörü olmadan), FOGRA, A/B, RL, foto plaka.
+
+---
+
+## 6. C1 ayrıntısı (hemen sonraki dilim)
+
+**Amaç:** Kullanıcı yüzey seçince sektör chip’i görmesin; sohbet gerçek eksik alanı sorsun; kutu tipi görünsün ve yazılabilsin.
+
+Yapılacak:
+
+1. Landing chip: Kutu / Etiket / Kutu + Etiket / Henüz emin değilim. Kozmetik/Kahve/Elektronik kalkar (yazılı “kahve kutusu” hâlâ extract edilir).
+2. `App.tsx`: `openingReply` `replies[0]`’ı ezmez. İlk cevap = `askCopy(nextMissing)`.
+3. Sektör sorusu: “Kozmetik mi gıda mı?” değil — “Ne ürünü paketliyoruz — parfüm, serum, kahve, kulaklık?”
+4. `generateResult`: seçilen şablonun **yapı adını** söyler; alternatifleri bir cümlede; `showTemplates: true`.
+5. Dieline sekmesi: `TemplatePicker` tasarım varken de açık. Başlık “Bu sektörün kutuları” → “Kutu / etiket yapıları”.
+6. `parseStructureUtterance`: tuck, ters tuck, mailer, sleeve, tepsi, wrap, A60, koli.
+7. `assignAwaiting('templateId')` + serbest metin: yapı sözcüğü `templateId` yazar, generate yenilenir.
+
+**Test:** `conversationFlow` / `conversationUnderstand` yeşil; yeni: chip Kutu sektör basmaz; generate cevabında `tuck` veya `mailer`; `showTemplates === true`.
+
+**Dokunma:** `hintsFromBrief`, golden hash, kit freeze, LearningEngine.
+
+---
+
+## 7. C3 notu (kilit tasarım kararı)
+
+“Parfüm yüzü serumda da kullanılabilsin” = **sektör pin’ini kaldırmak**, DNA’yı silmek değil.
+
+Önerilen skor (C3’te, testle):
+
+- sektör prior 0.15–0.25 (bugün 0.5)
+- style + temperament + palette 0.35
+- brief renk/kelime (`mermer`, `klinik`, `altın`, `editorial`) pin veya boost
+- `studioFamily` kullanıcı/LLM/öğrenme ile kilitlenirse last-merge (S4 durur)
+
+18 yüz hash **bilinçli** güncellenir; 29 kit job `studio:false` kalır.
+
+---
+
+## 8. Kanıt dosyaları
+
+| Faz | Rapor |
+|---|---|
+| C0 | bu belge + canvas |
+| C1…C8 | `docs/STUDIO_CHAT_Cn.md` — diff özeti, test komutu, tarayıcı notu |
+
+Durum tablosu §5 her kapanışta güncellenir.

@@ -6,12 +6,21 @@ import { escapeSvg, panelClipDefinition } from './svgGeometry'
 export type BoxFace = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom'
 
 const FACE_IDS: Record<BoxFace, string[]> = {
-  front: ['front', 'label', 'trayFront'],
-  back: ['back', 'labelBack', 'warnLabel', 'trayBack'],
-  left: ['left', 'trayLeft'],
-  right: ['right', 'trayRight'],
-  top: ['top'],
-  bottom: ['bottom', 'trayBottom'],
+  front: ['front', 'label', 'trayFront', 'base-front'],
+  back: ['back', 'labelBack', 'warnLabel', 'trayBack', 'base-back'],
+  left: ['left', 'side-left', 'trayLeft', 'side-flap-left', 'base-left'],
+  right: ['right', 'side-right', 'trayRight', 'side-flap-right', 'base-right'],
+  top: ['top', 'lid', 'lid-top', 'top-tuck'],
+  bottom: ['bottom', 'trayBottom', 'base', 'base-bottom', 'bottom-tuck', 'bottom-lock', 'auto-bottom-front'],
+}
+
+const FACE_ALIASES: Record<BoxFace, string[]> = {
+  front: ['front'],
+  back: ['back'],
+  left: ['left'],
+  right: ['right'],
+  top: ['top', 'lid'],
+  bottom: ['bottom'],
 }
 
 export function artworkMarkup(artwork: ArtworkModel): string {
@@ -23,15 +32,22 @@ export function clipDefs(dieline: DielineModel): string {
 }
 
 export function facePanelId(dieline: DielineModel, artwork: ArtworkModel, face: BoxFace): string | undefined {
+  const byId = (ids: string[]) => dieline.panels.find((p) => ids.includes(p.id))?.id
+  const byFace = (aliases: string[]) => dieline.panels.find((p) => p.face && aliases.includes(p.face))?.id
   if (face === 'front') {
     if (artwork.frontPanelId && dieline.panels.some((p) => p.id === artwork.frontPanelId)) return artwork.frontPanelId
-    return findHeroPanel(dieline.panels)?.id ?? FACE_IDS.front.find((id) => dieline.panels.some((p) => p.id === id))
+    return findHeroPanel(dieline.panels)?.id ?? byFace(FACE_ALIASES.front) ?? byId(FACE_IDS.front)
   }
   if (face === 'back') {
-    return findLegalPanel(dieline.panels)?.id ?? findLabelBackPanel(dieline.panels)?.id
+    return findLegalPanel(dieline.panels)?.id ?? findLabelBackPanel(dieline.panels)?.id ?? byFace(FACE_ALIASES.back) ?? byId(FACE_IDS.back)
   }
-  const ids = FACE_IDS[face]
-  return dieline.panels.find((p) => ids.includes(p.id))?.id
+  const hit = byId(FACE_IDS[face]) ?? byFace(FACE_ALIASES[face])
+  if (hit) return hit
+  if (face === 'left' || face === 'right') {
+    const sides = dieline.panels.filter((p) => p.face === 'side' || p.kind === 'polygon-wall' || p.kind === 'side-spine')
+    return face === 'left' ? sides[0]?.id : (sides[1]?.id ?? sides[0]?.id)
+  }
+  return undefined
 }
 
 export function renderPanelSvg(

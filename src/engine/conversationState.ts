@@ -65,10 +65,16 @@ export function acceptDefaultFor(brief: DesignBrief, key: AwaitingKey): DesignBr
       provenance: { dimensionsMm: { source: 'SYSTEM_DEFAULT', confidence: 1 } },
     })
   }
+  if (key === 'colors' || key === 'styleType') {
+    return mergeBrief(brief, {
+      directionDefaulted: true,
+      provenance: { colors: { source: 'SYSTEM_DEFAULT', confidence: 1 } },
+    })
+  }
   if (key === 'templateId') return brief
   return brief
 }
 
 export function canDefault(key: AwaitingKey): boolean {
-  return key === 'dimensionsMm' || key === 'templateId'
+  return key === 'dimensionsMm' || key === 'templateId' || key === 'colors' || key === 'styleType'
 }

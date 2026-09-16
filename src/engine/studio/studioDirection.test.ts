@@ -275,4 +275,48 @@ describe('studio direction — TASARIM REF families', () => {
     expect(label.studio?.direction.archetype).toBe('marble-frame')
     expect(label.studio?.direction.archetype).not.toBe('card-on-art')
   })
+
+  it('brief visual words override the sector pin — electronics + marble is marble, not diagonal', () => {
+    const brief = {
+      ...emptyBrief(),
+      brandName: 'Nox',
+      sector: 'elektronik',
+      subProduct: 'kulaklık',
+      packagingMode: 'box' as const,
+      styleType: 'luxury' as const,
+      colors: 'mermer · altın',
+    }
+    const hints = hintsFromBrief(brief, 'electronics', 'box')
+    expect(hints.archetype).toBe('marble-frame')
+    expect(hints.archetype).not.toBe('diagonal-tech')
+    expect(hints.background).toBe('marble')
+    const palette = paletteFor(brief, 'luxury', true)
+    const direction = resolveDirection({
+      brief,
+      sector: 'electronics',
+      style: 'luxury',
+      surface: 'box',
+      faceW: 90,
+      faceH: 160,
+      palette,
+      locale: 'tr',
+      variationIndex: 0,
+      copy: { brand: 'Nox', product: '', tagline: '', volume: '' },
+      hints: [hints],
+    })
+    expect(direction.archetype).toBe('marble-frame')
+    expect(direction.background).toBe('marble')
+  })
+
+  it('perfume + klinik brief uses line-scene instead of the dark-landscape cliché', () => {
+    const brief = {
+      ...emptyBrief(),
+      brandName: 'Luma',
+      sector: 'parfüm',
+      subProduct: 'eau de parfum',
+      packagingMode: 'box' as const,
+      colors: 'beyaz klinik',
+    }
+    expect(hintsFromBrief(brief, 'perfume', 'box').archetype).toBe('line-scene')
+  })
 })

@@ -110,7 +110,7 @@ Bugün 6+6 arketip, hepsi TASARIM REF’ten damıtılmış. Yeni referans = yeni
 - ASK_CRITICAL: yüzey, sektör, marka, ölçü
 - Sektör/yüzey adı marka olamaz; `şablon` marka değil
 - Provenance; MAX_ASK; açılış cümlesi sektörü yansıtır
-- Landing kısayolları `Kozmetik kutusu` / `Kahve kutusu`
+- Landing kısayolları yalnız yüzey: Kutu / Etiket / Kutu + Etiket (C1, 16 Eyl)
 
 ### Gap
 
@@ -307,7 +307,7 @@ Sonraki PR: **S8** LLM sözleşmesi + copy birleşimi.
 - `critiqueWithLlm` stüdyo ledger’ı kanıt olarak alır, geometri satırını yutar; pipeline otomatik çağırmaz.
 - Fine-tune yok.
 
-Sonraki PR: yok — S9 kapandı. FOGRA / CMYK park.
+Sonraki program: **C0–C8 sohbet stüdyosu** — `docs/STUDIO_CHAT_AUDIT.md`. FOGRA / CMYK park.
 
 ---
 

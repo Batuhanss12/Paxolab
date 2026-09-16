@@ -1,5 +1,7 @@
 import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, EngineResult } from '../types'
-import { pickTemplate } from './catalog/catalog'
+import { getTemplate, pickTemplate } from './catalog/catalog'
+import { describeStructureOffer, STRUCTURE_LABEL, templateIdFromUtterance } from './catalog/structureOffer'
+import { parseOfferChoice, recommendStructures } from './catalog/structureRecommend'
 import { applyExtraction, sameName } from './extract'
 import { askCopy, askRetryCopy, nextMissing } from './conversationAsk'
 import {
@@ -22,7 +24,7 @@ import {
   understandUtterance,
   wantsCompanionLabel,
 } from './conversationUnderstand'
-import { briefSummary, isCoreReady, mergeBrief } from './fields'
+import { briefSummary, isCoreReady, isSurfaceOnlySummary, mergeBrief } from './fields'
 import { parseFeedback } from './iterate/feedbackParser'
 import { isIteration, parseIntent } from './iterate/parseIntent'
 import { hintsFromFamily } from './studio/family'
@@ -43,22 +45,28 @@ function withUnderstanding(brief: DesignBrief, text: string, attachments: Attach
 }
 
 function generateResult(brief: DesignBrief, ack?: string, text = '', state?: ConversationState): EngineResult {
-  const tmpl = pickTemplate(brief)
+  const offer = recommendStructures(brief)
+  const tmpl =
+    (brief.templateId ? getTemplate(brief.templateId) : undefined) ??
+    (offer.candidates[0] ? getTemplate(offer.candidates[0].templateId) : undefined) ??
+    pickTemplate(brief)
   const next = {
     ...brief,
     templateId: tmpl.id,
     packagingMode: brief.packagingMode || tmpl.packagingMode,
   }
+  const pinned = { ...offer, selectedTemplateId: tmpl.id }
   const briefing = (ack ?? '').trim() || directionBriefing(next)
   const dual =
     isDualDeliverable(next) && next.packagingMode !== 'label'
       ? ' Kutu ve etiket istedin; önce kutuyu çiziyorum. Etiket için “etiketi de üret” yaz.'
       : ''
+  const structure = describeStructureOffer(next, tmpl, pinned)
   return {
     brief: next,
     awaiting: null,
     replies: [
-      `${briefing}${dual} Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.`,
+      `${briefing}${dual} ${structure} Referans stüdyo anatomisiyle (TASARIM REF) dieline ve vektör yüzeyi birlikte çıkarılıyor.`,
       'Yönü konuşarak iterasyon: “daha premium”, “daha modern”, “logoyu büyüt”, “etiketi de üret”.',
     ],
     shouldGenerate: true,
@@ -68,6 +76,40 @@ function generateResult(brief: DesignBrief, ack?: string, text = '', state?: Con
     note: 'generate',
     feedback: parseFeedback(text),
     state,
+    structureOffer: pinned,
+  }
+}
+
+/** Core brief is complete — show ranked structures. Design starts only after the user picks. */
+function offerStructureResult(brief: DesignBrief, ack?: string, state?: ConversationState): EngineResult {
+  const offer = recommendStructures(brief)
+  const next = { ...brief, packagingMode: brief.packagingMode || 'box' }
+  const lines = offer.candidates.map((row, i) => {
+    const label = STRUCTURE_LABEL[row.structureId] ?? row.title
+    return `${i + 1}. ${label} — ${row.reason}`
+  })
+  const top = offer.candidates[0]
+  const topLabel = top ? (STRUCTURE_LABEL[top.structureId] ?? top.title) : ''
+  const briefing = ((ack ?? '').trim() || directionBriefing(next)).replace(/ İlk yüzeyi hazırlıyorum\.$/, '')
+  const dual =
+    isDualDeliverable(next) && next.packagingMode !== 'label'
+      ? ' Kutu ve etiket istedin; önce kutuyu çizeceğim. Etiket için “etiketi de üret” yaz.'
+      : ''
+  return {
+    brief: next,
+    awaiting: 'templateId',
+    replies: [
+      `${briefing}${dual} Brief hazır. Uygun yapılar sağda — birini seç, sonra tasarım başlar.`,
+      top ? `Yapı: önerilen ${topLabel}.` : '',
+      lines.join('\n'),
+    ].filter(Boolean),
+    shouldGenerate: false,
+    showTemplates: true,
+    overridePatch: studioGeneratePatch(next),
+    copyPatch: {},
+    note: 'offer',
+    state: noteAsked(state ?? emptyConversationState(), 'templateId'),
+    structureOffer: offer,
   }
 }
 
@@ -110,6 +152,38 @@ export function runConversation(input: {
 }): EngineResult {
   const text = input.text.trim()
   let state = noteTurn(input.state ?? emptyConversationState())
+
+  const previewOffer = recommendStructures(input.brief)
+  const offerPick = parseOfferChoice(text, previewOffer.candidates.length)
+  if (offerPick && (input.hasDesign || input.awaiting === 'templateId' || isCoreReady(input.brief))) {
+    const hit = previewOffer.candidates[offerPick - 1]
+    if (hit) {
+      const next = {
+        ...input.brief,
+        templateId: hit.templateId,
+        packagingMode: input.brief.packagingMode || (hit.structureId.includes('label') ? ('label' as const) : ('box' as const)),
+      }
+      if (input.hasDesign || isCoreReady(next)) {
+        return generateResult(next, directionBriefing(next), text, state)
+      }
+    }
+  }
+
+  const structureId = templateIdFromUtterance(text, input.brief.packagingMode)
+  if (structureId && (input.hasDesign || input.awaiting === 'templateId' || isCoreReady(input.brief))) {
+    const next = {
+      ...input.brief,
+      templateId: structureId,
+      packagingMode: input.brief.packagingMode || (structureId.includes('label') ? 'label' as const : 'box' as const),
+    }
+    if (input.hasDesign || isCoreReady(next)) {
+      return generateResult(next, directionBriefing(next), text, state)
+    }
+  }
+
+  if (input.awaiting === 'templateId' && SKIP_UTTERANCE.test(text) && isCoreReady(input.brief)) {
+    return generateResult(input.brief, 'Önerdiğim yapıyla devam ediyorum.', text, state)
+  }
 
   if (input.hasDesign && wantsCompanionLabel(text) && input.brief.packagingMode !== 'label') {
     const labelBrief = { ...input.brief, packagingMode: 'label' as const, templateId: '' }
@@ -188,7 +262,7 @@ export function runConversation(input: {
     const retry = input.awaiting === askKey && timesAsked(state, askKey) >= 1 && !grew
     if (askKey === 'productName') replies.push(askCopy(brief, 'productName'))
     else if (retry) replies.push(askRetryCopy(brief, askKey, text))
-    else replies.push(`${grew && ack ? `${ack}. ` : ''}${askCopy(brief, missing)}`.trim())
+    else replies.push(`${grew && ack && !isSurfaceOnlySummary(ack) ? `${ack}. ` : ''}${askCopy(brief, missing)}`.trim())
     return {
       brief,
       awaiting: askKey,
@@ -202,12 +276,12 @@ export function runConversation(input: {
     }
   }
 
-  if (ready && (brief.templateId || missing === 'templateId' || missing === null)) {
+  if (ready && brief.templateId && input.awaiting === 'templateId') {
     return generateResult(brief, undefined, text, state)
   }
 
-  if (ready && !brief.templateId) {
-    return generateResult(brief, undefined, text, state)
+  if (ready) {
+    return offerStructureResult({ ...brief, templateId: '' }, undefined, state)
   }
 
   replies.push(askCopy(brief, 'packagingMode'))
@@ -227,16 +301,13 @@ export function runConversation(input: {
 export function openingReply(text: string): string {
   const t = text.toLowerCase()
   if (/henüz\s*emin|emin değilim/i.test(t)) {
-    return 'Anlatman yeterli. Kutu, etiket, ürün, marka, renk — nasıl durmasını istediğini yaz.'
+    return 'Anlatman yeterli. Kutu mu etiket mi, hangi ürün, marka, renk, nasıl dursun — eksikleri ben sorarım.'
   }
   if (/kutu\s*\+|kutu.+(etiket|label)|(etiket|label).+kutu/i.test(t)) {
-    return 'Kutu ve etiket. Önce kutuyu kuracağım. Markanın adı nedir?'
+    return 'Kutu ve etiket. Önce kutuyu kuracağım.'
   }
-  if (/etiket/.test(t)) return 'Etiket — en dar yüzey. Marka adı nedir?'
-  if (/gıda/.test(t)) return 'Gıda ambalajı. Markanın adı nedir?'
-  if (/elektronik/.test(t)) return 'Elektronik kutusu. Markanın adı nedir?'
-  if (/kozmetik|parfüm/.test(t)) return 'Kozmetik — ambalajın en net yüzeyi. Markanın adı nedir?'
-  if (/kutu/.test(t)) return 'Kutu. Markanın adı nedir?'
+  if (/etiket/.test(t)) return 'Etiket yüzeyi.'
+  if (/kutu/.test(t)) return 'Kutu yüzeyi.'
   return ''
 }
 

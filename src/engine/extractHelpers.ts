@@ -19,8 +19,19 @@ function labeledBlock(text: string, keys: string[]): string {
   return text.match(re)?.[1]?.trim().replace(/[,;]+$/, '') ?? ''
 }
 
+/** L×W×H tokens such as 70x35x140 must never become a lockup name. */
+export function isMeasureToken(value: string): boolean {
+  return /^\d+([.,]\d+)?(?:\s*[x×]\s*\d+([.,]\d+)?){1,2}(?:\s*mm)?$/i.test(value.trim())
+}
+
 function looksLikeName(value: string): boolean {
-  return !!value && value.length < 48 && !/[?]/.test(value) && /[A-Za-zÇĞİÖŞÜçğıöşü]/.test(value)
+  return (
+    !!value &&
+    value.length < 48 &&
+    !/[?]/.test(value) &&
+    /[A-Za-zÇĞİÖŞÜçğıöşü]/.test(value) &&
+    !isMeasureToken(value)
+  )
 }
 
 export function isPaletteName(value: string): boolean {

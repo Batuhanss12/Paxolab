@@ -377,9 +377,9 @@ export default function App() {
         })
 
         const replies = [...result.replies]
-        if (first && !result.brief.brandName) {
+        if (first && !result.shouldGenerate) {
           const open = openingReply(user.content)
-          if (open && !result.shouldGenerate) replies[0] = open
+          if (open && result.awaiting) replies[0] = `${open} ${result.replies[0] ?? ''}`.trim()
         }
 
         const publish = () => {
@@ -447,7 +447,6 @@ export default function App() {
         templateId,
         dimensionsMm: dims,
         packagingMode: briefRef.current.packagingMode || tmpl?.packagingMode || 'box',
-        sector: briefRef.current.sector || tmpl?.sectors[0] || '',
       }
       briefRef.current = next
       dispatch({ type: 'brief', brief: next })

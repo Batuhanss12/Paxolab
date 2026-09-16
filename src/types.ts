@@ -68,6 +68,8 @@ export type DesignBrief = {
   /** User accepted a sample/template value instead of providing one */
   volumeDefaulted?: boolean
   dimsDefaulted?: boolean
+  /** User skipped the optional colour / mood / story ask — painter uses product defaults. */
+  directionDefaulted?: boolean
   /** L×W×H came from fill-ml carton estimate, not a typed mill size. */
   dimsFromVolume?: boolean
   /** User skipped a line name — lockup keeps brand only */
@@ -187,6 +189,8 @@ export type Panel = {
   id: string
   role: PanelRole
   kind?: PanelKind
+  /** Forxa net face — 3D maps left/right/top/lid without id aliases. */
+  face?: string
   x: number
   y: number
   w: number
@@ -302,6 +306,8 @@ export type EngineResult = {
   feedback?: import('./engine/brain/DesignDecisionLog').StructuredFeedback[]
   /** Asked / answered ledger after this turn. */
   state?: import('./engine/conversationState').ConversationState
+  /** C5 ranked structure families. Absent on ask/hint turns. */
+  structureOffer?: import('./engine/catalog/structureRecommend').StructureRecommendation
 }
 
 export type DesignRating = {

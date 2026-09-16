@@ -20,9 +20,11 @@ import {
   labeled,
   labeledBlock,
   looksLikeName,
+  looksLikeSector,
   sameName,
-  looksLikeSector as looksLikeSectorLocal,
 } from './extractHelpers'
+import { templateIdFromUtterance } from './catalog/structureOffer'
+import { extractSpokenCopy } from './extractCopy'
 
 export function extractFields(text: string, attachments: Attachment[]): Partial<DesignBrief> {
   const patch: Partial<DesignBrief> = {}
@@ -47,6 +49,8 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
       break
     }
   }
+  const structureTmpl = templateIdFromUtterance(raw, patch.packagingMode || '')
+  if (structureTmpl) patch.templateId = structureTmpl
   for (const rule of SECTOR_RULES) {
     if (rule.re.test(raw)) {
       if (!patch.sector) patch.sector = rule.sector
@@ -54,7 +58,7 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
       break
     }
   }
-  if (patch.sector && !looksLikeSectorLocal(patch.sector)) delete patch.sector
+  if (patch.sector && !looksLikeSector(patch.sector)) delete patch.sector
 
   const brand = labeled(raw, ['marka', 'brand'])
   if (looksLikeName(brand)) patch.brandName = brand
@@ -190,14 +194,21 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   else if (/ye[sş]il|green/i.test(raw)) colors.push('Yeşil')
   if (/toprak|earth\s*tone/i.test(raw)) colors.push('Toprak')
   if (/krem|cream/i.test(raw) && !/yüz\s*krem|face\s*cream|night\s*cream/i.test(raw)) colors.push('Krem')
+  if (/mermer|marble/i.test(raw)) colors.push('Mermer')
+  if (/botanik|\bleaf\b|yaprak/i.test(raw)) colors.push('Botanik')
+  if (/klinik|clinical/i.test(raw)) colors.push('Klinik')
+  if (/\bdalga\b|\bwave\b/i.test(raw)) colors.push('Dalga')
+  if (/manzara|landscape/i.test(raw)) colors.push('Manzara')
+  if (/diyagonal|diagonal|antrasit/i.test(raw)) colors.push('Antrasit')
   if (colors.length) patch.colors = [...new Set(colors)].join(' · ')
 
   if (!patch.packagingMode && (patch.sector || patch.subProduct) && !/etiket|label|wrap/i.test(raw)) {
     patch.packagingMode = 'box'
   }
 
-  const slogan = labeled(raw, ['slogan', 'tagline', 'metin'])
-  if (slogan) patch.copyOverrides = slogan
+  const spokenCopy = extractSpokenCopy(raw)
+  if (spokenCopy.copyOverrides) patch.copyOverrides = spokenCopy.copyOverrides
+  if (spokenCopy.story) patch.story = spokenCopy.story
 
   const ingredientMatch = raw.match(/(?:içerik|ingredient|aktif|active|formül)\s*[:\-–]\s*([^.,;]{3,60})/i)
   if (ingredientMatch) {

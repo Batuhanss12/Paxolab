@@ -157,6 +157,21 @@ export function acceptedDimsDefault(brief: DesignBrief): boolean {
   return !!brief.dimsDefaulted
 }
 
+/** Colour, mood, story, or cue — enough for the director to skip the optional direction ask. */
+export function hasDirectionSignal(brief: DesignBrief): boolean {
+  return (
+    brief.colors.trim().length > 0 ||
+    !!brief.styleType ||
+    !!brief.directorCue ||
+    (brief.story ?? '').trim().length > 0 ||
+    brief.copyOverrides.trim().length > 0
+  )
+}
+
+export function acceptedDirectionDefault(brief: DesignBrief): boolean {
+  return !!brief.directionDefaulted
+}
+
 export function hasUserBarcode(brief: DesignBrief): boolean {
   return brief.barcode.trim().length > 0
 }
@@ -181,6 +196,12 @@ export function acceptedAddressDefault(brief: DesignBrief): boolean {
   return !!brief.addressDefaulted
 }
 
+function surfaceWord(mode: PackagingMode | ''): string {
+  if (mode === 'label') return 'etiket'
+  if (mode === 'box') return 'kutu'
+  return ''
+}
+
 export function briefSummary(brief: DesignBrief): string {
   const product =
     brief.productName.trim() &&
@@ -189,7 +210,12 @@ export function briefSummary(brief: DesignBrief): string {
       : ''
   // "Elite Brew · kahve", not "Elite Brew · gıda": the product family is what the user said.
   const family = brief.subProduct.trim() && !/^(bakım|genel)$/i.test(brief.subProduct) ? brief.subProduct.trim() : brief.sector
-  return [brief.brandName, product, family || brief.packagingMode].filter(Boolean).join(' · ')
+  return [brief.brandName, product, family || surfaceWord(brief.packagingMode)].filter(Boolean).join(' · ')
+}
+
+/** True when the summary is only the surface noun — do not echo “kutu.” before asking the product. */
+export function isSurfaceOnlySummary(summary: string): boolean {
+  return /^(kutu|etiket)$/i.test(summary.trim())
 }
 
 export type FilledEntry = {

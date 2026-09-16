@@ -1,6 +1,6 @@
 export * from './types'
 export { composeStudioArtwork } from './composeStudioArtwork'
-export { describeDirection, hashSeed, hintsFromBrief, resolveDirection, studioPalette, type DirectionInput } from './direction'
+export { describeDirection, hashSeed, hintsFromBrief, resolveDirection, resolveStudioCopy, studioPalette, type DirectionInput } from './direction'
 export { applyStudioPreflight, STUDIO_MIN_TEXT_MM, STUDIO_FLOOR_TEXT_MM } from './studioPreflight'
 export {
   archetypeForFamily,
