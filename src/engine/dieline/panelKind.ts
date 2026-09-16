@@ -5,7 +5,8 @@ export function nativeKindFor(panel: Panel): PanelKind {
   const id = panel.id
   if (id === 'labelBack' || id === 'warnLabel') return 'legal-back'
   if (panel.role === 'glue' || id === 'glue' || id === 'overlap') return 'glue'
-  if (panel.role === 'tuck' || id.includes('Dust') || id.includes('Tuck')) return 'tuck-flap'
+  const idLower = panel.id.toLowerCase()
+  if (panel.role === 'tuck' || idLower.includes('dust') || idLower.includes('tuck') || (idLower.includes('lock') && !idLower.includes('glue'))) return 'tuck-flap'
   if (id === 'front' || id === 'label' || id === 'trayFront') return 'hero-front'
   if (id === 'back' || id === 'trayBack') return 'legal-back'
   if (id === 'left' || id === 'right' || id === 'trayLeft' || id === 'trayRight') return 'side-spine'

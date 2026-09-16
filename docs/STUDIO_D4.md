@@ -3,7 +3,7 @@
 **Tarih:** 16 Eyl 2026  
 **Durum:** Kapandı  
 **Önceki:** D3 `docs/STUDIO_D3.md`  
-**Sonraki:** VL / concept / overlay birleşimi — hâlâ yok, istenmedikçe başlama
+**Sonraki:** D5 `docs/STUDIO_D5.md` (STATUS + log). VL / concept / overlay birleşimi — hâlâ yok.
 
 Kilitler durdu: overlay-candidate/critic tiyatrosu yok, kit `repairPlan` stüdyoda kapalı, SVG rewrite yok, critic kazanan seçmez, 18 golden hash durur, `luxury-tighten` 1.1 stüdyoya sızmaz.
 

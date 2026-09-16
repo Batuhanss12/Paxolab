@@ -68,6 +68,25 @@ describe('FAZ 4 design decision log', () => {
     expect(log?.selectedConcept.id).toBe(spec.designPlan?.visualConcept.id)
   })
 
+  it('records studio directionOffer as the candidate set, not kit ONLY', () => {
+    const spec = new FormaLocalEngine().generate({
+      brief: perfumeBrief(),
+      overridePatch: { studio: true },
+    })
+    const log = decisionLogFor(spec.id)
+    const offer = spec.studio?.offer
+    expect(log?.path).toBe('studio')
+    expect(offer?.candidates.length).toBeGreaterThanOrEqual(2)
+    expect(log?.candidates.length).toBe(offer?.candidates.length)
+    expect(log?.candidates.some((row) => row.decision === 'ONLY')).toBe(false)
+    expect(log?.candidates.filter((row) => row.decision === 'WINNER')).toHaveLength(1)
+    const painted = offer?.candidates.find((row) => row.selected)
+    expect(log?.winner?.id).toBe(painted?.family)
+    expect(log?.candidates.find((row) => row.decision === 'WINNER')?.id).toBe(painted?.family)
+    expect(log?.selectedLanguage).toEqual([spec.studio?.direction.archetype])
+    expect(JSON.stringify(log?.candidates)).not.toMatch(/"ONLY"/)
+  })
+
   it('records overlay candidates with existing scores for playful', () => {
     const job = JOBS.find((row) => row.slug === '09-cikolata-tray-playful')
     expect(job).toBeDefined()

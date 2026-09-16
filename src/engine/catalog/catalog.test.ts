@@ -49,13 +49,24 @@ describe('filterTemplates', () => {
 })
 
 describe('pickerTemplates', () => {
-  it('shows one card per structure for the surface, including mailer next to tuck', () => {
+  it('shows one sector-matched card per structure and hides mailer/tray/RSC on cosmetics', () => {
     const cards = pickerTemplates(brief({ sector: 'kozmetik', subProduct: 'parfüm', packagingMode: 'box' }))
     const structs = cards.map((t) => t.structureId)
+    const ids = cards.map((t) => t.id)
     expect(new Set(structs).size).toBe(structs.length)
     expect(structs).toContain('tuck-end-box')
-    expect(structs).toContain('mailer-box')
     expect(structs).toContain('sleeve')
+    expect(structs).not.toContain('mailer-box')
+    expect(structs).not.toContain('simple-tray')
+    expect(structs).not.toContain('rsc-carton')
+    expect(structs).not.toContain('product-carrier-tray')
+    expect(ids).not.toContain('fm-food-tray-snack')
+    expect(ids[0]).toBe('fm-cos-tuck-perfume')
     expect(cards[0]!.structureId).toBe('tuck-end-box')
+  })
+
+  it('keeps mismatched families behind includeMismatched', () => {
+    const all = pickerTemplates(brief({ sector: 'kozmetik', packagingMode: 'box' }), { includeMismatched: true })
+    expect(all.some((t) => t.structureId === 'mailer-box')).toBe(true)
   })
 })

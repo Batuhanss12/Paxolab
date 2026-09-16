@@ -4,6 +4,8 @@
 **İncelenen kopya:** `/workspace/paxolab-src` (node_modules hariç zip)  
 **Kural:** Kodda olmayan sistem “var” sayılmadı. Doküman ≠ runtime. Kod değişikliği yapılmadı.
 
+> **2026-09-16:** “Cut = bbox / 4 nokta” iddiası güncel değil — native net `outlineUnion`, Forxa outer path. Üretim + şablon: `docs/PRODUCTION_AND_TEMPLATE_AUDIT.md`.
+
 ---
 
 ## 1. EXECUTIVE SUMMARY
@@ -186,7 +188,7 @@ Hardcoded fallback: dims yoksa template defaults. FE/BE ayrımı yok (tek client
 |---|---|
 | Crease | WORKING |
 | Glue areas | WORKING |
-| Cut | **RISKY** — panel bbox (4 nokta), gerçek die outline değil |
+| Cut | **RISKY (2026-09-13)** — panel bbox (4 nokta). **2026-09-16:** `outlineUnion` / Forxa outer path; bkz. PRODUCTION_AND_TEMPLATE_AUDIT.md |
 | Bleed geometry | BROKEN vs claim (metin 3mm; geometri yok) |
 | Safe overlay | PARTIAL (2 mm dashed) |
 | DXF CUT/CREASE | WORKING (basic) |
@@ -466,7 +468,7 @@ Professional level: **2 / 5**
 
 ### P0
 1. **Pattern/decor plan painter’a bağlı değil** — Evidence: probe patterns=0; compose motifs import only legalColumnChrome. Impact: craft collapse. Fix: wire `paintPatternFamily` + lockout. Complexity M.
-2. **Cut = bbox** — Evidence: buildDieline outline 4 pts. Impact: converter yanıltma. Fix: gerçek outer path. Complexity L.
+2. **Cut = bbox** — Evidence (2026-09-13): buildDieline outline 4 pts. **2026-09-16 KAPANDI:** `outlineUnion` + Forxa cut rings. Kalan boşluklar: pillow map, user ZIP PDF, bleed kılavuz — `docs/PRODUCTION_AND_TEMPLATE_AUDIT.md`.
 3. **SaaS olarak konumlandırma** — Evidence: auth/billing/credits yok. Impact: false product posture. Fix: dürüst “local studio” veya platform epic. Complexity — product.
 
 ### P1

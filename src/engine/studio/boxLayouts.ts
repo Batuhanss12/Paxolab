@@ -445,13 +445,27 @@ export function paintBoxFlap(ctx: LayoutCtx): string {
   const arche = d.archetype as BoxArchetype
   const bg = deepGround(d.palette, arche)
   const ink = mix(deepInk(d.palette, arche), bg, 0.2)
-  const parts: string[] = [ground(w, h, bg)]
-  if (h >= 8 && w >= 16) {
-    const s = Math.min(2.6, h * 0.28)
-    const text = copy.brand.toLocaleUpperCase('tr')
-    parts.push(textEl({ x: w / 2, y: h / 2 + s * 0.35, text, size: s, face: pairingFaces(d.typePairing).brand, fill: ink, anchor: 'middle', tracking: s * 0.2 }))
-    ledger.text('flap-brand', w / 2, h / 2 + s * 0.35, textWidth(text, s, pairingFaces(d.typePairing).brand, s * 0.2), s, 'middle')
+  const vol = d.volumeLine
+  const canBrand = h >= 8 && w >= 16
+  const canVol = Boolean(vol) && h >= 12 && w >= 22
+  const parts: string[] = [`<g data-art="flap">${ground(w, h, bg)}`]
+  if (canBrand) {
+    const brand = copy.brand.toLocaleUpperCase('tr')
+    const face = pairingFaces(d.typePairing).brand
+    const s = fitSize(brand, w - 4, Math.min(2.8, h * (canVol ? 0.22 : 0.28)), 1.2, face, 0.2)
+    const brandY = canVol ? h * 0.38 + s * 0.35 : h / 2 + s * 0.35
+    parts.push(textEl({ x: w / 2, y: brandY, text: brand, size: s, face, fill: ink, anchor: 'middle', tracking: s * 0.2 }))
+    ledger.text('flap-brand', w / 2, brandY, textWidth(brand, s, face, s * 0.2), s, 'middle')
+    if (canVol && vol) {
+      let vs = Math.max(1.2, Math.min(2.2, h * 0.16))
+      const maxW = w - 4
+      while (vs > 1.2 && textWidth(vol, vs, 'sans', vs * 0.06) > maxW) vs -= 0.1
+      if (textWidth(vol, vs, 'sans', vs * 0.06) <= maxW) {
+        parts.push(netQuantity(ledger, w / 2, Math.min(h - 1.4, brandY + s * 0.85 + vs), vol, vs, mix(ink, bg, 0.12)))
+      }
+    }
   }
+  parts.push('</g>')
   return parts.join('')
 }
 

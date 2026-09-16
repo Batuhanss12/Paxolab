@@ -92,5 +92,7 @@ describe('kindFromForxaPanel', () => {
     expect(kindFromForxaPanel({ id: 'glue-tab', name: 'y', polygon: [], face: 'glue' })).toBe('glue')
     expect(kindFromForxaPanel({ id: 'wall-2', name: 'd', polygon: [], face: 'side' })).toBe('polygon-wall')
     expect(kindFromForxaPanel({ id: 'front', name: 'ö', polygon: [], face: 'front' })).toBe('hero-front')
+    expect(kindFromForxaPanel({ id: 'bottom-lock', name: 'kilit', polygon: [], face: 'bottom' })).toBe('tuck-flap')
+    expect(kindFromForxaPanel({ id: 'top-tuck', name: 'tuck', polygon: [], face: 'top' })).toBe('tuck-flap')
   })
 })

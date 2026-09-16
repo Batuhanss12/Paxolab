@@ -166,7 +166,7 @@ export function runPreflight(
       'bleed',
       'Taşma / güvenli',
       spec.overrides.printReady
-        ? `${pressSafeMm(spec.dieline)} mm güvenli · ${pressBleedMm(spec.dieline)} mm bleed (PDF/X-4 sRGB · trap yok · FOGRA değil)`
+        ? `${pressSafeMm(spec.dieline)} mm güvenli kılavuz · ${pressBleedMm(spec.dieline)} mm bleed kılavuz (CUT trim’de, taşma bıçağa işlenmez · PDF/X-4 sRGB · trap yok · FOGRA değil)`
         : 'Henüz kilitlenmedi',
       spec.overrides.printReady && exportOk ? 'pass' : 'warn',
     ),

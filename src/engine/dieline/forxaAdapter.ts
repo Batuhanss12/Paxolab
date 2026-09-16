@@ -27,6 +27,7 @@ export function kindFromForxaPanel(panel: MxPanel): PanelKind {
     id.includes('auto-bottom') ||
     id.includes('major-') ||
     id.includes('minor-') ||
+    (id.includes('lock') && !id.includes('glue')) ||
     face === 'lid-tuck'
   ) {
     return 'tuck-flap'

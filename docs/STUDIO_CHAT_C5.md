@@ -162,7 +162,7 @@ Golden otomatik güncellenmedi.
 
 1. Fizik modeli brief’teki L/W/H + yüzey + ürün. Şişe çapı / tüp / pouch yok.
 2. `pickTemplate` hâlâ sektör-first — kit job’lar `templateId` ile gelir. Sohbet `generateResult` otorite.
-3. Picker hâlâ tüm aileleri gösterir; top-3 gerekçeli, gerisi sessiz (C1 gizleme yasağı).
+3. Picker sektör eşleşen aileleri gösterir; “Diğer yapılar” expander ile tam liste. Top-3 gerekçeli.
 4. Aspect sınıfları katalog ailelerine sabit (portrait vs low). Yeni aile eklenirse kümeyi güncelle.
 5. C6 veto/vary konuşması yok.
 

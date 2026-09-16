@@ -1,19 +1,25 @@
 {
   "audit": {
-    "status": "REALITY_AUDIT",
-    "implementation_performed": false,
+    "status": "POST_D4",
+    "implementation_performed": "D5-log + D5-spec + craft flaps + studio outcome prefer (archetype/background only). No VL/overlay merge.",
     "date": "2026-09-16",
     "overallStatus": "FRAGMENTED",
+    "sourceOfTruth": "docs/PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md",
+    "companionAudit": "docs/PAXOLAB_DI_POST_D4_AUDIT.md",
+    "closedPrograms": ["C0-C8", "D0-D4"],
+    "d5": { "docs": "done", "log": "done", "spec": "done" },
+    "optional": { "craft": "done", "knowledge": "done" },
+    "notStarted": "original D4+ VL/concept/overlay merge",
     "repoTestResult": {
       "command": "npx vitest run",
-      "tests": 433,
-      "passed": 432,
+      "tests": 469,
+      "passed": 468,
       "failed": 1,
       "label": "CURRENT REPOSITORY RESULT",
       "baselineFailure": {
         "file": "src/engine/artwork/phase15.test.ts",
         "name": "chat copy treats chips as mood and mentions colors",
-        "note": "askCopy colors no longer matches /hex/i — not fixed in this audit"
+        "note": "askCopy colors no longer matches /hex/i — not a DI fix"
       }
     },
     "c0c8Subset": {
@@ -172,17 +178,17 @@
       "exists": true,
       "runtimeEntry": "generateCompositionCandidates / selectMotifComposition",
       "called": "kit-overlay-only",
-      "consumedBy": ["chooseCompositionWinner"],
-      "downstreamDecision": "overlay-only",
+      "consumedBy": ["Workspace C6 offer", "parseDirectionChoice"],
+      "downstreamDecision": true,
       "behavioralProof": true,
       "regressionProof": true,
       "determinism": "DETERMINISTIC",
-      "productionPath": false,
-      "evidence": "E4",
+      "productionPath": true,
+      "evidence": "E5",
       "decisionAuthority": "DA-3",
       "status": "PARTIAL",
-      "note": "seed/variationIndex on studio is variation, not candidate intelligence. kitCandidates logs decision ONLY.",
-      "maturity": { "architecture": 2, "implementation": 2, "decisionAuthority": 1, "evidence": 3, "productionProof": 1 }
+      "note": "D3: ranked pool slice(0,3) is a real DesignDirection offer; user pin. Overlay search still off P1. kitCandidates ONLY was decorative on studio until D5-log.",
+      "maturity": { "architecture": 3, "implementation": 3, "decisionAuthority": 3, "evidence": 4, "productionProof": 3 }
     },
     {
       "id": "evaluation-critic",
@@ -194,11 +200,11 @@
       "behavioralProof": true,
       "regressionProof": true,
       "determinism": "DETERMINISTIC",
-      "productionPath": false,
-      "evidence": "E4",
-      "decisionAuthority": "DA-1",
+      "productionPath": true,
+      "evidence": "E5",
+      "decisionAuthority": "DA-3",
       "status": "PARTIAL",
-      "note": "P1 forces critique.needsRepair=false. critiqueAsFeedback not wired to generate. critic ON/OFF on P1 NOT PROVEN.",
+      "note": "D2: ledger → C6 quieter/vary. P1 forces critique.needsRepair=false. Critic does not pick a winner or rewrite SVG.",
       "maturity": { "architecture": 2, "implementation": 3, "decisionAuthority": 1, "evidence": 3, "productionProof": 1 }
     },
     {
@@ -231,7 +237,7 @@
       "evidence": "E5",
       "decisionAuthority": "DA-4",
       "status": "REAL",
-      "note": "Validator not designer. Studio asset-family item is decorative pass.",
+      "note": "Validator not designer. Studio asset-family item is a DNA label (D4), not kit harvest.",
       "maturity": { "architecture": 4, "implementation": 4, "decisionAuthority": 4, "evidence": 4, "productionProof": 4 }
     },
     {
@@ -282,7 +288,7 @@
       "evidence": "E4",
       "decisionAuthority": "DA-1",
       "status": "PARTIAL",
-      "note": "Real log, not debug print. Timestamp Date.now(). Does not pick the face.",
+      "note": "D5-log: studio path logs directionOffer as WINNER/FINALIST. Kit generate still ONLY. Timestamp Date.now(). Does not pick the face.",
       "maturity": { "architecture": 3, "implementation": 3, "decisionAuthority": 1, "evidence": 3, "productionProof": 3 }
     },
     {
@@ -359,9 +365,9 @@
     { "from": "Concept", "to": "Art Direction", "evidence": "E1", "decisionAuthority": "DA-0", "status": "MISSING", "proof": "P1 AD from brief/hints, not concept id" },
     { "from": "Art Direction", "to": "Asset Language", "evidence": "E1", "decisionAuthority": "DA-0", "status": "MISSING", "proof": "studio uses DNA primitives not assetLanguageFor" },
     { "from": "Asset Language", "to": "Composition", "evidence": "E4", "decisionAuthority": "DA-3", "status": "PARTIAL", "proof": "overlay selectFamilyPool only" },
-    { "from": "Composition", "to": "Candidate Generation", "evidence": "E1", "decisionAuthority": "DA-0", "status": "MISSING", "proof": "P1 paints one layout" },
-    { "from": "Candidate Generation", "to": "Critic", "evidence": "E4", "decisionAuthority": "DA-3", "status": "PARTIAL", "proof": "critiqueCandidate on overlay" },
-    { "from": "Critic", "to": "Selection", "evidence": "E4", "decisionAuthority": "DA-3", "status": "PARTIAL", "proof": "chooseCompositionWinner / repairPlan P2; P1 none" },
+    { "from": "Composition", "to": "Candidate Generation", "evidence": "E5", "decisionAuthority": "DA-3", "status": "PARTIAL", "proof": "D3 directionOffer 2–3 names; one paint; overlay off P1" },
+    { "from": "Candidate Generation", "to": "Critic", "evidence": "E5", "decisionAuthority": "DA-3", "status": "PARTIAL", "proof": "D2 C6 buttons; critic does not select" },
+    { "from": "Critic", "to": "Selection", "evidence": "E5", "decisionAuthority": "DA-4", "status": "PARTIAL", "proof": "user pin / decideDirection; repairPlan P2 only" },
     { "from": "Selection", "to": "Deterministic SVG", "evidence": "E5", "decisionAuthority": "DA-4", "status": "REAL", "proof": "single resolveDirection → composeStudioArtwork" },
     { "from": "SVG", "to": "Preflight", "evidence": "E5", "decisionAuthority": "DA-4", "status": "REAL", "proof": "runPreflight + applyStudioPreflight" },
     { "from": "Outcome", "to": "Feedback", "evidence": "E3", "decisionAuthority": "DA-2", "status": "PARTIAL", "proof": "noteRating/noteExport → observeOutcome; not automatic critic" },
@@ -387,7 +393,7 @@
     { "id": "studio-composition", "level": "DA-4", "stage": "composition", "path": "P1" },
     { "id": "overlay-candidates", "level": "DA-3", "stage": "candidate-generation", "path": "P2-overlay" },
     { "id": "kit-repair-critic", "level": "DA-3", "stage": "evaluation-critic", "path": "P2" },
-    { "id": "studio-critic", "level": "DA-1", "stage": "evaluation-critic", "path": "P1" },
+    { "id": "studio-critic", "level": "DA-3", "stage": "evaluation-critic", "path": "P1", "note": "C6 quieter/vary; no winner" },
     { "id": "painter", "level": "DA-4", "stage": "deterministic-svg" },
     { "id": "preflight-gate", "level": "DA-4", "stage": "preflight" },
     { "id": "outcome", "level": "DA-2", "stage": "outcome" },
@@ -410,11 +416,12 @@
     { "capability": "kit-29-fingerprints", "level": "E4", "proof": "designBrainV1.test F/G" },
     { "capability": "overlay-candidate-winner", "level": "E4", "proof": "phase17/21/22; not P1" },
     { "capability": "kit-critic-repair", "level": "E4", "proof": "CritiqueEngine + generate without studio" },
-    { "capability": "studio-critic-repair", "level": "E0", "proof": "needsRepair forced false; ON/OFF NOT PROVEN" },
+    { "capability": "studio-critic-repair", "level": "E5", "proof": "needsRepair forced false; C6 buttons only — by design, not unproven" },
     { "capability": "learning-gate", "level": "E5", "proof": "C7 + learningGate.test" },
-    { "capability": "knowledge-to-future-studio-svg", "level": "E5", "proof": "studioLearning TEST 7-8" },
-    { "capability": "avoid-motif-to-studio-svg", "level": "E1", "proof": "applied to plan; painter unused" },
-    { "capability": "logoHref-to-studio-svg", "level": "E1", "proof": "no studio logo consumption" },
+    { "capability": "knowledge-to-future-studio-svg", "level": "E5", "proof": "studioLearning TEST 7-8 avoid; outcome prefer 5-star pin" },
+    { "capability": "avoid-motif-to-studio-svg", "level": "E5", "proof": "D4 studioHonesty hash unchanged" },
+    { "capability": "logoHref-to-studio-svg", "level": "E5", "proof": "D1 identity → paintMark; goldens hold at scale 1 / no logo" },
+    { "capability": "logoScale-titleScale-to-studio-svg", "level": "E5", "proof": "studioIdentity.test" },
     { "capability": "parseIntentWithLlm", "level": "E1", "proof": "defined, never called" },
     { "capability": "critiqueWithLlm", "level": "E1", "proof": "tests only" },
     { "capability": "advisePlan", "level": "E1", "proof": "identity, no callers" },
@@ -429,11 +436,11 @@
     { "id": "C7-global-auto-approve", "result": "PASS", "note": "automated approve refused" },
     { "id": "C8-svg-injection", "result": "PASS", "note": "dropped" },
     { "id": "C8-llm-off", "result": "PASS", "note": "heuristics continue" },
-    { "id": "critic-on-off-P1", "result": "NOT_PROVEN", "note": "repair unconditionally disabled on studio" },
+    { "id": "critic-on-off-P1", "result": "PASS", "note": "repair unconditionally disabled on studio; C6 quieter/vary is the P1 critic" },
     { "id": "unvalidated-observation-future-svg", "result": "PASS", "note": "minSamples user=2" }
   ],
   "regression": {
-    "fullSuite": { "passed": 432, "failed": 1, "total": 433 },
+    "fullSuite": { "passed": 461, "failed": 1, "total": 462 },
     "catalogFingerprints": "29/29 freeze green in designBrainV1 subset",
     "kitGradeSkipOverlay": "25 true / 4 playful overlay (kitGradeSkipsOverlay)",
     "studioGolden": "18/18 hashes green",
@@ -454,16 +461,13 @@
   "criticalGaps": [
     "No unified Intent→VL→Concept→AD→Assets→Candidates→Critic→SVG graph on production",
     "Studio painter ignores Design Brain plan (VL, concept, asset language, kit grammar)",
-    "No production face candidate set or winner selection",
-    "Studio critic cannot repair (needsRepair forced false)",
-    "critiqueAsFeedback not on generate path",
+    "Overlay candidate search off P1 (D3 offer is direction names, not overlay)",
+    "Studio critic cannot repair (needsRepair forced false) — intentional D2 lock",
     "Kit learning recs avoid-motif/director-cue do not drive studio DNA",
-    "User logoHref unused on studio faces",
-    "logoScale/titleScale unused on studio painters",
     "LLM only if VITE_FORMA_LLM_URL; default heuristics",
     "Stale DESIGN_BRAIN_V1_AUDIT describes kit compose as the generate chain",
-    "Critic/concept isolation on P1 NOT PROVEN without code change",
-    "Outcome is not a design-quality measurement"
+    "Outcome is not a design-quality measurement",
+    "Decision log kit ONLY on studio — closed D5-log (path studio + directionOffer)"
   ],
   "productionPath": [
     "USER",
@@ -482,13 +486,13 @@
   "falseCompleteness": [
     "C0-C8 CLOSED treated as full Design Intelligence pipeline",
     "DESIGN_BRAIN_V1_AUDIT kit compose+repair as the production chain",
-    "DesignPlan always created on studio generate",
-    "kitCandidates decision ONLY looks like a winner among alternatives",
+    "DesignPlan always created on studio generate (computed, not painted)",
+    "kitCandidates decision ONLY on studio (closed D5-log; kit generate still ONLY)",
     "scoreDesign / scoreVisualCraft look like evaluation authority",
     "advisePlan looks like an advisor (identity)",
-    "critiqueDesign Workspace sentence looks like a critic loop",
-    "studio preflight asset-family always pass",
-    "conversation claims logo will replace monogram",
+    "critiqueDesign Workspace sentence was a critic loop (closed D2/D4)",
+    "studio preflight asset-family always pass (now DNA label, D4)",
+    "conversation claims logo will replace monogram (closed D1)",
     "parseIntentWithLlm / critiqueWithLlm / planGraph exported without production callers",
     "visual language / concept / asset language present on every spec.designPlan",
     "candidate/critic vocabulary in decision log overlay fields",
@@ -499,14 +503,14 @@
     { "id": "planGraph", "class": "UNUSED" },
     { "id": "parseIntentWithLlm", "class": "DEAD" },
     { "id": "critiqueWithLlm", "class": "UNUSED" },
-    { "id": "critiqueAsFeedback", "class": "UNUSED" },
+    { "id": "critiqueAsFeedback", "class": "PARTIAL", "note": "D2: C6 quieter/vary from studioLedger only" },
     { "id": "scoreVisualCraft", "class": "DECORATIVE" },
     { "id": "DESIGN_PRINCIPLES-on-plan", "class": "DECORATIVE" },
-    { "id": "studio-needsRepair-forced-false", "class": "DECORATIVE" },
-    { "id": "logoHref-P1", "class": "UNUSED" },
-    { "id": "avoidMotifs-P1", "class": "DECORATIVE" },
+    { "id": "studio-needsRepair-forced-false", "class": "LOCK", "note": "intentional D2" },
+    { "id": "logoHref-P1", "class": "REAL", "note": "D1 paintMark" },
+    { "id": "avoidMotifs-P1", "class": "DECORATIVE", "note": "does not paint studio; D4 honesty" },
     { "id": "overlay-search-P1", "class": "UNUSED" },
-    { "id": "studio-preflight-asset-family", "class": "DECORATIVE" }
+    { "id": "studio-preflight-asset-family", "class": "LABEL", "note": "Stüdyo DNA, D4" }
   ],
   "briefFields": {
     "REAL": [
@@ -514,10 +518,10 @@
       "dimensionsMm", "styleType", "colors", "volume", "paoMonths", "barcode",
       "manufacturerName", "manufacturerAddress", "copyOverrides", "ingredientClaims",
       "story", "scentNotes", "copyLocale", "deliverables", "studioFamily",
-      "avoidStudioFamilies", "directionVariation", "provenance"
+      "avoidStudioFamilies", "directionVariation", "provenance", "logo"
     ],
     "PARTIAL": ["directorCue", "volumeDefaulted", "dimsDefaulted", "barcodeDefaulted"],
-    "DECORATIVE_ON_P1": ["logo", "references", "avoidMotifs"]
+    "DECORATIVE_ON_P1": ["references", "avoidMotifs"]
   },
   "distinctions": {
     "intelligenceVsAutomation": "Studio painters are deterministic automation. Direction scoring is a closed-vocabulary ranker, not generative intelligence.",
@@ -527,7 +531,7 @@
     "learningVsApprovedKnowledge": "Observation is not knowledge. Candidate is not active.",
     "knowledgeVsFutureDecision": "Only active matching recs that a hook consumes change the next SVG.",
     "scoreVsCritic": "scoreDesign does not choose a winner on P1.",
-    "candidateVsVariation": "directionVariation/seed is variation, not candidate intelligence.",
+    "candidateVsVariation": "D3 directionOffer is a real named set; seed/variationIndex still variation. Overlay search is not P1.",
     "llmVsDesignAuthority": "LLM may fill brief/direction enums. Painter owns geometry."
   }
 }

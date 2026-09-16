@@ -23,6 +23,32 @@ export function isForxaStructure(id: string): boolean {
   return FORXA_ROUTED.has(id)
 }
 
+/**
+ * Paxolab brief: L = front width, W = depth, H = standing height.
+ * Most Forxa engines use length/width/height. Pillow uses width as panel height and depth as flap.
+ */
+export function briefToEngineParams(
+  engineId: string,
+  dimensions: DimensionsMm,
+  defaults: Record<string, number> = {},
+): Record<string, number> {
+  const L = dimensions.L || defaults.length || defaults.sideLength || 80
+  const W = dimensions.W || defaults.width || 40
+  const H = dimensions.H || defaults.height || 120
+  const base = {
+    length: L,
+    width: W,
+    height: H,
+    sideLength: L,
+  }
+  if (engineId === 'pillow-box') {
+    const panelH = dimensions.H || defaults.width || 80
+    const depth = dimensions.W || defaults.depth || 40
+    return { ...base, length: L, width: panelH, height: panelH, depth }
+  }
+  return base
+}
+
 function failedModel(structureId: StructureId, dimensions: DimensionsMm, issues: string[]): DielineModel {
   return {
     structureId,
@@ -68,10 +94,7 @@ export function generateForxaModel(
   const defaults = structure.getDefaultParameters()
   const params: Record<string, number> = {
     ...defaults,
-    length: dimensions.L || defaults.length || 80,
-    width: dimensions.W || defaults.width || 40,
-    height: dimensions.H || defaults.height || 120,
-    sideLength: dimensions.L || defaults.sideLength || 60,
+    ...briefToEngineParams(engineId, dimensions, defaults),
     ...(useSolved ? solvedEngineParams(solved) : {}),
     ...engineParams,
   }

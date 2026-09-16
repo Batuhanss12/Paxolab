@@ -15,6 +15,7 @@ import type { CritiqueReport } from './CritiqueEngine'
 import { critiqueDesign, type DesignCritique, type StudioLedgerEvidence } from './DesignCritic'
 import { brandScopeKey } from './DesignKnowledgeStore'
 import type { DesignPlan } from './DesignPlan'
+import type { StudioDirectionOffer } from '../studio/types'
 
 export const DESIGN_BRAIN_VERSION = '1.0'
 export const VISUAL_LANGUAGE_VERSION = '1.0'
@@ -97,7 +98,7 @@ export type DesignDecisionLog = {
   vlVersion: string
   alVersion: string
   compositionVersion: string
-  path: 'overlay' | 'kit'
+  path: 'overlay' | 'kit' | 'studio'
   brief: {
     sector: string
     subProduct?: string
@@ -312,15 +313,40 @@ function overlayCandidates(search: CompositionSearchDebug): LoggedCandidate[] {
   }))
 }
 
+/** P1 candidate set is the D3 direction offer. Selected = decideDirection / user pin, not a kit ONLY row. */
+function studioCandidates(offer: StudioDirectionOffer): LoggedCandidate[] {
+  return offer.candidates.map((row) => ({
+    id: row.family,
+    strategy: `${row.archetype}/${row.background}`,
+    score: Math.round(row.score * 100),
+    decision: row.selected ? 'WINNER' : 'FINALIST',
+    reasons: [{ axis: 'direction', score: Math.round(row.score * 100) }],
+    critic: row.selected ? 'decideDirection' : 'offer',
+  }))
+}
+
 function winnerWhy(
   plan: DesignPlan,
   critique: CritiqueReport,
-  path: 'overlay' | 'kit',
+  path: 'overlay' | 'kit' | 'studio',
   candidates: LoggedCandidate[],
   search?: CompositionSearchDebug,
+  studio?: StudioDecision,
 ): WinnerWhy {
-  const winner = candidates.find((row) => row.decision === 'WINNER') ?? candidates[0]
+  const winner = candidates.find((row) => row.decision === 'WINNER') ?? candidates.find((row) => row.decision === 'ONLY') ?? candidates[0]
   const composition = winner ? winner.score / 100 : critique.scorecard.hierarchy / 100
+  if (path === 'studio') {
+    return {
+      sectorCompatibility: round01(critique.scorecard.sectorBlind / 100),
+      visualLanguageFit: 0,
+      assetRoleFit: 0,
+      compositionFit: round01(composition),
+      novelty: round01(1 - (critique.scorecard.repetitionPenalty ?? 0) / 100),
+      selectedLanguage: studio?.archetype,
+      selectedConcept: winner?.id,
+      selectedStrategy: winner?.strategy ?? studio?.archetype,
+    }
+  }
   const styleFit =
     search?.concept?.styleConsistency != null ? search.concept.styleConsistency / 100 : plan.visualLanguage.length ? 0.9 : 0.5
   const assetFit = winner?.reasons.find((row) => row.axis === 'assetCompatibility')?.score
@@ -356,6 +382,8 @@ export type CaptureGenerateInput = {
   feedbackFromLlm?: boolean
   /** Studio direction summary when overrides.studio painted this revision. */
   studio?: StudioDecision
+  /** D3 offer — logged as the P1 candidate set instead of kit ONLY. */
+  studioOffer?: StudioDirectionOffer
   /** Ledger evidence for the studio critic (kit hints are skipped when this is set). */
   studioLedger?: StudioLedgerEvidence
   /** True when the LLM art director proposed the studio direction. */
@@ -375,8 +403,15 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
     const plan = input.plan
     const skipOverlay = kitGradeSkipsOverlay(plan.style)
     const search = skipOverlay ? undefined : (input.search ?? lastCompositionSearch())
-    const path: 'overlay' | 'kit' = search && (search.candidates.length > 0 || search.winner) ? 'overlay' : 'kit'
-    const candidates = path === 'overlay' && search ? overlayCandidates(search) : kitCandidates(plan, input.critique)
+    const overlayPath = search && (search.candidates.length > 0 || search.winner)
+    const path: 'overlay' | 'kit' | 'studio' =
+      input.studio && input.studioOffer?.candidates.length ? 'studio' : overlayPath ? 'overlay' : 'kit'
+    const candidates =
+      path === 'studio' && input.studioOffer
+        ? studioCandidates(input.studioOffer)
+        : path === 'overlay' && search
+          ? overlayCandidates(search)
+          : kitCandidates(plan, input.critique)
     const winnerRow = candidates.find((row) => row.decision === 'WINNER' || row.decision === 'ONLY') ?? candidates[0]
     const assets = assetLanguageFor(plan)
     const outcome = bumpOutcome(input.designId, at, input)
@@ -414,12 +449,15 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
         density: plan.designIntent.density,
         cue: plan.designIntent.cue,
       },
-      selectedLanguage: plan.visualLanguage,
-      selectedConcept: {
-        id: plan.visualConcept.id,
-        label: plan.visualConcept.label,
-        family: plan.visualConcept.family,
-      },
+      selectedLanguage: path === 'studio' && input.studio ? [input.studio.archetype] : plan.visualLanguage,
+      selectedConcept:
+        path === 'studio' && winnerRow
+          ? { id: winnerRow.id, family: winnerRow.id, label: winnerRow.strategy }
+          : {
+              id: plan.visualConcept.id,
+              label: plan.visualConcept.label,
+              family: plan.visualConcept.family,
+            },
       artDirection: {
         chrome: plan.artDirection.chrome,
         vocabulary: plan.artDirection.vocabulary,
@@ -435,7 +473,7 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
         ? {
             id: winnerRow.id,
             score: winnerRow.score,
-            why: winnerWhy(plan, input.critique, path, candidates, search),
+            why: winnerWhy(plan, input.critique, path, candidates, search, input.studio),
           }
         : undefined,
       criticHints: input.critique.hints.map((hint) => ({ action: hint.action, topic: hint.topic })),

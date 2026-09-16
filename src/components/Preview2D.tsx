@@ -1,4 +1,5 @@
-import { studioFaceLabel } from '../engine/studio/faceCaption'
+import type { Attachment, DesignSpec, DimensionsMm } from '../types'
+import { studioFaceLabel, studioLanguageCaption } from '../engine/studio/faceCaption'
 import { renderFrontSvg } from '../engine/artwork/composeArtwork'
 import { artworkFromDocument } from '../engine/document'
 
@@ -16,6 +17,7 @@ export function Preview2D({ design, onDims }: Preview2DProps) {
     H: design.layout.heightMm,
   }
   const svg = renderFrontSvg(design.dieline, artworkFromDocument(design.document), design.palette)
+  const languageCaption = studioLanguageCaption(design)
 
   function setNum(key: keyof DimensionsMm, value: string) {
     onDims({ ...dims, [key]: Number(value) || 0 })
@@ -26,7 +28,7 @@ export function Preview2D({ design, onDims }: Preview2DProps) {
       <div className="preview-stage__meta">
         <span>Rev {design.revision}</span>
         {design.designPlan || design.studio ? <span>{studioFaceLabel(design)}</span> : null}
-        <span>{design.artwork.language}</span>
+        {languageCaption ? <span>{languageCaption}</span> : null}
         {design.overrides.printReady && !design.preflight.blocking && <span className="pill">Baskı kapısı açık</span>}
         <div className="dim-strip" aria-label="Ölçü">
           <span className="dim-strip__label">Ölçü</span>

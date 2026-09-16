@@ -58,11 +58,13 @@ export function buildManifest(spec: DesignSpec): string {
       manufacturer: spec.copy.manufacturer,
     },
     files: [
+      { name: `${slug}-knife.svg`, type: 'knife' },
+      { name: `${slug}-knife.dxf`, type: 'dxf' },
       { name: `${slug}-dieline.svg`, type: 'dieline' },
+      { name: `${slug}-dieline.pdf`, type: 'dieline-pdf' },
       { name: `${slug}-artwork.svg`, type: 'artwork' },
       { name: `${slug}-combined.svg`, type: 'combined' },
-      { name: `${slug}-dieline.dxf`, type: 'dxf' },
-      { name: `${slug}-dieline.pdf`, type: 'dieline-pdf' },
+      { name: 'OKU.txt', type: 'readme' },
     ],
   }
   return JSON.stringify(manifest, null, 2)

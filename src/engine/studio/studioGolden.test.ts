@@ -1,9 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { JOBS as CATALOG_JOBS } from '../../../scripts/catalog-jobs'
+import { resetDecisionLogs } from '../brain/DesignDecisionLog'
+import { resetDesignKnowledge } from '../brain/DesignKnowledgeStore'
+import { resetLearning } from '../brain/LearningEngine'
 import { STUDIO_GALLERY_JOBS } from './studioGalleryJobs'
 import { generateStudioFace, hashStudioFace, STUDIO_FACE_GOLDEN } from './studioGolden'
 
 describe('studio golden — 18 faces, kit freeze stays apart', () => {
+  beforeEach(() => {
+    resetDecisionLogs()
+    resetDesignKnowledge()
+    resetLearning()
+  })
+  afterEach(() => {
+    resetDecisionLogs()
+    resetDesignKnowledge()
+    resetLearning()
+  })
   it('locks 9 sectors × 2 surfaces and keeps hashes unique', () => {
     expect(STUDIO_GALLERY_JOBS).toHaveLength(18)
     expect(Object.keys(STUDIO_FACE_GOLDEN)).toHaveLength(18)

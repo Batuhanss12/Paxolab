@@ -96,7 +96,7 @@ Bugün 6+6 arketip, hepsi TASARIM REF’ten damıtılmış. Yeni referans = yeni
 | D1 | Kutu+etiket aynı brief’te **aynı arketip ailesini** paylaşır (`studioFamily`) | Kapandı S4 |
 | D2 | Şablon kartı stüdyo arketipini göstermiyor; kullanıcı tuck vs wrap seçiyor, mermer vs botanik değil | Template picker’a “görsel sistem” değil yapı; yön sohbette / vary’de |
 | D3 | `generic` sektör zayıf; hediye / e-ticaret / kargo DNA’sı yok | Yeni arketip ancak referans + layout ile |
-| D4 | Sleeve / snap-lock / reverse-tuck dieline’ı stüdyo front’a bağlandı; flap hâlâ sade zemin | `paintBoxFlap` zenginleştir (marka + hacim) — freeze dışı |
+| D4 | Sleeve / snap-lock / reverse-tuck dieline’ı stüdyo front’a bağlandı; flap hâlâ sade zemin | **Kapandı** — `paintBoxFlap` marka + hacim; `bottom-lock` tuck-flap |
 | D5 | Label wrap vs flat: `isLandscape` iki kolon; küçük kavanoz `isTiny` anatomi düşürüyor — test az | Tiny/landscape golden cases |
 
 **Sıra:** D1 aile anahtarı (kahve kutu marble ise etiket marble) → D4 flap/top tutarlılığı → D3 yalnız referans geldikçe.
@@ -159,7 +159,7 @@ Kapı: `LLMProvider.generateStructured`. Görevler: `brief-extract | feedback-in
 | K1 | **UI yok.** `runLearningCycle` Workspace’te yok; adaylar görünmez; insan global onay yok | Kapandı S7 |
 | K2 | `critiquePlan` kit overlay/hero; stüdyo yüzünde `needsRepair` zorla kapatılıyor | `FormaLocalEngine` |
 | K3 | Studio ledger collision/minText → preflight’a gidiyor; DesignCritic category/target’a tam map değil |
-| K4 | RatingBar yıldız → OutcomeTracker; stüdyo prefer bağının kullanıcıya izahı yok | Kapandı S7 — süreç notu `Öğrendim: …` |
+| K4 | RatingBar yıldız → OutcomeTracker; stüdyo prefer bağının kullanıcıya izahı yok | Kapandı S7 + knowledge: 2×5★ DNA pin; `Öğrendim` |
 | K5 | A/B knowledge (FAZ 7b) park — doğru; veri yokken açma |
 | K6 | Preference model / RL park |
 

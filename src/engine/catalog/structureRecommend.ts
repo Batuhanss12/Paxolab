@@ -3,7 +3,7 @@
  * Does not invent cartons. pickTemplate / kit generate stay on templateId.
  */
 import type { DesignBrief, DimensionsMm, FormaTemplate, PackagingMode, StructureId } from '../../types'
-import { activeTemplates, productHits, sectorHits } from './catalog'
+import { activeTemplates, getTemplate, productHits, sectorHits } from './catalog'
 
 export type StructureWeights = {
   physical: number
@@ -97,13 +97,33 @@ function productFit(brief: DesignBrief, template: FormaTemplate): number {
   return clamp01(sector + product)
 }
 
-/** One catalog card per structure family. Opposite-surface families stay for the hard gate. */
-function familyRepresentatives(mode: PackagingMode): FormaTemplate[] {
+/** One catalog card per structure family. Prefer the sector/product match when the brief has one. */
+function familyRepresentatives(mode: PackagingMode, brief: DesignBrief): FormaTemplate[] {
   const byStruct = new Map<StructureId, FormaTemplate>()
   for (const tmpl of activeTemplates(true)) {
     const prev = byStruct.get(tmpl.structureId)
-    if (!prev) byStruct.set(tmpl.structureId, tmpl)
-    else if (tmpl.packagingMode === mode && prev.packagingMode !== mode) byStruct.set(tmpl.structureId, tmpl)
+    if (!prev) {
+      byStruct.set(tmpl.structureId, tmpl)
+      continue
+    }
+    if (tmpl.packagingMode === mode && prev.packagingMode !== mode) {
+      byStruct.set(tmpl.structureId, tmpl)
+      continue
+    }
+    if (tmpl.packagingMode !== prev.packagingMode) continue
+    if (brief.sector) {
+      const hit = sectorHits(tmpl, brief.sector)
+      const prevHit = sectorHits(prev, brief.sector)
+      if (hit && !prevHit) {
+        byStruct.set(tmpl.structureId, tmpl)
+        continue
+      }
+      if (hit === prevHit && brief.subProduct) {
+        const prod = productHits(tmpl, brief.subProduct)
+        const prevProd = productHits(prev, brief.subProduct)
+        if (prod && !prevProd) byStruct.set(tmpl.structureId, tmpl)
+      }
+    }
   }
   return [...byStruct.values()]
 }
@@ -149,7 +169,7 @@ export function evaluateStructures(brief: DesignBrief, weights: StructureWeights
   const physW = weights.physical / wsum
   const aspW = weights.aspect / wsum
   const prodW = weights.product / wsum
-  const pool = familyRepresentatives(mode)
+  const pool = familyRepresentatives(mode, brief)
   const rows: StructureCandidate[] = pool.map((tmpl) => {
     const eligible = tmpl.packagingMode === mode
     const physical = physicalFit(brief.dimensionsMm, tmpl.defaultsMm, mode)
@@ -175,7 +195,15 @@ export function evaluateStructures(brief: DesignBrief, weights: StructureWeights
 export function recommendStructures(brief: DesignBrief, weights: StructureWeights = DEFAULT_STRUCTURE_WEIGHTS): StructureRecommendation {
   const all = evaluateStructures(brief, weights)
   const eligible = all.filter((row) => row.eligible)
-  const candidates = eligible.slice(0, 3)
+  const sectorRows =
+    brief.sector
+      ? eligible.filter((row) => {
+          const tmpl = getTemplate(row.templateId)
+          return tmpl ? sectorHits(tmpl, brief.sector) : row.productFit >= 0.65
+        })
+      : eligible
+  const pool = sectorRows.length ? sectorRows : eligible
+  const candidates = pool.slice(0, 3)
   const pinned = brief.templateId && eligible.some((row) => row.templateId === brief.templateId) ? brief.templateId : ''
   return {
     all,

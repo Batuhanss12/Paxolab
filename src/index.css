@@ -1316,12 +1316,26 @@ h2 {
 
 .tcard em {
   display: block;
-  margin-top: 8px;
+  margin: 0 0 4px;
   font-style: normal;
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+.tcard__thumb {
+  height: 88px;
+  margin: 0 0 10px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #080808;
+}
+
+.tcard__thumb svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .tcard__reason {
@@ -1349,6 +1363,49 @@ h2 {
   margin-top: 28px;
   display: grid;
   gap: 16px;
+}
+
+.templates__identity h3 {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.templates__more {
+  margin-top: 12px;
+}
+
+.templates__preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  gap: 16px;
+  align-items: center;
+}
+
+.carton-shell {
+  min-width: 0;
+}
+
+.carton-shell__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.carton-shell__caption {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.scene--shell {
+  min-height: 240px;
+  background: #0a0a0a;
+  border-radius: 12px;
+  border: 1px solid var(--line);
 }
 
 .templates__dims {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { DesignBrief } from '../types'
 import { appReducer, createInitialAppState } from '../appState'
 import { resetArtMemory } from './brain'
-import { buildCombinedSvg, buildExportBundle } from './production/exportDoc'
+import { buildCombinedSvg, buildExportBundle, buildUserExportFiles } from './production/exportDoc'
 import { FormaLocalEngine } from './FormaLocalEngine'
 import { emptyBrief } from './fields'
 import { artworkFromDocument, validateDesignDocument } from './document'
@@ -87,6 +87,30 @@ describe('FormaLocalEngine', () => {
     expect(bundle!.knife).toContain('mm')
   })
 
+  it('user ZIP lists knife, PDF, shop.json and OKU with trim honesty', () => {
+    const design = new FormaLocalEngine().generate({
+      brief: perfumeBrief(),
+      overridePatch: { printReady: true },
+    })
+    const files = buildUserExportFiles(design)
+    expect(files).toBeTruthy()
+    const names = files!.map((f) => f.name)
+    expect(names.some((n) => n.endsWith('-knife.svg'))).toBe(true)
+    expect(names.some((n) => n.endsWith('-knife.dxf'))).toBe(true)
+    expect(names.some((n) => n.endsWith('-dieline.pdf'))).toBe(true)
+    expect(names).toContain('shop.json')
+    expect(names).toContain('OKU.txt')
+    const pdf = files!.find((f) => f.name.endsWith('.pdf'))!.data as Uint8Array
+    expect(String.fromCharCode(...pdf.slice(0, 8))).toBe('%PDF-1.6')
+    const oku = files!.find((f) => f.name === 'OKU.txt')!.data as string
+    expect(oku).toMatch(/CUT trim/)
+    expect(oku).toMatch(/bıçağa işlenmez/)
+    expect(oku).toMatch(/KESİM İÇİN KULLANMA/)
+    const bleed = design.preflight.items.find((i) => i.id === 'bleed')
+    expect(bleed?.detail).toMatch(/kılavuz/)
+    expect(bleed?.detail).toMatch(/işlenmez/)
+  })
+
   it('printReady proof draws 3 mm safe + bleed and stays honest (PDF/X-4 sRGB, no trap)', () => {
     const design = new FormaLocalEngine().generate({
       brief: perfumeBrief(),
@@ -109,6 +133,7 @@ describe('FormaLocalEngine', () => {
     expect(bleed?.detail).toMatch(/PDF\/X-4 sRGB/)
     expect(bleed?.detail).toMatch(/trap yok/)
     expect(bleed?.detail).not.toMatch(/FOGRA39|GRACoL/)
+    expect(bleed?.detail).toMatch(/kılavuz/)
     const proof = design.preflight.items.find((i) => i.id === 'proof')
     expect(proof?.detail).toMatch(/3 mm/)
     expect(proof?.detail).toMatch(/PDF\/X-4 sRGB/)

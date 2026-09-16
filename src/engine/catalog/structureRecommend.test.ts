@@ -226,4 +226,26 @@ describe('C5 structure recommendation', () => {
     expect(rec.candidates.length).toBeGreaterThan(0)
     expect(rec.candidates[0]?.structureId).toBe('tuck-end-box')
   })
+
+  it('uses the food tuck representative and drops perfume-only families for gıda', () => {
+    const rec = recommendStructures({
+      ...emptyBrief(),
+      sector: 'gıda',
+      subProduct: 'yağ',
+      packagingMode: 'box',
+      dimensionsMm: { L: 80, W: 50, H: 180 },
+    })
+    expect(rec.selectedTemplateId).toBe('fm-food-tuck-oil')
+    expect(rec.candidates.some((row) => row.structureId === 'mailer-box')).toBe(false)
+    expect(rec.candidates.some((row) => row.structureId === 'sleeve')).toBe(false)
+    const tuck = rec.all.find((row) => row.structureId === 'tuck-end-box')
+    expect(tuck?.templateId).toBe('fm-food-tuck-oil')
+  })
+
+  it('keeps perfume candidates inside the cosmetics sector set', () => {
+    const rec = recommendStructures(perfume({ L: 70, W: 35, H: 140 }))
+    expect(rec.candidates.some((row) => row.structureId === 'mailer-box')).toBe(false)
+    expect(rec.candidates.some((row) => row.structureId === 'simple-tray')).toBe(false)
+    expect(rec.candidates[0]?.structureId).toBe('tuck-end-box')
+  })
 })

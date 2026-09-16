@@ -1,5 +1,6 @@
 import type { AwaitingKey, DesignBrief, DimensionsMm, FieldProvenance, PackagingMode, StyleType } from '../types'
 import { sourceMayOverride } from './briefProvenance'
+import { formatTemplateLabel } from './catalog/structureOffer'
 import { isSectorOrSurfaceName } from './extractHelpers'
 import { styleLabel } from './styles'
 
@@ -251,7 +252,7 @@ export function filledEntries(
   push('sector', brief.sector)
   push('subProduct', brief.subProduct)
   push('packagingMode', brief.packagingMode)
-  push('templateId', brief.templateId)
+  push('templateId', brief.templateId ? formatTemplateLabel(brief.templateId) : '')
   push('styleType', styleLabel(brief.styleType) || brief.styleType)
   const userDims = formatDimensions(brief.dimensionsMm)
   if (userDims) push('dimensionsMm', userDims, !!brief.dimsFromVolume || !!brief.dimsDefaulted)

@@ -2,8 +2,8 @@
 
 **Date:** 16 Sep 2026  
 **Mode:** Double-check of C0–C8 + D0–D4 against runtime. No production code in this pass.  
-**Previous snapshot:** `docs/PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md` (pre-D1; header still says logo unused).  
-**Repo tests (this check):** `npx vitest run` → **452 passed / 1 failed / 453 total**. Baseline fail remains `phase15.test.ts` `/hex/i`.
+**Previous snapshot:** `docs/PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md` was pre-D1; **D5-docs rewrote it to this post-D4 status.**  
+**Repo tests (this check):** `npx vitest run` → **468 passed / 1 failed / 469 total**. Baseline fail remains `phase15.test.ts` `/hex/i`. D5-log + D5-spec added honesty tests. Knowledge outcome prefer added 3 tests.
 
 ---
 
@@ -17,7 +17,7 @@ Two programs ran. Both are **closed**. The product is still a **dual-engine**, n
 | **D0–D4** | Honesty on P1: logo/scale, critic=C6, 2–3 real directions, kit metadata ≠ painted face | Closed |
 | **Original D4+** | VL / concept / overlay merge onto studio | **Not started. Still “later / maybe never.”** |
 
-We are **after D4**, not inside overlay-merge. The next production-code phase is optional; the remaining DI debt is mostly **stale docs** and **log/spec completeness theater** that D4 did not strip from `DesignDecisionLog`.
+We are **after D4**, not inside overlay-merge. **D5-docs** rewrote STATUS. **D5-log** records `directionOffer` on studio generate (`path: studio`, WINNER/FINALIST). **D5-spec** captions leftover kit hero/summary/food-harvest off the studio face. Overlay-merge is still later / maybe never.
 
 ---
 
@@ -39,8 +39,8 @@ We are **after D4**, not inside overlay-merge. The next production-code phase is
 | UI caption is studio DNA | `studioFaceLabel` not `heroGraphic.family` | REAL (D4) |
 | Kit motif recs do not paint P1 | `paintsStudioFace`; hash test | REAL (D4) |
 | 18 golden hashes (no logo, scale 1) | `studioGolden.test.ts` | REAL |
-| `STATUS.md` “logoHref never reaches studio” | file still pre-D1 | **STALE DOC** |
-| Decision log `decision: ONLY` on studio | `kitCandidates()` when overlay skipped | **Still decorative** |
+| `STATUS.md` “logoHref never reaches studio” | file rewritten D5-docs | **Current** |
+| Decision log `decision: ONLY` on studio | `studioCandidates(directionOffer)` | **Closed D5-log** |
 | `createPlan` still runs on P1 | `FormaLocalEngine` always | Computed, mostly unused by painter |
 | `advisePlan` | identity, no callers | UNUSED |
 | Visual language / concept / asset language → studio SVG | painters ignore plan VL/concept | Still kit-only |
@@ -60,7 +60,7 @@ USER
  → decideDirection + directionOffer
  → composeStudioArtwork           ← one face + identity + ledger critic
  → applyStudioPreflight
- → captureGenerateDecision        ← still logs kit ONLY candidate
+ → captureGenerateDecision        ← path studio: directionOffer; kit ONLY only on kit generate
  → observeFeedback / observeCritic (C6 quieter/vary only)
  → Learning Gate
  → future studioHintsFromKnowledge
@@ -89,7 +89,7 @@ Painter still does **not** consume: VL array, concept id, asset language, overla
 | Intent / VL / concept / asset language | KIT ONLY | |
 | Overlay candidates | OFF P1 | |
 | Outcome as quality | PARTIAL | rating → observe; not a score of the face |
-| Decision log | RECORDER | studio fields real; kit ONLY row decorative |
+| Decision log | RECORDER | D5-log: studio logs directionOffer; kit still ONLY |
 
 Overall: still **FRAGMENTED**, but P1 false-completeness on **logo, critic sentence, candidate set, kit hero caption, kit motif “öğrendim”** is closed.
 
@@ -101,16 +101,16 @@ Overall: still **FRAGMENTED**, but P1 false-completeness on **logo, critic sente
 
 | ID | Work | Why |
 |---|---|---|
-| **D5-docs** | Rewrite `PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md` to post-D4 (no production code) | Q18: stale audit is now the loudest lie |
-| **D5-log** | Studio generate must not emit `kitCandidates` `ONLY`. Log `directionOffer` as the candidate set; selected = `decideDirection` winner | Remaining decorative completeness |
-| **D5-spec** | Stop treating `designPlan.heroGraphic` / `summaryTr` as the studio face anywhere left (language id `food-harvest` can stay; it is not a hero) | Residual kit vocabulary |
+| **D5-docs** | Rewrite `PAXOLAB_DESIGN_INTELLIGENCE_STATUS.md` to post-D4 (no production code) | **Done** |
+| **D5-log** | Studio generate must not emit `kitCandidates` `ONLY`. Log `directionOffer` as the candidate set; selected = `decideDirection` winner | **Done** |
+| **D5-spec** | Stop treating `designPlan.heroGraphic` / `summaryTr` as the studio face anywhere left (language id `food-harvest` can stay; it is not a hero) | **Done** |
 
 ### Optional later (not DI merge)
 
-| ID | Work |
-|---|---|
-| Craft | Sleeve/snap-lock flap/top anatomy (`STUDIO_STAGE_AUDIT` D4) — painter craft, not intelligence |
-| Knowledge | Grow **studio-archetype / studio-background** evidence only (outcome prefer). Do not teach `avoid-motif` to the studio painter unless DNA actually has motifs |
+| ID | Work | Status |
+|---|---|---|
+| Craft | Sleeve/snap-lock flap/top anatomy (`STUDIO_STAGE_AUDIT` D4) — painter craft, not intelligence | **Done** |
+| Knowledge | Grow **studio-archetype / studio-background** evidence only (outcome prefer). Do not teach `avoid-motif` to the studio painter unless DNA actually has motifs | **Done** |
 
 ### Do not
 
@@ -128,5 +128,5 @@ Overall: still **FRAGMENTED**, but P1 false-completeness on **logo, critic sente
 
 ## 6. Proof files
 
-D1 `docs/STUDIO_D1.md` · D2 `docs/STUDIO_D2.md` · D3 `docs/STUDIO_D3.md` · D4 `docs/STUDIO_D4.md`  
-Tests: `studioIdentity`, `studioCritic`, `studioDirectionOffer`, `studioHonesty`, `studioGolden`, C0–C8 conversation suite.
+D1 `docs/STUDIO_D1.md` · D2 `docs/STUDIO_D2.md` · D3 `docs/STUDIO_D3.md` · D4 `docs/STUDIO_D4.md` · D5 `docs/STUDIO_D5.md`  
+Tests: `studioIdentity`, `studioCritic`, `studioDirectionOffer`, `studioHonesty`, `studioGolden`, `designDecisionLog`, C0–C8 conversation suite.

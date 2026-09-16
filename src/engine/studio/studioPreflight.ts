@@ -57,10 +57,21 @@ export function applyStudioPreflight(base: PreflightReport, report: StudioReport
     detail: exportOk ? 'SVG üretilebilir (studio)' : 'Engel var — dışa aktarma yeşil değil',
     status: exportOk ? 'pass' : 'fail',
   })
-  // proof / bleed items depend on exportOk in the base report; refresh their status
-  const refreshed = items.map((i) =>
-    (i.id === 'proof' || i.id === 'bleed') && i.status !== 'pass' && exportOk && /PDF\/X-4/.test(i.detail) ? { ...i, status: 'pass' as const } : i,
-  )
+  const dna = `${report.direction.archetype} · ${report.direction.background}`
+  // proof / bleed: kit heroGraphic is not the painted face. Keep press suffix; refresh status.
+  const refreshed = items.map((i) => {
+    if (i.id === 'proof') {
+      const press = i.detail.match(/\d+(?:\.\d+)? mm .+$/)?.[0]
+      const detail = press ? `${dna} · ${press}` : dna
+      const status: PreflightItem['status'] =
+        i.status !== 'pass' && exportOk && /PDF\/X-4/.test(detail) ? 'pass' : i.status
+      return { ...i, detail, status }
+    }
+    if (i.id === 'bleed' && i.status !== 'pass' && exportOk && /PDF\/X-4/.test(i.detail)) {
+      return { ...i, status: 'pass' as const }
+    }
+    return i
+  })
   return {
     items: refreshed,
     blocking: refreshed.some((i) => i.status === 'fail'),

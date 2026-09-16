@@ -79,4 +79,11 @@ export function describeStructureOffer(brief: DesignBrief, template?: FormaTempl
   return `Yapı: ${label} (${tmpl.title})${why}.${alt} Yapıyı değiştirmek için “2. yapı” / “mailer” / “sleeve” yaz.`
 }
 
+export function formatTemplateLabel(templateId: string): string {
+  const tmpl = getTemplate(templateId)
+  if (!tmpl) return templateId
+  const grammar = STRUCTURE_LABEL[tmpl.structureId] ?? tmpl.structureId
+  return `${grammar} — ${tmpl.title}`
+}
+
 export { parseOfferChoice, recommendStructures } from './structureRecommend'

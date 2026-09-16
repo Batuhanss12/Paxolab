@@ -93,13 +93,17 @@ export function filterTemplates(brief: DesignBrief): FormaTemplate[] {
   return [...sectorPool].sort((a, b) => Number(productHits(b, product)) - Number(productHits(a, product)))
 }
 
-/** One card per structure family for the current surface. Sector only sorts, it does not hide mailer/sleeve. */
-export function pickerTemplates(brief: DesignBrief): FormaTemplate[] {
+/** One card per structure family for the current surface. Sector hides mismatched families when any hit exists. */
+export function pickerTemplates(brief: DesignBrief, opts?: { includeMismatched?: boolean }): FormaTemplate[] {
   const mode = brief.packagingMode || 'box'
   const pool = activeTemplates(true).filter((t) => t.packagingMode === mode)
-  const ranked = brief.sector
-    ? [...pool].sort((a, b) => Number(sectorHits(b, brief.sector)) - Number(sectorHits(a, brief.sector)))
-    : pool
+  const sectorPool = brief.sector ? pool.filter((t) => sectorHits(t, brief.sector)) : pool
+  const ranked =
+    !opts?.includeMismatched && sectorPool.length
+      ? sectorPool
+      : brief.sector
+        ? [...pool].sort((a, b) => Number(sectorHits(b, brief.sector)) - Number(sectorHits(a, brief.sector)))
+        : pool
   const byStruct = new Map<string, FormaTemplate>()
   for (const t of ranked) {
     if (!byStruct.has(t.structureId)) byStruct.set(t.structureId, t)

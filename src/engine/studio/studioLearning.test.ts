@@ -17,6 +17,8 @@ import {
   upsertKnowledgeRule,
 } from '../brain/DesignKnowledgeStore'
 import { resetArtMemory } from '../brain/DesignMemory'
+import { learnedPreferenceLine } from '../brain/learningUi'
+import { noteRating } from '../brain/OutcomeTracker'
 import {
   LEARNING_THRESHOLDS,
   approveKnowledge,
@@ -244,6 +246,82 @@ describe('C7 learning loop', () => {
     expect(future.preflight.blocking).toBe(false)
     expect(future.preflight.exportOk).toBe(true)
     expect(applyKnowledgeToBrief(coffee()).applied.length).toBeGreaterThan(0)
+  })
+})
+
+describe('studio outcome prefer — archetype/background only', () => {
+  beforeEach(() => {
+    resetArtMemory()
+    resetDecisionLogs()
+    resetDesignKnowledge()
+    resetLearning()
+  })
+  afterEach(() => {
+    resetDecisionLogs()
+    resetDesignKnowledge()
+    resetLearning()
+  })
+
+  it('one 5-star is evidence, not an active rule', () => {
+    const liked = generate(coffee({ studioFamily: 'botanical' }))
+    expect(liked.studio?.direction.archetype).toBe('botanical-card')
+    noteRating(liked.id, 5, ['beğendim'])
+    const rows = listObservations().filter((row) => row.signal === 'outcome')
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((row) => row.recommendation?.kind !== 'avoid-motif')).toBe(true)
+    expect(rows.every((row) => row.recommendation?.kind !== 'director-cue')).toBe(true)
+    expect(
+      rows.some(
+        (row) =>
+          row.recommendation?.kind === 'studio-archetype' &&
+          row.recommendation.prefer &&
+          row.recommendation.archetype === 'botanical-card',
+      ),
+    ).toBe(true)
+    expect(activeKnowledge()).toEqual([])
+    expect(generate(coffee()).studio?.direction.archetype).toBe('marble-frame')
+  })
+
+  it('two independent 5-star studio faces pin that DNA on a later coffee generate', () => {
+    const before = generate(coffee())
+    expect(before.studio?.direction.archetype).toBe('marble-frame')
+    for (let i = 0; i < LEARNING_THRESHOLDS.minSamples.user; i++) {
+      const liked = generate(coffee({ studioFamily: 'botanical' }))
+      expect(liked.studio?.direction.archetype).toBe('botanical-card')
+      noteRating(liked.id, 5, ['beğendim'])
+    }
+    const rule = activeKnowledge().find(
+      (row) => row.recommendation.kind === 'studio-archetype' && row.recommendation.prefer,
+    )
+    expect(rule?.source).toBe('outcome')
+    expect(rule?.recommendation).toEqual({
+      kind: 'studio-archetype',
+      archetype: 'botanical-card',
+      prefer: true,
+    })
+    expect(activeKnowledge().every((row) => row.recommendation.kind !== 'avoid-motif')).toBe(true)
+    const after = generate(coffee())
+    expect(after.studio?.direction.archetype).toBe('botanical-card')
+    expect(after.studio?.direction.background).toBe('botanical')
+    expect(familyOf(after.studio!.direction.archetype)).toBe('botanical')
+    expect(faceHash(after)).not.toBe(faceHash(before))
+    expect(learnedPreferenceLine(after.appliedKnowledge, { studio: true })).toMatch(/botanical/)
+  })
+
+  it('çok klasik on studio does not write avoid-motif; it avoids the painted archetype', () => {
+    const classic = parseFeedback('çok klasik')
+    expect(classic[0]).toEqual(expect.objectContaining({ type: 'visual_language', direction: 'modernize' }))
+    generate(coffee({ studioFamily: 'marble' }), { feedback: classic })
+    const rows = listObservations()
+    expect(rows.every((row) => row.recommendation?.kind !== 'avoid-motif')).toBe(true)
+    expect(
+      rows.some(
+        (row) =>
+          row.recommendation?.kind === 'studio-archetype' &&
+          row.recommendation.prefer === false &&
+          row.recommendation.archetype === 'marble-frame',
+      ),
+    ).toBe(true)
   })
 })
 

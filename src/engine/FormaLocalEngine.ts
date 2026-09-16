@@ -276,6 +276,7 @@ export class FormaLocalEngine implements EnginePort {
             minTextMm: pack.studio.minTextMm,
           }
         : undefined,
+      studioOffer: pack.studio?.offer,
       studioLedger: pack.studio
         ? {
             collisions: pack.studio.collisions,

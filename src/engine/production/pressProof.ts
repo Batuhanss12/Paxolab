@@ -195,7 +195,7 @@ export function renderShopBrief(packs: PressProofPack[]): string {
     '  Toleransı kalıphane koyar. Motor ± mm uydurmaz.',
     '',
     'RENK / KATMAN',
-    '  DXF: CUT, CREASE, PERF — renk yok, katman adı var',
+    '  DXF: CUT ACI 1 kırmızı · CREASE ACI 5 mavi · PERF ACI 6 magenta · katman adı + renk',
     '  PDF: CUT 1 0 0 RGB · CREASE 0 0 1 RGB · PERF 0.75 0 0.75 RGB',
     '',
     'DÜRÜSTLÜK',

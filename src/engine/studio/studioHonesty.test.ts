@@ -11,7 +11,7 @@ import { resetArtMemory } from '../brain/DesignMemory'
 import { resetDecisionLogs } from '../brain/DesignDecisionLog'
 import { resetDesignKnowledge, upsertKnowledgeRule } from '../brain/DesignKnowledgeStore'
 import { learnedPreferenceLine } from '../brain/learningUi'
-import { studioFaceLabel, studioProcessSummary } from './faceCaption'
+import { studioFaceLabel, studioLanguageCaption, studioProcessSummary } from './faceCaption'
 import { hashStudioFace } from './studioGolden'
 
 function coffee(extra: Partial<DesignBrief> = {}): DesignBrief {
@@ -64,6 +64,38 @@ describe('D4 P1 honesty — kit metadata is not the studio face', () => {
     if (hero && hero !== 'marble-frame') expect(studioFaceLabel(spec)).not.toContain(hero)
     expect(studioProcessSummary(spec)).toMatch(/marble-frame|marble frame/)
     expect(studioProcessSummary(spec)).not.toMatch(/Strateji:/)
+    expect(spec.artwork.language).toBe('food-harvest')
+    expect(studioLanguageCaption(spec)).toBe('')
+    expect(spec.designPlan?.summaryTr).toMatch(/Strateji:/)
+    const proof = spec.preflight.items.find((row) => row.id === 'proof')
+    expect(proof?.detail).toContain('marble-frame')
+    expect(proof?.detail).toContain('marble')
+    expect(proof?.detail).not.toMatch(/Strateji:/)
+    if (hero && hero !== 'marble-frame' && hero !== 'marble') {
+      expect(proof?.detail).not.toContain(hero)
+      expect(studioFaceLabel(spec)).not.toContain(hero)
+    }
+    const visible = [
+      studioFaceLabel(spec),
+      studioProcessSummary(spec),
+      studioLanguageCaption(spec),
+      ...spec.preflight.items.map((row) => `${row.label} ${row.detail}`),
+    ].join('\n')
+    expect(visible).not.toMatch(/food-harvest/)
+    expect(visible).not.toMatch(/Strateji:/)
+  })
+
+  it('kit generate still captions heroGraphic and the food-harvest dialect id', () => {
+    const spec = new FormaLocalEngine().generate({ brief: coffee() })
+    expect(spec.studio).toBeFalsy()
+    expect(spec.artwork.language).toBe('food-harvest')
+    expect(studioLanguageCaption(spec)).toBe('food-harvest')
+    const hero = spec.designPlan?.heroGraphic.family
+    if (hero && hero !== 'none') {
+      expect(studioFaceLabel(spec)).toContain(hero)
+      expect(spec.preflight.items.find((row) => row.id === 'proof')?.detail).toContain(hero)
+    }
+    expect(studioProcessSummary(spec)).toMatch(/Strateji:/)
   })
 
   it('does not let an approved avoid-motif rule change the studio hash', () => {

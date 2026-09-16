@@ -38,7 +38,7 @@ export {
 } from './directionTalk'
 export { APPLY_STUDIO_CRITIC, studioCriticActions, studioCriticOffer, talkForCritic } from './studioCritic'
 export { describeDirectionOffer, directionOfferLine, parseDirectionChoice } from './directionOffer'
-export { studioFaceLabel, studioProcessSummary } from './faceCaption'
+export { studioFaceLabel, studioProcessSummary, studioLanguageCaption } from './faceCaption'
 export {
   ALL_ARCHETYPES,
   ALL_BACKGROUNDS,

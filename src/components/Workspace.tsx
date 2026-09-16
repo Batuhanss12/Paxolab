@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Attachment, DesignBrief, ChatMessage, DesignSpec, DimensionsMm, StyleType, TabId } from '../types'
 import { isCoreReady } from '../engine/fields'
 import { learnedPreferenceLine } from '../engine/brain'
+import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
 import { directionOfferLine } from '../engine/studio/directionOffer'
 import { studioProcessSummary } from '../engine/studio/faceCaption'
 import { studioCriticOffer } from '../engine/studio/studioCritic'
@@ -83,7 +84,7 @@ function ConversationBrief({
       {design && (
         <p className="brief-log__note">
           {summary ? `${summary}. ` : ''}
-          Grapxor motor rev {design.revision} · {design.structureId}. Soldan konuşarak iterasyon yapın.
+          Grapxor motor rev {design.revision} · {STRUCTURE_LABEL[design.structureId] ?? design.structureId}. Soldan konuşarak iterasyon yapın.
         </p>
       )}
       {design && <DesignProcessNote design={design} />}

@@ -39,6 +39,9 @@ describe('buildDielineDxf', () => {
     // first vertex of the union ring is present (Y flipped for DXF)
     expect(dxf).toContain(`10\n${ring[0]!.x}\n`)
     expect(dxf).toContain(`20\n${-ring[0]!.y}\n`)
+    expect(dxf).toContain('2\nCUT\n70\n0\n62\n1\n')
+    expect(dxf).toContain('2\nCREASE\n70\n0\n62\n5\n')
+    expect(dxf).toContain('2\nPERF\n70\n0\n62\n6\n')
   })
 
   it('puts zipper perforation on PERF, not CUT', () => {

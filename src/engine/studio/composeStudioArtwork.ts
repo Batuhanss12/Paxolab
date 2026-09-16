@@ -26,6 +26,12 @@ export type StudioComposeInput = {
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
 
+function isStudioFlap(panel: Panel, kind: ReturnType<typeof nativeKindFor>): boolean {
+  if (kind === 'tuck-flap' || panel.role === 'tuck') return true
+  const id = panel.id.toLowerCase()
+  return id.includes('dust') || id.includes('tuck') || (id.includes('lock') && !id.includes('glue'))
+}
+
 function wrap(panel: Panel, direction: DesignDirection, inner: string, role: string, fonts = false): string {
   const head = fonts ? studioFontStyle() : ''
   return `${head}<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="translate(${f(panel.x)} ${f(panel.y)})">${inner}</g></g>`
@@ -60,7 +66,7 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
     } else if (kind === 'glue' || panel.role === 'glue' || panel.id === 'glue' || panel.id === 'overlap') {
       inner = paintGlue(ctx)
       role = 'glue'
-    } else if (kind === 'tuck-flap' || panel.role === 'tuck' || panel.id.includes('Dust')) {
+    } else if (isStudioFlap(panel, kind)) {
       inner = paintBoxFlap(ctx)
       role = 'flap'
     } else if (kind === 'hero-front') {

@@ -19,10 +19,10 @@
  * 2 score line: üst panel sınırı, alt panel sınırı
  * 1 score line: back|front ortası
  *
- * Parametreler:
- *   length (L)  — ön/arka panel genişliği (mm)
- *   width  (W)  — panel yüksekliği (mm)
- *   height (H)  — kutu derinliği (mm) = flap yüksekliği
+ * Parametreler (Forxa keys):
+ *   length — ön/arka panel genişliği ← brief L
+ *   width  — panel yüksekliği ← brief H
+ *   depth  — kutu derinliği / flap ← brief W
  *   glueTabWidth — yapıştırma kulağı genişliği (mm)
  *   curveRadius — kavisli flap radyusu (mm)
  */

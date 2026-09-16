@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { DesignSpec } from '../types'
 import { studioProcessSummary } from '../engine/studio/faceCaption'
 import { downloadZip } from '../engine/production/exportDoc'
 import { RatingBar } from './RatingBar'
@@ -38,7 +39,7 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
           : design.overrides.printReady
-            ? 'Ön kontrol geçti. 3 mm güvenli + 3 mm bleed. Dieline PDF/X-4 sRGB; trap yok; FOGRA değil.'
+            ? 'Ön kontrol geçti. 3 mm güvenli + 3 mm bleed kılavuz (CUT trim’de). Dieline PDF/X-4 sRGB; trap yok; FOGRA değil.'
             : 'Motor yüzeyi üretti. “baskıya hazırla” → 3 mm prova overlay; fail varsa yeşil olmaz.'}
       </p>
 

@@ -25,7 +25,7 @@ function linetype(name: string, pattern: number[]): string {
 
 /**
  * R12-style millimetre DXF with named knife layers.
- * CUT = closed outline (black / 7). CREASE = fold (red / 1, dashed). PERF = tear (magenta / 6).
+ * CUT = closed outline (ACI 1 red). CREASE = fold (ACI 5 blue, dashed). PERF = tear (ACI 6 magenta).
  */
 export function buildDielineDxf(dieline: DielineModel): string {
   const cut = dieline.cut.filter((ring) => ring.length >= 2).map((ring) => polyline('CUT', ring)).join('')
@@ -39,7 +39,7 @@ export function buildDielineDxf(dieline: DielineModel): string {
     })
     .join('')
   const header = `${pair(0, 'SECTION')}${pair(2, 'HEADER')}${pair(9, '$INSUNITS')}${pair(70, 4)}${pair(9, '$LUNITS')}${pair(70, 2)}${pair(0, 'ENDSEC')}`
-  const tables = `${pair(0, 'SECTION')}${pair(2, 'TABLES')}${pair(0, 'TABLE')}${pair(2, 'LTYPE')}${pair(70, 2)}${linetype('CONTINUOUS', [])}${linetype('DASHED', [6, -3])}${pair(0, 'ENDTAB')}${pair(0, 'TABLE')}${pair(2, 'LAYER')}${pair(70, 3)}${layer('CUT', 7, 'CONTINUOUS')}${layer('CREASE', 1, 'DASHED')}${layer('PERF', 6, 'DASHED')}${pair(0, 'ENDTAB')}${pair(0, 'ENDSEC')}`
+  const tables = `${pair(0, 'SECTION')}${pair(2, 'TABLES')}${pair(0, 'TABLE')}${pair(2, 'LTYPE')}${pair(70, 2)}${linetype('CONTINUOUS', [])}${linetype('DASHED', [6, -3])}${pair(0, 'ENDTAB')}${pair(0, 'TABLE')}${pair(2, 'LAYER')}${pair(70, 3)}${layer('CUT', 1, 'CONTINUOUS')}${layer('CREASE', 5, 'DASHED')}${layer('PERF', 6, 'DASHED')}${pair(0, 'ENDTAB')}${pair(0, 'ENDSEC')}`
   const entities = `${pair(0, 'SECTION')}${pair(2, 'ENTITIES')}${cut}${crease}${perf}${pair(0, 'ENDSEC')}${pair(0, 'EOF')}`
   return `${header}${tables}${entities}`
 }

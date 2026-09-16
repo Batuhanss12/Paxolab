@@ -185,7 +185,9 @@ export function observeFeedback(log: DesignDecisionLog, feedback: StructuredFeed
   const out: Observation[] = []
   const condition = conditionOf(log)
   feedback.forEach((fb, index) => {
-    const recommendation = feedbackRecommendation(fb)
+    const kitRec = feedbackRecommendation(fb)
+    // Studio DNA has no kit motifs. Keep director-cue (C7 density → open-air); drop avoid-motif.
+    const recommendation = log.studio && kitRec?.kind === 'avoid-motif' ? undefined : kitRec
     const studioRecs = studioFeedbackRecommendations(log, fb)
     for (const scope of scopesFor(ctx.brandKey ?? log.brief.brandKey ?? '', ctx.userId ?? 'local')) {
       const row: Observation = {
@@ -224,7 +226,8 @@ export function observeCritic(log: DesignDecisionLog, feedback: StructuredFeedba
   const out: Observation[] = []
   const condition = conditionOf(log)
   feedback.forEach((fb, index) => {
-    const recommendation = feedbackRecommendation(fb)
+    const kitRec = feedbackRecommendation(fb)
+    const recommendation = log.studio && kitRec?.kind === 'avoid-motif' ? undefined : kitRec
     for (const scope of scopesFor(ctx.brandKey ?? log.brief.brandKey ?? '', ctx.userId ?? 'local')) {
       const row: Observation = {
         id: `${log.designId}:${log.revision}:critic${index}:${scopeKey(scope)}`,
@@ -246,9 +249,18 @@ export function observeCritic(log: DesignDecisionLog, feedback: StructuredFeedba
   return out
 }
 
+function kitOutcomeRecommendations(log: DesignDecisionLog): KnowledgeRecommendation[] {
+  const recs: KnowledgeRecommendation[] = []
+  const cue = log.intent.cue as DirectorCue | undefined
+  if (cue && cue !== 'none') recs.push({ kind: 'director-cue', cue })
+  if (log.assetLanguage.avoid.length) recs.push({ kind: 'avoid-motif', tokens: [...log.assetLanguage.avoid].sort() })
+  return recs
+}
+
 /**
  * Behavioural outcome → observations about what the approved / rejected design carried.
- * Approved (export / ≥4★) supports the cue and avoid tokens in play; rejected (≤2★) contradicts them.
+ * Kit path: approved (export / ≥4★) supports the cue and avoid tokens in play; rejected (≤2★) contradicts them.
+ * Studio path: only archetype / background prefer or avoid. Kit motifs are not painted DNA.
  */
 export function observeOutcome(log: DesignDecisionLog, ctx: ObserveContext = {}): Observation[] {
   void hydrate()
@@ -258,11 +270,8 @@ export function observeOutcome(log: DesignDecisionLog, ctx: ObserveContext = {})
   const support: 1 | -1 = approved ? 1 : -1
   const at = Date.now()
   const condition = conditionOf(log)
-  const recs: KnowledgeRecommendation[] = []
-  const cue = log.intent.cue as DirectorCue | undefined
-  if (cue && cue !== 'none') recs.push({ kind: 'director-cue', cue })
-  if (log.assetLanguage.avoid.length) recs.push({ kind: 'avoid-motif', tokens: [...log.assetLanguage.avoid].sort() })
   const out: Observation[] = []
+  const recs = log.studio ? [] : kitOutcomeRecommendations(log)
   recs.forEach((recommendation, index) => {
     for (const scope of scopesFor(ctx.brandKey ?? log.brief.brandKey ?? '', ctx.userId ?? 'local')) {
       const row: Observation = {
@@ -289,7 +298,7 @@ export function observeOutcome(log: DesignDecisionLog, ctx: ObserveContext = {})
     studioRecs.forEach((recommendation, index) => {
       for (const scope of scopesFor(ctx.brandKey ?? log.brief.brandKey ?? '', ctx.userId ?? 'local')) {
         const row: Observation = {
-          id: `${log.designId}:${log.revision}:studio${index}:${scopeKey(scope)}:${approved ? 'p' : 'a'}`,
+          id: `${log.designId}:${log.revision}:out-st${index}:${scopeKey(scope)}:${approved ? 'p' : 'a'}`,
           at,
           designId: log.designId,
           scope,
@@ -367,9 +376,9 @@ export function deriveKnowledgeCandidates(patterns: LearningPattern[] = aggregat
         recommendation: pattern.recommendation,
         confidence: patternConfidence(pattern),
         sampleCount: pattern.sampleCount,
-        source: pattern.evidence.some((id) => /:out\d/.test(id))
+        source: pattern.evidence.some((id) => id.includes(':out'))
           ? 'outcome'
-          : pattern.evidence.some((id) => /:critic/.test(id))
+          : pattern.evidence.some((id) => id.includes(':critic'))
             ? 'critic'
             : 'user_feedback',
         evidence: pattern.evidence,
