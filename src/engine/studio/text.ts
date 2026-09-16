@@ -62,13 +62,31 @@ const FACE_STACK: Record<Face, string> = {
 
 /** Average advance width as a fraction of font size (em). Tuned for caps-heavy packaging copy. */
 const FACE_EM: Record<Face, { upper: number; lower: number }> = {
-  serif: { upper: 0.66, lower: 0.47 },
-  'serif-italic': { upper: 0.62, lower: 0.45 },
-  sans: { upper: 0.7, lower: 0.57 },
-  'sans-light': { upper: 0.67, lower: 0.54 },
-  'sans-heavy': { upper: 0.76, lower: 0.62 },
-  script: { upper: 0.62, lower: 0.42 },
+  serif: { upper: 0.7, lower: 0.48 },
+  'serif-italic': { upper: 0.66, lower: 0.46 },
+  sans: { upper: 0.72, lower: 0.58 },
+  'sans-light': { upper: 0.69, lower: 0.55 },
+  'sans-heavy': { upper: 0.8, lower: 0.64 },
+  script: { upper: 0.7, lower: 0.46 },
   mono: { upper: 0.62, lower: 0.62 },
+}
+
+/** Per-glyph multiplier on the face average. Narrow/wide Latin+TR so long brands don't overflow and short ones don't collapse. */
+function glyphEm(ch: string, face: Face): number {
+  const em = FACE_EM[face]
+  if (ch === ' ') return 0.28
+  if (/[.,·'’:;|]/.test(ch)) return 0.2
+  if (ch === '-' || ch === '–' || ch === '—') return 0.38
+  const letter = /[A-Za-zÀ-ÖØ-öø-ÿÇĞİÖŞÜçğıöşü]/.test(ch)
+  const upper = letter && ch === ch.toUpperCase() && ch !== ch.toLowerCase()
+  const base = upper || /\d/.test(ch) ? em.upper : em.lower
+  const folded = ch.toLocaleUpperCase('tr')
+  if ('IİJ1!'.includes(folded) || 'ijıl'.includes(ch)) return base * 0.42
+  if ('LTF'.includes(folded)) return base * 0.62
+  if ('MWĞÖ'.includes(folded)) return base * 1.28
+  if (upper && 'OQDCGUNA'.includes(folded)) return base * 1.08
+  if (/\d/.test(ch)) return em.upper * 0.88
+  return base
 }
 
 export function faceFamily(face: Face): string {
@@ -85,17 +103,8 @@ export function faceWeight(face: Face): number {
 
 /** Estimated rendered width in the same unit as `size` (mm). */
 export function textWidth(text: string, size: number, face: Face, tracking = 0): number {
-  const em = FACE_EM[face]
   let w = 0
-  for (const ch of text) {
-    if (ch === ' ') w += 0.3
-    else if (/[.,·'’:;|]/.test(ch)) w += 0.28
-    else if (/[iIl1!]/.test(ch)) w += (ch === ch.toUpperCase() ? em.upper : em.lower) * 0.55
-    else if (/[mwMW]/.test(ch)) w += (ch === ch.toUpperCase() ? em.upper : em.lower) * 1.25
-    else if (/\d/.test(ch)) w += em.upper * 0.85
-    else if (ch === ch.toUpperCase() && ch !== ch.toLowerCase()) w += em.upper
-    else w += em.lower
-  }
+  for (const ch of text) w += glyphEm(ch, face)
   const chars = Math.max(0, [...text].length - 1)
   return w * size + chars * tracking
 }
@@ -105,7 +114,8 @@ export function fitSize(text: string, maxWidth: number, max: number, min: number
   if (!text) return max
   const width1 = textWidth(text, 1, face, trackingEm)
   if (width1 <= 0) return max
-  const fit = maxWidth / width1
+  const safety = [...text].length <= 4 ? 1 : 0.97
+  const fit = (maxWidth / width1) * safety
   return Math.max(min, Math.min(max, fit))
 }
 

@@ -4,7 +4,7 @@ import { facePanelId, renderFrontSvg, renderPanelSvg } from '../engine/artwork/r
 import { artworkFromDocument } from '../engine/document'
 import { useEffect, useRef, useState } from 'react'
 import { CopyCanvas, copyFieldFromTarget } from './CopyCanvas'
-import type { CopyField } from '../engine/studio/recomposeCopy'
+import { labelFaceForField, type CopyField } from '../engine/studio/recomposeCopy'
 
 type Preview2DProps = {
   design: DesignSpec
@@ -35,12 +35,11 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
       })()
     : renderFrontSvg(design.dieline, artwork, design.palette)
   const languageCaption = studioLanguageCaption(design)
-  const BACK_FIELDS: CopyField[] = ['ingredients', 'warnings', 'manufacturer', 'address', 'barcode', 'usage']
 
-  function selectField(field: CopyField | null) {
+  function selectField(field: CopyField | null, opts: { syncFace?: boolean } = {}) {
     setActive(field)
     if (!field || !isLabel) return
-    setLabelFace(BACK_FIELDS.includes(field) ? 'back' : 'front')
+    if (opts.syncFace !== false) setLabelFace(labelFaceForField(field))
     setDockOpen(true)
   }
 
@@ -55,11 +54,16 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
       const field = copyFieldFromTarget(event.target)
       if (!field) return
       event.preventDefault()
-      selectField(field)
+      selectField(field, { syncFace: false })
     }
     root.addEventListener('click', onClick)
     return () => root.removeEventListener('click', onClick)
   }, [isLabel, onCopyChange])
+
+  useEffect(() => {
+    setLabelFace('front')
+    setActive(null)
+  }, [design.id])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -133,6 +137,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
           <CopyCanvas
             design={design}
             active={active}
+            face={isLabel ? labelFace : undefined}
             onActive={selectField}
             onChange={onCopyChange}
             onCommit={() => onCopyCommit?.()}

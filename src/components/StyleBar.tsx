@@ -1,18 +1,24 @@
+import type { DesignBrief, DesignSpec, DimensionsMm, StyleType } from '../types'
 import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { STYLE_OPTIONS } from '../engine/styles'
+import { TEMPERAMENT_OPTIONS } from '../engine/studio/temperament'
+import type { Temperament } from '../engine/studio/types'
 
 type StyleBarProps = {
   brief: DesignBrief
   design: DesignSpec | null
   onStyle: (style: StyleType) => void
+  onTemperament?: (temperament: Temperament) => void
   onDims: (dims: DimensionsMm) => void
   onVary?: () => void
   className?: string
   variant?: 'rail'
 }
 
-export function StyleBar({ brief, design, onStyle, onDims, onVary, className, variant }: StyleBarProps) {
-  const active = brief.styleType || design?.brief.styleType || 'luxury'
+export function StyleBar({ brief, design, onStyle, onTemperament, onDims, onVary, className, variant }: StyleBarProps) {
+  const studio = Boolean(design?.studio)
+  const activeStyle = brief.styleType || design?.brief.styleType || 'luxury'
+  const activeTemp = brief.studioTemperament || design?.studio?.direction.temperament || 'dark-luxe'
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
       ? brief.dimensionsMm
@@ -32,15 +38,16 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary, className, va
 
   return (
     <section className={rootClass} aria-label="Ruh hali">
-      <div className="style-chips" role="listbox" aria-label="Ruh hali (kostüm değil)">
+      <p className="style-bar__kicker">Ruh hali</p>
+      <div className="style-chips" role="listbox" aria-label="Ruh hali">
         {STYLE_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
             role="option"
-            aria-selected={active === opt.id}
+            aria-selected={activeStyle === opt.id}
             title={opt.hint}
-            className={`style-chip ${active === opt.id ? 'is-active' : ''}`}
+            className={`style-chip ${activeStyle === opt.id ? 'is-active' : ''}`}
             onClick={() => onStyle(opt.id)}
           >
             <span className="style-chip__swatch" style={{ background: opt.swatch }} />
@@ -48,6 +55,27 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary, className, va
           </button>
         ))}
       </div>
+      {studio && onTemperament ? (
+        <>
+          <p className="style-bar__kicker">Temperament</p>
+          <div className="style-chips" role="listbox" aria-label="Temperament">
+            {TEMPERAMENT_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="option"
+                aria-selected={activeTemp === opt.id}
+                title={opt.hint}
+                className={`style-chip ${activeTemp === opt.id ? 'is-active' : ''}`}
+                onClick={() => onTemperament(opt.id)}
+              >
+                <span className="style-chip__swatch" style={{ background: opt.swatch }} />
+                <span className="style-chip__name">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
       {showDims && (
         <div className="style-bar__dims">
           <span className="style-bar__dims-label">Ölçü</span>

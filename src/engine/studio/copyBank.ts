@@ -372,8 +372,23 @@ export function refineBenefits(brief: Pick<DesignBrief, 'subProduct' | 'productN
   return base
 }
 
+/** True when two pack lines would read as the same painted string. */
+export function samePackLine(a: string, b: string): boolean {
+  const left = a.trim()
+  const right = b.trim()
+  if (!left || !right) return false
+  return left.toLocaleUpperCase('tr') === right.toLocaleUpperCase('tr')
+}
+
+/** Category under the product — empty when the product already is the category (EAU DE PARFUM ×2). */
+export function categoryBesideProduct(product: string, category: string): string {
+  const cat = category.trim()
+  if (!cat) return ''
+  return samePackLine(product, cat) ? '' : cat
+}
+
 /** "ARGAN + COLLAGEN + KERATIN" style chip from the user's ingredient claims. */
-export function claimChip(brief: Pick<DesignBrief, 'ingredientClaims'>, fallback: string): string {
+export function claimChip(brief: Pick<DesignBrief, 'ingredientClaims'>, fallback = ''): string {
   const raw = (brief.ingredientClaims ?? '').trim()
   if (!raw) return fallback
   const parts = raw
@@ -419,6 +434,7 @@ export function backHeaders(locale: CopyLocale): {
   storage: string
   nutrition: string
   producer: string
+  address: string
   notes: { top: string; heart: string; base: string; title: string }
   story: string
 } {
@@ -430,6 +446,7 @@ export function backHeaders(locale: CopyLocale): {
       storage: 'STORAGE',
       nutrition: 'Nutrition Facts (per 100 g)',
       producer: 'PRODUCER',
+      address: 'ADDRESS',
       notes: { top: 'TOP NOTES', heart: 'HEART NOTES', base: 'BASE NOTES', title: 'FRAGRANCE NOTES' },
       story: 'OUR STORY',
     }
@@ -441,6 +458,7 @@ export function backHeaders(locale: CopyLocale): {
     storage: 'SAKLAMA KOŞULLARI',
     nutrition: 'Besin Değerleri (100 g için)',
     producer: 'ÜRETİCİ',
+    address: 'ADRES',
     notes: { top: 'TEPE NOTALAR', heart: 'KALP NOTALAR', base: 'DİP NOTALAR', title: 'KOKU PİRAMİDİ' },
     story: 'HİKÂYEMİZ',
   }

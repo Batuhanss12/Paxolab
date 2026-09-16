@@ -1,6 +1,6 @@
 export * from './types'
 export { composeStudioArtwork } from './composeStudioArtwork'
-export { recomposeCopy, clampCopyPatch, COPY_FIELD_LIMIT, type CopyField, type CopyPatch } from './recomposeCopy'
+export { recomposeCopy, clampCopyPatch, COPY_FIELD_LIMIT, FRONT_COPY_FIELDS, BACK_COPY_FIELDS, labelFaceForField, type CopyField, type CopyPatch } from './recomposeCopy'
 export {
   decideDirection,
   describeDirection,
@@ -55,7 +55,8 @@ export {
   isTypePairing,
 } from './referenceDna'
 export { STUDIO_GALLERY_JOBS } from './studioGalleryJobs'
-export { copyBank, isGenericTagline, volumeLine } from './copyBank'
+export { copyBank, isGenericTagline, volumeLine, samePackLine, categoryBesideProduct } from './copyBank'
+export { TEMPERAMENT_OPTIONS, temperamentTalk } from './temperament'
 export {
   studioExportFontStyle,
   studioFontStyle,

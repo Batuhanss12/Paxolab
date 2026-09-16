@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appReducer, createInitialAppState, type AppState } from './appState'
+import { appReducer, createInitialAppState, designSurface, sameSurface, type AppState } from './appState'
 
 const attachment = {
   id: 'logo-1',
@@ -54,5 +54,13 @@ describe('appReducer', () => {
     expect(backToBox.design?.id).toBe('box-1')
     expect(backToBox.surfaceView).toBe('box')
     expect(backToBox.showTemplates).toBe(false)
+  })
+
+  it('maps packaging designs to the box surface so StyleBar can regenerate', () => {
+    expect(designSurface({ kind: 'packaging' })).toBe('box')
+    expect(designSurface({ kind: 'label' })).toBe('label')
+    expect(sameSurface({ kind: 'packaging' }, { packagingMode: 'box' })).toBe(true)
+    expect(sameSurface({ kind: 'packaging' }, { packagingMode: 'label' })).toBe(false)
+    expect(sameSurface({ kind: 'label' }, { packagingMode: 'label' })).toBe(true)
   })
 })

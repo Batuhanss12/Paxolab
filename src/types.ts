@@ -122,6 +122,11 @@ export type DesignBrief = {
    * StyleBar still uses override variationIndex; this persists the chat step.
    */
   directionVariation?: number
+  /**
+   * Studio StyleBar temperament pin. Catalog omits.
+   * Survives vary inside the locked family; kit STYLE_OPTIONS do not read this.
+   */
+  studioTemperament?: import('./engine/studio/types').Temperament
   /** Per-field source + confidence. Catalog omits this; mergeBrief keeps the strongest source. */
   provenance?: Partial<Record<string, FieldProvenance>>
 }

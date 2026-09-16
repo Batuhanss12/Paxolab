@@ -25,7 +25,6 @@ import {
   productBadge,
   productBadgeHeight,
   productStack,
-  qualityBadge,
   spacedLine,
   stackedLockup,
   stackedWords,
@@ -38,7 +37,7 @@ import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, claimLine, liveClaim, nutritionRows, usageCopy } from './copyBank'
 import { fitLabelBarcode } from '../barcode'
-import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, type LayoutCtx } from './layoutContext'
+import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
 import { Ledger, fitSize, textEl, textWidth, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
 
@@ -113,13 +112,14 @@ function marbleFrame(ctx: LayoutCtx): string {
   const bx = m * 1.6
   const bw = w - bx * 2
   const by = h * 0.1
-  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 10) }))
+  const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, liveClaim(copy, d.chips[1] ?? d.taglineLine), withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 10), subEdit: 'cta' }))
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
   // tiny "HIGH-QUALITY COFFEE" style category under the bracket
   const catSize = 1.5
-  parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, d.categoryLine, catSize, ink, bw))
+  const marbleCat = categoryCaption(ctx)
+  if (marbleCat) parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, marbleCat, catSize, ink, bw))
   // product at the foot: script prefix + heavy product
   const volSize = d.volumeLine ? Math.max(2, Math.min(2.8, w * 0.032, h * 0.07)) : 0
   const stackMax = Math.min(8.5, w * 0.11, landscape || h < 55 ? Math.max(2.8, h * 0.18) : 8.5)
@@ -175,8 +175,11 @@ function diagonalSplit(ctx: LayoutCtx): string {
   parts.push(c.markup)
   y += c.h + subSize * 1.3
   const catSize = Math.max(1.9, tSize * 0.42)
-  parts.push(textEl({ x: m, y, text: d.categoryLine, size: catSize, face: 'sans-heavy', fill: accent, tracking: catSize * 0.12 }))
-  ledger.text('category', m, y, textWidth(d.categoryLine, catSize, 'sans-heavy', catSize * 0.12), catSize)
+  const splitCat = categoryCaption(ctx)
+  if (splitCat) {
+    parts.push(textEl({ x: m, y, text: splitCat, size: catSize, face: 'sans-heavy', fill: accent, tracking: catSize * 0.12 }))
+    ledger.text('category', m, y, textWidth(splitCat, catSize, 'sans-heavy', catSize * 0.12), catSize)
+  }
   // bottom-left: pictos only — address / usage / warnings live on the back
   const picS = Math.max(3.6, Math.min(5.2, h * 0.065))
   const picY = h - m - picS
@@ -197,27 +200,7 @@ function diagonalSplit(ctx: LayoutCtx): string {
   }
   const volSize = Math.max(2, Math.min(2.8, rw * 0.06))
   const volBase = h - m * 0.6
-  if (tiny) {
-    const catBase = Math.min(mono.bottom + 9, volBase - volSize * 2.2)
-    parts.push(spacedLine(ledger, rcx, catBase, d.categoryLine, 1.7, accent, rw))
-    if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
-  } else if (landscape) {
-    const stack = productStack(ledger, d, rcx, mono.bottom + 9, rw, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(6.8, rw * 0.13) }))
-    parts.push(stack.markup)
-    const chipSize = 1.6
-    const chipH = chipSize * 1.75
-    const badgeH = 2.1 * 2.2
-    const roomBelowChip = volBase - volSize * 1.4 - (stack.bottom + 2.2 + chipH)
-    if (roomBelowChip > 2) parts.push(chip(ledger, d, rcx, stack.bottom + 2.2, chipText, { color: ink, size: chipSize, anchor: 'middle', edit: 'cta' }).markup)
-    if (roomBelowChip > badgeH + 3) {
-      const badgeY = stack.bottom + 2.2 + chipH + 3
-      const badge = qualityBadge(ledger, d, rcx, badgeY, d.locale === 'en' ? 'PREMIUM QUALITY' : 'PREMIUM KALİTE', d.locale === 'en' ? 'BEST CHOICE' : 'EN İYİ SEÇİM', accent)
-      parts.push(badge.markup)
-    }
-    if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
-  } else {
-    if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
-  }
+  if (d.volumeLine) parts.push(netQuantity(ledger, rcx, volBase, d.volumeLine, volSize, ink))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
 }
@@ -259,7 +242,8 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   parts.push(`<g data-edit="product">${productBlock}</g>`)
   ledger.text('product', w / 2, titleY, wa + wb, size, 'middle')
   const subSize = Math.max(1.6, size * 0.36)
-  parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, d.categoryLine, subSize, ink, w - m * 2))
+  const sceneCat = categoryCaption(ctx)
+  if (sceneCat) parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, sceneCat, subSize, ink, w - m * 2))
   // scene
   parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { uid: ctx.uid, span: 0.46 }))
   // volume
@@ -292,7 +276,8 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
     brandMax: Math.min(11, w * 0.16),
   }))
   parts.push(lock.markup)
-  parts.push(spacedLine(ledger, w / 2, lock.bottom + 2.6, d.categoryLine, Math.max(1.5, Math.min(2.2, w * 0.03)), ink, w - m * 2))
+  const waveCat = categoryCaption(ctx)
+  if (waveCat) parts.push(spacedLine(ledger, w / 2, lock.bottom + 2.6, waveCat, Math.max(1.5, Math.min(2.2, w * 0.03)), ink, w - m * 2))
   const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.08, w - m * 2, copy.product, withIdent(ctx, {
     color: ink,
     accent,
@@ -421,12 +406,12 @@ function inkPanel(ctx: LayoutCtx): string {
   const tagTop = stack.bottom + h * 0.05
   const tag = stackedWords(ledger, w / 2, tagTop, tagWords, 1.7, ink, w * 0.55)
   parts.push(`<g data-edit="tagline">${tag.markup}</g>`)
-  // foot: tagline / volume on the right-bottom (ink wash occupies bottom-left)
   const footY = h - m * 1.1
   const onInk = footY > h * 0.6
   const footColor = onInk ? d.palette.card : ink
+  const chipText = claimLine(copy, d.chips)
+  if (chipText) parts.push(spacedLine(ledger, w - m, footY - 4, chipText, 1.3, footColor, w * 0.6, 'end', 'sans', 'cta'))
   if (d.volumeLine) parts.push(netQuantity(ledger, w - m, footY, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.03)), footColor, 'end'))
-  parts.push(spacedLine(ledger, w - m, footY - 4, copy.tagline || d.chips[0] || '', 1.3, footColor, w * 0.6, 'end', 'sans', 'tagline'))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
 }
@@ -477,7 +462,8 @@ export function paintLabelBack(ctx: LayoutCtx): string {
     { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
     { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
-    { title: hdr.producer, body: producerLine(ctx), edit: 'manufacturer' },
+    { title: hdr.producer, body: copy.manufacturer, edit: 'manufacturer' },
+    { title: hdr.address, body: copy.address, edit: 'address' },
   ]
   const legalSize = Math.max(1.25, Math.min(1.6, w * 0.017))
   const titleColor = d.palette.accent === ink ? ink : vivid ? ink : d.palette.accent

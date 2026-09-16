@@ -239,24 +239,25 @@ export function diagonal(w: number, h: number, pal: StudioPalette, seed: number,
   const id = `${opts.uid}-dg`
   const warm = pal.accent
   const warm2 = pal.accent2
-  const defs = `<defs>
-    <linearGradient id="${id}-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(warm, 0.08)}" /><stop offset="0.55" stop-color="${warm}" /><stop offset="1" stop-color="${darken(warm2, 0.12)}" /></linearGradient>
-    <linearGradient id="${id}-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(pal.ground, 0.14)}" /><stop offset="1" stop-color="${pal.ground}" /></linearGradient>
-  </defs>`
-  const parts: string[] = [defs, ground(w, h, pal.ground)]
   const clear = opts.clearRight ?? 0
   const maxRight = clear > 0 ? w * (1 - clear) : w
+  const clip = clear > 0 ? `\n    <clipPath id="${id}-clear"><rect x="0" y="0" width="${f(maxRight)}" height="${f(h)}" /></clipPath>` : ''
+  const defs = `<defs>
+    <linearGradient id="${id}-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(warm, 0.08)}" /><stop offset="0.55" stop-color="${warm}" /><stop offset="1" stop-color="${darken(warm2, 0.12)}" /></linearGradient>
+    <linearGradient id="${id}-b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lighten(pal.ground, 0.14)}" /><stop offset="1" stop-color="${pal.ground}" /></linearGradient>${clip}
+  </defs>`
+  const parts: string[] = [defs, ground(w, h, pal.ground)]
   // main metallic block: parallelogram sweeping from top-centre to bottom-right
   const shift = Math.min(w * (0.32 + rng() * 0.1), Math.max(w * 0.12, maxRight * 0.45))
   const x0 = Math.min(w * (0.36 + rng() * 0.08), Math.max(w * 0.12, maxRight - w * 0.34))
   const bw = Math.min(w * (0.16 + k * 0.1), Math.max(w * 0.1, maxRight - x0 - w * 0.06))
-  parts.push(`<polygon points="${f(x0)},0 ${f(x0 + bw)},0 ${f(x0 + bw + shift)},${f(h)} ${f(x0 + shift)},${f(h)}" fill="url(#${id}-a)" />`)
-  // secondary lighter charcoal block
+  const stripe: string[] = []
+  stripe.push(`<polygon points="${f(x0)},0 ${f(x0 + bw)},0 ${f(x0 + bw + shift)},${f(h)} ${f(x0 + shift)},${f(h)}" fill="url(#${id}-a)" />`)
   const x1 = x0 - w * 0.22
-  parts.push(`<polygon points="${f(x1)},0 ${f(x1 + bw * 0.55)},0 ${f(x1 + bw * 0.55 + shift)},${f(h)} ${f(x1 + shift)},${f(h)}" fill="url(#${id}-b)" opacity="0.9" />`)
-  // thin metallic hairline
+  stripe.push(`<polygon points="${f(x1)},0 ${f(x1 + bw * 0.55)},0 ${f(x1 + bw * 0.55 + shift)},${f(h)} ${f(x1 + shift)},${f(h)}" fill="url(#${id}-b)" opacity="0.9" />`)
   const x2 = x0 + bw + w * 0.05
-  parts.push(`<polygon points="${f(x2)},0 ${f(x2 + 0.6)},0 ${f(x2 + 0.6 + shift)},${f(h)} ${f(x2 + shift)},${f(h)}" fill="${warm}" opacity="0.7" />`)
+  stripe.push(`<polygon points="${f(x2)},0 ${f(x2 + 0.6)},0 ${f(x2 + 0.6 + shift)},${f(h)} ${f(x2 + shift)},${f(h)}" fill="${warm}" opacity="0.7" />`)
+  parts.push(clear > 0 ? `<g clip-path="url(#${id}-clear)">${stripe.join('')}</g>` : stripe.join(''))
   return `<g data-bg="diagonal">${parts.join('')}</g>`
 }
 

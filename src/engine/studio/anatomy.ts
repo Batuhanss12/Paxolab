@@ -8,6 +8,7 @@ import { iconEmark, iconFlammable, iconGlassFork, iconKeepDry, iconPao, iconRecy
 import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
+import { categoryBesideProduct } from './copyBank'
 import { Ledger, fitSize, pairingFaces, textEl, textWidth, wrapByWidth, type Face } from './text'
 import {
   clampStudioScale,
@@ -155,6 +156,7 @@ export function stackedLockup(
     logoHref?: string
     logoScale?: number
     titleScale?: number
+    subEdit?: string
   } = {},
 ): LockupResult {
   const faces = pairingFaces(d.typePairing)
@@ -165,33 +167,41 @@ export function stackedLockup(
   const brandMax = (opts.brandMax ?? Math.min(maxW * 0.16, 11)) * titleScale
   const size = fitSize(brandUpper, maxW, brandMax, (opts.brandMin ?? 2.4) * titleScale, faces.brand, tracking)
   let y = top
-  let out = ''
+  let brandOut = ''
   const href = opts.logoHref?.trim()
   if (opts.mark || href) {
     const r = Math.max(2.2, size * 0.75)
     const paintLogo = Boolean(href && r >= STUDIO_MIN_LOGO_R)
     if (opts.mark || paintLogo) {
       const painted = paintLogo ? r * clampStudioScale(opts.logoScale) : r
-      out += paintMark(opts.markKind ?? markKindFor(d), cx, y + painted, r, opts.markColor ?? d.palette.accent, brand, opts)
+      brandOut += paintMark(opts.markKind ?? markKindFor(d), cx, y + painted, r, opts.markColor ?? d.palette.accent, brand, opts)
       ledger.add('element', paintLogo ? 'brand-logo' : 'brand-mark', cx - painted * 1.3, y, painted * 2.6, painted * 2)
       y += painted * 2 + size * 0.55
     }
   }
   const baseline = y + size * 0.82
-  out += textEl({ x: cx, y: baseline, text: brandUpper, size, face: faces.brand, fill: color, anchor: 'middle', tracking: size * tracking })
+  brandOut += textEl({ x: cx, y: baseline, text: brandUpper, size, face: faces.brand, fill: color, anchor: 'middle', tracking: size * tracking })
   ledger.text('brand', cx, baseline, textWidth(brandUpper, size, faces.brand, size * tracking), size, 'middle')
   y = baseline + size * 0.32
+  let subOut = ''
   if (sub) {
     const subSize = Math.max(1.5, Math.min(size * 0.3, 2.6))
     const subUpper = sub.toLocaleUpperCase('tr')
     const subBase = y + subSize
     const subTrack = subSize * 0.32
     const subW = textWidth(subUpper, subSize, faces.meta, subTrack)
-    out += textEl({ x: cx, y: subBase, text: subUpper, size: subSize, face: faces.meta, fill: opts.markColor ?? d.palette.accent, anchor: 'middle', tracking: subTrack })
+    subOut = textEl({ x: cx, y: subBase, text: subUpper, size: subSize, face: faces.meta, fill: opts.markColor ?? d.palette.accent, anchor: 'middle', tracking: subTrack })
     ledger.text('brand-sub', cx, subBase, subW, subSize, 'middle')
     y = subBase + subSize * 0.4
   }
-  return { markup: `<g data-art="lockup" data-lockup="stacked" data-edit="brand">${out}</g>`, bottom: y, top }
+  if (opts.subEdit && subOut) {
+    return {
+      markup: `<g data-art="lockup" data-lockup="stacked"><g data-edit="brand">${brandOut}</g><g data-edit="${opts.subEdit}">${subOut}</g></g>`,
+      bottom: y,
+      top,
+    }
+  }
+  return { markup: `<g data-art="lockup" data-lockup="stacked" data-edit="brand">${brandOut}${subOut}</g>`, bottom: y, top }
 }
 
 /** White rounded pill with the brand — woo.originals top-right. Returns the pill box. */
@@ -322,11 +332,12 @@ export function productStack(
     ledger.text('product', x, base, textWidth(line, size, faces.product, track), size, anchor)
     y = base + size * 0.22
   }
-  if (opts.category) {
+  const catLine = categoryBesideProduct(product, opts.category ?? '')
+  if (catLine) {
     const cSize = Math.max(1.6, Math.min(size * 0.34, 3))
     const cTrack = cSize * 0.36
     const base = y + cSize * 1.45
-    const cat = opts.category.toLocaleUpperCase('tr')
+    const cat = catLine.toLocaleUpperCase('tr')
     out += textEl({ x, y: base, text: cat, size: cSize, face: faces.meta, fill: accent, anchor, tracking: cTrack })
     ledger.text('category', x, base, textWidth(cat, cSize, faces.meta, cTrack), cSize, anchor)
     y = base + cSize * 0.4
@@ -393,7 +404,7 @@ export function claimBand(ledger: Ledger, d: DesignDirection, x: number, y: numb
 export function chip(ledger: Ledger, d: DesignDirection, x: number, y: number, text: string, opts: { color?: string; fill?: string; size?: number; anchor?: 'start' | 'middle'; edit?: string } = {}): { markup: string; w: number; h: number } {
   const size = opts.size ?? 1.9
   const color = opts.color ?? d.palette.ink
-  const fill = opts.fill ?? 'none'
+  const fill = opts.fill ?? (opts.edit ? 'transparent' : 'none')
   const track = size * 0.14
   const textW = textWidth(text, size, 'sans-heavy', track)
   const padX = size * 0.9
@@ -728,10 +739,11 @@ function badgeMetrics(d: DesignDirection, w: number, product: string, sub: strin
   const title = product.toLocaleUpperCase('tr')
   const lines = textWidth(title, 5 * scale, faces.brand) > inner ? splitTitle(title) : [title]
   const size = Math.min(...lines.map((l) => fitSize(l, inner, Math.min(5.4, w * 0.14) * scale, 2.4 * scale, faces.brand, 0.06)))
+  const caption = categoryBesideProduct(product, sub)
   const subSize = Math.max(1.35, Math.min(size * 0.36, 2))
   const volSize = Math.max(1.8, size * 0.55)
-  const h = pad * 1.4 + lines.length * size * 1.15 + (sub ? subSize * 2.2 : 0) + (volume ? volSize * 1.8 : 0) + pad
-  return { pad, faces, lines, size, subSize, volSize, h }
+  const h = pad * 1.4 + lines.length * size * 1.15 + (caption ? subSize * 2.2 : 0) + (volume ? volSize * 1.8 : 0) + pad
+  return { pad, faces, lines, size, subSize, volSize, h, caption }
 }
 
 /** Height a product badge of width `w` will take — lets layouts reserve room before painting. */
@@ -741,7 +753,7 @@ export function productBadgeHeight(d: DesignDirection, w: number, product: strin
 
 /** Dark rounded product badge with gold border (Anadolu Bal). */
 export function productBadge(ledger: Ledger, d: DesignDirection, cx: number, y: number, w: number, product: string, sub: string, volume: string, titleScale = 1): { markup: string; bottom: number } {
-  const { pad, faces, lines, size, subSize, volSize, h } = badgeMetrics(d, w, product, sub, volume, titleScale)
+  const { pad, faces, lines, size, subSize, volSize, h, caption } = badgeMetrics(d, w, product, sub, volume, titleScale)
   const x = cx - w / 2
   const ink = d.palette.accent2
   let out = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(Math.min(2.6, w * 0.06))}" fill="${ink}" stroke="${d.palette.accent}" stroke-width="0.34" />`
@@ -753,10 +765,10 @@ export function productBadge(ledger: Ledger, d: DesignDirection, cx: number, y: 
     ledger.text('product', cx, base, textWidth(line, size, faces.brand, size * 0.06), size, 'middle')
     cy = base + size * 0.25
   }
-  if (sub) {
+  if (caption) {
     const base = cy + subSize * 1.5
-    out += textEl({ x: cx, y: base, text: sub.toLocaleUpperCase('tr'), size: subSize, face: 'sans', fill: d.palette.accent, anchor: 'middle', tracking: subSize * 0.3 })
-    ledger.text('badge-sub', cx, base, textWidth(sub.toLocaleUpperCase('tr'), subSize, 'sans', subSize * 0.3), subSize, 'middle')
+    out += textEl({ x: cx, y: base, text: caption.toLocaleUpperCase('tr'), size: subSize, face: 'sans', fill: d.palette.accent, anchor: 'middle', tracking: subSize * 0.3 })
+    ledger.text('badge-sub', cx, base, textWidth(caption.toLocaleUpperCase('tr'), subSize, 'sans', subSize * 0.3), subSize, 'middle')
     cy = base + subSize * 0.5
   }
   if (volume) {

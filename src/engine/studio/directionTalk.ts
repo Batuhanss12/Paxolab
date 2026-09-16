@@ -13,14 +13,8 @@ import {
   type DirectionClaim,
   type DirectionDecision,
 } from './direction'
-import {
-  applyVetoToHints,
-  familiesFromUtterance,
-  familyOf,
-  familyTalk,
-  hintsFromFamily,
-  hintsFromVeto,
-} from './family'
+import { applyVetoToHints, familiesFromUtterance, familyOf, familyTalk, hintsFromFamily, hintsFromVeto } from './family'
+import { isTemperament } from './referenceDna'
 import type { DirectionHints, StudioDirectionOffer, StudioFamily, StudioSurface, Temperament } from './types'
 
 export type DirectionTalkKind = 'why' | 'veto' | 'vary' | 'pin'
@@ -135,7 +129,17 @@ export function assembleStudioHints(
   const veto = hintsFromVeto(vetoed)
   const family =
     brief.studioFamily && !vetoed.includes(brief.studioFamily) ? hintsFromFamily(brief.studioFamily, surface) : null
-  return [hintsFromBrief(brief, sector, surface), ...(veto ? [veto] : []), ...extras, ...(family ? [family] : [])]
+  const temperament =
+    brief.studioTemperament && isTemperament(brief.studioTemperament)
+      ? ({ temperament: brief.studioTemperament, source: 'user' as const, rationale: ['StyleBar temperament.'] } satisfies DirectionHints)
+      : null
+  return [
+    hintsFromBrief(brief, sector, surface),
+    ...(veto ? [veto] : []),
+    ...extras,
+    ...(family ? [family] : []),
+    ...(temperament ? [temperament] : []),
+  ]
 }
 
 export function inspectStudioDirection(brief: DesignBrief, extras: DirectionHints[] = []): DirectionDecision {
@@ -210,12 +214,21 @@ export function applyDirectionTalk(brief: DesignBrief, talk: DirectionTalk, text
   if (talk.kind === 'vary') {
     next = { ...next, directionVariation: (next.directionVariation ?? 0) + 1 }
   }
+  if (talk.quieter) {
+    next = { ...next, studioTemperament: 'light-luxe' }
+  }
 
   const intent = parseIntent(text, next.styleType)
   if (intent.briefPatch.studioFamily && talk.kind === 'vary') {
     delete intent.briefPatch.studioFamily
   }
-  next = { ...next, ...intent.briefPatch, avoidStudioFamilies: next.avoidStudioFamilies, directionVariation: next.directionVariation }
+  next = {
+    ...next,
+    ...intent.briefPatch,
+    avoidStudioFamilies: next.avoidStudioFamilies,
+    directionVariation: next.directionVariation,
+    studioTemperament: next.studioTemperament,
+  }
   if (talk.kind === 'veto' && next.studioFamily && (next.avoidStudioFamilies ?? []).includes(next.studioFamily)) {
     next = { ...next, studioFamily: undefined }
   }

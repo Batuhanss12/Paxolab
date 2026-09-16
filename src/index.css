@@ -417,6 +417,11 @@ h2 {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
 }
 
+.topbar-popover--style {
+  max-height: min(70vh, 560px);
+  overflow: auto;
+}
+
 .topbar-popover--style .style-bar {
   padding: 0;
   border: 0;
@@ -660,6 +665,14 @@ h2 {
   background: transparent;
 }
 
+.style-bar__kicker {
+  margin: 2px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
 .style-chips {
   display: flex;
   flex-wrap: wrap;
@@ -762,6 +775,171 @@ h2 {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+.preview-stack {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.preview-stack > .preview-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+  padding: 14px 18px 8px;
+}
+
+.preview-stack > .direction-offer {
+  flex: 0 0 auto;
+}
+
+.preview-stack .preview-stage__meta {
+  margin-bottom: 10px;
+}
+
+.preview-stack .preview-stage__work,
+.preview-stack .preview-stage__canvas {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.preview-stack .preview-stage__canvas--wide {
+  width: 100%;
+  padding: 0 4px 4px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.preview-stack .art-svg,
+.preview-stack .art-svg--label {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.preview-stack .art-svg svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.preview-stack .dieline-svg {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-stack .dieline-svg svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview-stack .copy-canvas {
+  flex-basis: 200px;
+  width: 200px;
+  max-width: 200px;
+}
+
+.direction-offer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--line);
+  background: #080808;
+  overflow-x: auto;
+}
+
+.direction-offer__label {
+  flex-shrink: 0;
+  margin: 0 4px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.direction-offer__card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: #c8c8c8;
+  border-radius: 8px;
+  padding: 3px 8px 3px 4px;
+  text-align: left;
+}
+
+.direction-offer__card:hover:not(:disabled) {
+  background: #111;
+  border-color: #333;
+}
+
+.direction-offer__card.is-selected {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.direction-offer__face {
+  display: grid;
+  grid-template-rows: 1fr 5px 4px;
+  width: 14px;
+  height: 20px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #0003;
+}
+
+.direction-offer__face span {
+  display: block;
+}
+
+.direction-offer__meta {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.direction-offer__index {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+}
+
+.direction-offer__card.is-selected .direction-offer__index {
+  color: #666;
+}
+
+.direction-offer__name {
+  font-size: 11px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.direction-offer__temp {
+  display: none;
 }
 
 /* ——— Chat ——— */
@@ -985,6 +1163,7 @@ h2 {
 
 .preview-stage--edit .art-svg--live [data-edit] {
   cursor: text;
+  pointer-events: all;
 }
 
 .preview-stage--edit .art-svg--live [data-edit]:hover {
@@ -993,6 +1172,36 @@ h2 {
 }
 
 .preview-stage--edit .art-svg--live [data-edit].is-editing {
+  outline: 1px solid rgba(201, 168, 108, 0.72);
+  outline-offset: 2px;
+}
+
+.preview-stage--edit .preview-stage__canvas--wide {
+  padding: 0 4px 4px;
+}
+
+.preview-stage--edit .dieline-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.preview-stage--edit .dieline-svg--live [data-layer],
+.preview-stage--edit .dieline-svg--live [data-type],
+.preview-stage--edit .dieline-svg--live [data-proof] {
+  pointer-events: none;
+}
+
+.preview-stage--edit .dieline-svg--live [data-edit] {
+  cursor: text;
+  pointer-events: all;
+}
+
+.preview-stage--edit .dieline-svg--live [data-edit]:hover {
+  outline: 1px dashed rgba(201, 168, 108, 0.38);
+  outline-offset: 2px;
+}
+
+.preview-stage--edit .dieline-svg--live [data-edit].is-editing {
   outline: 1px solid rgba(201, 168, 108, 0.72);
   outline-offset: 2px;
 }
@@ -1056,6 +1265,10 @@ h2 {
   text-transform: uppercase;
   padding: 4px 8px;
   border-radius: 999px;
+}
+
+.copy-canvas__group.is-current h3 {
+  color: var(--danger);
 }
 
 .copy-canvas__group + .copy-canvas__group {

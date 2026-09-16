@@ -7,7 +7,15 @@
 import type { CopyLocale, DesignBrief, Palette, StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
-import { claimChip, copyBankFor, isGenericTagline, refineBenefits, refineCategory, volumeLine } from './copyBank'
+import {
+  claimChip,
+  copyBankFor,
+  isGenericTagline,
+  refineBenefits,
+  refineCategory,
+  samePackLine,
+  volumeLine,
+} from './copyBank'
 import { familyOf } from './family'
 import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
 import type {
@@ -479,6 +487,26 @@ function groundedClaims(
   return claims
 }
 
+function uniqueFamilyRows(ranked: ScoredDna[], n: number): ScoredDna[] {
+  const seen = new Set<StudioFamily>()
+  const out: ScoredDna[] = []
+  for (const row of ranked) {
+    const family = familyFor(row.dna.id as StudioArchetype)
+    if (seen.has(family)) continue
+    seen.add(family)
+    out.push(row)
+    if (out.length >= n) break
+  }
+  return out.length ? out : ranked.slice(0, n)
+}
+
+function rotateToFront<T>(list: readonly T[], first: T | undefined): T[] {
+  const i = first != null ? list.indexOf(first) : -1
+  if (i <= 0) return [...list]
+  return [...list.slice(i), ...list.slice(0, i)]
+}
+
+/** S4: locked family stays. Unlocked vary walks ranked 1–6 so step 3 is not step 0. */
 function rankDirectionPool(input: DirectionInput): RankedPool {
   const hints = mergeHints(input.hints)
   const temperamentGuess = hints.temperament ?? temperamentFor(input.sector, input.style, input.palette, input.brief)
@@ -494,9 +522,65 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
     hints.archetype && !avoided.has(hints.archetype) ? scored.find((c) => c.dna.id === hints.archetype) : undefined
   const eligible = scored.filter((c) => !avoided.has(c.dna.id as StudioArchetype))
   const ranked = eligible.length ? eligible : scored
-  const pool = ranked.slice(0, 3)
-  const pick = pinned ?? pool[input.variationIndex % Math.max(1, pool.length)] ?? ranked[0] ?? scored[0]
+  const pool = uniqueFamilyRows(ranked, 3)
+  const walk = uniqueFamilyRows(ranked, 6)
+  const pick = pinned ?? walk[input.variationIndex % Math.max(1, walk.length)] ?? ranked[0] ?? scored[0]
   return { hints, temperamentGuess, scored, scores, ranked, pool, pick }
+}
+
+function userHoldsTemperament(hints: DirectionHints): boolean {
+  if (!hints.temperament) return false
+  if (hints.source === 'user') return true
+  return (hints.rationale ?? []).some((row) => /StyleBar temperament|daha sakin varyasyon/i.test(row))
+}
+
+/** variationIndex 0 honors pins (goldens). Later steps cycle DNA texture then temperament. */
+function varyFace(
+  dna: ArchetypeDna,
+  hints: DirectionHints,
+  temperamentGuess: Temperament,
+  variationIndex: number,
+): { temperament: Temperament; background: (typeof dna.backgrounds)[number] } {
+  const bgPool = dna.backgrounds.filter((b) => !hints.avoidBackgrounds?.includes(b))
+  const backgrounds = bgPool.length ? bgPool : dna.backgrounds
+  if (variationIndex <= 0) {
+    const temperament: Temperament =
+      userHoldsTemperament(hints) && hints.temperament
+        ? hints.temperament
+        : dna.temperaments.includes(temperamentGuess)
+          ? temperamentGuess
+          : (hints.temperament ?? dna.temperaments[0])
+    const background =
+      hints.background && dna.backgrounds.includes(hints.background) ? hints.background : backgrounds[0] ?? dna.backgrounds[0]
+    return { temperament, background }
+  }
+  const holdTemp = userHoldsTemperament(hints)
+  const orderedTemps = holdTemp && hints.temperament ? [hints.temperament] : rotateToFront(dna.temperaments, temperamentGuess)
+  const bgIndex = variationIndex % Math.max(1, backgrounds.length)
+  const tempIndex = Math.floor(variationIndex / Math.max(1, backgrounds.length)) % Math.max(1, orderedTemps.length)
+  return {
+    background: backgrounds[bgIndex] ?? dna.backgrounds[0],
+    temperament: orderedTemps[tempIndex] ?? dna.temperaments[0],
+  }
+}
+
+function resolveStudioChips(input: {
+  brief: DesignBrief
+  bankChips: string[]
+  category: string
+  copySource: CopySource
+  tagline: string
+}): string[] {
+  const claimed = claimChip(input.brief)
+  const distinct = input.bankChips.filter(
+    (c) => c && !samePackLine(c, input.category) && !samePackLine(c, claimed),
+  )
+  const primary = claimed || distinct[0] || ''
+  const dropDup = (c: string) => c && !samePackLine(c, input.category)
+  if (input.copySource === 'user') {
+    return [primary, input.tagline].filter((c, i, a) => dropDup(c) && a.indexOf(c) === i).slice(0, 2)
+  }
+  return [primary, ...distinct.filter((c) => c !== primary)].filter(dropDup).slice(0, 2)
 }
 
 function materializeDirection(
@@ -507,27 +591,22 @@ function materializeDirection(
   variationIndex: number,
 ): DesignDirection {
   const { brief, sector, surface, locale } = input
-  const temperament: Temperament = dna.temperaments.includes(temperamentGuess)
-    ? temperamentGuess
-    : (hints.temperament ?? dna.temperaments[0])
-  const background =
-    hints.background && dna.backgrounds.includes(hints.background)
-      ? hints.background
-      : dna.backgrounds.filter((b) => !hints.avoidBackgrounds?.includes(b))[
-          Math.floor(variationIndex / 3) % Math.max(1, dna.backgrounds.length)
-        ] ?? dna.backgrounds[0]
+  const { temperament, background } = varyFace(dna, hints, temperamentGuess, variationIndex)
   const palette = studioPalette(input.palette, temperament)
   const bank = copyBankFor(brief, sector, locale)
   const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${variationIndex}`)
   const category = hints.categoryLine || refineCategory(brief, sector, locale) || bank.category
-  const chipsFromBrief = claimChip(brief, bank.chips[0])
   const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
   const selected = resolveStudioCopy({ brief, spokenTag, bankTagline: bank.tagline })
   const chips = hints.chips?.length
     ? hints.chips
-    : selected.copySource === 'user'
-      ? [chipsFromBrief, selected.tagline].filter((c, i, a) => c && a.indexOf(c) === i).slice(0, 2)
-      : [chipsFromBrief, ...bank.chips.filter((c) => c !== chipsFromBrief)].slice(0, 2)
+    : resolveStudioChips({
+        brief,
+        bankChips: bank.chips,
+        category,
+        copySource: selected.copySource,
+        tagline: selected.tagline,
+      })
   const productPrefix =
     hints.productPrefix ??
     (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans'

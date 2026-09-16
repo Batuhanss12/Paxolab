@@ -7,6 +7,8 @@ import type { SurfaceView } from '../appState'
 import { learnedPreferenceLine } from '../engine/brain'
 import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
 import { familyOf, familyTalk } from '../engine/studio/family'
+import type { StudioFamily, Temperament } from '../engine/studio/types'
+import { DirectionOfferStrip } from './DirectionOfferStrip'
 import { Chat } from './Chat'
 import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
@@ -56,6 +58,8 @@ type WorkspaceProps = {
   onCopyChange?: (field: CopyField, value: string) => void
   onCopyCommit?: () => void
   onStyle: (style: StyleType) => void
+  onTemperament?: (temperament: Temperament) => void
+  onDirectionPick?: (family: StudioFamily, index: number) => void
   onVary?: () => void
   tab: TabId
   onTab: (tab: TabId) => void
@@ -80,7 +84,6 @@ function ConversationBrief({
   messages: ChatMessage[]
   design: DesignSpec | null
 }) {
-  const summary = design ? studioProcessSummary(design) : ''
   return (
     <div className="brief-log">
       <p className="eyebrow">Konuşma özeti</p>
@@ -144,6 +147,8 @@ export function Workspace({
   onCopyChange,
   onCopyCommit,
   onStyle,
+  onTemperament,
+  onDirectionPick,
   onVary,
   tab,
   onTab,
@@ -173,6 +178,9 @@ export function Workspace({
   const showPreview = !!design || generating || showTemplates || !!boxDesign
   const showTabs = !!design && !showPicker
   const showStyles = !!design || showTemplates || isCoreReady(brief)
+  const copyOn2D = !!design && design.kind === 'label'
+  const copyOnDieline = !!design && design.kind !== 'label'
+  const hasCopyCanvas = !showPicker && ((tab === 'vektor' && copyOn2D) || (tab === 'dieline' && copyOnDieline))
   const viewingLabel = Boolean(labelPicker || design?.kind === 'label' || surfaceView === 'label')
   const [toolsMenu, setToolsMenu] = useState<ToolsMenu>('none')
   const toolsRef = useRef<HTMLDivElement>(null)
@@ -282,6 +290,7 @@ export function Workspace({
                   brief={brief}
                   design={design}
                   onStyle={onStyle}
+                  onTemperament={onTemperament}
                   onDims={onDims}
                   onVary={onVary}
                   variant="rail"
@@ -327,7 +336,7 @@ export function Workspace({
         </div>
       </header>
 
-      <div className={`workspace__body ${showPreview ? 'has-preview' : ''} ${tab === 'vektor' && design && !showPicker ? 'has-copy-canvas' : ''}`}>
+      <div className={`workspace__body ${showPreview ? 'has-preview' : ''} ${hasCopyCanvas ? 'has-copy-canvas' : ''}`}>
         <aside className="workspace__left">
           <Chat
             messages={messages}
@@ -359,18 +368,42 @@ export function Workspace({
               <ConversationBrief messages={messages} design={design} />
             )}
             {!generating && !showPicker && tab === 'vektor' && design && (
-              <Preview2D
-                design={design}
-                attachments={allAttachments}
-                onDims={onDims}
-                onCopyChange={onCopyChange}
-                onCopyCommit={onCopyCommit}
-              />
+              <div className="preview-stack">
+                <Preview2D
+                  design={design}
+                  attachments={allAttachments}
+                  onDims={onDims}
+                  onCopyChange={copyOn2D ? onCopyChange : undefined}
+                  onCopyCommit={copyOn2D ? onCopyCommit : undefined}
+                />
+                {onDirectionPick && (
+                  <DirectionOfferStrip
+                    offer={design.studio?.offer}
+                    onPick={onDirectionPick}
+                    disabled={generating}
+                  />
+                )}
+              </div>
             )}
             {!generating && !showPicker && tab === 'karsilastir' && design && (
               <ComparePreview current={design} previous={designHistory.filter((d) => d.kind === design.kind).at(-1)} />
             )}
-            {!generating && !showPicker && tab === 'dieline' && design && <DielinePreview design={design} />}
+            {!generating && !showPicker && tab === 'dieline' && design && (
+              <div className="preview-stack">
+                <DielinePreview
+                  design={design}
+                  onCopyChange={copyOnDieline ? onCopyChange : undefined}
+                  onCopyCommit={copyOnDieline ? onCopyCommit : undefined}
+                />
+                {onDirectionPick && (
+                  <DirectionOfferStrip
+                    offer={design.studio?.offer}
+                    onPick={onDirectionPick}
+                    disabled={generating}
+                  />
+                )}
+              </div>
+            )}
             {!generating && !showPicker && tab === 'onizleme3d' && design && (
               <Preview3D
                 design={design}

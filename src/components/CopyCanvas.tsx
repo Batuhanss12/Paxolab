@@ -8,6 +8,7 @@ import { COPY_FIELD_LIMIT, type CopyField } from '../engine/studio/recomposeCopy
 type CopyCanvasProps = {
   design: DesignSpec
   active: CopyField | null
+  face?: 'front' | 'back'
   onActive: (field: CopyField | null) => void
   onChange: (field: CopyField, value: string) => void
   onCommit: () => void
@@ -47,10 +48,11 @@ function canvasValue(design: DesignSpec, id: CopyField): string {
     const sector = design.studio?.direction.sector ?? resolveSector(design.brief)
     return usageCopy(design.copy, sector, resolveCopyLocale(design.brief))
   }
+  if (id === 'product') return design.copy.product
   return design.copy[id] ?? ''
 }
 
-export function CopyCanvas({ design, active, onActive, onChange, onCommit, onClose }: CopyCanvasProps) {
+export function CopyCanvas({ design, active, face, onActive, onChange, onCommit, onClose }: CopyCanvasProps) {
   const root = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -77,53 +79,56 @@ export function CopyCanvas({ design, active, onActive, onChange, onCommit, onClo
           </button>
         ) : null}
       </header>
-      {GROUPS.map((group) => (
-        <section key={group.title} className="copy-canvas__group">
-          <h3>{group.title}</h3>
-          {group.fields.map((field) => {
-            const value = canvasValue(design, field.id)
-            const rows = field.rows ?? 1
-            const selected = active === field.id
-            const limit = COPY_FIELD_LIMIT[field.id]
-            return (
-              <label key={field.id} className={`copy-canvas__field${selected ? ' is-active' : ''}`}>
-                <span>
-                  {field.label}
-                  <em>
-                    {value.length}/{limit}
-                  </em>
-                </span>
-                {rows > 1 ? (
-                  <textarea
-                    name={field.id}
-                    rows={rows}
-                    maxLength={limit}
-                    value={value}
-                    autoComplete="off"
-                    spellCheck={false}
-                    onFocus={() => onActive(field.id)}
-                    onChange={(e) => onChange(field.id, e.target.value)}
-                    onBlur={onCommit}
-                  />
-                ) : (
-                  <input
-                    name={field.id}
-                    type="text"
-                    maxLength={limit}
-                    value={value}
-                    autoComplete="off"
-                    spellCheck={false}
-                    inputMode={field.id === 'barcode' ? 'numeric' : 'text'}
-                    onFocus={() => onActive(field.id)}
-                    onChange={(e) => onChange(field.id, e.target.value)}
-                    onBlur={onCommit}
-                  />
-                )}
-              </label>
-            )
-          })}
-        </section>
-      ))}
+      {GROUPS.map((group) => {
+        const groupFace = group.title === 'Arka yüz' ? 'back' : 'front'
+        return (
+          <section key={group.title} className={`copy-canvas__group${face === groupFace ? ' is-current' : ''}`}>
+            <h3>{group.title}</h3>
+            {group.fields.map((field) => {
+              const value = canvasValue(design, field.id)
+              const rows = field.rows ?? 1
+              const selected = active === field.id
+              const limit = COPY_FIELD_LIMIT[field.id]
+              return (
+                <label key={field.id} className={`copy-canvas__field${selected ? ' is-active' : ''}`}>
+                  <span>
+                    {field.label}
+                    <em>
+                      {value.length}/{limit}
+                    </em>
+                  </span>
+                  {rows > 1 ? (
+                    <textarea
+                      name={field.id}
+                      rows={rows}
+                      maxLength={limit}
+                      value={value}
+                      autoComplete="off"
+                      spellCheck={false}
+                      onFocus={() => onActive(field.id)}
+                      onChange={(e) => onChange(field.id, e.target.value)}
+                      onBlur={onCommit}
+                    />
+                  ) : (
+                    <input
+                      name={field.id}
+                      type="text"
+                      maxLength={limit}
+                      value={value}
+                      autoComplete="off"
+                      spellCheck={false}
+                      inputMode={field.id === 'barcode' ? 'numeric' : 'text'}
+                      onFocus={() => onActive(field.id)}
+                      onChange={(e) => onChange(field.id, e.target.value)}
+                      onBlur={onCommit}
+                    />
+                  )}
+                </label>
+              )
+            })}
+          </section>
+        )
+      })}
     </aside>
   )
 }

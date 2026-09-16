@@ -3,7 +3,7 @@ import type { DesignBrief } from '../../types'
 import { emptyBrief } from '../fields'
 import { FormaLocalEngine } from '../FormaLocalEngine'
 import { resetArtMemory } from '../brain/DesignMemory'
-import { recomposeCopy } from './recomposeCopy'
+import { labelFaceForField, recomposeCopy } from './recomposeCopy'
 
 function perfumeLabel(): DesignBrief {
   return {
@@ -69,5 +69,12 @@ describe('recomposeCopy', () => {
     })
     const next = recomposeCopy(spec, { barcode: '86912' })
     expect(next.copy.barcode).toBe('86912')
+  })
+
+  it('maps canvas fields to the label face the painter actually uses', () => {
+    expect(labelFaceForField('cta')).toBe('front')
+    expect(labelFaceForField('volume')).toBe('front')
+    expect(labelFaceForField('usage')).toBe('back')
+    expect(labelFaceForField('address')).toBe('back')
   })
 })

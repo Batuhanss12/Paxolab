@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { appReducer, createInitialAppState, prevForSurface, surfaceKind, type SurfaceView } from './appState'
+import { appReducer, createInitialAppState, prevForSurface, sameSurface, surfaceKind, type SurfaceView } from './appState'
 import { Landing } from './components/Landing'
 import { MockPayPage } from './components/BillingPanel'
 import { Workspace } from './components/Workspace'
@@ -27,12 +27,23 @@ import {
 } from './projectStore'
 import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
-import { applyVetoToHints } from './engine/studio/family'
+import { applyVetoToHints, familyTalk, hintsFromFamily } from './engine/studio/family'
+import { temperamentTalk } from './engine/studio/temperament'
+import type { StudioFamily, Temperament } from './engine/studio/types'
 import { recommendBottleShape } from './engine/label/bottleShape'
 import { recomposeCopy, type CopyField } from './engine/studio/recomposeCopy'
-import type { Attachment, BottleShape, ChatMessage, DesignBrief, DesignSpec, DimensionsMm, StyleType } from './types'
+import type { Attachment, BottleShape, ChatMessage, DesignBrief, DesignSpec, DimensionsMm, StyleType, TabId } from './types'
 
 const engine = getEngine()
+
+function tabAfterStudioEdit(kind: DesignSpec['kind'], tab: TabId): TabId {
+  if (tab !== 'konusma') return tab
+  return kind === 'label' ? 'vektor' : 'dieline'
+}
+
+function liveOnSurface(design: DesignSpec | null, brief: DesignBrief): design is DesignSpec {
+  return sameSurface(design, brief)
+}
 
 function restoredAppState() {
   return {
@@ -320,9 +331,19 @@ export default function App() {
             ...(llmDirection
               ? {
                   direction: applyVetoToHints(
-                    familyLocked
-                      ? { ...llmDirection, ...result?.overridePatch?.direction, source: result?.overridePatch?.direction?.source ?? 'family' }
-                      : { ...result?.overridePatch?.direction, ...llmDirection, source: 'llm' as const },
+                    (() => {
+                      const userDir = result?.overridePatch?.direction
+                      if (familyLocked) {
+                        return { ...llmDirection, ...userDir, source: userDir?.source ?? 'family' }
+                      }
+                      const pinTemp = userDir?.source === 'user' && userDir.temperament
+                      return {
+                        ...userDir,
+                        ...llmDirection,
+                        ...(pinTemp ? { temperament: userDir.temperament } : {}),
+                        source: pinTemp ? 'user' : 'llm',
+                      }
+                    })(),
                     vetoed,
                   ),
                 }
@@ -384,10 +405,10 @@ export default function App() {
           attachments: files,
           brief: mergedBrief,
           awaiting: awaitingRef.current,
-          hasDesign: designRef.current?.kind === surfaceKind(mergedBrief),
+          hasDesign: liveOnSurface(designRef.current, mergedBrief),
           state: stateRef.current.conversation,
-          studioCritic: designRef.current?.kind === surfaceKind(mergedBrief) ? designRef.current?.studio?.critic : undefined,
-          directionOffer: designRef.current?.kind === surfaceKind(mergedBrief) ? designRef.current?.studio?.offer : undefined,
+          studioCritic: liveOnSurface(designRef.current, mergedBrief) ? designRef.current.studio?.critic : undefined,
+          directionOffer: liveOnSurface(designRef.current, mergedBrief) ? designRef.current.studio?.offer : undefined,
         })
 
         briefRef.current = result.brief
@@ -510,7 +531,7 @@ export default function App() {
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
     if (stateRef.current.showTemplates) return
-    if (!designRef.current || designRef.current.kind !== surfaceKind(next)) return
+    if (!liveOnSurface(designRef.current, next)) return
     window.clearTimeout(dimTimer.current)
     dimTimer.current = window.setTimeout(() => {
       runGenerate(briefRef.current)
@@ -544,7 +565,7 @@ export default function App() {
     awaitingRef.current = awaitingRef.current === 'styleType' ? null : awaitingRef.current
     dispatch({ type: 'awaiting', awaiting: awaitingRef.current })
     if (stateRef.current.showTemplates) return
-    if (!designRef.current || designRef.current.kind !== surfaceKind(next)) return
+    if (!liveOnSurface(designRef.current, next)) return
     dispatch({
       type: 'messages.add',
       messages: [{ id: uid(), role: 'assistant', content: `${styleLabel(style)} hale çekiyorum — palet ve tipografi sıfırdan.` }],
@@ -552,9 +573,58 @@ export default function App() {
     runGenerate(next)
   }, [runGenerate])
 
+  const onTemperament = useCallback((temperament: Temperament) => {
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    const next = { ...briefRef.current, studioTemperament: temperament, directionVariation: 0 }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
+    dispatch({
+      type: 'messages.add',
+      messages: [{ id: uid(), role: 'assistant', content: `${temperamentTalk(temperament)} temperament — aynı aile, yeni palet.` }],
+    })
+    const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
+    if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
+    runGenerate(next, {
+      overridePatch: { variationIndex: 0, direction: { temperament, source: 'user' } },
+    })
+  }, [runGenerate])
+
+  const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    const hit = current.studio?.offer?.candidates.find((row) => row.index === index)
+    if (!hit || hit.selected) return
+    const next = {
+      ...briefRef.current,
+      studioFamily: family,
+      studioTemperament: undefined,
+      directionVariation: 0,
+    }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
+    dispatch({
+      type: 'messages.add',
+      messages: [{ id: uid(), role: 'assistant', content: `${index}. yön: ${familyTalk(family)}.` }],
+    })
+    const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
+    if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
+    const surface = next.packagingMode === 'label' ? 'label' : 'box'
+    runGenerate(next, {
+      overridePatch: {
+        variationIndex: 0,
+        direction: { ...hintsFromFamily(family, surface), source: 'user' },
+      },
+    })
+  }, [runGenerate])
+
   const onVary = useCallback(() => {
-    if (!designRef.current || designRef.current.kind !== surfaceKind(briefRef.current)) return
-    const nextIndex = (designRef.current.designPlan?.variationIndex ?? 0) + 1
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    const nextIndex = (current.designPlan?.variationIndex ?? 0) + 1
+    const next = { ...briefRef.current, directionVariation: nextIndex }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
     dispatch({
       type: 'messages.add',
       messages: [
@@ -565,8 +635,9 @@ export default function App() {
         },
       ],
     })
-    dispatch({ type: 'tab', tab: 'vektor' })
-    runGenerate(briefRef.current, { overridePatch: { variationIndex: nextIndex } })
+    const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
+    if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
+    runGenerate(next, { overridePatch: { variationIndex: nextIndex } })
   }, [runGenerate])
 
   const onUndo = useCallback(() => {
@@ -666,6 +737,8 @@ export default function App() {
           onCopyChange={onCopyChange}
           onCopyCommit={onCopyCommit}
           onStyle={onStyle}
+          onTemperament={onTemperament}
+          onDirectionPick={onDirectionPick}
           onVary={onVary}
           tab={tab}
           onTab={(nextTab) => dispatch({ type: 'tab', tab: nextTab })}

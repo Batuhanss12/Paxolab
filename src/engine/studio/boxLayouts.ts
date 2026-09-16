@@ -38,7 +38,7 @@ import { ground, paintBackground } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
 import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
-import { cityLine, identOf, marginFor, withIdent, type LayoutCtx } from './layoutContext'
+import { cityLine, identOf, marginFor, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
 
@@ -130,7 +130,8 @@ function marbleFront(ctx: LayoutCtx): string {
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
-  parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, d.categoryLine, 1.5, ink, bw))
+  const cat = categoryCaption(ctx)
+  if (cat) parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, cat, 1.5, ink, bw))
   const stack = productStack(ledger, d, w / 2, h * 0.7, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
   parts.push(stack.markup)
   if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
@@ -188,10 +189,13 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
   parts.push(`<g data-edit="product">${productBlock}</g>`)
   y += tSize * 0.6
+  const cat = categoryCaption(ctx)
   const catSize = Math.max(1.7, tSize * 0.36)
-  parts.push(textEl({ x: m, y: y + catSize * 1.2, text: d.categoryLine, size: catSize, face: 'sans', fill: accent, tracking: catSize * 0.3 }))
-  ledger.text('category', m, y + catSize * 1.2, textWidth(d.categoryLine, catSize, 'sans', catSize * 0.3), catSize)
-  y += catSize * 2.6
+  if (cat) {
+    parts.push(textEl({ x: m, y: y + catSize * 1.2, text: cat, size: catSize, face: 'sans', fill: accent, tracking: catSize * 0.3 }))
+    ledger.text('category', m, y + catSize * 1.2, textWidth(cat, catSize, 'sans', catSize * 0.3), catSize)
+    y += catSize * 2.6
+  }
   let cx = m
   for (const c of d.chips.slice(0, 2)) {
     const el = chip(ledger, d, cx, y, c, { color: ink, size: Math.max(1.4, Math.min(1.9, w * 0.024)) })
@@ -408,7 +412,7 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
     ledger.text('side-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.14), brandSize, 'middle')
     const spineTop = m + r * 2.6
     const spineBottom = by - brandSize * 1.6
-    parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, `${copy.product} · ${d.categoryLine}`, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineBottom - spineTop))
+    parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, categoryCaption(ctx) ? `${copy.product} · ${categoryCaption(ctx)}` : copy.product, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineBottom - spineTop))
     return parts.join('')
   }
   // narrow spine: one line along the long axis (rotated when the panel is taller than wide)

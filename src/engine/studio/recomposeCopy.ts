@@ -43,6 +43,13 @@ export const COPY_FIELD_LIMIT: Record<CopyField, number> = {
   usage: 240,
 }
 
+export const FRONT_COPY_FIELDS: CopyField[] = ['brand', 'product', 'tagline', 'cta', 'volume']
+export const BACK_COPY_FIELDS: CopyField[] = ['usage', 'ingredients', 'warnings', 'manufacturer', 'address', 'barcode']
+
+export function labelFaceForField(field: CopyField): 'front' | 'back' {
+  return BACK_COPY_FIELDS.includes(field) ? 'back' : 'front'
+}
+
 export function clampCopyPatch(patch: CopyPatch): CopyPatch {
   const out: CopyPatch = {}
   for (const key of Object.keys(patch) as CopyField[]) {

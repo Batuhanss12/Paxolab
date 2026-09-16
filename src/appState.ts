@@ -75,9 +75,22 @@ export function surfaceKind(brief: Pick<DesignBrief, 'packagingMode'> | null | u
   return brief?.packagingMode === 'label' ? 'label' : 'box'
 }
 
+/** DesignSpec.kind is packaging|label; UI/brief surface is box|label. */
+export function designSurface(design: Pick<DesignSpec, 'kind'> | null | undefined): SurfaceView | null {
+  if (!design) return null
+  return design.kind === 'label' ? 'label' : 'box'
+}
+
+export function sameSurface(
+  design: Pick<DesignSpec, 'kind'> | null | undefined,
+  brief: Pick<DesignBrief, 'packagingMode'> | null | undefined,
+): boolean {
+  return designSurface(design) === surfaceKind(brief)
+}
+
 /** Previous revision for this surface only — never feed a carton into a label generate. */
 export function prevForSurface(state: AppState, kind: SurfaceView): DesignSpec | null {
-  if (state.design?.kind === kind) return state.design
+  if (designSurface(state.design) === kind) return state.design
   return kind === 'label' ? state.labelDesign : state.boxDesign
 }
 

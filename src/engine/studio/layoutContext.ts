@@ -1,4 +1,5 @@
 import type { DesignBrief, DesignSpec, Panel } from '../../types'
+import { categoryBesideProduct } from './copyBank'
 import { Ledger } from './text'
 import {
   clampStudioScale,
@@ -86,6 +87,11 @@ export function cityLine(brief: DesignBrief): string {
   const m = addr.match(/\d{5}\s+([A-Za-zÇĞİÖŞÜçğıöşü]+)/)
   const city = m?.[1] ?? 'İstanbul'
   return city.toLocaleUpperCase('tr')
+}
+
+/** Category line under the product; empty when the product already is that line. */
+export function categoryCaption(ctx: LayoutCtx): string {
+  return categoryBesideProduct(ctx.copy.product, ctx.d.categoryLine)
 }
 
 export function seamMark(w: number, h: number, color: string): string {

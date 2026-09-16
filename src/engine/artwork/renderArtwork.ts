@@ -39,7 +39,12 @@ export function facePanelId(dieline: DielineModel, artwork: ArtworkModel, face: 
     return findHeroPanel(dieline.panels)?.id ?? byFace(FACE_ALIASES.front) ?? byId(FACE_IDS.front)
   }
   if (face === 'back') {
-    return findLegalPanel(dieline.panels)?.id ?? findLabelBackPanel(dieline.panels)?.id ?? byFace(FACE_ALIASES.back) ?? byId(FACE_IDS.back)
+    return (
+      findLabelBackPanel(dieline.panels)?.id ??
+      findLegalPanel(dieline.panels)?.id ??
+      byFace(FACE_ALIASES.back) ??
+      byId(FACE_IDS.back)
+    )
   }
   const hit = byId(FACE_IDS[face]) ?? byFace(FACE_ALIASES[face])
   if (hit) return hit
