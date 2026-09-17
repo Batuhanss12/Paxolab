@@ -228,7 +228,7 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   }
   let cx = m
   for (const c of d.chips.slice(0, 2)) {
-    const el = chip(ledger, d, cx, y, c, { color: ink, size: Math.max(1.4, Math.min(1.9, w * 0.024)) })
+    const el = chip(ledger, d, cx, y, c, { color: ink, size: typeSize(Math.min(1.9, w * 0.024)) })
     if (cx + el.w > w - m) break
     parts.push(el.markup)
     cx += el.w + 2
@@ -328,7 +328,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   } else if (d.sector === 'electronics' && footTop - y > 14) {
     let cx = m
     for (const c of d.chips.slice(0, 3)) {
-      const el = chip(ledger, d, cx, y, c, { color: ink, size: Math.max(1.3, Math.min(1.7, w * 0.02)) })
+      const el = chip(ledger, d, cx, y, c, { color: ink, size: typeSize(Math.min(1.7, w * 0.02)) })
       if (cx + el.w > w - m) break
       parts.push(el.markup)
       cx += el.w + 1.8

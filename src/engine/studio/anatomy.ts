@@ -718,7 +718,10 @@ export function qrPlaceholder(ledger: Ledger, x: number, y: number, s: number, c
     }
   }
   ledger.add('element', 'qr', x, y, s, s + (caption ? 2 : 0))
-  const cap = caption ? textEl({ x: x + s / 2, y: y + s + 1.6, text: caption, size: 1.1, face: 'sans', fill: captionColor, anchor: 'middle' }) : ''
+  // The caption sits under the code, so it may not shrink below the print floor to make room —
+  // it has to fit the code's own width at a legible size instead.
+  const capSize = caption ? fitSize(caption, s, typeSize(1.1), STUDIO_TYPE_FLOOR_MM, 'sans') : 0
+  const cap = caption ? textEl({ x: x + s / 2, y: y + s + 1.6, text: caption, size: capSize, face: 'sans', fill: captionColor, anchor: 'middle' }) : ''
   return `<g data-art="qr" data-sample="true">${out}${cap}</g>`
 }
 
