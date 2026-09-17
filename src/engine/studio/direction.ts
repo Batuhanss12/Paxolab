@@ -6,6 +6,7 @@
  */
 import type { CopyLocale, DesignBrief, Palette, StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
+import { parseBriefColors } from '../artwork/briefPalette'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
 import {
   claimChip,
@@ -51,6 +52,22 @@ export function hashSeed(text: string): number {
     h = Math.imul(h, 16777619) >>> 0
   }
   return h >>> 0
+}
+
+/**
+ * The brief named its colours and none of them carry hue (black / white / grey / cream).
+ * `vivid-mono` forces saturation to at least 0.55, so applying it here would invent a colour
+ * the customer never asked for — measured 2026-09-17: "siyah · beyaz" came back turquoise.
+ */
+function briefIsAchromatic(brief: DesignBrief): boolean {
+  const hexes = parseBriefColors(brief.colors)
+  if (!hexes.length) return false
+  // Near-black and near-white read as neutral whatever their nominal saturation: at those
+  // lightnesses the hue is not visible on press.
+  return hexes.every((hex) => {
+    const { s, l } = hsl(hex)
+    return s < 0.2 || l < 0.12 || l > 0.9
+  })
 }
 
 function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, brief: DesignBrief): Temperament {
@@ -146,7 +163,12 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
     case 'tech-dark':
     default: {
       const ground = isDark(base.bg) ? base.bg : '#15181d'
-      const accent = separateAccent(ground, accentH.s > 0.2 ? base.accent : '#6fd3e0')
+      // The brief's accent may be unusable here (a "siyah · beyaz" brief hands us black, which
+      // vanishes on a dark ground). Reach for another colour the brief actually gave — its paper
+      // — before inventing the cyan default.
+      const usable = accentH.s > 0.2 || luminance(base.accent) > 0.5
+      const fallback = luminance(base.paper) > 0.5 ? base.paper : '#6fd3e0'
+      const accent = separateAccent(ground, usable ? base.accent : fallback)
       return {
         ground,
         ink: readableInk(ground, base.fg),
@@ -176,6 +198,7 @@ function scoreArchetype(
   input: DirectionInput,
   temperament: Temperament,
   hints: DirectionHints,
+  achromatic = false,
 ): { score: number; parts: ArchetypeScoreParts } {
   const sectorFit = dna.sectors[input.sector] ?? 0.2
   const styleFit = dna.styles[input.style] ?? 0.3
@@ -188,7 +211,10 @@ function scoreArchetype(
   const veto = avoided ? -1.5 : 0
   const bgMiss = hints.background && !dna.backgrounds.includes(hints.background) ? -0.15 : 0
   const bgAvoid = hints.avoidBackgrounds?.length && dna.backgrounds.every((b) => hints.avoidBackgrounds?.includes(b)) ? -0.6 : 0
-  const backgroundMismatch = bgMiss + bgAvoid
+  // An archetype that can only wear one saturated temperament cannot serve a brief that asked
+  // for black / white / grey — it would invent a hue. Loud faces lose on quiet briefs.
+  const paletteClash = achromatic && dna.temperaments.every((t) => t === 'vivid-mono') ? -0.5 : 0
+  const backgroundMismatch = bgMiss + bgAvoid + paletteClash
   const score = sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18 + productFamily + hintPin + veto + backgroundMismatch
   return {
     score,
@@ -509,11 +535,33 @@ function rotateToFront<T>(list: readonly T[], first: T | undefined): T[] {
 /** S4: locked family stays. Unlocked vary walks ranked 1–6 so step 3 is not step 0. */
 function rankDirectionPool(input: DirectionInput): RankedPool {
   const hints = mergeHints(input.hints)
-  const temperamentGuess = hints.temperament ?? temperamentFor(input.sector, input.style, input.palette, input.brief)
+  // A brief that named only neutral colours cannot wear a vivid-only archetype: that archetype
+  // permits a single saturated temperament, so the face would invent a hue nobody asked for
+  // (measured 2026-09-17: "siyah · beyaz" şampuan came back turquoise). Release the *sector*
+  // pin and let scoring pick a face that can hold black / white / grey. A visual word
+  // ("mermer"), a user pick or a locked family still wins — only the category guess yields.
+  const achromatic = briefIsAchromatic(input.brief)
+  if (hints.pinSource === 'sector' && hints.archetype && achromatic) {
+    const hinted = dnaFor(hints.archetype, input.surface)
+    if (hinted.temperaments.every((t) => t === 'vivid-mono')) {
+      hints.archetype = undefined
+      if (hints.temperament === 'vivid-mono') hints.temperament = undefined
+    }
+  }
+  const guessed = hints.temperament ?? temperamentFor(input.sector, input.style, input.palette, input.brief)
+  // Single choke point for both the sector hint and the default: a brief that named only neutral
+  // colours must not be pushed into `vivid-mono`, which forces saturation ≥ 0.55 and would invent
+  // a hue nobody asked for. Measured 2026-09-17: "siyah · beyaz" came back turquoise, then red.
+  const temperamentGuess: Temperament =
+    guessed === 'vivid-mono' && achromatic
+      ? isDark(input.palette.bg)
+        ? 'tech-dark'
+        : 'clean-clinical'
+      : guessed
   const avoided = new Set(hints.avoidArchetypes ?? [])
   const scored = archetypesFor(input.surface)
     .map((dna) => {
-      const row = scoreArchetype(dna, input, temperamentGuess, hints)
+      const row = scoreArchetype(dna, input, temperamentGuess, hints, achromatic)
       return { dna, score: row.score, parts: row.parts }
     })
     .sort((a, b) => b.score - a.score || a.dna.id.localeCompare(b.dna.id))

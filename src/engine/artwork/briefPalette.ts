@@ -8,19 +8,51 @@ import { paletteFor } from './paletteTable'
 
 const HEX = /#([0-9a-fA-F]{3,8})\b/g
 
+/**
+ * Colour words a brief may actually use. Specific shades come first so "koyu yeşil" does not
+ * only register as plain green.
+ *
+ * Measured 2026-09-17: the old 12-entry table had no pink, purple, orange, blue, yellow or red,
+ * so "pembe · mor" matched nothing, fell through to the sector default and the customer got an
+ * orange box. A colour the brief names must never be silently dropped.
+ */
 const NAMED: Array<[RegExp, string]> = [
-  [/siyah|black/i, '#1a0a0a'],
+  // dark / light qualifiers first
+  [/koyu\s*ye[sş]il|dark\s*green/i, '#1f4733'],
+  [/a[cç][ıi]k\s*ye[sş]il|light\s*green/i, '#7fb069'],
+  [/koyu\s*mavi|dark\s*blue/i, '#123a63'],
+  [/a[cç][ıi]k\s*mavi|light\s*blue|bebek\s*mavi/i, '#8ec5e3'],
+  [/koyu\s*gri|antrasit|charcoal/i, '#2e3235'],
+  // named hues
+  // Neutral, not a warm near-black: #1a0a0a carries 44% saturation, so a "siyah · beyaz" brief
+  // read as chromatic and the vivid temperament derived a red ground from it.
+  [/siyah|black/i, '#141414'],
+  [/beyaz|white/i, '#f7f4ee'],
   [/altın|altin|gold/i, '#c9a227'],
+  [/g[uü]m[uü][sş]|silver/i, '#c5ccd6'],
+  [/bak[ıi]r|copper|bronz|bronze/i, '#a9623a'],
   [/krem|cream|nude/i, '#f5f0e8'],
   [/bej|beige/i, '#d8cbb8'],
-  [/beyaz|white/i, '#f7f4ee'],
-  [/ye[sş]il|green/i, '#2d6a4f'],
-  [/toprak|earth/i, '#6b5344'],
-  [/lacivert|navy/i, '#0e1624'],
-  [/g[uü]m[uü][sş]|silver/i, '#c5ccd6'],
-  [/bordo|burgundy/i, '#6b1d2a'],
   [/kraft|eco/i, '#cbb892'],
   [/zeytin|olive/i, '#3f4a32'],
+  [/haki|khaki/i, '#6b6f4a'],
+  [/ye[sş]il|green/i, '#2d6a4f'],
+  [/nane|mint/i, '#8fd3b6'],
+  [/turkuaz|turquoise|teal/i, '#2f9c9c'],
+  [/lacivert|navy/i, '#0e1624'],
+  [/mavi|blue/i, '#2a5d9f'],
+  [/mor|purple|lila|lavanta|lavender/i, '#6b4f9e'],
+  [/fu[sş]ya|fuchsia|magenta/i, '#b8336a'],
+  [/pembe|pink|gül\s*kurusu|rose/i, '#e59bb0'],
+  [/k[ıi]rm[ıi]z[ıi]|red/i, '#b8331f'],
+  [/bordo|burgundy|vi[sş]ne|cherry/i, '#6b1d2a'],
+  [/turuncu|orange/i, '#de5e21'],
+  [/[sş]eftali|peach|somon|salmon/i, '#f0a98a'],
+  [/sar[ıi]|yellow|hardal|mustard/i, '#e0b31c'],
+  [/kahve(?:rengi)?|brown|[cç]ikolata\s*rengi/i, '#5b3a26'],
+  [/toprak|earth|terracotta|terakota/i, '#6b5344'],
+  [/gri|gray|grey/i, '#8a8f94'],
+  [/pastel/i, '#e8dff0'],
 ]
 
 export function normalizeHex(raw: string): string {

@@ -372,7 +372,32 @@ Yeni `studio/species.ts` katmanı bu soruyu ayırıyor: **kompozisyon arketipte 
 
 Tarayıcıda doğrulandı: zeytinyağı kutusu artık **yuvarlak taçlı zeytinlik**, bal kutusu **buğday başakları** çiziyor — ikisi de eskiden çam üçgeniydi. **+8 test.** Golden'da yalnız 2 yüz (çayır zeminli gıda) değişti, DNA sabit.
 
-**Kalan:** arketip çeşitliliği (yukarıdaki %36), palet sadakati, kör kalite değerlendirmesi.
+**L2-2 uygulandı — palet sadakati (A seçeneği: "brief'in sesini yükselt"):**
+
+Görsel incelemede asıl kusurun arketip değil **renk** olduğu ortaya çıktı: "Sleek Volume, siyah · beyaz, modern" şampuan **turkuaz** bir kutu alıyordu. Kullanıcının ilk fark edeceği şey bu.
+
+Üç katmanlı kök sebep, sırayla kazılarak bulundu:
+
+1. **Brief renkleri stüdyoya hiç ulaşmıyordu.** `paletteFromBrief` yalnızca `blankCanvas` yolunda çağrılıyordu; normal stüdyo yolu sektör/stil tablosuna düşüyordu. Yani isimli renk tablosu zaten hiç danışılmıyormuş.
+2. **Tablo 12 renkti** — pembe, mor, turuncu, mavi, sarı, kırmızı, gri, kahve, turkuaz yoktu. "pembe · mor" hiçbir şeye eşleşmeyip sektör varsayılanına düşüyor ve **turuncu** çıkıyordu.
+3. **"Siyah" nötr değildi.** `#1a0a0a` %44 doygunluk taşıyor; siyah brief "renkli" sayılıyor ve `vivid-mono` ondan hue türetiyordu.
+
+Yapılanlar: stüdyo yolu artık `paletteFromBrief` kullanıyor (**kit yolu `paletteFor` ile bırakıldı — 29 katalog fingerprint'i bu yüzden sağlam**); renk tablosu 30 girdiye çıkarıldı; siyah `#141414` yapıldı; nötr brief `vivid-mono`'ya sokulmuyor (tek boğaz noktasında) ve yalnızca doygun mizaç taşıyan arketipler nötr brief'te **−0.5 ceza** alıyor; nötr brief'te vurgu rengi camgöbeği uydurmak yerine brief'in kendi açık rengine düşüyor.
+
+**Ölçülen sonuç:**
+
+| Brief | Önce | Sonra |
+|---|---|---|
+| siyah · beyaz (şampuan) | turkuaz botanik kart | **siyah zeminli tech yüzü** |
+| pembe · mor (çikolata) | turuncu | **pembe/magenta** |
+| siyah · altın (parfüm) | siyah + gümüş | **siyah + altın** |
+| lacivert · altın | lacivert + turkuaz | **lacivert + altın** |
+| mermer · altın | mermer | mermer *(görsel kelime hâlâ kazanıyor)* |
+| (renk yok) | sektör varsayılanı | *(değişmedi)* |
+
+**Aynı kategori + zıt brief → aynı arketip: %36 → %29.** Şampuan çifti ayrıştı. **+9 test.** Golden: 17 yüz güncellendi, **DNA 18'inde de sabit**.
+
+**Kalan (B seçeneği):** 4/14 çift hâlâ aynı arketipte — ikisi de renkli ve kategoriyle tutarlı olan brief'ler. Bu, 8 arketiplik tavanın kendisi; çözümü arketip *içinde* parametrik varyasyon. Ayrıca kör kalite değerlendirmesi yapılmadı.
 1. **Sektör-motif sadakati** — zeytinyağına çam çizilmemeli. Arketip↔sektör uyumu için motif katmanı (zeytin dalı, bahçe, damla) veya arketip seçiminde sert sektör vetosu.
 2. **Palet sadakati** — brief'teki renk, boyanan yüzde ölçülebilir şekilde baskın olsun (ölçüt: üretilen SVG'deki renk dağılımı brief paletine yakınsıyor mu).
 3. **Özgünlük ölçümü** — 25–30 sentetik brief → arketip dağılımı + yüz hash çeşitliliği. **Tavanın nerede olduğunu bilmiyoruz.** Sonuç, arketip havuzunu mu büyütmek yoksa arketip *içinde* parametrik kompozisyona mı geçmek gerektiğini söyleyecek.
@@ -415,3 +440,4 @@ Yalnızca doğrulaması çalıştırılmış işler buraya yazılır.
 | 2026-09-17 | L1-2 | Gerçek font metrikleri + 1.5 mm punto tabanı tek geçişte; 1.5 altı metin %15.6 → 0; 16/18 stüdyo golden bilinçli güncellendi (DNA sabit) | `tsc` 0 · **561/561 SPA · 71/71 server** · 0 lint hatası · build ✓ |
 | 2026-09-17 | L2-ölçüm | 28 brief ile özgünlük ölçüldü: 28/28 benzersiz yüz ama **%36 çift aynı arketipe** düşüyor; tavan 8 kutu arketipi | `scripts/measure-originality.ts` |
 | 2026-09-17 | L2-1 | `species.ts`: kompozisyon arketipte, **ne çizildiği üründen**. Zeytinyağı artık zeytinlik, bal buğday çiziyor (ikisi de çamdı) | **569/569 SPA** · 0 lint hatası · 2 golden bilinçli güncel · tarayıcıda doğrulandı |
+| 2026-09-17 | L2-2 | Palet sadakati: brief renkleri stüdyoya hiç ulaşmıyormuş. 3 katmanlı kök sebep kazıldı; "siyah·beyaz" turkuaz yerine siyah, "pembe·mor" turuncu yerine pembe. Çökme %36→%29 | **578/578 SPA · 71/71 server** · 0 lint hatası · 17 golden bilinçli güncel (DNA sabit) · 29 kit hash'i sağlam |

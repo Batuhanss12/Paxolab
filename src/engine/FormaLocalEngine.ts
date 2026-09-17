@@ -175,6 +175,12 @@ export class FormaLocalEngine implements EnginePort {
       if (studioOn) {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
         const surface = kind === 'label' ? 'label' : 'box'
+        // The studio face answers to the brief's own colours. The kit path keeps `paletteFor`
+        // so the 29 catalog fingerprints stay frozen; `paletteFromBrief` falls back to exactly
+        // that table when the brief names no colour, so a silent brief is unaffected either way.
+        const studioBase = ensureAccentContrast(
+          varyPalette(paletteFromBrief(brief, style, overrides.premium), variationIndex),
+        )
         const decided = decideDirection({
           brief: planBrief,
           sector: resolveSector(brief),
@@ -182,7 +188,7 @@ export class FormaLocalEngine implements EnginePort {
           surface,
           faceW: hero?.w ?? dieline.dimensions.L,
           faceH: hero?.h ?? dieline.dimensions.H,
-          palette,
+          palette: studioBase,
           locale: brief.copyLocale ?? 'tr',
           variationIndex,
           copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },

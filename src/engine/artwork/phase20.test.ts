@@ -103,7 +103,9 @@ describe('Phase 20 family richness + kit path', () => {
   })
 
   it('P20-D: single-swatch black brief lifts accent off the ground', () => {
-    expect(parseBriefColors('siyah')).toEqual(['#1a0a0a'])
+    // L2: "siyah" is a neutral black. The old #1a0a0a carried 44% saturation, so a black brief
+    // read as chromatic and the vivid temperament derived a hue from it.
+    expect(parseBriefColors('siyah')).toEqual(['#141414'])
     const pal = paletteFromBrief({ ...emptyBrief(), colors: 'siyah', styleType: 'modern' }, 'modern')
     expect(accentContrastsGround(pal.bg, pal.accent)).toBe(true)
     expect(pal.accent.toLowerCase()).not.toBe(pal.bg.toLowerCase())
