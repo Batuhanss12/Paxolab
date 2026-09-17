@@ -55,6 +55,16 @@ export function facePanelId(dieline: DielineModel, artwork: ArtworkModel, face: 
   return undefined
 }
 
+/**
+ * The neutral board a preview sits on, and the hairline that marks where the design ends.
+ *
+ * Neither is part of the artwork and neither appears in an exported production file — they exist
+ * only so the customer can see their design as an object on a page rather than as colour running
+ * to the edge of the frame.
+ */
+const PREVIEW_MOUNT = '#eceae6'
+const PREVIEW_EDGE = 'rgba(20,24,28,0.22)'
+
 export function renderPanelSvg(
   dieline: DielineModel,
   artwork: ArtworkModel,
@@ -68,10 +78,23 @@ export function renderPanelSvg(
   const raw = artwork.layers.find((candidate) => candidate.panelId === panel.id)?.markup ?? ''
   if (!raw) return ''
   const layer = opts?.exportFonts ? withStudioExportFonts(raw) : raw
+  // The padding is the board the artwork is *shown on*, not part of the artwork. It used to be
+  // filled with `palette.paper`, so changing the mood repainted a band outside the design and made
+  // it look as though the engine had coloured something the customer never asked it to — and with
+  // the surround and the design on neighbouring tones, the edge of their own label disappeared.
+  // The mount is a constant neutral and the panel keeps a hairline, so the design's extent is
+  // always visible whatever palette it carries.
+  const mount =
+    pad > 0
+      ? `<rect x="${panel.x - pad}" y="${panel.y - pad}" width="${panel.w + pad * 2}" height="${panel.h + pad * 2}" fill="${PREVIEW_MOUNT}" />`
+      : ''
+  const edge = pad > 0 ? `<rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="none" stroke="${PREVIEW_EDGE}" stroke-width="0.25" />` : ''
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${panel.x - pad} ${panel.y - pad} ${panel.w + pad * 2} ${panel.h + pad * 2}" preserveAspectRatio="none">
-    <rect x="${panel.x - pad}" y="${panel.y - pad}" width="${panel.w + pad * 2}" height="${panel.h + pad * 2}" fill="${palette.paper}" />
+    ${mount}
+    <rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="${palette.paper}" />
     <defs>${clipDefs(dieline)}</defs>
     ${layer}
+    ${edge}
   </svg>`
 }
 

@@ -14,7 +14,7 @@ function panelArt(design: DesignSpec, face: 'front' | 'back'): string {
 }
 
 export function BottlePreview({ design }: BottlePreviewProps) {
-  const { layout, palette: p } = design
+  const { layout } = design
   const { rot, spinning, toggle, down, move, up } = useOrbit3D({ restX: -12, restY: 28, speed: 0.82, tilt: [-42, 18] })
   const front = useMemo(() => panelArt(design, 'front'), [design])
   const back = useMemo(() => panelArt(design, 'back'), [design])
@@ -25,8 +25,13 @@ export function BottlePreview({ design }: BottlePreviewProps) {
   const bodyH = labelH + 28
   const neckH = Math.round(bodyH * 0.14)
   const capH = Math.round(bodyH * 0.1)
-  const glass = p.paper || '#d9e2e8'
-  const glassDark = p.muted || '#8aa0ad'
+  // The vessel is a mockup, not the artwork: it is the surface the label is *shown on*, and the
+  // customer never prints it. Painting it from the design palette made changing the mood look like
+  // it had repainted something outside the design — and when the label and the glass landed on
+  // neighbouring tones, the label stopped reading as a separate object at all. So the glass is a
+  // constant neutral, chosen to sit behind any palette without competing with it.
+  const glass = '#dbe3e8'
+  const glassDark = '#9fb1bc'
 
   const bottleStyle = {
     transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
