@@ -6,7 +6,8 @@
  */
 import type { CopyLocale, DesignBrief, Palette, StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
-import { parseBriefColors } from '../artwork/briefPalette'
+import { ensureAccentContrast, paletteFromBrief, parseBriefColors } from '../artwork/briefPalette'
+import { resolveSector } from '../designSystem/sector'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
 import {
   claimChip,
@@ -102,6 +103,19 @@ function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, _b
       // the same mood on a food or cosmetic brief is not.
       return sector === 'electronics' || dark ? 'tech-dark' : 'clean-clinical'
   }
+}
+
+/**
+ * What a mood will do to this brief's colours, without generating anything.
+ *
+ * A credit is spent per change, so the customer has to be able to see where a mood goes *before*
+ * they pay for it. This runs the same chain the painter runs — brief colours, mood treatment,
+ * temperament — and stops at the palette, which is cheap and pure.
+ */
+export function moodPreview(brief: DesignBrief, mood: StyleType): { ground: string; accent: string; ink: string } {
+  const base = ensureAccentContrast(paletteFromBrief(brief, mood))
+  const pal = studioPalette(base, temperamentFor(resolveSector(brief), mood, base, brief))
+  return { ground: pal.ground, accent: pal.accent, ink: pal.ink }
 }
 
 /** Build the studio palette from the engine palette + temperament. Hue comes from the brief; the temperament sets lightness/role. */

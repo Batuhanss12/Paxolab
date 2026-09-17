@@ -62,6 +62,8 @@ export type CreditReservationRow = {
   created_at: string
   finalized_at: string | null
   billing_user_id?: string | null
+  /** Bitmask of variation indices this reservation has served. See SHOT_VARIATIONS. */
+  served_variations?: number
 }
 
 export type CreditBucketRow = {
@@ -276,6 +278,7 @@ export function migrate(db: DatabaseSync): void {
       status TEXT NOT NULL,
       operation TEXT NOT NULL,
       client_request_id TEXT,
+      served_variations INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       finalized_at TEXT
     );
@@ -511,6 +514,15 @@ export function migrate(db: DatabaseSync): void {
   }
   try {
     db.exec(`ALTER TABLE credit_reservations ADD COLUMN billing_user_id TEXT`)
+  } catch {
+    /* column already exists */
+  }
+  try {
+    // One credit buys one shot, and a shot is worth several variations. This is a bitmask of the
+    // variation indices already served, not a request counter: re-rendering a variation the customer
+    // has already seen — because they edited a line of copy — must not eat their allowance. The
+    // allowance is enforced here, where the balance lives, not in the client that happens to ask.
+    db.exec(`ALTER TABLE credit_reservations ADD COLUMN served_variations INTEGER NOT NULL DEFAULT 1`)
   } catch {
     /* column already exists */
   }

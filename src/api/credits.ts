@@ -13,6 +13,8 @@ export type ReserveResponse = {
   balance: number
   operation: CreditOperation
   idempotent?: boolean
+  /** Variations left in this shot. The server decides; the client only displays it. */
+  usesLeft?: number | null
 }
 
 export type FinalizeResponse = {
@@ -44,7 +46,9 @@ export async function listTransactions(limit = 50): Promise<CreditTransaction[]>
 
 export async function reserveCredits(input: {
   operation: CreditOperation
+  /** The shot this generation belongs to. The same id means "another variation of what I paid for". */
   clientRequestId?: string
+  variationIndex?: number
 }): Promise<ReserveResponse> {
   return apiRequest<ReserveResponse>('/api/credits/reserve', {
     method: 'POST',

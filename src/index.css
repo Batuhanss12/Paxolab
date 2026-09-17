@@ -714,6 +714,20 @@ h2 {
   box-shadow: 0 0 0 1px #0003;
 }
 
+/* Two dots per mood — the ground it will paint and the accent it will pair with it, both derived
+   from the customer's own brief colours. The point is that the row can be read before a credit is
+   spent: the mood that looks dark here comes back dark. */
+.style-chip__pair {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.style-chip__swatch--accent {
+  margin-left: -3px;
+  box-shadow: 0 0 0 1px #1e1e1e55;
+}
+
 /* hints live in title tooltips only */
 .style-chip__hint {
   display: none;

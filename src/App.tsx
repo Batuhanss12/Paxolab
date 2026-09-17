@@ -28,9 +28,9 @@ import {
 import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
 import { applyVetoToHints, familyTalk, hintsFromFamily } from './engine/studio/family'
-import { temperamentTalk } from './engine/studio/temperament'
-import type { StudioFamily, Temperament } from './engine/studio/types'
+import type { StudioFamily } from './engine/studio/types'
 import { recommendBottleShape } from './engine/label/bottleShape'
+import { shotKeyOf } from './engine/shot'
 import { recomposeCopy, type CopyField } from './engine/studio/recomposeCopy'
 import type { Attachment, BottleShape, ChatMessage, DesignBrief, DesignSpec, DimensionsMm, StyleType, TabId } from './types'
 
@@ -108,6 +108,8 @@ export default function App() {
   } = state
 
   const briefRef = useRef(brief)
+  /** The shot the customer has already paid for: same key → same reservation → no new charge. */
+  const shotRef = useRef<{ key: string; id: string } | null>(null)
   const awaitingRef = useRef(awaiting)
   const designRef = useRef(design)
   const copyBaseRef = useRef<DesignSpec | null>(null)
@@ -273,7 +275,12 @@ export default function App() {
     },
   ) => {
     dispatch({ type: 'generation.start' })
-    const attemptId = uid()
+    // One credit buys one shot; stepping through that shot's variations reuses its reservation and
+    // costs nothing more. The id only changes when a priced part of the brief changes.
+    const shotKey = shotKeyOf(nextBrief)
+    if (shotRef.current?.key !== shotKey) shotRef.current = { key: shotKey, id: uid() }
+    const shotId = shotRef.current.id
+    const variationIndex = result?.overridePatch?.variationIndex ?? nextBrief.directionVariation ?? 0
     const wantedKind = surfaceKind(nextBrief)
     const prev = prevForSurface(stateRef.current, wantedKind)
     const hasPrev = !!prev
@@ -296,7 +303,8 @@ export default function App() {
           try {
             const reserved = await reserveCredits({
               operation,
-              clientRequestId: attemptId,
+              clientRequestId: shotId,
+              variationIndex,
             })
             reservationId = reserved.reservationId
             setCreditsRefreshKey((k) => k + 1)
@@ -588,23 +596,6 @@ export default function App() {
     runGenerate(next)
   }, [runGenerate])
 
-  const onTemperament = useCallback((temperament: Temperament) => {
-    const current = designRef.current
-    if (!liveOnSurface(current, briefRef.current)) return
-    const next = { ...briefRef.current, studioTemperament: temperament, directionVariation: 0 }
-    briefRef.current = next
-    dispatch({ type: 'brief', brief: next })
-    dispatch({
-      type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `${temperamentTalk(temperament)} temperament — aynı aile, yeni palet.` }],
-    })
-    const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
-    if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
-    runGenerate(next, {
-      overridePatch: { variationIndex: 0, direction: { temperament, source: 'user' } },
-    })
-  }, [runGenerate])
-
   const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
@@ -752,7 +743,6 @@ export default function App() {
           onCopyChange={onCopyChange}
           onCopyCommit={onCopyCommit}
           onStyle={onStyle}
-          onTemperament={onTemperament}
           onDirectionPick={onDirectionPick}
           onVary={onVary}
           tab={tab}

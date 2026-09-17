@@ -1,24 +1,27 @@
+import { useMemo } from 'react'
 import type { DesignBrief, DesignSpec, DimensionsMm, StyleType } from '../types'
 import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { STYLE_OPTIONS } from '../engine/styles'
-import { TEMPERAMENT_OPTIONS } from '../engine/studio/temperament'
-import type { Temperament } from '../engine/studio/types'
+import { moodPreview } from '../engine/studio/direction'
 
 type StyleBarProps = {
   brief: DesignBrief
   design: DesignSpec | null
   onStyle: (style: StyleType) => void
-  onTemperament?: (temperament: Temperament) => void
   onDims: (dims: DimensionsMm) => void
   onVary?: () => void
   className?: string
   variant?: 'rail'
 }
 
-export function StyleBar({ brief, design, onStyle, onTemperament, onDims, onVary, className, variant }: StyleBarProps) {
-  const studio = Boolean(design?.studio)
+export function StyleBar({ brief, design, onStyle, onDims, onVary, className, variant }: StyleBarProps) {
   const activeStyle = brief.styleType || design?.brief.styleType || 'luxury'
-  const activeTemp = brief.studioTemperament || design?.studio?.direction.temperament || 'dark-luxe'
+  // Swatches come from the customer's *own* brief, not from a fixed sample, so the row shows where
+  // each mood actually goes before a credit is spent on finding out.
+  const swatches = useMemo(
+    () => new Map(STYLE_OPTIONS.map((opt) => [opt.id, moodPreview(brief, opt.id)])),
+    [brief],
+  )
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
       ? brief.dimensionsMm
@@ -50,32 +53,14 @@ export function StyleBar({ brief, design, onStyle, onTemperament, onDims, onVary
             className={`style-chip ${activeStyle === opt.id ? 'is-active' : ''}`}
             onClick={() => onStyle(opt.id)}
           >
-            <span className="style-chip__swatch" style={{ background: opt.swatch }} />
+            <span className="style-chip__pair" aria-hidden="true">
+              <span className="style-chip__swatch" style={{ background: swatches.get(opt.id)?.ground ?? opt.swatch }} />
+              <span className="style-chip__swatch style-chip__swatch--accent" style={{ background: swatches.get(opt.id)?.accent ?? opt.swatch }} />
+            </span>
             <span className="style-chip__name">{opt.label}</span>
           </button>
         ))}
       </div>
-      {studio && onTemperament ? (
-        <>
-          <p className="style-bar__kicker">Temperament</p>
-          <div className="style-chips" role="listbox" aria-label="Temperament">
-            {TEMPERAMENT_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                role="option"
-                aria-selected={activeTemp === opt.id}
-                title={opt.hint}
-                className={`style-chip ${activeTemp === opt.id ? 'is-active' : ''}`}
-                onClick={() => onTemperament(opt.id)}
-              >
-                <span className="style-chip__swatch" style={{ background: opt.swatch }} />
-                <span className="style-chip__name">{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
       {showDims && (
         <div className="style-bar__dims">
           <span className="style-bar__dims-label">Ölçü</span>

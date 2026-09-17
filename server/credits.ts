@@ -162,6 +162,24 @@ export type ReserveResult = {
   balance: number
   operation: MeteredOperation
   idempotent: boolean
+  /** Variations still included in this shot. Absent means a fresh shot with the full allowance. */
+  usesLeft?: number
+}
+
+/**
+ * How many designs one credit buys.
+ *
+ * A customer who pays per click stops exploring, and a packaging brief is not something anyone
+ * gets right on the first frame. So a credit buys a *shot*: the same decision rendered several
+ * ways, free to browse. Changing the brief, the mood or the direction is a new decision, and that
+ * is what costs.
+ */
+export const SHOT_VARIATIONS = 6
+
+function popcount(mask: number): number {
+  let n = 0
+  for (let m = mask; m; m >>>= 1) n += m & 1
+  return n
 }
 
 /**
@@ -176,6 +194,7 @@ export function reserveCredits(
   userId: string,
   operation: MeteredOperation,
   clientRequestId?: string | null,
+  variationIndex?: number,
 ): ReserveResult {
   const amount = costFor(operation)
   const clientId =
@@ -196,6 +215,33 @@ export function reserveCredits(
           db.exec('ROLLBACK')
           throw new CreditsError(409, 'Bu istek için rezervasyon iade edilmiş.')
         }
+        // A shot is one credit and several variations: reusing the same client request id is how
+        // the client asks for another variation of something already paid for. What is counted is
+        // the set of *distinct* variations served, not the number of requests — re-rendering one
+        // the customer has already seen, because they fixed a line of copy, must be free.
+        const servedBefore = existing.served_variations ?? 1
+        const index = Math.floor(variationIndex ?? 0)
+        // Out of range is refused, not clamped. Folding index 6 onto index 5 would make it look
+        // like a variation the customer had already seen, so the seventh design would be free.
+        if (index < 0 || index >= SHOT_VARIATIONS) {
+          db.exec('ROLLBACK')
+          throw new CreditsError(
+            409,
+            `Bu çekimin ${SHOT_VARIATIONS} varyasyonu kullanıldı. Yeni bir tasarım için brief, ruh hali veya yönü değiştirin.`,
+          )
+        }
+        const bit = 1 << index
+        if (!(servedBefore & bit) && popcount(servedBefore) >= SHOT_VARIATIONS) {
+          db.exec('ROLLBACK')
+          throw new CreditsError(
+            409,
+            `Bu çekimin ${SHOT_VARIATIONS} varyasyonu kullanıldı. Yeni bir tasarım için brief, ruh hali veya yönü değiştirin.`,
+          )
+        }
+        const served = servedBefore | bit
+        if (served !== servedBefore) {
+          db.prepare(`UPDATE credit_reservations SET served_variations = ? WHERE id = ?`).run(served, existing.id)
+        }
         const billTo = existing.billing_user_id || userId
         const balance = getBalanceUnlocked(db, billTo)
         db.exec('COMMIT')
@@ -205,6 +251,7 @@ export function reserveCredits(
           balance,
           operation: existing.operation as MeteredOperation,
           idempotent: true,
+          usesLeft: SHOT_VARIATIONS - popcount(served),
         }
       }
     }
@@ -284,6 +331,7 @@ export function reserveCredits(
       balance: newBalance,
       operation,
       idempotent: false,
+      usesLeft: SHOT_VARIATIONS - 1,
     }
   } catch (err) {
     if (err instanceof CreditsError) throw err

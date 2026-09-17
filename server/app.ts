@@ -435,7 +435,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   credits.post('/reserve', async (c) => {
     const user = c.get('user') as PublicUser
-    let body: { operation?: string; clientRequestId?: string }
+    let body: { operation?: string; clientRequestId?: string; variationIndex?: number }
     try {
       body = await c.req.json()
     } catch {
@@ -451,6 +451,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         user.id,
         operation as MeteredOperation,
         body.clientRequestId ?? null,
+        typeof body.variationIndex === 'number' ? body.variationIndex : 0,
       )
       return c.json({
         reservationId: result.reservationId,
@@ -458,6 +459,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         balance: result.balance,
         operation: result.operation,
         idempotent: result.idempotent,
+        usesLeft: result.usesLeft ?? null,
       })
     } catch (err) {
       const mapped = asCreditsHttp(err)
