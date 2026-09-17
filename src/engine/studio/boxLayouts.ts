@@ -37,27 +37,36 @@ import {
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
-import { darken, isDark, lighten, mix } from './color'
+import { darken, isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
 import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, identOf, marginFor, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
 
-/** Sides / top / flaps use the "deep" surface of the direction: navy for ink-wash, black for dark-luxe, marble for marble. */
+/**
+ * Sides / top / flaps.
+ *
+ * The archetype decides *whether* its sides wear the deep surface — a front that is a card
+ * floating on art wants coloured sides, a front that is already a full-bleed field does not.
+ * That is composition, so it belongs here. What the deep surface *is* belongs to the palette,
+ * which is why this no longer reaches for `accent2`: that slot holds a texture sibling and was
+ * never a surface, so the sides ended up cream on a near-black box, lighter than the front on a
+ * modern one, and brown on a brief that asked for green.
+ */
 function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
-  if (archetype === 'ink-wash') return p.accent2
   if (archetype === 'landscape-window') return p.ground
-  if (archetype === 'botanical-card') return p.accent2
-  if (archetype === 'line-scene') return p.accent2
-  if (archetype === 'wave-panel') return p.accent2
+  if (archetype === 'ink-wash' || archetype === 'botanical-card' || archetype === 'line-scene' || archetype === 'wave-panel') {
+    return p.deep
+  }
   return p.ground
 }
 
 function deepInk(p: StudioPalette, archetype: BoxArchetype): string {
   const g = deepGround(p, archetype)
   if (archetype === 'landscape-window') return p.ink
-  return isDark(g) ? (archetype === 'botanical-card' ? '#ffffff' : p.accent) : p.cardInk
+  // Readable on whatever the deep surface turned out to be, rather than on an assumption about it.
+  return readableInk(g, isDark(g) ? p.card : p.cardInk)
 }
 
 /* ------------------------------------------------------------------ fronts */

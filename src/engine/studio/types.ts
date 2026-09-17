@@ -79,6 +79,14 @@ export type StudioPalette = {
   accent: string
   /** Secondary accent: darker or lighter sibling for texture. */
   accent2: string
+  /**
+   * The deep surface: sides, top and flaps of a box whose front is a card floating on art.
+   *
+   * It is a *relationship* to the ground — always the same hue family, always reading as the
+   * deeper face of the same object — and how far it travels from the ground is the mood's call.
+   * Before this existed the layouts borrowed `accent2`, which was never designed for the job.
+   */
+  deep: string
   /** Light panel / card colour. */
   card: string
   /** Text on card. */

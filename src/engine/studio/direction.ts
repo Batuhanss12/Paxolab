@@ -119,6 +119,23 @@ export function moodPreview(brief: DesignBrief, mood: StyleType): { ground: stri
 }
 
 /** Build the studio palette from the engine palette + temperament. Hue comes from the brief; the temperament sets lightness/role. */
+/**
+ * The deep surface a box's sides wear when its front is a card floating on art.
+ *
+ * Measured 2026-09-17, before this existed: the layouts read `accent2`, which holds a texture
+ * sibling and was never meant to be a surface. A near-black luxury box came back with cream sides,
+ * a modern box's sides were *lighter* than its front, and an eco box's sides were brown while the
+ * brief had asked for green. None of those are a deep surface; they are whatever that slot happened
+ * to contain.
+ *
+ * Derived from the ground instead, so it always reads as the same object seen deeper. `step` is the
+ * mood's decision: a restrained mood moves a little, an ornate one moves a lot, and a mood whose
+ * ground is already dark barely moves at all because there is nowhere deeper to go.
+ */
+function deepSurface(ground: string, ink: string, step: number): string {
+  return isDark(ground) ? darken(ground, step * 0.35) : mix(ground, ink, step)
+}
+
 export function studioPalette(base: Palette, temperament: Temperament): StudioPalette {
   const accentH = hsl(base.accent)
   const bgH = hsl(base.bg)
@@ -133,6 +150,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink: readableInk(ground, base.fg),
         accent,
         accent2: darken(accent, 0.16),
+        deep: deepSurface(ground, readableInk(ground, base.fg), 0.12),
         card: lighten(base.paper, 0.05),
         cardInk: darken(ground, 0.02),
         muted: mix(readableInk(ground, base.fg), ground, 0.35),
@@ -147,6 +165,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink: readableInk(ground, deep),
         accent,
         accent2: deep,
+        deep: deepSurface(ground, deep, 0.7),
         card: ground,
         cardInk: readableInk(ground, deep),
         muted: mix(deep, ground, 0.45),
@@ -166,6 +185,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink,
         accent: separateAccent(ground, ink),
         accent2: art,
+        deep: deepSurface(ground, ink, 0.24),
         card: '#ffffff',
         cardInk: fromHsl(hue.h, Math.max(0.55, hue.s), 0.3),
         muted: mix(ink, ground, 0.4),
@@ -187,6 +207,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink,
         accent,
         accent2: darken(accent, 0.18),
+        deep: deepSurface(ground, ink, 0.34),
         card: '#fbf6ea',
         cardInk: ink,
         muted: mix(ink, ground, 0.45),
@@ -209,6 +230,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink,
         accent,
         accent2: saturate(lighten(ink, 0.3), 0.1),
+        deep: deepSurface(ground, ink, 0.16),
         card: '#ffffff',
         cardInk: ink,
         muted: mix(ink, ground, 0.5),
@@ -230,6 +252,7 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
         ink: readableInk(ground, base.fg),
         accent,
         accent2: mix(accent, ground, 0.55),
+        deep: deepSurface(ground, readableInk(ground, base.fg), 0.12),
         card: lighten(ground, 0.08),
         cardInk: readableInk(ground, base.fg),
         muted: mix(readableInk(ground, base.fg), ground, 0.4),
