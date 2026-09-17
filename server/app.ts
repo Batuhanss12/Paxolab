@@ -180,7 +180,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     )
   })
 
-  app.post('/api/auth/register', rateLimit('auth'), async (c) => {
+  app.post('/api/auth/register', rateLimit('auth', db), async (c) => {
     let body: { email?: string; password?: string; name?: string }
     try {
       body = await c.req.json()
@@ -215,7 +215,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     return c.json({ user, token }, 201)
   })
 
-  app.post('/api/auth/login', rateLimit('auth'), async (c) => {
+  app.post('/api/auth/login', rateLimit('auth', db), async (c) => {
     let body: { email?: string; password?: string }
     try {
       body = await c.req.json()
@@ -963,7 +963,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     })
   })
 
-  app.post('/api/billing/checkout', rateLimit('checkout'), requireAuth(db), async (c) => {
+  app.post('/api/billing/checkout', rateLimit('checkout', db), requireAuth(db), async (c) => {
     const user = c.get('user') as PublicUser
     let body: { packId?: string; planId?: string }
     try {
@@ -1227,7 +1227,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   // ---- Phase 9 admin ----
   const admin = new Hono<AppEnv>()
-  admin.use('*', rateLimit('admin'))
+  admin.use('*', rateLimit('admin', db))
   admin.use('*', requireAuth(db))
   admin.use('*', async (c, next) => {
     const user = c.get('user') as PublicUser

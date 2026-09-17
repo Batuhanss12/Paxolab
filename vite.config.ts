@@ -35,5 +35,20 @@ export default defineConfig(({ command }) => ({
   },
   test: {
     exclude: ['**/node_modules/**', '**/dist/**', 'server/**'],
+    /*
+     * Headroom, because these tests are genuinely slow rather than accidentally slow.
+     *
+     * Measured on an idle machine: the heaviest test runs 7.4 s, and three more sit between 2.8 and
+     * 4.9 s — they read and atomize the SVG asset library, then generate whole catalog faces. The
+     * default budget left no margin at all, so the suite was fine idle and fell apart under any
+     * concurrent load: with three runs in parallel, 15 to 17 tests failed, every one of them with
+     * `Test timed out` and not a single assertion among them.
+     *
+     * A suite that fails when the machine is busy teaches you to ignore red, which is worse than
+     * having no suite. 30 s is generous against a 7.4 s worst case and still catches a real hang —
+     * nothing here should ever take half a minute.
+     */
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 }))

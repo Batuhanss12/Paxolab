@@ -1,11 +1,12 @@
 /**
  * Launch hardening helpers (Phase 10).
  *
- * In-memory rate limits are per-process. They are NOT safe as the only
- * control on multi-instance / multi-replica production — use a shared
- * store (Redis, etc.) or an edge limiter there.
+ * The limiter counts in the database when one is handed to it, so every process sharing that
+ * database shares the allowance. The in-memory path remains for callers without a database and for
+ * the unit tests, and is per-process by nature — see `checkRateLimit`.
  */
 import type { Context, MiddlewareHandler } from 'hono'
+import type { FormaDb, RateLimitCounterRow } from './db.ts'
 
 const SECRET_KEY_RE = /password|passwd|secret|token|authorization|api[_-]?key|cookie|iyzi/i
 
@@ -59,7 +60,11 @@ export function clientIp(c: Context): string {
 
 type Bucket = { count: number; resetAt: number }
 
-/** In-memory per-key counters. Single-process only — see file header. */
+/**
+ * In-memory per-key counters. One process only — `checkRateLimitShared` is the multi-process path.
+ * Kept because a caller without a database still needs a limiter, and the unit tests exercise the
+ * window arithmetic here without touching SQLite.
+ */
 const buckets = new Map<string, Bucket>()
 let lastMapReset = Date.now()
 
@@ -102,10 +107,68 @@ export function checkRateLimit(
 }
 
 /**
+ * The same window, counted in the database so every process shares it.
+ *
+ * `BEGIN IMMEDIATE` is what makes it a limit rather than a suggestion: two processes arriving at
+ * the same moment serialise here, so the allowance cannot be spent twice. Without it each would
+ * read the same count, both would find room, and the published limit would quietly double.
+ *
+ * Expired rows are swept opportunistically — the window is a timestamp comparison, so there is
+ * nothing to schedule, and the sweep costs one indexed delete per denied-or-new key.
+ */
+export function checkRateLimitShared(
+  db: FormaDb,
+  key: string,
+  limit: number,
+  now = Date.now(),
+): { ok: true } | { ok: false; retryAfterSec: number } {
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const row = db
+      .prepare(`SELECT key, count, reset_at FROM rate_limit_counters WHERE key = ?`)
+      .get(key) as RateLimitCounterRow | undefined
+
+    if (!row || row.reset_at <= now) {
+      db.prepare(
+        `INSERT INTO rate_limit_counters (key, count, reset_at) VALUES (?, 1, ?)
+           ON CONFLICT(key) DO UPDATE SET count = 1, reset_at = excluded.reset_at`,
+      ).run(key, now + RATE_LIMIT_WINDOW_MS)
+      db.prepare(`DELETE FROM rate_limit_counters WHERE reset_at <= ?`).run(now)
+      db.exec('COMMIT')
+      return { ok: true }
+    }
+
+    if (row.count >= limit) {
+      db.exec('COMMIT')
+      return { ok: false, retryAfterSec: Math.max(1, Math.ceil((row.reset_at - now) / 1000)) }
+    }
+
+    db.prepare(`UPDATE rate_limit_counters SET count = count + 1 WHERE key = ?`).run(key)
+    db.exec('COMMIT')
+    return { ok: true }
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* already rolled back */
+    }
+    throw err
+  }
+}
+
+/** Test/ops helper: forget every shared window. */
+export function resetSharedRateLimits(db: FormaDb): void {
+  db.prepare(`DELETE FROM rate_limit_counters`).run()
+}
+
+/**
  * Per-IP limiter. `auth` is a shared bucket for login + register.
  * `checkout` and `admin` have their own buckets.
+ *
+ * Pass the database and the allowance is shared across processes; omit it and the counters stay in
+ * this process, which is only correct when there is exactly one.
  */
-export function rateLimit(scope: 'auth' | 'checkout' | 'admin'): MiddlewareHandler {
+export function rateLimit(scope: 'auth' | 'checkout' | 'admin', db?: FormaDb): MiddlewareHandler {
   return async (c, next) => {
     if (isRateLimitDisabled()) {
       await next()
@@ -118,7 +181,8 @@ export function rateLimit(scope: 'auth' | 'checkout' | 'admin'): MiddlewareHandl
           ? checkoutRatePerMinute()
           : adminRatePerMinute()
     const ip = clientIp(c)
-    const result = checkRateLimit(`${scope}:${ip}`, limit)
+    const key = `${scope}:${ip}`
+    const result = db ? checkRateLimitShared(db, key, limit) : checkRateLimit(key, limit)
     if (!result.ok) {
       c.header('Retry-After', String(result.retryAfterSec))
       return c.json({ error: RATE_LIMIT_TR }, 429)

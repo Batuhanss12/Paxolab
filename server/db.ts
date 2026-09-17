@@ -52,6 +52,12 @@ export type CreditTransactionRow = {
   created_at: string
 }
 
+export type RateLimitCounterRow = {
+  key: string
+  count: number
+  reset_at: number
+}
+
 export type DownloadEntitlementRow = {
   id: string
   user_id: string
@@ -220,6 +226,24 @@ export function openDb(dbPath: string = defaultDbPath()): DatabaseSync {
     db.exec('PRAGMA journal_mode = WAL')
   } catch {
     /* WAL may be unsupported (e.g. some :memory: / platform cases); skip safely */
+  }
+  try {
+    /*
+     * Wait for the write lock instead of refusing.
+     *
+     * WAL already lets several processes share this file — readers never block, and one writer
+     * proceeds at a time. What was missing is patience: without a busy timeout, a process that
+     * finds the write lock held throws SQLITE_BUSY *immediately* rather than waiting its turn. On a
+     * single process that never happens, so nothing revealed it; run four workers on one box and
+     * ordinary contention starts surfacing as errors to customers.
+     *
+     * Five seconds is far longer than any transaction here, all of which are a handful of indexed
+     * statements. If a write ever really waits five seconds, something is wrong and an error is the
+     * right answer.
+     */
+    db.exec('PRAGMA busy_timeout = 5000')
+  } catch {
+    /* older builds may not expose it; the single-process case is unaffected */
   }
   db.exec('PRAGMA foreign_keys = ON')
   migrate(db)
@@ -514,6 +538,25 @@ export function migrate(db: DatabaseSync): void {
 
     CREATE INDEX IF NOT EXISTS idx_download_entitlements_open
       ON download_entitlements(user_id, consumed_at);
+
+    /*
+     * Rate-limit counters, shared rather than per-process.
+     *
+     * The limiter kept its buckets in a module-level Map, which is exactly as wide as one process.
+     * Behind a load balancer — or simply four worker processes on one box — each granted the full
+     * allowance, so the published limit was N times whatever the configuration said. Putting the
+     * counters next to the balance they protect makes the limit mean one thing again.
+     *
+     * key is scope:ip; reset_at is an epoch millisecond, so an expired window is a comparison
+     * rather than a scheduled job.
+     */
+    CREATE TABLE IF NOT EXISTS rate_limit_counters (
+      key TEXT PRIMARY KEY,
+      count INTEGER NOT NULL,
+      reset_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rate_limit_reset ON rate_limit_counters(reset_at);
   `)
   try {
     db.exec(`ALTER TABLE subscription_plans ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0`)

@@ -74,11 +74,44 @@ written down rather than left to be discovered.
 - **A hardcoded `http://localhost:3000`** had been written into a "top up credits" link. All
   cross-app links go through `src/api/urls.ts` now.
 
-## Known constraints before scaling past one instance
+## Running more than one instance
 
-Neither blocks launch; both are load-bearing assumptions worth knowing.
+### Several processes on one host — supported
 
-- **SQLite, single writer.** `server/data/forma.sqlite` via `node:sqlite`. Fine for one API
-  process. Two processes against one file will fight over writes.
-- **The rate limiter is in-process.** `server/security.ts` keeps counters in memory, so N instances
-  give N times the allowance. `.env.example` has said so all along.
+This is the realistic first step (four workers on one box, `pm2 -i 4`, Node cluster). Two things
+had to change for it, and both were measured rather than assumed.
+
+- **The rate limit is counted in the database**, not in each process's memory. It used to be a
+  module-level `Map`, so every worker granted the full allowance and the published limit was
+  silently multiplied by the worker count. `checkRateLimitShared()` counts inside
+  `BEGIN IMMEDIATE`, so two workers arriving together serialise instead of both finding room.
+  `server/sharedRateLimit.test.ts` drives two app instances over one database file and asserts the
+  fifth request is refused whichever instance receives it.
+- **SQLite waits for the write lock instead of refusing it.** WAL already allowed several processes
+  to share the file, but without a busy timeout a process that found the lock held threw
+  `SQLITE_BUSY` immediately. Measured with three processes each attempting 400 transactions:
+  **277 of 1200 succeeded** — a 77% failure rate, invisible on a single process. With
+  `PRAGMA busy_timeout = 5000`: 1200 of 1200, zero busy errors.
+
+### Several hosts — not yet
+
+SQLite is one file on one filesystem, so multiple *machines* need a different database. That is a
+project, not a setting, and the reason is worth stating plainly before anyone schedules it:
+
+`node:sqlite` is **synchronous**. `db.prepare(…).get()` returns a row; it does not return a promise.
+Postgres drivers are asynchronous, so every one of the **165 `db.prepare` call sites across 13
+server files** would become `await`, and `async` would cascade outward through the credit ledger,
+auth and every route handler. Twelve `BEGIN IMMEDIATE` transactions would need rewriting as well.
+
+None of that is hard; all of it is in the part of the system where a bug costs a customer money. It
+is worth doing when traffic demands more than one host, and worth doing on its own, with the credit
+tests as the net — not folded into a release.
+
+Until then: one API host, as many worker processes on it as the box will carry, and the site scaled
+freely because it is stateless.
+
+### Durability note
+
+WAL is on with the default `synchronous = FULL`. `NORMAL` is the usual WAL pairing and measurably
+faster, at the cost of losing the last commits if the host loses power. That is a decision about
+the ledger, so it has not been made here.
