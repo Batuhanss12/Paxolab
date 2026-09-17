@@ -38,27 +38,37 @@ export type StudioFaceFreeze = {
  * A two-face move is the shape a background-only change should have — if a painter rewrite moves
  * faces that do not use that background, something leaked and the diff is worth reading.
  *
+ * L2-C moved all 18 at once, and this is the move to read carefully. The mood knob had gone dead —
+ * with any colour in the brief, all six moods produced the same ground — so the colour layer was
+ * rebuilt around one rule: the brief owns which hues exist, the mood owns what they do. Every face
+ * is painted by that layer, so every hash moves.
+ *
+ * Archetype / background / family are unchanged on all 18. That is the number that matters: the
+ * colour layer changed and did *not* leak into the skeleton. Had archetypes shifted too, it would
+ * mean the mood had started deciding composition as well, and the layering would be back where it
+ * started. The 29 kit fingerprints are untouched — the kit path still paints from `paletteFor`.
+ *
  * Update via `npx vite-node scripts/dump-studio-golden.ts`.
  */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
-  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: 'c51dd96c2dea87c5' },
-  '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: 'b8d087f467c63fae' },
-  '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: 'c436a017f8e33644' },
-  '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: '3f8c72cc1a5fa310' },
-  '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '649c2d55f47ea9c6' },
-  '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'cc35d65fb76d17c7' },
-  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'c76d87eff3b560ce' },
-  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: 'ba7d7f1a6c4f474e' },
-  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '39b5d424b6c40b8b' },
-  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'f8b00fc50cad86f0' },
-  '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: '92d752e16e5c52d9' },
-  '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '71253e1e7d9a9abb' },
-  '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '42d44d2e10c4afdf' },
-  '07-bebek-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '83d3f850a2ece5d7' },
-  '08-saglik-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '8ffae60b5f286442' },
-  '08-saglik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '1729626e8aa6820a' },
-  '09-temizlik-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '29a5cc54325f41a5' },
-  '09-temizlik-etiket': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: 'aaa94f7bcabababf' },
+  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: 'a3b6fa920bb512c7' },
+  '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: 'b69b47c732c2ab2b' },
+  '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: '0d7ef418e4cc2cf9' },
+  '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: '85dbc11d834185bb' },
+  '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'a551338af36eb372' },
+  '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'c8465fb935b5a0f0' },
+  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'c7b5acec64883268' },
+  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '1859d69ac6bde662' },
+  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '9e9ea449036aec01' },
+  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '5d272b1ba329a782' },
+  '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: 'f30e79fb2fa06c2f' },
+  '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '4ee48a6738adf632' },
+  '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '05a33d48326f47f6' },
+  '07-bebek-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'e2f44a393b04cff8' },
+  '08-saglik-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '82c02d17ca9bc048' },
+  '08-saglik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '0c2a65daef36ab39' },
+  '09-temizlik-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '4a0c1638045045b8' },
+  '09-temizlik-etiket': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '13563fa041b5d5bd' },
 }
 
 export function hashStudioFace(markup: string): string {

@@ -56,15 +56,21 @@ function faceHash(spec: ReturnType<FormaLocalEngine['generate']>): string {
 }
 
 describe('DNA leftovers 1–5', () => {
-  it('locked family vary changes temperament, not the S4 family', () => {
+  /**
+   * This used to assert the opposite — that varying *changed* the temperament. That was the old
+   * contract, and it made "variation" a second, unlabelled mood knob: six variations of one mood
+   * came back with four different grounds, so the mood the customer chose quietly stopped holding
+   * partway through the set. Under the layered model one credit buys six takes on the *same*
+   * decision, so varying moves the arrangement and the background texture and leaves the colour
+   * where the mood put it.
+   */
+  it('locked family vary changes the face, not the colour treatment', () => {
     const base = generate(coffee({ studioFamily: 'marble' }))
-    const next = generate(
-      { ...base.brief, directionVariation: 1 },
-      { variationIndex: 1 },
-    )
+    const next = generate({ ...base.brief, directionVariation: 1 }, { variationIndex: 1 })
     expect(next.studio?.direction.archetype).toBe('marble-frame')
     expect(next.brief.studioFamily).toBe('marble')
-    expect(next.studio?.direction.temperament).not.toBe(base.studio?.direction.temperament)
+    expect(next.studio?.direction.temperament).toBe(base.studio?.direction.temperament)
+    expect(next.studio?.direction.palette.ground).toBe(base.studio?.direction.palette.ground)
     expect(faceHash(next)).not.toBe(faceHash(base))
   })
 

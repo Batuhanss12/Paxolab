@@ -1,8 +1,15 @@
 /**
- * Phase 15 — brief colors[] are the primary palette seed.
- * Mood only tweaks contrast / neutrals. No style-pack costumes.
+ * The palette layer.
+ *
+ * Two inputs meet here and neither owns the result on its own:
+ *   - the brief names the **hues** (Phase 15: a colour the customer typed is never dropped),
+ *   - the mood decides their **roles** (L2-C: which hue grounds the face, how light, how loud).
+ *
+ * Getting that split wrong in either direction has already shipped once each way — see the L2-C
+ * note above `rolesOf` for what each failure looked like on a face.
  */
 import type { DesignBrief, Palette, StyleType } from '../../types'
+import { fromHsl, hsl } from '../studio/color'
 import { moodPrior } from '../brain/moodPriors'
 import { paletteFor } from './paletteTable'
 
@@ -70,20 +77,30 @@ export function normalizeHex(raw: string): string {
   return `#${h}`
 }
 
+/**
+ * Colours in the order the brief names them.
+ *
+ * The order matters: whatever comes first is the colour the customer leads with, and downstream
+ * that is the one that carries the face. This used to return them in *table* order, so "pembe ·
+ * mor" came back purple-first purely because purple sits higher in `NAMED` — the box led with the
+ * colour they mentioned second.
+ */
 export function parseBriefColors(colors: string): string[] {
   const text = (colors || '').trim()
   if (!text || /^motor paleti$/i.test(text)) return []
+  const found: { at: number; hex: string }[] = []
+  for (const match of text.matchAll(HEX)) found.push({ at: match.index ?? 0, hex: normalizeHex(match[0]) })
+  for (const [re, hex] of NAMED) {
+    const m = re.exec(text)
+    if (m) found.push({ at: m.index, hex })
+  }
+  found.sort((a, b) => a.at - b.at)
   const out: string[] = []
   const seen = new Set<string>()
-  const push = (hex: string) => {
-    const n = normalizeHex(hex)
-    if (seen.has(n)) return
-    seen.add(n)
-    out.push(n)
-  }
-  for (const match of text.matchAll(HEX)) push(match[0])
-  for (const [re, hex] of NAMED) {
-    if (re.test(text)) push(hex)
+  for (const { hex } of found) {
+    if (seen.has(hex)) continue
+    seen.add(hex)
+    out.push(hex)
   }
   return out
 }
@@ -159,43 +176,152 @@ function tweakNeutrals(base: Palette, mood: StyleType): Palette {
   }
 }
 
-function paletteFromHexes(hexes: string[], mood: StyleType): Palette {
-  const sorted = [...hexes].sort((a, b) => hexLuminance(a) - hexLuminance(b))
-  const dark = sorted[0]
-  const light = sorted[sorted.length - 1]
-  const mid = hexes.find((h) => h !== dark && h !== light) ?? (mood === 'luxury' || mood === 'classic' ? light : dark)
-  const family = colorFamilyOf(hexes)
-  const preferLight =
-    family === 'light' ||
-    family === 'botanical' ||
-    mood === 'minimal' ||
-    mood === 'eco' ||
-    (hexLuminance(light) > 0.62 && mood !== 'luxury')
-  if (!preferLight && hexLuminance(dark) < 0.42) {
-    const fg = hexLuminance(light) > 0.55 ? light : '#f6f0e4'
-    return ensureAccentContrast(
-      tweakNeutrals(
-        {
-          bg: dark,
-          fg,
-          accent: hexLuminance(mid) > 0.2 ? mid : light,
-          muted: mixHex(dark, fg, 0.38),
-          paper: mixHex(dark, fg, 0.08),
-        },
-        mood,
-      ),
-    )
-  }
-  const ink = hexLuminance(dark) < 0.55 ? dark : '#1a1a1a'
-  const accent = mid !== light && mid !== dark ? mid : hexLuminance(dark) < 0.4 ? dark : ink
+/**
+ * L2-C — what the mood knob is for.
+ *
+ * Measured 2026-09-17: with any colour in the brief, all six moods produced the *same* ground,
+ * and three of six produced a byte-identical face. The knob was dead, because this file's older
+ * contract ("brief colors[] are the primary seed, mood only tweaks contrast") let the brief decide
+ * the whole palette and left the mood nothing to do. Before that change the studio painted from a
+ * sector×style table, so the mood repainted everything — and the brief's own colours were ignored,
+ * which is the bug that prompted the change. Both halves were wrong in the same way: each treated
+ * colour as owned by exactly one input.
+ *
+ * The rule now is the one a designer works to: **the brief says which colours, the mood says how
+ * they are used.** The hues are locked — a brief that says green always gets green — and the mood
+ * decides the roles: which hue carries the ground, how light or dark that ground sits, how much
+ * chroma survives, and how far the ink is pushed from it.
+ */
+type Roles = {
+  /** The colour the brief is actually about. */
+  hero: string
+  /** A supporting brief colour, or one derived from the hero when the brief named only one. */
+  second: string
+  /** A light surface the brief named (krem, beyaz), or a paper tinted from the hero. */
+  light: string
+  /** True when `second` is a colour the brief actually named, rather than one derived from the hero. */
+  secondFromBrief: boolean
+}
+
+/**
+ * Below this, a colour has no usable hue and must keep it that way.
+ *
+ * Every rule here that reaches for a *minimum* saturation — "modern is bold", "playful is loud" —
+ * is a way to invent a hue the brief never named. That is the turquoise bug in a new costume: a
+ * "siyah · beyaz" brief has nothing to be loud *with*, so on a neutral brief the moods have to
+ * express themselves through lightness and contrast alone.
+ */
+const NEUTRAL_S = 0.12
+
+/**
+ * Neutrality is not saturation alone — it is saturation the eye can actually see.
+ *
+ * `#f7f4ee`, this table's "beyaz", carries a nominal 31% saturation, but at 95% lightness no hue
+ * reads on press. Testing `s` on its own let a white brief count as chromatic, and `modern` then
+ * pushed that "hue" to a mid gold: a "siyah · beyaz" brief came back as a gold box. This mirrors
+ * the rule `briefIsAchromatic` already uses on the direction side.
+ */
+function isNeutral(hex: string): boolean {
+  const { s, l } = hsl(hex)
+  return s < NEUTRAL_S || l < 0.12 || l > 0.9
+}
+
+/** Raise saturation toward `target`, but never lift a neutral off zero. */
+function chromaUp(s: number, target: number): number {
+  return s < NEUTRAL_S ? s : Math.max(target, s)
+}
+
+function rolesOf(hexes: string[]): Roles {
+  // The first colour the brief names that can actually show a hue. Word order is the customer's
+  // own ranking, so it leads; neutrals are skipped only because "siyah · yeşil" means a green box
+  // with black type, not a black box.
+  const hero = hexes.find((hex) => !isNeutral(hex)) ?? hexes[0]
+  const lightest = [...hexes].sort((a, b) => hexLuminance(b) - hexLuminance(a))[0]
+  const h = hsl(hero)
+  const light = hexLuminance(lightest) > 0.55 ? lightest : fromHsl(h.h, Math.min(0.1, h.s), 0.95)
+  const rest = hexes.filter((hex) => hex !== hero && hex !== light)
+  const derived = fromHsl(h.h, h.s < NEUTRAL_S ? h.s : Math.min(0.5, h.s + 0.1), h.l < 0.5 ? 0.66 : 0.28)
+  return { hero, second: rest[0] ?? derived, light, secondFromBrief: rest.length > 0 }
+}
+
+/** Ink that is guaranteed to read on the ground, without inventing a hue the brief never named. */
+function inkOn(ground: string, roles: Roles): string {
+  const dark = hexLuminance(ground) < 0.4
+  const h = hsl(roles.hero)
+  return dark ? (hexLuminance(roles.light) > 0.55 ? roles.light : '#f6f0e4') : fromHsl(h.h, Math.min(0.5, h.s), 0.16)
+}
+
+const MOOD_GROUND: Record<StyleType, (r: Roles) => string> = {
+  // Deep, quiet, expensive: the hero hue pushed down to near-black but still legibly itself.
+  luxury: (r) => {
+    const { h, s, l } = hsl(r.hero)
+    // A colour the customer typed that is already luxury-dark is used verbatim. Re-lighting it to
+    // the band's centre would hand back a different hex than the one they asked for.
+    return l <= 0.22 ? r.hero : fromHsl(h, Math.min(0.42, s), 0.13)
+  },
+  // Air. The hero barely tints the paper and does its work in the ink and the accent instead.
+  minimal: (r) => {
+    const { h, s } = hsl(r.hero)
+    return hexLuminance(r.light) > 0.8 ? r.light : fromHsl(h, Math.min(0.06, s), 0.96)
+  },
+  // One bold flat field — the hero as a colour block, not as decoration. With no hue to be bold
+  // with, "bold" becomes the extreme of the hero's own lightness instead.
+  modern: (r) => {
+    const { h, s, l } = hsl(r.hero)
+    if (isNeutral(r.hero)) return fromHsl(h, s, l < 0.5 ? 0.1 : 0.93)
+    return l >= 0.36 && l <= 0.58 ? r.hero : fromHsl(h, Math.min(0.85, chromaUp(s, 0.5)), 0.46)
+  },
+  // Natural: the hero knocked back so it reads as paper and plant, not as print. A neutral brief
+  // goes to a neutral paper — pulling it toward kraft would tint it a warmth nobody asked for.
+  eco: (r) => {
+    const { h, s } = hsl(r.hero)
+    if (isNeutral(r.hero)) return '#e8e5e0'
+    // Knocked back *in its own hue*. Mixing half-and-half toward kraft dragged a blue-green 70°
+    // round the wheel and handed back olive — the brief's green stopped being the brief's green.
+    // The warmth that makes it read "eco" is a light touch of kraft on top, not a new hue.
+    return mixHex(fromHsl(h, Math.min(0.26, Math.max(0.1, s * 0.45)), 0.76), '#cbb892', 0.18)
+  },
+  // Warm cream with the hero only breathing through it; a neutral brief gets a neutral paper.
+  classic: (r) => {
+    const { h, s } = hsl(r.hero)
+    return mixHex(isNeutral(r.hero) ? '#f2f0ec' : '#f5ecdc', fromHsl(h, Math.min(0.5, s), 0.5), 0.12)
+  },
+  // Loud and bright: the hero at the top of its chroma, or at the top of its contrast if it has
+  // no chroma to push.
+  playful: (r) => {
+    const { h, s, l } = hsl(r.hero)
+    if (isNeutral(r.hero)) return fromHsl(h, s, l < 0.5 ? 0.18 : 0.9)
+    return l >= 0.52 && l <= 0.74 ? r.hero : fromHsl(h, chromaUp(s, 0.62), 0.62)
+  },
+}
+
+function paletteFromMood(hexes: string[], mood: StyleType): Palette {
+  const roles = rolesOf(hexes)
+  const bg = MOOD_GROUND[mood](roles)
+  const fg = inkOn(bg, roles)
+  const dark = hexLuminance(bg) < 0.4
+  // The accent is the brief's supporting colour, lifted or dropped until it separates from the
+  // ground. It is never invented: `ensureAccentContrast` only steps in if the brief left nothing
+  // that can carry it.
+  const s2 = hsl(roles.second)
+  // Whichever colour the brief named is *not* carrying the ground is the accent, used exactly as
+  // typed. Re-lighting it to the mood's band would hand back a colour the customer never chose —
+  // a "#f5f0e8 · #2d6a4f" brief grounds on the off-white, so the green is the accent, verbatim.
+  const groundSource = bg === roles.light ? roles.light : roles.hero
+  const spare = hexes.find((hex) => hex !== groundSource && accentContrastsGround(bg, hex))
+  const accent =
+    spare ??
+    (roles.secondFromBrief && accentContrastsGround(bg, roles.second)
+      ? roles.second
+      : fromHsl(s2.h, chromaUp(s2.s, 0.3), dark ? 0.62 : 0.34))
   return ensureAccentContrast(
     tweakNeutrals(
       {
-        bg: hexLuminance(light) > 0.55 ? light : '#f4f1ea',
-        fg: ink,
+        bg,
+        fg,
         accent,
-        muted: mixHex(ink, light, 0.55),
-        paper: mixHex(light, ink, 0.06),
+        muted: mixHex(fg, bg, dark ? 0.42 : 0.5),
+        paper: mixHex(bg, fg, dark ? 0.08 : 0.05),
       },
       mood,
     ),
@@ -219,7 +345,7 @@ export function paletteFromBrief(brief: DesignBrief, mood: StyleType, premium = 
   const metal = hexes.find((hex) => METALLIC.has(hex))
   const ground = hexes.filter((hex) => !METALLIC.has(hex))
   const base = ground.length
-    ? paletteFromHexes(ground, mood)
+    ? paletteFromMood(ground, mood)
     : ensureAccentContrast(tweakNeutrals(paletteFor(brief, mood, premium), mood))
   if (!metal) return base
   return ensureAccentContrast({ ...base, accent: metal })

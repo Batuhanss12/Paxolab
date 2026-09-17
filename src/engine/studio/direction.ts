@@ -73,18 +73,35 @@ function briefIsAchromatic(brief: DesignBrief): boolean {
   })
 }
 
-function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, brief: DesignBrief): Temperament {
+/**
+ * The mood decides the colour treatment. Sector may break a tie; it may not overrule.
+ *
+ * Measured 2026-09-17: this used to test the sector first, so `sector === 'cream'` returned
+ * `vivid-mono` before luxury or minimal were ever considered — every mood produced the same face
+ * on a cream brief. Paired with the palette ignoring the mood, that is why the mood knob was dead:
+ * two independent short-circuits, either one of which was enough on its own.
+ *
+ * Layer 2 owns this, so the mapping is deliberately total and boring — one mood in, one treatment
+ * out. A customer paying a credit per change has to be able to predict the change.
+ */
+function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, _brief: DesignBrief): Temperament {
   const dark = isDark(palette.bg)
-  const colors = brief.colors.toLocaleLowerCase('tr')
-  if (/neon|canlı|vivid|mor|lila|turkuaz|lime|fuşya|pembe/.test(colors) && sector !== 'perfume') return 'vivid-mono'
-  if (sector === 'electronics') return dark || style !== 'minimal' ? 'tech-dark' : 'clean-clinical'
-  if (sector === 'food' || style === 'eco') return dark && style === 'luxury' ? 'dark-luxe' : 'natural-warm'
-  if (style === 'luxury' || style === 'classic') return dark ? 'dark-luxe' : 'light-luxe'
-  if (style === 'minimal' || sector === 'health' || sector === 'serum') return 'clean-clinical'
-  if (sector === 'cleaning') return 'clean-clinical'
-  if (style === 'playful' || sector === 'cream' || sector === 'baby') return 'vivid-mono'
-  if (style === 'modern') return dark ? 'tech-dark' : 'clean-clinical'
-  return dark ? 'dark-luxe' : 'light-luxe'
+  switch (style) {
+    case 'luxury':
+      return dark ? 'dark-luxe' : 'light-luxe'
+    case 'classic':
+      return 'light-luxe'
+    case 'minimal':
+      return 'clean-clinical'
+    case 'eco':
+      return 'natural-warm'
+    case 'playful':
+      return 'vivid-mono'
+    case 'modern':
+      // The only place sector still speaks: a dark modern face on electronics is the tech look,
+      // the same mood on a food or cosmetic brief is not.
+      return sector === 'electronics' || dark ? 'tech-dark' : 'clean-clinical'
+  }
 }
 
 /** Build the studio palette from the engine palette + temperament. Hue comes from the brief; the temperament sets lightness/role. */
@@ -122,37 +139,57 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
       }
     }
     case 'vivid-mono': {
-      const hue = accentH.s > 0.25 ? accentH : bgH.s > 0.25 ? bgH : { h: 265, s: 0.6, l: 0.5 }
-      const ground = fromHsl(hue.h, Math.max(0.55, hue.s), 0.5)
-      const art = fromHsl(hue.h, Math.max(0.55, hue.s), 0.36)
+      // The mood already chose the ground's hue *and* how light it sits. This case may only
+      // guarantee the chroma that makes the treatment "vivid" — recomputing the lightness is what
+      // used to throw the mood away, so every mood came back at l=0.5 on the same hue.
+      const hue = bgH.s > 0.2 ? bgH : accentH.s > 0.25 ? accentH : { h: 265, s: 0.6, l: 0.5 }
+      const l = Math.min(0.74, Math.max(0.28, bgH.s > 0.2 ? bgH.l : 0.5))
+      const ground = fromHsl(hue.h, Math.max(0.55, hue.s), l)
+      const art = fromHsl(hue.h, Math.max(0.55, hue.s), Math.max(0.2, l - 0.14))
+      const ink = readableInk(ground, base.fg)
       return {
         ground,
-        ink: '#ffffff',
-        accent: '#ffffff',
+        ink,
+        accent: separateAccent(ground, ink),
         accent2: art,
         card: '#ffffff',
         cardInk: fromHsl(hue.h, Math.max(0.55, hue.s), 0.3),
-        muted: fromHsl(hue.h, 0.3, 0.9),
+        muted: mix(ink, ground, 0.4),
       }
     }
     case 'natural-warm': {
-      const ground = isDark(base.bg) ? '#f3e9d3' : mix(lighten(base.bg, 0.06), '#f3e9d3', 0.5)
-      const accent = separateAccent(ground, warmAccent ? gold : '#b8892f')
-      const ink = '#4a3521'
+      // Warmed toward paper, not replaced by it. Mixing toward a cream also drags the *hue* toward
+      // that cream — a blue-green brief kept arriving as olive, 70° off what the customer asked
+      // for. So the mix sets the lightness and the chroma, and the brief's own hue is put back.
+      const warmed = mix(lighten(base.bg, 0.04), '#f3e9d3', 0.3)
+      const w = hsl(warmed)
+      const ground = isDark(base.bg) ? '#f3e9d3' : bgH.s > 0.1 ? fromHsl(bgH.h, w.s, w.l) : warmed
+      // Ink and accent were hardcoded browns, so three different briefs came back with the same
+      // type colour in eco — the mood held but the brief stopped showing through it.
+      const ink = isDark(base.fg) ? base.fg : fromHsl(bgH.s > 0.12 ? bgH.h : 30, 0.4, 0.2)
+      const accent = separateAccent(ground, warmAccent ? gold : darken(base.accent, 0.08))
       return {
         ground,
         ink,
         accent,
-        accent2: '#7a5a2b',
+        accent2: darken(accent, 0.18),
         card: '#fbf6ea',
         cardInk: ink,
         muted: mix(ink, ground, 0.45),
       }
     }
     case 'clean-clinical': {
-      const ground = '#ffffff'
+      // Clinical means bright and quiet, not literally white: a mood that tinted the paper keeps
+      // its tint. Only a ground too dark to read as clinical is replaced outright.
+      const ground = luminance(base.bg) > 0.62 ? base.bg : '#ffffff'
       const ink = isDark(base.fg) ? (hsl(base.fg).s > 0.2 ? base.fg : fromHsl(accentH.s > 0.2 ? accentH.h : 240, 0.5, 0.3)) : fromHsl(240, 0.5, 0.3)
-      const accent = separateAccent(ground, accentH.s > 0.3 && luminance(base.accent) > 0.2 ? base.accent : '#f2a93b')
+      // A dark accent is not an unusable one — on a white clinical ground it is the *best* one.
+      // Requiring luminance > 0.2 threw away the brief's deep green and substituted a hardcoded
+      // orange, so a "yeşil · krem" brief in minimal came back with no green anywhere on the face.
+      // `separateAccent` already guarantees the contrast; this only decides whether the brief gave
+      // us anything with a hue to work with.
+      const usableAccent = accentH.s > 0.18 || luminance(base.accent) < 0.35
+      const accent = separateAccent(ground, usableAccent ? base.accent : '#f2a93b')
       return {
         ground,
         ink,
@@ -170,7 +207,9 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
       // vanishes on a dark ground). Reach for another colour the brief actually gave — its paper
       // — before inventing the cyan default.
       const usable = accentH.s > 0.2 || luminance(base.accent) > 0.5
-      const fallback = luminance(base.paper) > 0.5 ? base.paper : '#6fd3e0'
+      // ...and if the brief gave no usable light colour either, its own ink beats the cyan
+      // default: a "siyah · beyaz" brief has no business coming back with a cyan accent.
+      const fallback = luminance(base.paper) > 0.5 ? base.paper : luminance(base.fg) > 0.5 ? base.fg : '#6fd3e0'
       const accent = separateAccent(ground, usable ? base.accent : fallback)
       return {
         ground,
@@ -529,12 +568,6 @@ function uniqueFamilyRows(ranked: ScoredDna[], n: number): ScoredDna[] {
   return out.length ? out : ranked.slice(0, n)
 }
 
-function rotateToFront<T>(list: readonly T[], first: T | undefined): T[] {
-  const i = first != null ? list.indexOf(first) : -1
-  if (i <= 0) return [...list]
-  return [...list.slice(i), ...list.slice(0, i)]
-}
-
 /** S4: locked family stays. Unlocked vary walks ranked 1–6 so step 3 is not step 0. */
 function rankDirectionPool(input: DirectionInput): RankedPool {
   const hints = mergeHints(input.hints)
@@ -551,7 +584,12 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
       if (hints.temperament === 'vivid-mono') hints.temperament = undefined
     }
   }
-  const guessed = hints.temperament ?? temperamentFor(input.sector, input.style, input.palette, input.brief)
+  // A visual pin ("mermer") chooses the archetype and the background — that is layer 1, the
+  // skeleton. It must not also choose the colour treatment, or the mood knob dies on exactly the
+  // briefs that named a material. Only an explicit user pick outranks the mood here.
+  const guessed =
+    (userHoldsTemperament(hints) ? hints.temperament : undefined) ??
+    temperamentFor(input.sector, input.style, input.palette, input.brief)
   // Single choke point for both the sector hint and the default: a brief that named only neutral
   // colours must not be pushed into `vivid-mono`, which forces saturation ≥ 0.55 and would invent
   // a hue nobody asked for. Measured 2026-09-17: "siyah · beyaz" came back turquoise, then red.
@@ -585,7 +623,14 @@ function userHoldsTemperament(hints: DirectionHints): boolean {
   return (hints.rationale ?? []).some((row) => /StyleBar temperament|daha sakin varyasyon/i.test(row))
 }
 
-/** variationIndex 0 honors pins (goldens). Later steps cycle DNA texture then temperament. */
+/**
+ * variationIndex 0 honors pins (goldens). Later steps cycle the DNA's background texture.
+ *
+ * They deliberately do *not* cycle the temperament any more. One credit buys six variations, so
+ * the six have to be six takes on the same decision — if step 3 flips a light face to a dark one,
+ * the mood the customer chose and paid for silently stops holding, and "variation" and "mood" turn
+ * into the same knob with different labels.
+ */
 function varyFace(
   dna: ArchetypeDna,
   hints: DirectionHints,
@@ -596,22 +641,19 @@ function varyFace(
   const backgrounds = bgPool.length ? bgPool : dna.backgrounds
   if (variationIndex <= 0) {
     const temperament: Temperament =
-      userHoldsTemperament(hints) && hints.temperament
-        ? hints.temperament
-        : dna.temperaments.includes(temperamentGuess)
-          ? temperamentGuess
-          : (hints.temperament ?? dna.temperaments[0])
+      userHoldsTemperament(hints) && hints.temperament ? hints.temperament : temperamentGuess
     const background =
       hints.background && dna.backgrounds.includes(hints.background) ? hints.background : backgrounds[0] ?? dna.backgrounds[0]
     return { temperament, background }
   }
-  const holdTemp = userHoldsTemperament(hints)
-  const orderedTemps = holdTemp && hints.temperament ? [hints.temperament] : rotateToFront(dna.temperaments, temperamentGuess)
   const bgIndex = variationIndex % Math.max(1, backgrounds.length)
-  const tempIndex = Math.floor(variationIndex / Math.max(1, backgrounds.length)) % Math.max(1, orderedTemps.length)
   return {
     background: backgrounds[bgIndex] ?? dna.backgrounds[0],
-    temperament: orderedTemps[tempIndex] ?? dna.temperaments[0],
+    // The archetype's `temperaments` list is a *preference*, already paid for in `scoreArchetype`
+    // via tempFit — an archetype that cannot wear the mood loses the ranking. It must not also be
+    // a veto at paint time: `botanical-card` permits only `vivid-mono`, so every mood on a cream
+    // brief came back vivid no matter what the customer chose. Layer 1 ranks; layer 2 decides.
+    temperament: userHoldsTemperament(hints) && hints.temperament ? hints.temperament : temperamentGuess,
   }
 }
 
