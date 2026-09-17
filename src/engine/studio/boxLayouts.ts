@@ -66,7 +66,7 @@ function darkLandscape(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, d.palette.ground)]
-  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { uid: ctx.uid, span: 0.66 }))
+  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: 0.66 }))
   const ink = d.palette.ink
   const accent = d.palette.accent
   const lock = stackedLockup(ledger, d, w / 2, h * 0.08, w - m * 2, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent }))
@@ -95,7 +95,7 @@ function darkLandscape(ctx: LayoutCtx): string {
 function inkWashFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { uid: ctx.uid, corner: 'bl' })]
+  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: 'bl' })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.85))
@@ -122,7 +122,7 @@ function landscapeWindowFront(ctx: LayoutCtx): string {
 function marbleFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.8 })]
+  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.8 })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   const bx = m * 1.6
@@ -143,7 +143,7 @@ function marbleFront(ctx: LayoutCtx): string {
 function botanicalCardFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.85 })]
   const ink = d.palette.ink
   const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6, identOf(ctx))
   parts.push(pill.markup)
@@ -169,7 +169,7 @@ function botanicalCardFront(ctx: LayoutCtx): string {
 function diagonalTechFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   // brand small top-left, monogram top-right
@@ -252,8 +252,8 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   const ink = light ? d.palette.cardInk : d.palette.ink
   const accent = arche === 'botanical-card' ? '#ffffff' : d.palette.accent
   const parts: string[] = [ground(w, h, bg)]
-  if (arche === 'marble-frame') parts.push(paintBackground('marble', w, h, { ...d.palette, accent: mix(d.palette.accent, bg, 0.6) }, d.seed + 7, { uid: `${ctx.uid}-b`, intensity: 0.3 }))
-  if (arche === 'wave-panel') parts.push(paintBackground('wave', w, h, d.palette, d.seed + 7, { uid: `${ctx.uid}-b` }))
+  if (arche === 'marble-frame') parts.push(paintBackground('marble', w, h, { ...d.palette, accent: mix(d.palette.accent, bg, 0.6) }, d.seed + 7, { species: ctx.species, uid: `${ctx.uid}-b`, intensity: 0.3 }))
+  if (arche === 'wave-panel') parts.push(paintBackground('wave', w, h, d.palette, d.seed + 7, { species: ctx.species, uid: `${ctx.uid}-b` }))
   if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.55, accent, 0.8))
   const hdr = backHeaders(d.locale)
   // header lockup
@@ -361,13 +361,13 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   const m = marginFor(w, h)
   const parts: string[] = []
   if (arche === 'dark-landscape' || arche === 'marble-frame') {
-    parts.push(paintBackground('marble', w, h, { ...d.palette, ground: bg, accent: mix(d.palette.accent, bg, arche === 'dark-landscape' ? 0.35 : 0) }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
+    parts.push(paintBackground('marble', w, h, { ...d.palette, ground: bg, accent: mix(d.palette.accent, bg, arche === 'dark-landscape' ? 0.35 : 0) }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
   } else if (arche === 'botanical-card') {
-    parts.push(paintBackground('botanical', w, h, { ...d.palette, ground: bg, accent2: darken(bg, 0.08) }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
+    parts.push(paintBackground('botanical', w, h, { ...d.palette, ground: bg, accent2: darken(bg, 0.08) }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
   } else if (arche === 'diagonal-tech') {
-    parts.push(paintBackground('circuit', w, h, d.palette, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}` }))
+    parts.push(paintBackground('circuit', w, h, d.palette, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}` }))
   } else if (arche === 'wave-panel') {
-    parts.push(paintBackground('wave', w, h, { ...d.palette, ground: bg }, d.seed + 11 + index, { uid: `${ctx.uid}-s${index}` }))
+    parts.push(paintBackground('wave', w, h, { ...d.palette, ground: bg }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}` }))
   } else {
     parts.push(ground(w, h, bg))
   }

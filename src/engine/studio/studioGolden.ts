@@ -22,7 +22,11 @@ export type StudioFaceFreeze = {
  *     −10%…+20%, worst on `script`; the negative side let lines overrun their box),
  *   - every computed type size is clamped to `STUDIO_TYPE_FLOOR_MM` (1.5 mm).
  * 16 of 18 hashes moved. Archetype / background / family are unchanged on all 18 — the DNA did
- * not shift, only the type did. Update via `npx vite-node scripts/dump-studio-golden.ts`.
+ * not shift, only the type did.
+ *
+ * L2 then moved 2 more (the meadow-backed food faces): scenery silhouettes now come from the
+ * product's species instead of always being conifers. DNA unchanged again.
+ * Update via `npx vite-node scripts/dump-studio-golden.ts`.
  */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
   '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: '530cb8a4537e0469' },
@@ -31,8 +35,8 @@ export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
   '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: 'a143ef466005bcbf' },
   '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '84d5b6dce359144f' },
   '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '64a1423b81734924' },
-  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'd24658d29e96a8aa' },
-  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '2e6cd55e2ba4fd55' },
+  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'd5a2f427ab652750' },
+  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '4eba883ed99a5c3c' },
   '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '33f73eaad2a64666' },
   '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '721d886bb154eb53' },
   '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: 'adc4b12b62dcd643' },

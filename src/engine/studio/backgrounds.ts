@@ -5,6 +5,7 @@
  */
 import type { BackgroundFamily, StudioPalette } from './types'
 import { darken, lighten, mix } from './color'
+import { speciesLeaf, speciesTree, type Species } from './species'
 
 export type Rng = () => number
 
@@ -32,6 +33,11 @@ export type BackgroundOpts = {
   span?: number
   /** Keep this right-side fraction of the face free of the main stripe (label lockup column). */
   clearRight?: number
+  /**
+   * What the scenery is of. The archetype owns the composition; this owns the silhouettes,
+   * so an olive oil carton gets an olive grove instead of the default conifers.
+   */
+  species?: Species
 }
 
 export function paintBackground(family: BackgroundFamily, w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
@@ -221,12 +227,18 @@ export function botanical(w: number, h: number, pal: StudioPalette, seed: number
     cutouts += fenestratedLeaf(cx, cy, len, rng() * 360, tones[(i + 1) % tones.length], 0.58 + rng() * 0.28, rng)
   }
   parts.push(`<g data-texture="cutouts">${cutouts}</g>`)
+  // Foreground is the layer you actually read, so it carries the product's own botany.
+  const species = opts.species ?? 'flora'
   for (let i = 0; i < front; i++) {
     const { cx, cy } = edgeAnchor(rng, w, h)
     const len = diag * (0.2 + rng() * 0.18)
     const fill = tones[(i + 2) % tones.length]
     const opacity = 0.62 + rng() * 0.28
-    parts.push(rng() < 0.45 ? frond(cx, cy, len, rng() * 360, fill, opacity, rng) : broadLeaf(cx, cy, len * 0.85, rng() * 360, fill, opacity))
+    if (species !== 'flora' && species !== 'conifer') {
+      parts.push(speciesLeaf(species, cx, cy, len, rng() * 360, fill, opacity))
+    } else {
+      parts.push(rng() < 0.45 ? frond(cx, cy, len, rng() * 360, fill, opacity, rng) : broadLeaf(cx, cy, len * 0.85, rng() * 360, fill, opacity))
+    }
   }
   return `<g data-bg="botanical">${parts.join('')}</g>`
 }
@@ -373,11 +385,12 @@ export function landscapeMeadow(w: number, h: number, pal: StudioPalette, seed: 
   // meadow hills
   parts.push(`<path d="M0 ${f(h * 0.78)} C${f(w * 0.3)} ${f(h * 0.68)} ${f(w * 0.6)} ${f(h * 0.82)} ${f(w)} ${f(h * 0.72)} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${meadow}" />`)
   parts.push(`<path d="M0 ${f(h * 0.88)} C${f(w * 0.35)} ${f(h * 0.8)} ${f(w * 0.7)} ${f(h * 0.94)} ${f(w)} ${f(h * 0.86)} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${meadowLight}" />`)
-  // pines along the hill
+  // trees along the hill — an orchard for olive/citrus, stalks for grain, conifers otherwise
+  const species = opts.species ?? 'conifer'
   for (let i = 0; i < Math.round(w / 5); i++) {
     const x = rng() * w
     const base = h * (0.74 + rng() * 0.06)
-    parts.push(pine(x, base, h * (0.07 + rng() * 0.07), darken(meadow, 0.18)))
+    parts.push(speciesTree(species, x, base, h * (0.07 + rng() * 0.07), darken(meadow, 0.18)))
   }
   // flowers
   let flowers = ''

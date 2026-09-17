@@ -346,7 +346,33 @@ Sattığın şey üretime hazır dosya; bugün o dosya matbaada bozuluyor.
 
 **Çıkış kapısı:** İndirilen SVG, o fontlar **kurulu olmayan** bir makinede açıldığında birebir aynı görünüyor (kanıt: iki ortamda render karşılaştırması) · export'ta hiçbir metin ticari eşiğin altında değil · kullanıcı ölçüsü korunuyor.
 
-### `[ ]` L2 — Tasarım gerçeği
+### `[~]` L2 — Tasarım gerçeği
+
+**Özgünlük ölçümü (2026-09-17, `scripts/measure-originality.ts` — 28 brief, 14 kategoride ikişer zıt brief):**
+
+| Ölçüt | Sonuç |
+|---|---|
+| Benzersiz yüz hash | **28 / 28** — hiçbir iki tasarım birebir aynı değil |
+| Kullanılan arketip | 7 (kutu havuzu 8; `ink-wash` hiç seçilmedi) |
+| En baskın arketip | `botanical-card` — %21 (tek arketip her şeyi yemiyor) |
+| Benzersiz zemin / temperament | 7 / 6 |
+| **Aynı kategori + zıt brief → aynı arketip** | **5 / 14 (%36)** |
+
+**Tavan bulundu: 8 kutu arketipi.** 28 brief 7 arketipe düşüyor.
+
+Çöken çiftler — brief zıt olmasına rağmen:
+`serum klinik↔sıcak` · `bal dağ↔modern` (siyah·sarı, modern olan da çayır alıyor) · `temizlik ferah↔doğal` · `şampuan botanik↔editorial` (siyah·beyaz, modern olan da botanik alıyor) · `çay klasik↔sakin`.
+Sebep: `productFamilyFit` ±0.22 ham puanla ekleniyor ve `styleFit * 0.35`'i bastırıyor — yani ikinci ve daha güçlü bir sektör pini.
+
+**L2-1 uygulandı — sektör-motif sadakati:**
+
+Ölçüm gösterdi ki sorun sandığımdan genişti: zeytinyağı `botanical` bile almıyordu — lüks olanı **mermer**, eko olanı **çam ağaçlı çayır** alıyordu. Yani hiçbir arketip ürünün *ne olduğunu* bilmiyordu; mermer ve botanik, alakasız kategorilere "lüks" ve "doğal" duvar kâğıdı gibi uygulanıyordu.
+
+Yeni `studio/species.ts` katmanı bu soruyu ayırıyor: **kompozisyon arketipte kalır, ne çizildiği üründen gelir.** `speciesFor(brief)` → olive / coffee / tea / grain / citrus / cocoa / flora / conifer; `landscapeMeadow` ve `botanical` painter'ları siluetleri bu türden alıyor.
+
+Tarayıcıda doğrulandı: zeytinyağı kutusu artık **yuvarlak taçlı zeytinlik**, bal kutusu **buğday başakları** çiziyor — ikisi de eskiden çam üçgeniydi. **+8 test.** Golden'da yalnız 2 yüz (çayır zeminli gıda) değişti, DNA sabit.
+
+**Kalan:** arketip çeşitliliği (yukarıdaki %36), palet sadakati, kör kalite değerlendirmesi.
 1. **Sektör-motif sadakati** — zeytinyağına çam çizilmemeli. Arketip↔sektör uyumu için motif katmanı (zeytin dalı, bahçe, damla) veya arketip seçiminde sert sektör vetosu.
 2. **Palet sadakati** — brief'teki renk, boyanan yüzde ölçülebilir şekilde baskın olsun (ölçüt: üretilen SVG'deki renk dağılımı brief paletine yakınsıyor mu).
 3. **Özgünlük ölçümü** — 25–30 sentetik brief → arketip dağılımı + yüz hash çeşitliliği. **Tavanın nerede olduğunu bilmiyoruz.** Sonuç, arketip havuzunu mu büyütmek yoksa arketip *içinde* parametrik kompozisyona mı geçmek gerektiğini söyleyecek.
@@ -387,3 +413,5 @@ Yalnızca doğrulaması çalıştırılmış işler buraya yazılır.
 | 2026-09-17 | — | **Launch denetimi:** sıfırdan kullanıcı olarak uçtan uca akış koşuldu (kayıt→brief→generate→dieline→preflight→export). Sonuç §2.4; kapılar §2.6 | Tarayıcı yolculuğu + export probe (font gömme yok, min punto 1.05 mm) |
 | 2026-09-17 | L1 | İyelik eki + kullanıcı ölçüsü + **export outline** (SIL OFL fontlar vendor'landı, glyph tablosu derlendi). `FACE_EM` sapması ölçüldü: −%10…+%20 | `tsc` 0 · **554/554 SPA · 71/71 server · 0 lint hatası** · 3 yönlü tarayıcı render karşılaştırması |
 | 2026-09-17 | L1-2 | Gerçek font metrikleri + 1.5 mm punto tabanı tek geçişte; 1.5 altı metin %15.6 → 0; 16/18 stüdyo golden bilinçli güncellendi (DNA sabit) | `tsc` 0 · **561/561 SPA · 71/71 server** · 0 lint hatası · build ✓ |
+| 2026-09-17 | L2-ölçüm | 28 brief ile özgünlük ölçüldü: 28/28 benzersiz yüz ama **%36 çift aynı arketipe** düşüyor; tavan 8 kutu arketipi | `scripts/measure-originality.ts` |
+| 2026-09-17 | L2-1 | `species.ts`: kompozisyon arketipte, **ne çizildiği üründen**. Zeytinyağı artık zeytinlik, bal buğday çiziyor (ikisi de çamdı) | **569/569 SPA** · 0 lint hatası · 2 golden bilinçli güncel · tarayıcıda doğrulandı |

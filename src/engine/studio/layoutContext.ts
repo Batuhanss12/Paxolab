@@ -1,6 +1,7 @@
 import type { DesignBrief, DesignSpec, Panel } from '../../types'
 import { categoryBesideProduct } from './copyBank'
 import { Ledger } from './text'
+import { speciesFor, type Species } from './species'
 import {
   clampStudioScale,
   DEFAULT_STUDIO_IDENTITY,
@@ -24,6 +25,8 @@ export type LayoutCtx = {
   logoHref?: string
   logoScale: number
   titleScale: number
+  /** Which plant the scenery depicts — resolved from the product, not the archetype. */
+  species: Species
 }
 
 export function makeCtx(
@@ -54,6 +57,7 @@ export function makeCtx(
     logoHref: href || undefined,
     logoScale: clampStudioScale(identity.logoScale, DEFAULT_STUDIO_IDENTITY.logoScale),
     titleScale: clampStudioScale(identity.titleScale, DEFAULT_STUDIO_IDENTITY.titleScale),
+    species: speciesFor({ sector: brief.sector, subProduct: brief.subProduct, productName: product, story: brief.story }),
   }
 }
 

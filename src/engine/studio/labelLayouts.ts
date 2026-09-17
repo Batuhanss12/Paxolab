@@ -65,7 +65,7 @@ function cardOnArt(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const landscape = isLandscape(w, h)
-  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.85 })]
   const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.42, identOf(ctx))
   parts.push(pill.markup)
   const ink = d.palette.ink
@@ -114,7 +114,7 @@ function marbleFrame(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const landscape = isLandscape(w, h)
-  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { uid: ctx.uid, intensity: 0.85 })]
+  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.85 })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   // lockup inside corner brackets in the upper third
@@ -149,7 +149,7 @@ function marbleFrame(ctx: LayoutCtx): string {
 function diagonalSplit(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('diagonal', w, h, d.palette, d.seed, { uid: ctx.uid, clearRight: 0.48 })]
+  const parts: string[] = [paintBackground('diagonal', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, clearRight: 0.48 })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   const lockInk = readableInk(d.palette.ground, ink)
@@ -254,7 +254,7 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const sceneCat = categoryCaption(ctx)
   if (sceneCat) parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, sceneCat, subSize, ink, w - m * 2))
   // scene
-  parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { uid: ctx.uid, span: 0.46 }))
+  parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: 0.46 }))
   // volume
   if (d.volumeLine) {
     const vs = Math.max(2, Math.min(2.8, w * 0.034))
@@ -275,7 +275,7 @@ function lineScene(ctx: LayoutCtx): string {
 export function paintWavePanelFace(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('wave', w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const parts: string[] = [paintBackground('wave', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   const lock = stackedLockup(ledger, d, w / 2, m * 1.5, w - m * 2, copy.brand, '', withIdent(ctx, {
@@ -310,7 +310,7 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
 export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: number; brandMax?: number } = {}): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('paper', w, h, d.palette, d.seed, { uid: ctx.uid })]
+  const parts: string[] = [paintBackground('paper', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, opts.frameInset ?? m * 0.55, accent))
@@ -344,7 +344,7 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
   const window = (winX: number, winY: number, winW: number, winH: number, badgeOverlap: number) => {
     const arch = archWindow(ctx.uid, winX, winY, winW, winH)
     parts.push(`<defs>${arch.defs}</defs>`)
-    parts.push(`<g clip-path="url(#${arch.clipId})"><g transform="translate(${f(winX)} ${f(winY)})">${paintBackground('landscape-meadow', winW, winH, d.palette, d.seed, { uid: `${ctx.uid}-w` })}</g></g>`)
+    parts.push(`<g clip-path="url(#${arch.clipId})"><g transform="translate(${f(winX)} ${f(winY)})">${paintBackground('landscape-meadow', winW, winH, d.palette, d.seed, { species: ctx.species, uid: `${ctx.uid}-w` })}</g></g>`)
     parts.push(arch.outline(accent))
     ledger.add('ground', 'window', winX, winY, winW, winH)
     const badgeW = winW * 0.78
@@ -402,7 +402,7 @@ function landscapeBadge(ctx: LayoutCtx): string {
 function inkPanel(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { uid: ctx.uid, corner: 'bl' })]
+  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: 'bl' })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.8))
