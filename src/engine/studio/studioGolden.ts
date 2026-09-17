@@ -30,6 +30,14 @@ export type StudioFaceFreeze = {
  *     ran on the blank-canvas path, so a brief that said "siyah · beyaz" was never consulted and
  *     the face came back turquoise. The kit path still uses `paletteFor`, which is why the 29
  *     catalog fingerprints are untouched.
+ *
+ * Then the marble painter was rewritten and only the two marble faces moved (05-kahve-kutu,
+ * 05-kahve-etiket). Zoomed to print size the old slab read as a gold road map: ~27 veins, all in
+ * the accent colour, each one stroke wide with hard vertices where the path jumped. Veins are now
+ * tapered fills on a drifting turn rate, mostly stone-coloured, with gold as a rare thread.
+ * A two-face move is the shape a background-only change should have — if a painter rewrite moves
+ * faces that do not use that background, something leaked and the diff is worth reading.
+ *
  * Update via `npx vite-node scripts/dump-studio-golden.ts`.
  */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
@@ -41,8 +49,8 @@ export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
   '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'cc35d65fb76d17c7' },
   '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'c76d87eff3b560ce' },
   '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: 'ba7d7f1a6c4f474e' },
-  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'abf47271c48c2f91' },
-  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'e8167f0e1f43622d' },
+  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '39b5d424b6c40b8b' },
+  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'f8b00fc50cad86f0' },
   '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: '92d752e16e5c52d9' },
   '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '71253e1e7d9a9abb' },
   '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '42d44d2e10c4afdf' },

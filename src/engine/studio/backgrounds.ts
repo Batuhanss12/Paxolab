@@ -72,48 +72,63 @@ export function ground(w: number, h: number, fill: string): string {
 
 /* ------------------------------------------------------------------ marble */
 
-function veinPath(rng: Rng, w: number, h: number, wobble: number): string {
-  const x0 = rng() * w
-  const y0 = rng() * h
-  let d = `M${f(x0)} ${f(y0)}`
-  let x = x0
-  let y = y0
-  const steps = 3 + Math.floor(rng() * 3)
+type Pt = { x: number; y: number }
+
+/**
+ * The centreline of one vein.
+ *
+ * A vein is a crack that was filled, so it holds a direction and only bends by a little at a
+ * time. The old painter jumped to a new random point each step, which is why a zoomed face read
+ * as a road map: hard vertices, and the same turn repeated across the panel.
+ *
+ * Drifting the *heading* fixes the corners but not the shape — independent nudges cancel out over
+ * 30 steps and leave a straight blade. So what drifts is the turn rate: it persists, which bends
+ * the run into a long sweep before easing back. That is the difference between a shard and a vein.
+ */
+function veinSpine(rng: Rng, start: Pt, heading: number, len: number, steps: number): Pt[] {
+  const pts: Pt[] = [start]
+  let { x, y } = start
+  let a = heading
+  let turn = (rng() - 0.5) * 0.08
+  const step = len / steps
   for (let i = 0; i < steps; i++) {
-    const nx = Math.max(-w * 0.2, Math.min(w * 1.2, x + (rng() - 0.5) * w * wobble))
-    const ny = Math.max(-h * 0.2, Math.min(h * 1.2, y + (rng() - 0.5) * h * wobble))
-    const c1x = x + (rng() - 0.5) * w * wobble * 0.8
-    const c1y = y + (rng() - 0.5) * h * wobble * 0.8
-    const c2x = nx + (rng() - 0.5) * w * wobble * 0.8
-    const c2y = ny + (rng() - 0.5) * h * wobble * 0.8
-    d += ` C${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(nx)} ${f(ny)}`
-    x = nx
-    y = ny
+    turn = Math.max(-0.16, Math.min(0.16, turn + (rng() - 0.5) * 0.07))
+    a += turn + (rng() - 0.5) * 0.04
+    x += Math.cos(a) * step
+    y += Math.sin(a) * step
+    pts.push({ x, y })
   }
-  return d
+  return pts
 }
 
-/** Diagonal S-curve from an edge — Elite Brew flowing marble, not a random scribble. */
-function flowVein(rng: Rng, w: number, h: number): string {
-  const fromLeft = rng() < 0.55
-  let x = fromLeft ? -w * 0.08 : rng() * w
-  let y = fromLeft ? rng() * h : -h * 0.08
-  const dirX = fromLeft ? 1 : rng() < 0.5 ? 1 : -0.25
-  const dirY = fromLeft ? rng() - 0.32 : 1
-  let d = `M${f(x)} ${f(y)}`
-  const steps = 4 + Math.floor(rng() * 3)
-  for (let i = 0; i < steps; i++) {
-    const nx = x + dirX * w * (0.18 + rng() * 0.22) + (rng() - 0.5) * w * 0.1
-    const ny = y + dirY * h * (0.12 + rng() * 0.18) + (rng() - 0.5) * h * 0.08
-    const c1x = x + (nx - x) * 0.35 + (rng() - 0.5) * w * 0.14
-    const c1y = y + (ny - y) * 0.22 + (rng() - 0.5) * h * 0.1
-    const c2x = x + (nx - x) * 0.72 + (rng() - 0.5) * w * 0.1
-    const c2y = y + (ny - y) * 0.78 + (rng() - 0.5) * h * 0.07
-    d += ` C${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(nx)} ${f(ny)}`
-    x = nx
-    y = ny
+function headingAt(pts: Pt[], i: number): number {
+  const a = pts[Math.max(0, i - 1)]
+  const b = pts[Math.min(pts.length - 1, i + 1)]
+  return Math.atan2(b.y - a.y, b.x - a.x)
+}
+
+/**
+ * A stroke has one width for its whole length; a vein does not — it swells and thins away to
+ * nothing. So the spine is drawn as a filled ribbon: out along one side at the profile's
+ * half-width, back along the other. That single change is most of the difference between
+ * "scratches on paper" and stone.
+ */
+function veinRibbon(pts: Pt[], maxW: number, peak: number): string {
+  const n = pts.length - 1
+  const halfWidth = (i: number) => {
+    const t = i / n
+    const s = t < peak ? t / peak : 1 - (t - peak) / (1 - peak)
+    return (maxW / 2) * Math.max(0, s) ** 0.6
   }
-  return d
+  const side = (i: number, sign: number) => {
+    const a = headingAt(pts, i) + Math.PI / 2
+    const k = halfWidth(i) * sign
+    return `${f(pts[i].x + Math.cos(a) * k)} ${f(pts[i].y + Math.sin(a) * k)}`
+  }
+  let d = `M${side(0, 1)}`
+  for (let i = 1; i <= n; i++) d += `L${side(i, 1)}`
+  for (let i = n; i >= 0; i--) d += `L${side(i, -1)}`
+  return `${d}Z`
 }
 
 export function marble(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
@@ -121,32 +136,74 @@ export function marble(w: number, h: number, pal: StudioPalette, seed: number, o
   const k = opts.intensity ?? 0.8
   const parts: string[] = [ground(w, h, pal.ground)]
   const area = Math.sqrt(w * h)
-  const soft = mix(pal.ground, pal.accent2, 0.22)
+  // Veining reads as *stone* before it reads as colour, so it is mixed from the ground toward the
+  // panel's own ink: dark threads on a pale slab, pale threads on a dark one, at any palette.
+  const shadow = mix(pal.ground, pal.ink, 0.08)
+  const stone = mix(pal.ground, pal.ink, 0.34)
+  const hair = mix(pal.ground, pal.ink, 0.2)
   const gold = mix(pal.accent, pal.accent2, 0.25)
-  const swirls = Math.round(5 + k * 6)
-  for (let i = 0; i < swirls; i++) {
-    parts.push(
-      `<path d="${flowVein(rng, w, h)}" fill="none" stroke="${soft}" stroke-opacity="${f(0.28 + rng() * 0.28)}" stroke-width="${f(area * (0.018 + rng() * 0.045))}" stroke-linecap="round" />`,
-    )
+
+  // A slab is cut so the veining runs one way. Entering from the left or top edge on a shared
+  // diagonal is what makes several veins look like one piece of stone rather than a tangle.
+  const bias = 0.16 + rng() * 0.16
+  /**
+   * `lane` walks the entry along the edge instead of rolling for it. Left to chance, four veins
+   * clumped into one corner and left the rest of the slab bare — the eye reads that as a stain,
+   * not as stone.
+   */
+  const entry = (lane: number, lanes: number): { p: Pt; a: number } => {
+    const a = Math.PI * (bias + (rng() - 0.5) * 0.12)
+    const t = (lane + 0.15 + rng() * 0.7) / lanes
+    return t < 0.6
+      ? { p: { x: -w * 0.08, y: h * (t / 0.6) * 1.05 - h * 0.35 }, a }
+      : { p: { x: w * ((t - 0.6) / 0.4) * 0.9 - w * 0.05, y: -h * 0.08 }, a }
   }
-  const veins = Math.round(14 + k * 16)
+
+  let soft = ''
+  const bands = 2 + Math.round(k * 2)
+  for (let i = 0; i < bands; i++) {
+    const { p, a } = entry(i, bands)
+    soft += `<path d="${veinRibbon(veinSpine(rng, p, a, (w + h) * 1.1, 22), area * (0.1 + rng() * 0.14), 0.5)}" fill="${shadow}" fill-opacity="${f(0.5 + rng() * 0.3)}" />`
+  }
+  parts.push(soft)
+
+  // Few and deliberate. The old painter drew ~27 veins in the accent colour, which on a gold
+  // accent meant a gold grid over the whole face.
+  const primaries = 1 + Math.round(k * 4)
   let veinMarkup = ''
-  for (let i = 0; i < veins; i++) {
-    const flowing = rng() < 0.72
-    veinMarkup += `<path d="${flowing ? flowVein(rng, w, h) : veinPath(rng, w, h, 0.5)}" fill="none" stroke="${i % 4 === 0 ? gold : pal.accent}" stroke-opacity="${f(0.38 + rng() * 0.5)}" stroke-width="${f(area * (0.0022 + rng() * 0.0055))}" stroke-linecap="round" />`
+  for (let i = 0; i < primaries; i++) {
+    const { p, a } = entry(i, primaries)
+    const spine = veinSpine(rng, p, a, (w + h) * (0.8 + rng() * 0.5), 30)
+    const wide = area * (0.012 + rng() * 0.014)
+    veinMarkup += `<path d="${veinRibbon(spine, wide, 0.3 + rng() * 0.3)}" fill="${stone}" fill-opacity="${f(0.45 + rng() * 0.25)}" />`
+    // Veins fork. A vein that never branches is a line.
+    for (let b = 0; b < 1 + Math.floor(rng() * 2); b++) {
+      const at = Math.floor(spine.length * (0.2 + rng() * 0.55))
+      const off = headingAt(spine, at) + (rng() < 0.5 ? -1 : 1) * (0.25 + rng() * 0.4)
+      const child = veinSpine(rng, spine[at], off, (w + h) * (0.2 + rng() * 0.28), 16)
+      veinMarkup += `<path d="${veinRibbon(child, wide * (0.3 + rng() * 0.25), 0.25)}" fill="${hair}" fill-opacity="${f(0.4 + rng() * 0.25)}" />`
+    }
+  }
+  // Gold is the rare thread that makes the slab expensive, not the material it is made of.
+  const threads = k > 0.7 ? 2 : k > 0.4 ? 1 : 0
+  for (let i = 0; i < threads; i++) {
+    const { p, a } = entry(i, threads)
+    const spine = veinSpine(rng, p, a, (w + h) * (0.7 + rng() * 0.4), 26)
+    veinMarkup += `<path d="${veinRibbon(spine, area * (0.005 + rng() * 0.006), 0.35)}" fill="${gold}" fill-opacity="${f(0.55 + rng() * 0.25)}" />`
   }
   parts.push(`<g data-texture="veins">${veinMarkup}</g>`)
-  const flecks = Math.round(area * 2.1 * k)
+
+  const flecks = Math.round(area * 0.55 * k)
   let dust = ''
   for (let i = 0; i < flecks; i++) {
     const cx = rng() * w
     const cy = rng() * h
-    if (rng() < 0.22) {
-      const rx = 0.12 + rng() * 0.38
-      const ry = 0.05 + rng() * 0.12
-      dust += `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" transform="rotate(${f(rng() * 180)} ${f(cx)} ${f(cy)})" fill="${gold}" fill-opacity="${f(0.28 + rng() * 0.55)}" />`
+    if (rng() < 0.28) {
+      const rx = 0.1 + rng() * 0.26
+      const ry = 0.04 + rng() * 0.08
+      dust += `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" transform="rotate(${f(rng() * 180)} ${f(cx)} ${f(cy)})" fill="${gold}" fill-opacity="${f(0.2 + rng() * 0.35)}" />`
     } else {
-      dust += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(0.07 + rng() * 0.2)}" fill="${pal.accent}" fill-opacity="${f(0.28 + rng() * 0.58)}" />`
+      dust += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(0.05 + rng() * 0.14)}" fill="${stone}" fill-opacity="${f(0.18 + rng() * 0.32)}" />`
     }
   }
   parts.push(`<g data-texture="dust">${dust}</g>`)

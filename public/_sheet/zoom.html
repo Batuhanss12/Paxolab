@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>zoom</title>
+<style>body{margin:0;background:#e9e7e3}#h{display:block}</style>
+<div id="h"></div>
+<script>
+const p = new URLSearchParams(location.search)
+const file = p.get('f') || 'elite-brew.svg'
+const zx = parseFloat(p.get('x') ?? '0.25'), zy = parseFloat(p.get('y') ?? '0.24')
+const zw = parseFloat(p.get('w') ?? '0.30'), zh = parseFloat(p.get('h') ?? '0.42')
+fetch(file).then(r => r.text()).then(t => {
+  document.getElementById('h').innerHTML = t
+  const s = document.querySelector('#h svg')
+  const v = s.getAttribute('viewBox').split(/[\s,]+/).map(Number)
+  s.setAttribute('viewBox', [v[0]+v[2]*zx, v[1]+v[3]*zy, v[2]*zw, v[3]*zh].join(' '))
+  s.removeAttribute('width'); s.removeAttribute('height')
+  s.style.cssText = 'display:block;margin:0 auto;background:#fff;width:'+900+'px;height:'+Math.round(900*(v[3]*zh)/(v[2]*zw))+'px'
+})
+</script>

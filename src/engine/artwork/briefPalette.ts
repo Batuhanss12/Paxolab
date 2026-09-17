@@ -31,6 +31,13 @@ const NAMED: Array<[RegExp, string]> = [
   [/altın|altin|gold/i, '#c9a227'],
   [/g[uü]m[uü][sş]|silver/i, '#c5ccd6'],
   [/bak[ıi]r|copper|bronz|bronze/i, '#a9623a'],
+  // Materials a packaging brief names as often as hues. "mermer · altın" used to reduce to gold
+  // alone, because marble matched nothing — and a single surviving colour becomes the ground.
+  [/mermer|marble/i, '#f2efe9'],
+  [/fildi[sş]i|ivory/i, '#f6f1e3'],
+  [/kum|sand|[sş]ampanya|champagne/i, '#e3d5bd'],
+  [/vizon|taupe/i, '#a8998c'],
+  [/ta[sş]|stone|beton|concrete/i, '#b6b2ab'],
   [/krem|cream|nude/i, '#f5f0e8'],
   [/bej|beige/i, '#d8cbb8'],
   [/kraft|eco/i, '#cbb892'],
@@ -195,9 +202,25 @@ function paletteFromHexes(hexes: string[], mood: StyleType): Palette {
   )
 }
 
+/**
+ * Metallics a brief names as foil, not as fill.
+ *
+ * Measured 2026-09-17: "mermer · altın" produced a box flooded in mustard. Two causes stacked —
+ * marble matched no entry and dropped out, and the one colour left standing became the ground.
+ * Even alone, gold must not do that: no printer floods a face in solid metallic and no designer
+ * asks for it. A named metallic is a request for foil, so it belongs on the accent slot while the
+ * ground comes from whatever else the brief said, or from the sector default if it said nothing.
+ */
+const METALLIC = new Set(['#c9a227', '#c5ccd6', '#a9623a'])
+
 /** Production palette: colors[] win; mood only nudges contrast. */
 export function paletteFromBrief(brief: DesignBrief, mood: StyleType, premium = false): Palette {
   const hexes = parseBriefColors(brief.colors)
-  if (hexes.length) return paletteFromHexes(hexes, mood)
-  return ensureAccentContrast(tweakNeutrals(paletteFor(brief, mood, premium), mood))
+  const metal = hexes.find((hex) => METALLIC.has(hex))
+  const ground = hexes.filter((hex) => !METALLIC.has(hex))
+  const base = ground.length
+    ? paletteFromHexes(ground, mood)
+    : ensureAccentContrast(tweakNeutrals(paletteFor(brief, mood, premium), mood))
+  if (!metal) return base
+  return ensureAccentContrast({ ...base, accent: metal })
 }

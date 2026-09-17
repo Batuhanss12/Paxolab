@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { botanical, landscapeMoon, marble } from './backgrounds'
+import { mix } from './color'
 import type { StudioPalette } from './types'
 
 const pal: StudioPalette = {
@@ -37,13 +38,36 @@ describe('studio backgrounds — S5 density + seed', () => {
     expect(landscapeMoon(70, 140, pal, 1, { uid: 'lm' })).not.toBe(landscapeMoon(70, 140, pal, 2, { uid: 'lm' }))
   })
 
-  it('marble keeps flowing veins and gold dust, not a sparse scribble', () => {
-    const svg = marble(80, 180, pal, 42, { uid: 'm', intensity: 0.8 })
+  /**
+   * This used to demand ≥18 paths and ≥40 flecks, which pinned the defect rather than the
+   * feature: at that density the slab drew ~27 veins, all of them in the accent colour and all of
+   * them one stroke wide. Zoomed to print size it read as a gold road map, not as stone.
+   *
+   * What actually makes marble is the opposite of density — few veins, tapered, mostly the colour
+   * of the stone, with gold as the rare thread. So those are the properties pinned now.
+   */
+  it('marble draws few tapered veins in stone, not a grid of accent strokes', () => {
+    const stone: StudioPalette = { ...pal, ground: '#f2efe9', ink: '#141414', accent: '#c9a227', accent2: '#7a5a2b' }
+    const svg = marble(80, 180, stone, 42, { uid: 'm', intensity: 0.8 })
     expect(svg).toMatch(/data-bg="marble"/)
     expect(svg).toMatch(/data-texture="veins"/)
     expect(svg).toMatch(/data-texture="dust"/)
-    expect((svg.match(/<path /g) ?? []).length).toBeGreaterThanOrEqual(18)
-    expect((svg.match(/<circle |<ellipse /g) ?? []).length).toBeGreaterThanOrEqual(40)
+
+    const veins = svg.match(/data-texture="veins">(.*?)<\/g>/s)?.[1] ?? ''
+    const paths = veins.match(/<path /g) ?? []
+    expect(paths.length, 'vein count').toBeGreaterThanOrEqual(4)
+    expect(paths.length, 'vein count').toBeLessThanOrEqual(20)
+
+    // A vein is a filled ribbon whose width varies along its length. A stroke cannot taper, so a
+    // stroked vein is by definition the old uniform hairline.
+    expect(veins, 'veins must be filled ribbons, not strokes').not.toMatch(/stroke=/)
+    expect((veins.match(/Z"/g) ?? []).length, 'closed ribbons').toBe(paths.length)
+
+    // Gold is the rare thread. The regression was every vein taking the accent.
+    const gold = mix(stone.accent, stone.accent2, 0.25)
+    const goldVeins = (veins.match(new RegExp(`fill="${gold}"`, 'g')) ?? []).length
+    expect(goldVeins, 'gold veins').toBeLessThanOrEqual(2)
+    expect(goldVeins / paths.length, 'gold share of veining').toBeLessThan(0.34)
   })
 
   it('botanical punches evenodd cutouts through layered leaves', () => {
