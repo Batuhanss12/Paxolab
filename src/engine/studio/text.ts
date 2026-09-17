@@ -71,8 +71,35 @@ const FACE_EM: Record<Face, { upper: number; lower: number }> = {
   mono: { upper: 0.62, lower: 0.62 },
 }
 
+/**
+ * Real advance widths, measured from the vendored faces by `scripts/build-font-outlines.py`.
+ *
+ * The estimator below drifted −10%…+20% against the actual fonts (worst on `script`). The
+ * negative side was the damaging one: the engine believed a line was narrower than it renders,
+ * declared it fitted, and let it overrun its box. Advances only — ~14 kB, so layout can measure
+ * synchronously on every generate.
+ */
+import METRICS from './fontMetrics.json'
+
+const METRIC_FACE: Partial<Record<Face, string>> = {
+  serif: 'cormorant-500',
+  'serif-italic': 'cormorant-500i',
+  sans: 'montserrat-500',
+  'sans-light': 'montserrat-300',
+  'sans-heavy': 'montserrat-700',
+  script: 'greatvibes-400',
+  // `mono` has no vendored face — it falls back to the estimator below.
+}
+
+function measuredEm(ch: string, face: Face): number | undefined {
+  const key = METRIC_FACE[face]
+  if (!key) return undefined
+  const advance = (METRICS.faces as Record<string, Record<string, number>>)[key]?.[ch]
+  return advance == null ? undefined : advance / METRICS.em
+}
+
 /** Per-glyph multiplier on the face average. Narrow/wide Latin+TR so long brands don't overflow and short ones don't collapse. */
-function glyphEm(ch: string, face: Face): number {
+function estimatedGlyphEm(ch: string, face: Face): number {
   const em = FACE_EM[face]
   if (ch === ' ') return 0.28
   if (/[.,·'’:;|]/.test(ch)) return 0.2
@@ -87,6 +114,10 @@ function glyphEm(ch: string, face: Face): number {
   if (upper && 'OQDCGUNA'.includes(folded)) return base * 1.08
   if (/\d/.test(ch)) return em.upper * 0.88
   return base
+}
+
+function glyphEm(ch: string, face: Face): number {
+  return measuredEm(ch, face) ?? estimatedGlyphEm(ch, face)
 }
 
 export function faceFamily(face: Face): string {
@@ -109,14 +140,28 @@ export function textWidth(text: string, size: number, face: Face, tracking = 0):
   return w * size + chars * tracking
 }
 
+/**
+ * Commercial print floor. Type below this is not legible on a carton, so the studio never
+ * draws it — a face that cannot fit its copy at this size must give up a line instead.
+ * (Mandatory food legal text has a stricter x-height rule; that is a per-sector check,
+ * not this global floor.)
+ */
+export const STUDIO_TYPE_FLOOR_MM = 1.5
+
+/** Single clamp for every computed type size, so drawing and the ledger never disagree. */
+export function typeSize(mm: number): number {
+  return Math.max(STUDIO_TYPE_FLOOR_MM, mm)
+}
+
 /** Largest size in [min, max] whose measured width fits `maxWidth`. */
 export function fitSize(text: string, maxWidth: number, max: number, min: number, face: Face, trackingEm = 0): number {
-  if (!text) return max
+  const floor = typeSize(min)
+  if (!text) return Math.max(max, floor)
   const width1 = textWidth(text, 1, face, trackingEm)
-  if (width1 <= 0) return max
+  if (width1 <= 0) return Math.max(max, floor)
   const safety = [...text].length <= 4 ? 1 : 0.97
   const fit = (maxWidth / width1) * safety
-  return Math.max(min, Math.min(max, fit))
+  return Math.max(floor, Math.min(Math.max(max, floor), fit))
 }
 
 /** Greedy word wrap by measured width. */

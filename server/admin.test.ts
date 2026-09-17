@@ -179,4 +179,79 @@ describe('Phase 9 admin + user orders', () => {
     const forbidden = await app.request('/api/admin/projects', { headers: outsider.auth })
     expect(forbidden.status).toBe(403)
   })
+
+  /**
+   * R13 — field-name contracts the admin panel reads directly.
+   *
+   * The LLM cost table shipped with snake_case field names against a camelCase API and rendered
+   * "Invalid Date / $0.0000"; nothing failed because the data was fetched but never displayed.
+   * These assertions fail loudly if a response is renamed out from under the panel.
+   */
+  describe('admin API field contracts (panel reads these names)', () => {
+    async function asAdmin(email = 'contract-admin@forma.test') {
+      const { auth } = await register(email, 'Contract Admin')
+      db.prepare(`UPDATE users SET role = 'admin' WHERE email = ?`).run(email)
+      return auth
+    }
+
+    it('/users exposes both the personal wallet and the billing wallet', async () => {
+      const auth = await asAdmin()
+      const body = await json(await app.request('/api/admin/users', { headers: auth }))
+      const row = (body.users as Record<string, unknown>[])[0]
+      expect(row).toBeTruthy()
+      for (const key of ['id', 'email', 'role', 'balance', 'billingUserId', 'billingBalance', 'sharedWallet']) {
+        expect(Object.keys(row)).toContain(key)
+      }
+      // A user with no org bills their own wallet — the panel prints "kendi" for this shape.
+      expect(row.sharedWallet).toBe(false)
+      expect(row.billingUserId).toBe(row.id)
+      expect(row.billingBalance).toBe(row.balance)
+    })
+
+    it('/llm-costs is camelCase — the panel formats these two fields', async () => {
+      const auth = await asAdmin('contract-llm@forma.test')
+      const res = await app.request('/api/admin/llm-costs?limit=5', { headers: auth })
+      expect(res.status).toBe(200)
+      const body = await json(res)
+      expect(Array.isArray(body.costs)).toBe(true)
+      db.prepare(
+        `INSERT INTO llm_cost_records (id, operation_id, user_id, provider, model, input_tokens, output_tokens, estimated_cost_usd, created_at)
+         VALUES ('c1','brief-extract',NULL,'openai','gpt-4o-mini',10,5,0.0012,?)`,
+      ).run(new Date().toISOString())
+      const after = await json(await app.request('/api/admin/llm-costs?limit=5', { headers: auth }))
+      const row = (after.costs as Record<string, unknown>[])[0]
+      expect(Object.keys(row)).toContain('estimatedCostUsd')
+      expect(Object.keys(row)).toContain('createdAt')
+      expect(row.estimatedCostUsd).toBe(0.0012)
+      expect(Number.isNaN(new Date(String(row.createdAt)).getTime())).toBe(false)
+    })
+
+    it('/plans and /orgs/:id carry the fields the admin screens render', async () => {
+      const auth = await asAdmin('contract-plans@forma.test')
+      const plans = await json(await app.request('/api/admin/plans', { headers: auth }))
+      const plan = (plans.plans as Record<string, unknown>[])[0]
+      for (const key of ['id', 'label', 'monthlyPrice', 'monthlyCredits', 'enabled']) {
+        expect(Object.keys(plan)).toContain(key)
+      }
+
+      const owner = await register('org-owner@forma.test', 'Owner')
+      const created = await json(
+        await app.request('/api/orgs', {
+          method: 'POST',
+          headers: owner.auth,
+          body: JSON.stringify({ name: 'Contract Studio' }),
+        }),
+      )
+      const orgId = String((created.organization as Record<string, unknown>).id)
+      const detail = await json(await app.request(`/api/admin/orgs/${orgId}`, { headers: auth }))
+      const org = detail.organization as Record<string, unknown>
+      for (const key of ['id', 'name', 'slug', 'createdBy', 'createdAt', 'memberCount', 'seatLimit']) {
+        expect(Object.keys(org)).toContain(key)
+      }
+      const member = (detail.members as Record<string, unknown>[])[0]
+      for (const key of ['userId', 'email', 'role', 'createdAt']) {
+        expect(Object.keys(member)).toContain(key)
+      }
+    })
+  })
 })

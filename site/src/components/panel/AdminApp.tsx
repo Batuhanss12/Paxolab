@@ -16,7 +16,12 @@ type AdminUser = {
   role: string;
   created_at: string;
   auth_provider?: string;
+  /** This user's own wallet. A team member spends the owner's wallet, not this one. */
   balance: number;
+  /** Wallet the user actually spends from — own id, or the org owner's when they have an active plan. */
+  billingUserId?: string;
+  billingBalance?: number;
+  sharedWallet?: boolean;
 };
 
 export function AdminApp() {
@@ -127,7 +132,8 @@ export function AdminApp() {
       {section === "subscriptions" && <Subscriptions locale={locale} />}
       {section === "payments" && <Payments locale={locale} />}
       {section === "operations" && <Operations locale={locale} />}
-      {section === "teams" && <Teams locale={locale} />}
+      {section === "teams" && !id && <Teams locale={locale} />}
+      {section === "teams" && id && <TeamDetail locale={locale} orgId={id} />}
       {section === "logs" && <Logs locale={locale} />}
       {section === "settings" && <Settings locale={locale} />}
       {section === "intelligence" && <Intelligence locale={locale} />}
@@ -223,7 +229,8 @@ function Users({ locale }: { locale: "tr" | "en" }) {
               <tr>
                 <th className="pb-2">{tr ? "E-posta" : "Email"}</th>
                 <th className="pb-2">{tr ? "Rol" : "Role"}</th>
-                <th className="pb-2">{tr ? "Bakiye" : "Balance"}</th>
+                <th className="pb-2">{tr ? "Kişisel" : "Personal"}</th>
+                <th className="pb-2">{tr ? "Fatura cüzdanı" : "Billing wallet"}</th>
                 <th className="pb-2"></th>
               </tr>
             </thead>
@@ -233,6 +240,16 @@ function Users({ locale }: { locale: "tr" | "en" }) {
                   <td className="py-2.5">{u.email}</td>
                   <td className="py-2.5 text-cream/60">{u.role}</td>
                   <td className="py-2.5 tabular-nums">{u.balance}</td>
+                  <td className="py-2.5 tabular-nums">
+                    {u.sharedWallet ? (
+                      <span title={u.billingUserId}>
+                        {u.billingBalance ?? "—"}
+                        <span className="ml-1.5 text-[11px] text-copper">{tr ? "ekip" : "team"}</span>
+                      </span>
+                    ) : (
+                      <span className="text-cream/35">{tr ? "kendi" : "own"}</span>
+                    )}
+                  </td>
                   <td className="py-2.5 text-right">
                     <Link href={adminHref(locale, "users", u.id)} className="text-xs text-copper">
                       {tr ? "Detay" : "Detail"}
@@ -749,18 +766,123 @@ function Teams({ locale }: { locale: "tr" | "en" }) {
       ) : (
         <ul className="text-sm">
           {data.organizations.map((o) => (
-            <li key={o.id} className="flex justify-between border-t border-white/[0.06] py-2">
+            <li key={o.id} className="flex items-center justify-between gap-3 border-t border-white/[0.06] py-2">
               <span>
                 {o.name} · {o.slug}
               </span>
-              <span>
-                {o.memberCount}/{o.seatLimit} · {o.planLabel ?? "—"}
+              <span className="flex items-center gap-3">
+                <span>
+                  {o.memberCount}/{o.seatLimit} · {o.planLabel ?? "—"}
+                </span>
+                <Link href={adminHref(locale, "teams", o.id)} className="text-xs text-copper">
+                  {tr ? "Detay" : "Detail"}
+                </Link>
               </span>
             </li>
           ))}
         </ul>
       )}
     </PanelCard>
+  );
+}
+
+type AdminOrgDetail = {
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    createdBy: string;
+    createdAt: string;
+    memberCount: number;
+    seatLimit: number;
+    planLabel: string | null;
+    unlimited?: boolean;
+  };
+  members: { userId: string; email: string; name: string | null; role: string; createdAt: string }[];
+};
+
+function TeamDetail({ locale, orgId }: { locale: "tr" | "en"; orgId: string }) {
+  const tr = locale !== "en";
+  const { data, error } = useAdminLoad(
+    async () => consoleRequest<AdminOrgDetail>(`/api/admin/orgs/${orgId}`),
+    [orgId],
+  );
+  if (!data) return <ErrorText>{error ?? (tr ? "Yükleniyor…" : "Loading…")}</ErrorText>;
+  const org = data.organization;
+  const seatsFull = org.memberCount >= org.seatLimit;
+  return (
+    <div className="space-y-6">
+      <PanelCard
+        title={org.name}
+        action={
+          <Link href={adminHref(locale, "teams")} className="text-xs text-copper">
+            {tr ? "← Ekipler" : "← Teams"}
+          </Link>
+        }
+      >
+        <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <div className="flex justify-between gap-3">
+            <dt className="text-cream/50">{tr ? "Kısa ad" : "Slug"}</dt>
+            <dd>{org.slug}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-cream/50">{tr ? "Sahip planı" : "Owner plan"}</dt>
+            <dd>{org.unlimited ? (tr ? "sınırsız" : "unlimited") : (org.planLabel ?? "—")}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-cream/50">{tr ? "Koltuk" : "Seats"}</dt>
+            <dd className={seatsFull ? "text-copper" : undefined}>
+              {org.memberCount}/{org.seatLimit}
+              {seatsFull ? ` · ${tr ? "dolu" : "full"}` : ""}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-cream/50">{tr ? "Kuruldu" : "Created"}</dt>
+            <dd>{new Date(org.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</dd>
+          </div>
+        </dl>
+      </PanelCard>
+      <PanelCard title={tr ? "Üyeler" : "Members"}>
+        {data.members.length === 0 ? (
+          <EmptyState>{tr ? "Üye yok." : "No members."}</EmptyState>
+        ) : (
+          <TableWrap>
+            <table className="w-full text-left text-sm">
+              <thead className="text-[11px] uppercase tracking-wider text-cream/35">
+                <tr>
+                  <th className="pb-2">{tr ? "E-posta" : "Email"}</th>
+                  <th className="pb-2">{tr ? "Rol" : "Role"}</th>
+                  <th className="pb-2">{tr ? "Katıldı" : "Joined"}</th>
+                  <th className="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.members.map((m) => (
+                  <tr key={m.userId} className="border-t border-white/[0.06]">
+                    <td className="py-2.5">
+                      {m.email}
+                      {m.userId === org.createdBy ? (
+                        <span className="ml-2 text-[11px] text-copper">{tr ? "sahip" : "owner"}</span>
+                      ) : null}
+                    </td>
+                    <td className="py-2.5 text-cream/60">{m.role}</td>
+                    <td className="py-2.5 text-cream/60">
+                      {new Date(m.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <Link href={adminHref(locale, "users", m.userId)} className="text-xs text-copper">
+                        {tr ? "Kullanıcı" : "User"}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+        )}
+      </PanelCard>
+      <ErrorText>{error}</ErrorText>
+    </div>
   );
 }
 
@@ -772,9 +894,9 @@ function Logs({ locale }: { locale: "tr" | "en" }) {
         "/api/admin/events",
       ),
       consoleRequest<{ refunds: { id: string; amount: number; reason: string; ownerEmail: string }[] }>("/api/admin/refunds"),
-      consoleRequest<{ costs: { id: string; provider?: string; estimated_cost_usd?: number; created_at: string }[] }>(
-        "/api/admin/llm-costs?limit=50",
-      ).catch(() => ({ costs: [] })),
+      consoleRequest<{
+        costs: { id: string; provider?: string; model?: string; estimatedCostUsd?: number; createdAt: string }[];
+      }>("/api/admin/llm-costs?limit=50").catch(() => ({ costs: [] })),
     ]);
     return { events: events.events, refunds: refunds.refunds, costs: llm.costs };
   }, []);
@@ -814,6 +936,32 @@ function Logs({ locale }: { locale: "tr" | "en" }) {
           </ul>
         )}
       </PanelCard>
+      <PanelCard
+        title={tr ? "LLM maliyeti" : "LLM cost"}
+        action={
+          data && data.costs.length > 0 ? (
+            <span className="text-xs text-cream/50 tabular-nums">
+              {tr ? "toplam" : "total"} ${data.costs.reduce((sum, row) => sum + (row.estimatedCostUsd ?? 0), 0).toFixed(4)}
+            </span>
+          ) : null
+        }
+      >
+        {!data || data.costs.length === 0 ? (
+          <EmptyState>{tr ? "Kayıt yok." : "No records."}</EmptyState>
+        ) : (
+          <ul className="text-sm">
+            {data.costs.map((row) => (
+              <li key={row.id} className="flex justify-between border-t border-white/[0.06] py-2">
+                <span className="text-cream/70">
+                  {row.provider ?? "—"}
+                  {row.model ? ` · ${row.model}` : ""} · {new Date(row.createdAt).toLocaleString(tr ? "tr-TR" : "en-US")}
+                </span>
+                <span className="tabular-nums">${(row.estimatedCostUsd ?? 0).toFixed(4)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PanelCard>
     </div>
   );
 }
@@ -832,6 +980,19 @@ function Settings({ locale }: { locale: "tr" | "en" }) {
     ]);
     return { plans: plans.plans, operations: operations.operations };
   }, []);
+
+  async function patchPlan(planId: string, patch: { monthlyCredits: number; monthlyPrice: number; enabled: boolean }) {
+    setBusy(true);
+    try {
+      await consoleRequest(`/api/admin/plans/${planId}`, { method: "PATCH", body: patch });
+      setNote(tr ? "Plan güncellendi." : "Plan updated.");
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Güncellenemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function patchCost(operationId: string, creditCost: number) {
     setBusy(true);
@@ -853,13 +1014,51 @@ function Settings({ locale }: { locale: "tr" | "en" }) {
   return (
     <div className="space-y-6">
       <PanelCard title={tr ? "Planlar" : "Plans"}>
-        <ul className="text-sm">
+        <ul className="space-y-2 text-sm">
           {data.plans.map((p) => (
-            <li key={p.id} className="flex justify-between border-t border-white/[0.06] py-2">
-              <span>{p.label}</span>
-              <span>
-                {p.unlimited ? (tr ? "sınırsız" : "unlimited") : `${p.monthlyCredits} kr`} · {p.monthlyPrice} ₺
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] py-2">
+              <span className="min-w-24">
+                {p.label}
+                {p.unlimited ? <span className="ml-2 text-xs text-cream/50">{tr ? "sınırsız" : "unlimited"}</span> : null}
               </span>
+              <form
+                className="flex flex-wrap items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  void patchPlan(p.id, {
+                    monthlyCredits: Number(fd.get("credits")),
+                    monthlyPrice: Number(fd.get("price")),
+                    enabled: fd.get("enabled") === "on",
+                  });
+                }}
+              >
+                <label className="flex items-center gap-1 text-xs text-cream/60">
+                  {tr ? "kredi" : "credits"}
+                  <input
+                    name="credits"
+                    type="number"
+                    defaultValue={p.monthlyCredits}
+                    className="w-20 rounded-sm border border-cream/15 bg-ink-975 px-2 py-1 text-sm text-cream"
+                  />
+                </label>
+                <label className="flex items-center gap-1 text-xs text-cream/60">
+                  ₺
+                  <input
+                    name="price"
+                    type="number"
+                    defaultValue={p.monthlyPrice}
+                    className="w-20 rounded-sm border border-cream/15 bg-ink-975 px-2 py-1 text-sm text-cream"
+                  />
+                </label>
+                <label className="flex items-center gap-1 text-xs text-cream/60">
+                  <input name="enabled" type="checkbox" defaultChecked={p.enabled} />
+                  {tr ? "açık" : "enabled"}
+                </label>
+                <button type="submit" disabled={busy} className="text-xs text-copper">
+                  {tr ? "Kaydet" : "Save"}
+                </button>
+              </form>
             </li>
           ))}
         </ul>

@@ -10,9 +10,7 @@ export type {
   VisualConceptBlock,
 } from './DesignPlan'
 export { planSummaryTr } from './DesignPlan'
-export { createPlan, planGraph, advisePlan } from './DesignDirector'
-export { buildDesignGraph } from './DesignGraph'
-export type { DesignGraph } from './DesignGraph'
+export { createPlan } from './DesignDirector'
 export { styleRule, sectorRisks } from './DesignRules'
 export { DESIGN_PRINCIPLES } from './DesignKnowledge'
 export { scoreDesign, scoreVisualCraft } from './DesignScore'

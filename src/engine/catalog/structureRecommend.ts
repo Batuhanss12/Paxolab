@@ -163,7 +163,7 @@ function groundedReason(
   if (brief.sector && fits.product >= 0.5) {
     return `${brief.sector} yüzeyinde ${label} aktif katalog yapısı.`
   }
-  return mode === 'label' ? `${label} etiket yüzeyinde aktif.` : `${label} kutu yüzeyinde aktif katalog yapısı.`
+  return `${label} kutu yüzeyinde aktif katalog yapısı.`
 }
 
 function compareCandidates(a: StructureCandidate, b: StructureCandidate): number {

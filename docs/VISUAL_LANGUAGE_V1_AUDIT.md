@@ -1,5 +1,15 @@
 # VISUAL LANGUAGE V1 AUDIT
 
+> **POST-IMPLEMENTATION NOTU (2026-09-17).** Bu audit "VL-1 onay bekliyor" diyerek kapanmıştı; **VL-1 ve VL-2 o tarihten sonra uygulandı**, doküman güncellenmemişti. Kodda doğrulandı:
+> - `DesignPlan.visualLanguage: ConceptLanguageId[]` taşıyıcı alan mevcut (`brain/DesignPlan.ts:178`)
+> - `languagesOfConcept` önce **plan taşıyıcısını** okur, concept satırı fallback'e düştü (`artwork/visualLanguage.ts`) → §2.A'daki "ikinci kapı" kapandı
+> - `visualLanguageFor(intent, sector, subProduct)` mevcut ve `ArtDirection` / `VisualConcept` tarafından çağrılıyor
+> - `allowedHeroes` / `allowedPatterns` artık dil parametresi alıyor (`artDirectionPickers.ts`)
+>
+> **VL-4 de uygulandı** — `visualConceptFor` intent alıp `conceptInLanguage` ile concept'i dil allow-list'i içinde yeniden seçiyor (`VisualConcept.ts:318`).
+>
+> **VL-3 tam invert: 2026-09-17'de kararla reddedildi.** V5 audit §4'ün çarpışma analizi (tek character → üç dil ailesi) ve `designBrainV1.test.ts` `stayHeraldic` sözleşmesi, sector'ün dil anahtarı olarak kalması gerektiğini gösteriyor. Gerekçe ve kilitleyen testler: `docs/PAXOLAB_MASTER_ROADMAP.md` → R6, `src/engine/artwork/visualLanguageAuthority.test.ts`.
+
 Ürün: Grapxor. Kök: `Desktop/Paxolab`. Tarih: 15 Eyl 2026.  
 Kapsam: `visualLanguage.ts`, `VisualConcept.ts`, `ArtDirection` / pickers / allowed, `VOCAB`, `STYLE_HEROES`, `conceptKitAlignment`, overlay call-site’ları.  
 Kod değişikliği yok. Concept tie-break yok. Faz 2 freeze dokunulmaz.

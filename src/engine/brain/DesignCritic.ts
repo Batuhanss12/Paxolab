@@ -17,6 +17,7 @@ import type { Temperament } from '../studio/types'
 import type { CritiqueReport } from './CritiqueEngine'
 import type { StructuredFeedback } from './DesignDecisionLog'
 import type { DesignPlan } from './DesignPlan'
+import type { VisualCraftScorecard } from './scoreVisualCraft'
 
 export type CritiqueCategory =
   | 'hierarchy'
@@ -35,7 +36,7 @@ export type CritiqueCategory =
 export type CritiqueSeverity = 'info' | 'warn' | 'error'
 
 export type CritiqueEvidence = {
-  source: 'critiquePlan' | 'compositionCritic' | 'preflight' | 'llm' | 'studioLedger'
+  source: 'critiquePlan' | 'compositionCritic' | 'preflight' | 'llm' | 'studioLedger' | 'craftScore'
   topic: string
   score?: number
   detail?: string
@@ -94,6 +95,19 @@ export type StudioLedgerEvidence = {
   temperament?: Temperament
 }
 
+/**
+ * Craft dimensions that read the shipped markup, so they speak for both painters.
+ * Advisory only: severity never rises to `error` and nothing here gates repair or export.
+ */
+const CRAFT_TOPICS: { key: keyof VisualCraftScorecard; below: number; map: TopicMap }[] = [
+  { key: 'hierarchy', below: 55, map: { category: 'hierarchy', target: 'brand_lockup', severity: 'warn', direction: 'strengthen' } },
+  { key: 'composition', below: 55, map: { category: 'composition', target: 'face', severity: 'warn', direction: 'rebalance' } },
+  { key: 'typography', below: 55, map: { category: 'typography', target: 'type_scale', severity: 'warn', direction: 'refine' } },
+  { key: 'sectorFit', below: 45, map: { category: 'sector_fit', target: 'front_panel', severity: 'warn', direction: 'sector_cue' } },
+  { key: 'decoration', below: 45, map: { category: 'density', target: 'decor', severity: 'info', direction: 'adjust' } },
+  { key: 'originality', below: 40, map: { category: 'motif', target: 'hero_family', severity: 'info', direction: 'diversify' } },
+]
+
 export function critiqueDesign(input: {
   plan: DesignPlan
   critique: CritiqueReport
@@ -101,6 +115,9 @@ export function critiqueDesign(input: {
   search?: CompositionSearchDebug
   /** Present when the studio painter ran — kit lockup/density hints do not apply. */
   studioLedger?: StudioLedgerEvidence
+  /** Quality scorecard over the shipped markup. Gives the studio face critic coverage
+   *  beyond geometry, without borrowing kit plan vocabulary. */
+  craft?: VisualCraftScorecard
 }): DesignCritique[] {
   const out: DesignCritique[] = []
   const push = (row: DesignCritique) => {
@@ -185,6 +202,22 @@ export function critiqueDesign(input: {
     }
   }
 
+  if (input.craft) {
+    const craft = input.craft
+    for (const row of CRAFT_TOPICS) {
+      const score = craft[row.key]
+      if (typeof score !== 'number' || score >= row.below) continue
+      push({
+        category: row.map.category,
+        target: row.map.target,
+        severity: row.map.severity,
+        issue: `Craft skoru ${row.key} ${Math.round(score)}/100 — ${row.below} eşiğinin altında.`,
+        suggestedDirection: row.map.direction,
+        evidence: { source: 'craftScore', topic: row.key, score },
+      })
+    }
+  }
+
   for (const item of input.preflight.items) {
     if (item.status !== 'fail' && item.status !== 'warn') continue
     if (input.studioLedger && STUDIO_PREFLIGHT_SKIP.has(item.id)) continue
@@ -201,6 +234,10 @@ export function critiqueDesign(input: {
   return out
 }
 
+function feedbackStrength(severity: CritiqueSeverity): StructuredFeedback['strength'] {
+  return severity === 'error' ? 'high' : 'medium'
+}
+
 /** A finding as StructuredFeedback so the Brain / learning loop treat it like a revision signal.
  *  Studio ledger rows only enter this channel when they map to a C6 button (quieter / vary). */
 export function critiqueAsFeedback(critiques: DesignCritique[]): StructuredFeedback[] {
@@ -213,7 +250,7 @@ export function critiqueAsFeedback(critiques: DesignCritique[]): StructuredFeedb
             type: 'brand_fit' as const,
             target: 'character',
             direction: 'strengthen',
-            strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+            strength: feedbackStrength(c.severity),
             raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
           },
         ]
@@ -224,7 +261,7 @@ export function critiqueAsFeedback(critiques: DesignCritique[]): StructuredFeedb
             type: 'composition' as const,
             target: 'layout',
             direction: 'vary',
-            strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+            strength: feedbackStrength(c.severity),
             raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
           },
         ]
@@ -236,7 +273,7 @@ export function critiqueAsFeedback(critiques: DesignCritique[]): StructuredFeedb
         type: c.category,
         target: c.target,
         direction: c.suggestedDirection,
-        strength: (c.severity === 'error' ? 'high' : 'medium') as const,
+        strength: feedbackStrength(c.severity),
         raw: `critic:${c.evidence.source}/${c.evidence.topic}`,
       },
     ]

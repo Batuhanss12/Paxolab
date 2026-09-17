@@ -62,7 +62,7 @@ import {
   updateOperationMeta,
   type OperationDef,
 } from './credit/catalog.ts'
-import { bucketSummary, listBuckets, reconcileCheck } from './credit/buckets.ts'
+import { bucketSummary } from './credit/buckets.ts'
 import { classifyFeedback, classifyOperation, toLegacyOperation } from './credit/classify.ts'
 import {
   createSession as createDesignSession,

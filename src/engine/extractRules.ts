@@ -134,6 +134,24 @@ export const SECTOR_NOUN_RE =
 export const GENERIC_PRODUCT_RE =
   /^(parfüm|parfum|perfume|krem|cream|serum|içecek|beverage|takviye|supplement|bebek|baby|etiket|kutu|kutusu|ambalaj|kozmetik|gıda|sağlık|şişe|kahve|coffee|elektronik|elektornik|elektronik|wrap|label)$/i
 
+/**
+ * Turkish possessive / descriptor tails that trail a brand but are not part of it:
+ * "Nexora markası için…" → Nexora · "Verda firması adına…" → Verda.
+ */
+const BRAND_TAIL_RE =
+  /^(marka|markası|markasi|markam|markamız|markamiz|markanın|markanin|firma|firması|firmasi|şirket|şirketi|sirketi|adlı|adli|isimli|isminde|adında|adinda|adına|adina)$/i
+
+/** Drops trailing possessive/descriptor words so a captured phrase is just the name. */
+export function stripBrandTail(phrase: string): string {
+  const parts = phrase.trim().split(/\s+/).filter(Boolean)
+  while (parts.length > 1 && BRAND_TAIL_RE.test(parts[parts.length - 1].replace(/[,.:;]+$/g, ''))) {
+    parts.pop()
+  }
+  // A bare "markası" with nothing in front is not a name at all.
+  if (parts.length === 1 && BRAND_TAIL_RE.test(parts[0])) return ''
+  return parts.join(' ')
+}
+
 /** Stop words for brand/product name extraction. */
 export const NAME_STOP_RE =
   /^(için|bir|ve|ile|adı|adın|adını|olsun|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum|yeni|istiyorum|biraz|çok|henüz|emin|değilim|yapmak|çıktı|doğal|içerikli|yüz|tonlarında|editorial|contemporary|special|series|kahve|coffee|şampuan|shampoo|sabun|temizlik|deterjan|takviye|vitamin|bebek|içecek|teknoloji|tasarım|tasarla|lazım|gerek|istiyoruz|etiketi|kutusunu)$/i

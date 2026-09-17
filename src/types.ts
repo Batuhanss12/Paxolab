@@ -299,6 +299,8 @@ export type DesignSpec = {
   critique?: import('./engine/brain/CritiqueEngine').CritiqueReport
   /** Structured critic findings (category/target/severity/evidence). Read-only; never edits SVG. */
   designCritique?: import('./engine/brain/DesignCritic').DesignCritique[]
+  /** Design-quality scorecard over the shipped markup. Report only — never gates repair or export. */
+  craftScore?: import('./engine/brain/DesignScore').VisualCraftScorecard
   /** Active knowledge rule ids that shaped this design's brief (KNOWLEDGE_DERIVED). */
   appliedKnowledge?: string[]
   /** Studio direction + ledger report when overrides.studio painted the faces. */

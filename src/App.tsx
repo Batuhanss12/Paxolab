@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { appReducer, createInitialAppState, prevForSurface, sameSurface, surfaceKind, type SurfaceView } from './appState'
 import { Landing } from './components/Landing'
-import { MockPayPage } from './components/BillingPanel'
+import { MockPayPage } from './components/MockPayPage'
 import { Workspace } from './components/Workspace'
 import { openingReply, runConversation, runConversationAsync } from './engine/conversation'
 import { getEngine } from './engine/EnginePort'

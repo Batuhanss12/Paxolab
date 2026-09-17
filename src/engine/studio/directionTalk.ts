@@ -64,8 +64,7 @@ export function parseDirectionTalk(text: string, current?: StudioFamily): Direct
 
   if (VETO.test(t) || REPLACE.test(t)) {
     const namedOnly = /istemi|olmasın|don't\s+want/i.test(t) && !/vazgeç/i.test(t)
-    const pinFamily =
-      !namedOnly && named.find((family) => family !== current)
+    const pinFamily = namedOnly ? undefined : named.find((family) => family !== current)
     const vetoFamilies = namedOnly
       ? named
       : current && pinFamily !== current

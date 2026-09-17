@@ -10,13 +10,22 @@ type ProductionInfoProps = {
 
 export function ProductionInfo({ design }: ProductionInfoProps) {
   const [exportNote, setExportNote] = useState('')
+  const [zipping, setZipping] = useState(false)
   const passed = design.preflight.items.filter((i) => i.status === 'pass').length
   const blocked = design.preflight.blocking
   const summary = studioProcessSummary(design)
 
-  function onZip() {
-    const ok = downloadZip(design)
-    setExportNote(ok ? 'Teslim ZIP indirildi.' : 'ZIP yok — kapı kırmızı.')
+  async function onZip() {
+    setZipping(true)
+    setExportNote('Yazılar vektöre çevriliyor…')
+    try {
+      const ok = await downloadZip(design)
+      setExportNote(ok ? 'Teslim ZIP indirildi — yazılar outline.' : 'ZIP yok — kapı kırmızı.')
+    } catch {
+      setExportNote('ZIP üretilemedi.')
+    } finally {
+      setZipping(false)
+    }
   }
 
   return (
@@ -58,8 +67,13 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       </ul>
 
       <div className="prod__actions">
-        <button type="button" className="ghost-btn" onClick={onZip} disabled={!design.preflight.exportOk}>
-          Teslim ZIP
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={() => void onZip()}
+          disabled={zipping || !design.preflight.exportOk}
+        >
+          {zipping ? 'Hazırlanıyor…' : 'Teslim ZIP'}
         </button>
         {exportNote && <span className="prod__export-note">{exportNote}</span>}
       </div>

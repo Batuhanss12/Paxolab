@@ -25,6 +25,7 @@ import {
   pictogramsForBack,
   productStack,
   qrPlaceholder,
+  linesThatFit,
   qualityBadge,
   spacedLine,
   stackedLockup,
@@ -40,7 +41,7 @@ import { darken, isDark, lighten, mix } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
 import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, identOf, marginFor, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
-import { fitSize, pairingFaces, textEl, textWidth, wrapByWidth } from './text'
+import { fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
 
 /** Sides / top / flaps use the "deep" surface of the direction: navy for ink-wash, black for dark-luxe, marble for marble. */
@@ -152,9 +153,16 @@ function botanicalCardFront(ctx: LayoutCtx): string {
   parts.push(card.markup)
   const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
   parts.push(band.markup)
-  const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, Math.max(1.6, Math.min(2.3, cardW * 0.045)), 'sans', ink, 2, 'middle', false, 'tagline')
-  parts.push(sentence.markup)
-  if (d.volumeLine) parts.push(netQuantity(ledger, m, h - m * 0.9, d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink, 'start'))
+  // Net quantity is pinned to the foot, so the sentence above it must give way, not overprint.
+  const sentenceSize = Math.max(1.6, Math.min(2.3, cardW * 0.045))
+  const volSize = Math.max(1.9, Math.min(2.6, w * 0.032))
+  const footY = h - m * 0.9
+  const sentenceLines = linesThatFit(band.bottom + 2.2, footY - volSize * 1.3, sentenceSize, 2)
+  if (sentenceLines > 0) {
+    const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, sentenceSize, 'sans', ink, sentenceLines, 'middle', false, 'tagline')
+    parts.push(sentence.markup)
+  }
+  if (d.volumeLine) parts.push(netQuantity(ledger, m, footY, d.volumeLine, volSize, ink, 'start'))
   return parts.join('')
 }
 
@@ -255,7 +263,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   parts.push(stack.markup)
   let y = stack.bottom + 3
   // story
-  const bodySize = Math.max(1.35, Math.min(1.8, w * 0.024))
+  const bodySize = typeSize(Math.min(1.8, w * 0.024))
   const story = paragraph(ledger, m * 1.4, y, w - m * 2.8, d.story, bodySize, pairingFaces(d.typePairing).body, ink, 4, 'middle')
   parts.push(story.markup)
   y = story.bottom + 2
@@ -276,7 +284,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
     parts.push(row.markup)
     y = row.bottom + 2.5
-    const tableSize = Math.max(1.3, Math.min(1.58, w * 0.02))
+    const tableSize = typeSize(Math.min(1.58, w * 0.02))
     // leave room for at least the usage / warnings block under the table
     const tableLimit = footTop - Math.max(14, (footTop - y) * 0.42)
     if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
@@ -336,7 +344,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   }
   if (qrRoom) parts.push(qrPlaceholder(ledger, barX - picS - 3, rowY, picS, ink, d.seed + 3))
   // producer + origin
-  const pSize = Math.max(1.15, Math.min(1.45, w * 0.017))
+  const pSize = typeSize(Math.min(1.45, w * 0.017))
   const producer = paragraph(ledger, m, h - m - 3.2, w - m * 2, `${copy.manufacturer} · ${copy.address}`, pSize, 'sans', ink, 1, 'middle', false, 'manufacturer')
   parts.push(producer.markup)
   parts.push(spacedLine(ledger, w / 2, h - m * 0.55, d.locale === 'en' ? 'MADE IN TÜRKİYE' : 'TÜRKİYE’DE ÜRETİLDİ', 1.1, ink, w - m * 2))
@@ -413,7 +421,15 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
     ledger.text('side-brand', w / 2, by, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, pairingFaces(d.typePairing).brand, brandSize * 0.14), brandSize, 'middle')
     const spineTop = m + r * 2.6
     const spineBottom = by - brandSize * 1.6
-    parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, categoryCaption(ctx) ? `${copy.product} · ${categoryCaption(ctx)}` : copy.product, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineBottom - spineTop))
+    const spineLen = spineBottom - spineTop
+    const spineLine = categoryCaption(ctx) ? `${copy.product} · ${categoryCaption(ctx)}` : copy.product
+    // This spine shares the panel's centre line with the mark above and the brand below, so it
+    // only gets painted when the gap can hold the rotated line at its smallest size. Without the
+    // guard `fitSize` floors at 1.6 mm and the text runs straight across both of them.
+    const spineFits = spineLen > 0 && textWidth(spineLine.toLocaleUpperCase('tr'), 1.6, 'sans', 1.6 * 0.3) <= spineLen
+    if (spineFits) {
+      parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, spineLine, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineLen))
+    }
     return parts.join('')
   }
   // narrow spine: one line along the long axis (rotated when the panel is taller than wide)

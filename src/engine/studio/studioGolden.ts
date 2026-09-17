@@ -16,24 +16,31 @@ export type StudioFaceFreeze = {
   hash: string
 }
 
-/** Captured 16 Eyl 2026 after FACE_EM calibration + category/chip DNA leftovers. Update via `npx vite-node scripts/dump-studio-golden.ts`. */
+/**
+ * Captured 17 Eyl 2026 (L1). Two deliberate changes landed together so the set only moved once:
+ *   - text is measured with real font advances instead of the old estimator (which drifted
+ *     −10%…+20%, worst on `script`; the negative side let lines overrun their box),
+ *   - every computed type size is clamped to `STUDIO_TYPE_FLOOR_MM` (1.5 mm).
+ * 16 of 18 hashes moved. Archetype / background / family are unchanged on all 18 — the DNA did
+ * not shift, only the type did. Update via `npx vite-node scripts/dump-studio-golden.ts`.
+ */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
-  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: '0cbb971129281215' },
-  '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: 'da11f929e81966a9' },
-  '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: 'f0bb46f5acf47b0f' },
-  '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: '7dfbcdc7409d6799' },
-  '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '1b539060f963849d' },
-  '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '02d0d957f8941c63' },
-  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: '413bb8d1071466b5' },
-  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '3a67d10503f6e8f6' },
-  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '4c43c8a1efa86592' },
-  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'afa17fd01d14187d' },
-  '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: '31594a74988ad0fe' },
-  '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: 'a5adb7734f91ae3b' },
-  '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'c8abe6369207b701' },
-  '07-bebek-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '8211d6d466f9b7e6' },
-  '08-saglik-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'ea58b7051893c0ed' },
-  '08-saglik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '857e5c61edec5ba9' },
+  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: '530cb8a4537e0469' },
+  '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: '2f33f772b8f1b506' },
+  '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: 'ed03088422c947ab' },
+  '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: 'a143ef466005bcbf' },
+  '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '84d5b6dce359144f' },
+  '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '64a1423b81734924' },
+  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'd24658d29e96a8aa' },
+  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '2e6cd55e2ba4fd55' },
+  '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '33f73eaad2a64666' },
+  '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '721d886bb154eb53' },
+  '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: 'adc4b12b62dcd643' },
+  '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: 'fadf050aa5ca2c7e' },
+  '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'dbf9ef51f9728b83' },
+  '07-bebek-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'a3d455ae15ad4d47' },
+  '08-saglik-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '8ffae60b5f286442' },
+  '08-saglik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'de8a53882257b767' },
   '09-temizlik-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: 'fd441011f1ddf8dc' },
   '09-temizlik-etiket': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: 'e81bdee2d84e64c3' },
 }

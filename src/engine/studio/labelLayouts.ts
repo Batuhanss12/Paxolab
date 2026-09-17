@@ -27,6 +27,7 @@ import {
   productBadge,
   productBadgeHeight,
   productStack,
+  linesThatFit,
   spacedLine,
   stackedLockup,
   stackedWords,
@@ -40,7 +41,7 @@ import { darken, isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, claimLine, liveClaim, nutritionRows, usageCopy } from './copyBank'
 import { fitLabelBarcode } from '../barcode'
 import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
-import { Ledger, fitSize, textEl, textWidth, wrapByWidth } from './text'
+import { Ledger, fitSize, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
@@ -92,8 +93,14 @@ function cardOnArt(ctx: LayoutCtx): string {
   parts.push(card.markup)
   const band = claimBand(ledger, d, cardX, card.bottom, cardW, bandText, undefined, undefined, 'cta')
   parts.push(band.markup)
-  const sentence = paragraph(ledger, cardX, band.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, 2, 'middle', false, 'tagline')
-  parts.push(sentence.markup)
+  // On a small face the block floor wins over `blockBottomLimit`, so the sentence can reach the
+  // pictogram / net-quantity reserve. Drop lines instead of overprinting them.
+  const sentenceLimit = landscape ? h - m : reserveTop - 1
+  const sentenceLines = linesThatFit(band.bottom + 2, sentenceLimit, sentenceSize, 2)
+  if (sentenceLines > 0) {
+    const sentence = paragraph(ledger, cardX, band.bottom + 2, cardW, sentenceText, sentenceSize, 'sans', ink, sentenceLines, 'middle', false, 'tagline')
+    parts.push(sentence.markup)
+  }
   const pic = pictogramRow(ledger, m, picY, picS, pictogramsFor(d).filter((k) => k !== 'flammable').slice(0, 3), ink, ctx.paoMonths)
   parts.push(pic.markup)
   if (vol) parts.push(netQuantity(ledger, m, picY - volSize * 0.9, vol, volSize, ink, 'start'))
@@ -474,7 +481,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   const food = d.sector === 'food' || d.sector === 'beverage'
   if (food) {
     const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
-    const tableSize = Math.max(1.28, Math.min(1.55, w * 0.018))
+    const tableSize = typeSize(Math.min(1.55, w * 0.018))
     const rows = nutritionRows(d.locale, blob)
     if (w - m * 2 >= 56) {
       const tableW = Math.max(26, (w - m * 2) * 0.42)

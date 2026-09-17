@@ -211,6 +211,8 @@ export type StudioReport = {
   critic: StudioCriticOffer[]
   /** Ranked sibling directions. The painted face is `direction`; this is not a multi-paint. */
   offer?: StudioDirectionOffer
+  /** Set when the one-shot studio repair retuned identity scales and cleared ledger hits. */
+  repaired?: string
 }
 
 export type StudioInput = {

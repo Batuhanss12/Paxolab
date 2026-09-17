@@ -5,6 +5,14 @@
 **Kural:** Kodda olmayan sistem “var” sayılmadı. Doküman ≠ runtime. Kod değişikliği yapılmadı.
 
 > **2026-09-16:** “Cut = bbox / 4 nokta” iddiası güncel değil — native net `outlineUnion`, Forxa outer path. Üretim + şablon: `docs/PRODUCTION_AND_TEMPLATE_AUDIT.md`.
+>
+> **2026-09-17 — kapanan P0/P1'ler (kodda doğrulandı):**
+> - **§39 P0-1 / §42-1-2 "pattern + primitives painter'a bağlı değil" → KAPANDI.** `paintPatternFamily` `frontDecor.ts` ve `sidePanel.ts`'te, `paintPrimitives` `frontDecor.ts`'te gerçekten çağrılıyor.
+> - **§39 P1-5 / §42-3 "`wrapContinuity` stub" → KAPANDI.** `patternMotifs.ts`'te gerçek implementasyon, `frontPanel.ts:177`'de çağrılıyor.
+> - **§21–27 "auth / credits / billing / admin MISSING" → ARTIK GEÇERLİ DEĞİL.** Hono API + SQLite, kredi rezerv/commit/refund, abonelik, admin paneli mevcut; durum: `docs/PAXOLAB_PANEL_AUDIT.md`.
+> - **Hâlâ açık:** `advisePlan` no-op, `scoreVisualCraft` generate'de kullanılmıyor, `document/types.ts` DesignDocument, 3D shell.
+>
+> Güncel seviye ve faz planı: `docs/PAXOLAB_MASTER_ROADMAP.md`.
 
 ---
 

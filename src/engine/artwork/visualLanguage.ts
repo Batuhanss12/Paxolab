@@ -152,6 +152,9 @@ export function visualLanguageFor(
   void intent.surface
   void intent.positioning
   void intent.hierarchyPolicy
+  // The job's sector is authoritative, not the intent's. An intent may be carried across
+  // contexts (repair, tie-break probes) and must never drag a perfume face into food dialect.
+  void intent.sector
   const base = baseVisualLanguageFor(intent.style, sector, subProduct)
   return applyCharacterLanguageModifier(base, intent.character)
 }

@@ -4,6 +4,8 @@
 
 **Date:** 2026-09-13 · **Overall design maturity: 98%** (H0–D6 closed; planned phases done)
 
+> **SUPERSEDED (2026-09-17).** Bu "%98" yalnızca *painter craft*'ı (tipografi, marks, dieline bağlama, sektör kiti) ölçer. Karar mimarisini — intent → language → concept → aday → değerlendirme zincirini — kapsamaz; o eksende sistem `docs/DESIGN_BRAIN_V1_AUDIT.md`'ye göre henüz "decision engine" değildir. H0–D8 kayıtları geçerli tarihsel kanıttır, ancak **ürün seviyesi için tek gerçek kaynak `docs/PAXOLAB_MASTER_ROADMAP.md`'dir.** Planlama yaparken bu dosyadaki %98 rakamını kullanmayın.
+
 ---
 
 ## 1. Executive summary

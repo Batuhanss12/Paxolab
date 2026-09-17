@@ -10,7 +10,9 @@ import {
   observeFeedback,
   repairPlan,
   scoreDesign,
+  scoreVisualCraft,
 } from './brain'
+import { ledgerHits, planStudioRepair, type StudioRepairDelta } from './studio/studioRepair'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
@@ -163,7 +165,7 @@ export class FormaLocalEngine implements EnginePort {
 
     const hero = findHeroPanel(dieline.panels)
     const studioKnowledge = studioOn ? studioHintsFromKnowledge(brief) : null
-    const paint = (plan: typeof designPlan) => {
+    const paint = (plan: typeof designPlan, identityDelta?: StudioRepairDelta) => {
       const system = applyPlanToSystem(
         resolveDesignSystem(brief, template.structureId, { blankCanvas }),
         plan,
@@ -198,8 +200,8 @@ export class FormaLocalEngine implements EnginePort {
           system,
           identity: {
             logoHref: input.logoHref,
-            logoScale: overrides.logoScale,
-            titleScale: overrides.titleScale,
+            logoScale: identityDelta?.logoScale ?? overrides.logoScale,
+            titleScale: identityDelta?.titleScale ?? overrides.titleScale,
           },
         })
         artwork = composed.artwork
@@ -232,6 +234,17 @@ export class FormaLocalEngine implements EnginePort {
     }
 
     let pack = paint(designPlan)
+    if (studioOn && pack.studio) {
+      // One studio-native repair pass. Kept only when it actually clears ledger hits, so a
+      // retune can never make the face worse and a clean face is never re-painted.
+      const delta = planStudioRepair(pack.studio, { titleScale: overrides.titleScale, logoScale: overrides.logoScale })
+      if (delta) {
+        const retry = paint(designPlan, delta)
+        if (retry.studio && ledgerHits(retry.studio) < ledgerHits(pack.studio)) {
+          pack = { ...retry, studio: { ...retry.studio, repaired: delta.reason } }
+        }
+      }
+    }
     if (!studioOn && pack.critique.needsRepair) {
       pack = paint(repairPlan(pack.plan, pack.critique))
       pack.critique = { ...pack.critique, repaired: true, needsRepair: false }
@@ -252,6 +265,9 @@ export class FormaLocalEngine implements EnginePort {
     }
     const artwork = artworkFromDocument(document)
     const revision = (input.prev?.revision ?? 0) + 1
+    // Craft score reads the shipped markup after every repair decision, so it can report quality
+    // (and give the studio face non-geometry critic coverage) without ever feeding `needsRepair`.
+    const craftScore = scoreVisualCraft({ artwork, preflight: pack.preflight, copy, kind }, pack.plan)
     const decision = captureGenerateDecision({
       designId: id,
       revision,
@@ -287,6 +303,7 @@ export class FormaLocalEngine implements EnginePort {
           }
         : undefined,
       directionFromLlm: pack.studio?.direction.source === 'llm',
+      craft: craftScore,
     })
     if (decision && input.feedback?.length) {
       // Observation → candidate → validate; user/brand may auto-activate. Global stays human.
@@ -328,6 +345,7 @@ export class FormaLocalEngine implements EnginePort {
       designPlan: pack.plan,
       critique: pack.critique,
       designCritique: decision?.critiques,
+      craftScore,
       appliedKnowledge: knowledge.applied.length || studioKnowledge?.applied.length ? [...knowledge.applied, ...(studioKnowledge?.applied ?? [])] : undefined,
       studio: pack.studio,
       copyLocale: brief.copyLocale,

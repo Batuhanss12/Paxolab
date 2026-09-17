@@ -7,9 +7,17 @@ import type { StudioReport } from './types'
 
 const REPLACED = new Set(['collision', 'type-fit', 'text-overflow', 'asset-family'])
 
-/** Minimum legible type on press: 1.2 mm ≈ 3.4 pt for legal, hard floor 0.9 mm. */
-export const STUDIO_MIN_TEXT_MM = 1.2
-export const STUDIO_FLOOR_TEXT_MM = 0.9
+/**
+ * Commercial print floor: 1.5 mm ≈ 4.3 pt. The painters clamp every computed size to
+ * `STUDIO_TYPE_FLOOR_MM`, so these thresholds are a regression guard — if a face reports
+ * smaller type, some size path bypassed the clamp.
+ *
+ * The previous values (warn 1.2 / fail 0.9 ≈ 2.5 pt) passed type nobody can read on a carton.
+ * Mandatory food legal copy has a stricter x-height rule; that is a per-sector check, not this
+ * global floor.
+ */
+export const STUDIO_MIN_TEXT_MM = 1.5
+export const STUDIO_FLOOR_TEXT_MM = 1.5
 
 export function applyStudioPreflight(base: PreflightReport, report: StudioReport): PreflightReport {
   const kept = base.items.filter((i) => !REPLACED.has(i.id) && i.id !== 'export')

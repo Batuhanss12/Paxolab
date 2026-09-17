@@ -169,4 +169,81 @@ describe('Phase 8 billing (mock)', () => {
     })
     expect(stolen.status).toBe(403)
   })
+
+  // P0-5 — the guard that keeps a live deployment from handing out paid plans for free.
+  describe('payment gate (iyzico keys present)', () => {
+    function withKeys() {
+      process.env.IYZI_API_KEY = 'test-key'
+      process.env.IYZI_SECRET_KEY = 'test-secret'
+    }
+
+    it('refuses free subscription activation and leaves the user without a plan', async () => {
+      const { auth, token } = await register('gated@forma.test')
+      withKeys()
+
+      const res = await app.request('/api/billing/subscribe', {
+        method: 'POST',
+        headers: auth,
+        body: JSON.stringify({ planId: 'pro' }),
+      })
+      expect(res.status).toBe(403)
+
+      const sub = await json(
+        await app.request('/api/billing/subscription', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      )
+      expect(sub.subscription ?? null).toBeNull()
+    })
+
+    it('still activates in mock mode, so dev flow is untouched', async () => {
+      const { auth } = await register('mock@forma.test')
+      const res = await app.request('/api/billing/subscribe', {
+        method: 'POST',
+        headers: auth,
+        body: JSON.stringify({ planId: 'pro' }),
+      })
+      expect(res.status).toBe(201)
+    })
+
+    it('mock completion is closed once real keys are configured', async () => {
+      const { auth } = await register('mockclosed@forma.test')
+      const checkout = await json(
+        await app.request('/api/billing/checkout', {
+          method: 'POST',
+          headers: auth,
+          body: JSON.stringify({ packId: 'pack_50' }),
+        }),
+      )
+      withKeys()
+      const res = await app.request('/api/billing/mock/complete', {
+        method: 'POST',
+        headers: auth,
+        body: JSON.stringify({ orderId: checkout.orderId }),
+      })
+      expect(res.status).not.toBe(200)
+    })
+
+    it('a callback without a token never grants credits', async () => {
+      const { auth, token } = await register('cb@forma.test')
+      const before = await json(await app.request('/api/credits/balance', { headers: auth }))
+      withKeys()
+
+      const res = await app.request('/api/billing/iyzico/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({}),
+      })
+      expect(res.status).toBe(400)
+
+      const after = await json(
+        await app.request('/api/credits/balance', { headers: { Authorization: `Bearer ${token}` } }),
+      )
+      expect(after.balance).toBe(before.balance)
+    })
+
+    // NOTE: a callback that *carries* a token cannot be covered here — the handler calls the
+    // live iyzico API to retrieve the payment before deciding, so the request hangs on the
+    // network. Covering it needs an injectable iyzico client (see R12 note in the roadmap).
+  })
 })

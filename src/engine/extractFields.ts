@@ -12,6 +12,7 @@ import {
   SECTOR_RULES,
   SKIP_UTTERANCE,
   normaliseSectorTypos,
+  stripBrandTail,
 } from './extractRules'
 import {
   isGenericProductName,
@@ -85,13 +86,15 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   }
 
   const icin = raw.match(/^["“']?([A-Za-zÇĞİÖŞÜçğıöşü0-9][\wÇĞİÖŞÜçğıöşü&.'’\s-]{1,40}?)["”']?\s+için\b/i)
-  if (icin && looksLikeName(icin[1]) && !patch.brandName) {
-    const parts = icin[1].trim().split(/\s+/).filter(Boolean)
+  // "Nexora markası için…" — the possessive tail is grammar, not part of the name.
+  const icinName = icin ? stripBrandTail(icin[1]) : ''
+  if (icinName && looksLikeName(icinName) && !patch.brandName) {
+    const parts = icinName.split(/\s+/).filter(Boolean)
     if (parts.length >= 3 && !isGenericProductName(parts[parts.length - 1] ?? '')) {
       patch.brandName = parts.slice(0, -1).join(' ')
       if (!patch.productName) patch.productName = parts[parts.length - 1]
     } else {
-      patch.brandName = icin[1].trim()
+      patch.brandName = icinName
     }
   }
 
@@ -138,12 +141,21 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
         patch.brandName = words[0]
       }
       if (!patch.productName && !brand && !spokenBrand && words.length > 1 && !brandRun) {
+        // Compare against the brand's *words*, not the whole string: with brand "Elite Brew",
+        // "Brew" is not a product name — taking it would later chop the brand back to "Elite".
+        const brandWords = new Set(
+          (patch.brandName ?? '')
+            .toLocaleLowerCase('tr')
+            .split(/\s+/)
+            .filter(Boolean),
+        )
         const rest = words.slice(1).find(
           (w) =>
             looksLikeName(w) &&
             !isGenericProductName(w) &&
             !isPaletteName(w) &&
-            !sameName(w, patch.brandName ?? ''),
+            stripBrandTail(w) !== '' &&
+            !brandWords.has(w.toLocaleLowerCase('tr')),
         )
         if (rest) patch.productName = rest
       }

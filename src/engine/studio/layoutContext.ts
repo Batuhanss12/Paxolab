@@ -58,7 +58,7 @@ export function makeCtx(
 }
 
 /** Spread onto lockup/stack opts so identity reaches anatomy without extra positional args. */
-export function withIdent<T extends object>(ctx: LayoutCtx, opts: T): T & StudioIdentity {
+export function withIdent<const T extends object>(ctx: LayoutCtx, opts: T): T & StudioIdentity {
   return { ...opts, logoHref: ctx.logoHref, logoScale: ctx.logoScale, titleScale: ctx.titleScale }
 }
 

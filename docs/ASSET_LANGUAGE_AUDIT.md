@@ -1,5 +1,12 @@
 # ASSET LANGUAGE AUDIT
 
+> **POST-IMPLEMENTATION NOTU (2026-09-17).** Bu audit'in "facade" hükmü artık geçerli değil; üç ana bulgu da kapandı (kodda ölçüldü, `src/engine/artwork/assetLanguageRole.test.ts` kilitliyor):
+> - **preferred / allowed / forbidden AL'de üretiliyor** — `assetLanguageFor` artık `preferred {roles, lexicon}` · `allowed {families, languages}` · `forbidden {avoid, strategies}` döndürüyor.
+> - **"Rol skorda 0" → yanlış.** `assetCompatibilityOf` = `alFit × 0.7 + roleFitOf × 0.3`, `compositionCandidates.ts:684`'ten çağrılıyor. Tam rol ıskası toplam skoru winner eşiğinden (0.8) fazla oynatıyor.
+> - **`preferredRolesForLanguage('organic' | 'geometric')` artık boş dizi döndürmüyor** → playful overlay yüzlerinde rol sıralaması atıl değil.
+>
+> §4'teki "Aday A vs Aday B" hesabı bu yüzden yeniden yapılmalıdır. Güncel durum: `docs/PAXOLAB_MASTER_ROADMAP.md` → R7.
+
 Ürün: Grapxor. Tarih: 15 Eyl 2026.  
 Kapsam: `assetLanguageFor`, composition, motif match, critic, kit overlay skip.  
 Kod değişikliği yok. 29 set-0 freeze dokunulmaz.

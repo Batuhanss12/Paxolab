@@ -76,15 +76,6 @@ export type OrgDetail = {
   billing: { ownerUserId: string; balance: number; unlimited: boolean };
 };
 
-export type AdminUser = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string;
-  created_at: string;
-  auth_provider?: string;
-  balance: number;
-};
 
 export type AdminStats = {
   users: number;
@@ -104,20 +95,3 @@ export type AdminBillingOverview = {
   failedOperations: number;
 };
 
-export type AdminPlan = {
-  id: string;
-  label: string;
-  monthlyPrice: number;
-  monthlyCredits: number;
-  currency: string;
-  enabled: boolean;
-  unlimited?: boolean;
-};
-
-export type AdminOperation = {
-  operationId: string;
-  displayName: string;
-  category: string;
-  creditCost: number;
-  enabled: boolean;
-};

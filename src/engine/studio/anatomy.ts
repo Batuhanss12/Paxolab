@@ -10,7 +10,7 @@ import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { categoryBesideProduct } from './copyBank'
-import { Ledger, fitSize, pairingFaces, textEl, textWidth, wrapByWidth, type Face } from './text'
+import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
 import {
   clampStudioScale,
   type BenefitIcon,
@@ -444,7 +444,7 @@ export function benefitRow(ledger: Ledger, _d: DesignDirection, x: number, y: nu
   const n = Math.max(1, items.length)
   const cell = w / n
   const r = opts.r ?? Math.min(cell * 0.22, 4.2)
-  const labelSize = Math.max(1.35, Math.min(r * 0.52, 2.1))
+  const labelSize = typeSize(Math.min(r * 0.52, 2.1))
   let out = ''
   let bottom = y
   items.forEach((item, i) => {
@@ -466,7 +466,7 @@ export function benefitRow(ledger: Ledger, _d: DesignDirection, x: number, y: nu
 
 export function benefitColumn(ledger: Ledger, _d: DesignDirection, x: number, y: number, w: number, items: BenefitItem[], color: string, gap = 2.4, maxBottom = Infinity): { markup: string; bottom: number } {
   const r = Math.min(w * 0.14, 3.6)
-  const labelSize = Math.max(1.4, Math.min(r * 0.6, 2.2))
+  const labelSize = typeSize(Math.min(r * 0.6, 2.2))
   let out = ''
   let cy = y + r
   for (const item of items) {
@@ -492,8 +492,9 @@ export type Section = { title: string; body: string; edit?: string }
 
 /** Readable legal type that still clips inside `room` instead of colliding with the footer. */
 export function legalTypeSize(panelW: number, room: number, kind: 'box' | 'label' | 'aside' = 'box'): number {
-  const cap = kind === 'label' ? 1.95 : kind === 'aside' ? 1.7 : 1.85
-  const floor = kind === 'aside' ? 1.3 : kind === 'label' ? 1.45 : 1.4
+  // Legal copy is the text most likely to be read under bad light — it never goes below the floor.
+  const cap = Math.max(kind === 'label' ? 1.95 : kind === 'aside' ? 1.7 : 1.85, STUDIO_TYPE_FLOOR_MM)
+  const floor = typeSize(kind === 'aside' ? 1.3 : kind === 'label' ? 1.45 : 1.4)
   const byWidth = panelW * (kind === 'label' ? 0.023 : kind === 'aside' ? 0.021 : 0.024)
   const byRoom = Math.max(0, room) * (kind === 'aside' ? 0.16 : 0.12)
   return Math.max(floor, Math.min(cap, byWidth, byRoom > 0 ? byRoom : floor))
@@ -540,6 +541,17 @@ export function legalColumn(
     cy += size * 1.1
   }
   return { markup: `<g data-art="legal-column">${out}</g>`, bottom: cy }
+}
+
+/**
+ * How many paragraph lines fit between `top` and `limit`, capped at `max`.
+ * Layouts call this before `paragraph` so a growing block never runs into a footer that is
+ * anchored to the panel edge (net quantity, pictogram row).
+ */
+export function linesThatFit(top: number, limit: number, size: number, max: number): number {
+  const room = limit - top
+  if (room <= 0) return 0
+  return Math.max(0, Math.min(max, Math.floor(room / (size * 1.45))))
 }
 
 export function paragraph(ledger: Ledger, x: number, y: number, w: number, text: string, size: number, face: Face, color: string, maxLines: number, anchor: 'start' | 'middle' = 'middle', italic = false, edit?: string): { markup: string; bottom: number } {
@@ -680,7 +692,7 @@ export function barcodeBlock(
   onLight = true,
   captionSize?: number,
 ): string {
-  const cap = captionSize ?? Math.max(1.25, Math.min(1.85, w / 9.2))
+  const cap = typeSize(captionSize ?? Math.max(1.25, Math.min(1.85, w / 9.2)))
   const capPad = Math.max(4.2, cap * 2.15)
   const box = onLight ? '' : `<rect x="${f(x - 1)}" y="${f(y - 1)}" width="${f(w + 2)}" height="${f(h + capPad)}" fill="#ffffff" />`
   ledger.add('element', 'barcode', x - 1, y - 1, w + 2, h + capPad)
@@ -754,8 +766,9 @@ export function notesTable(ledger: Ledger, x: number, y: number, w: number, head
   cols.forEach((col, i) => {
     const cx = x + colW * (i + 0.5)
     let cy = top
-    out += textEl({ x: cx, y: cy, text: col.h, size: size * 0.9, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: size * 0.2 })
-    ledger.text('notes-head', cx, cy, textWidth(col.h, size * 0.9, 'sans-heavy', size * 0.2), size * 0.9, 'middle')
+    const headSize = typeSize(size * 0.9)
+    out += textEl({ x: cx, y: cy, text: col.h, size: headSize, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: size * 0.2 })
+    ledger.text('notes-head', cx, cy, textWidth(col.h, headSize, 'sans-heavy', size * 0.2), headSize, 'middle')
     cy += size * 1.6
     for (const item of col.items.slice(0, 3)) {
       out += textEl({ x: cx, y: cy, text: item, size, face: 'sans', fill: color, anchor: 'middle' })
@@ -779,7 +792,7 @@ function badgeMetrics(d: DesignDirection, w: number, product: string, sub: strin
   const lines = textWidth(title, 5 * scale, faces.brand) > inner ? splitTitle(title) : [title]
   const size = Math.min(...lines.map((l) => fitSize(l, inner, Math.min(5.4, w * 0.14) * scale, 2.4 * scale, faces.brand, 0.06)))
   const caption = categoryBesideProduct(product, sub)
-  const subSize = Math.max(1.35, Math.min(size * 0.36, 2))
+  const subSize = typeSize(Math.min(size * 0.36, 2))
   const volSize = Math.max(1.8, size * 0.55)
   const h = pad * 1.4 + lines.length * size * 1.15 + (caption ? subSize * 2.2 : 0) + (volume ? volSize * 1.8 : 0) + pad
   return { pad, faces, lines, size, subSize, volSize, h, caption }

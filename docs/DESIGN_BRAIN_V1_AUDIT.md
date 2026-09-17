@@ -1,5 +1,12 @@
 # DESIGN BRAIN V1 AUDIT
 
+> **POST-IMPLEMENTATION NOTU (2026-09-17).** "MINIMUM CHANGE PLAN"ın 1. ve 2. adımı uygulandı; doküman güncellenmemişti. Kodda doğrulandı:
+> - **Gap 2 kapandı** — `void principlesFor` yok; `createPlan` artık `principles: principlesFor(style, surface)` yazıyor (`DesignDirector.ts:221`), `DesignPlan.principles` alanı mevcut (`DesignPlan.ts:175`)
+> - **Gap 3 kapandı** — `DesignIntent = CompositionTargets` alias'ı kaldırıldı; ayrı `DesignIntentBlock` var (`DesignPlan.ts:199`), `buildDesignIntent` üretiyor
+> - **Gap 1 kısmen** — dil katmanı artık taşıyıcı üzerinden akıyor (bkz. `VISUAL_LANGUAGE_V1_AUDIT` notu), ancak concept lookup anahtarı hâlâ `sector:sub:style`
+>
+> **Hâlâ açık:** Gap 4 (kit-grade overlay skip — bilinçli freeze), Gap 5 (`scoreVisualCraft` generate'de yok), `advisePlan` no-op. Güncel plan: `docs/PAXOLAB_MASTER_ROADMAP.md` → R2, R3, R6.
+
 Ürün: Grapxor. Kök: `Desktop/Paxolab`. Tarih: 15 Eyl 2026.  
 Kapsam: `src/engine` design / compose / brain / critic / knowledge / catalog + salt-okunur testler.  
 Yok sayıldı: `node_modules`, `site/`, `docs/instagram`, GraphicLibrary merge adayları.  

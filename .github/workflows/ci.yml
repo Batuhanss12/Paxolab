@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The engine's value is its determinism: 29 catalog fingerprints and 18 studio face hashes.
+# Those only protect anything if every push re-runs them.
+jobs:
+  engine:
+    name: Engine (SPA + server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # node:sqlite needs >= 22.5; server/db.ts imports it directly.
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Typecheck + build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: SPA tests (catalog + studio goldens)
+        run: npx vitest run
+      - name: Server tests
+        run: npm run test:server
+
+  site:
+    name: Site (panel build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - name: Build + typecheck
+        run: npm run build
+        working-directory: site

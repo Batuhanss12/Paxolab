@@ -6,7 +6,6 @@ import { attachArtDirection } from './ArtDirection'
 import { composeGrammar } from './CompositionGrammar'
 import { rememberArt } from './DesignMemory'
 import { allowedDecorFor, sectorRisks, styleRule } from './DesignRules'
-import { buildDesignGraph, type DesignGraph } from './DesignGraph'
 import { principlesFor } from './DesignKnowledge'
 import type {
   BackgroundTreatment,
@@ -249,10 +248,3 @@ export function createPlan(input: DirectorInput): DesignPlan {
   return plan
 }
 
-export function planGraph(plan: DesignPlan): DesignGraph {
-  return buildDesignGraph(plan)
-}
-
-export function advisePlan(plan: DesignPlan): DesignPlan {
-  return plan
-}

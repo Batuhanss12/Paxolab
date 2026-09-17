@@ -15,6 +15,7 @@ import type { CritiqueReport } from './CritiqueEngine'
 import { critiqueDesign, type DesignCritique, type StudioLedgerEvidence } from './DesignCritic'
 import { brandScopeKey } from './DesignKnowledgeStore'
 import type { DesignPlan } from './DesignPlan'
+import type { VisualCraftScorecard } from './scoreVisualCraft'
 import type { StudioDirectionOffer } from '../studio/types'
 
 export const DESIGN_BRAIN_VERSION = '1.0'
@@ -386,6 +387,8 @@ export type CaptureGenerateInput = {
   studioOffer?: StudioDirectionOffer
   /** Ledger evidence for the studio critic (kit hints are skipped when this is set). */
   studioLedger?: StudioLedgerEvidence
+  /** Craft scorecard over the shipped markup — advisory critic evidence, never a repair gate. */
+  craft?: VisualCraftScorecard
   /** True when the LLM art director proposed the studio direction. */
   directionFromLlm?: boolean
 }
@@ -424,6 +427,7 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
       preflight: preflightReport,
       search: path === 'overlay' && !input.studioLedger ? search : undefined,
       studioLedger: input.studioLedger,
+      craft: input.craft,
     })
     const entry: DesignDecisionLog = {
       designId: input.designId,

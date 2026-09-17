@@ -175,13 +175,16 @@ function structureGate(input: { hasDesign: boolean; awaiting: AwaitingKey | null
 /** User named a carton — pin it and wait for dim edit + start. Do not generate yet. */
 function selectStructureResult(brief: DesignBrief, templateId: string, text: string, state?: ConversationState): EngineResult {
   const tmpl = getTemplate(templateId)
-  const dims = dimsFromTemplate(templateId)
+  // The nets are parametric, so a structure choice must not overwrite a size the user gave.
+  // Only fall back to the catalog default when we have nothing of theirs to keep.
+  const keepUserDims = !brief.dimsDefaulted && brief.dimensionsMm.L > 0 && brief.dimensionsMm.H > 0
+  const dims = keepUserDims ? brief.dimensionsMm : dimsFromTemplate(templateId)
   const next = {
     ...brief,
     templateId,
     packagingMode: brief.packagingMode || tmpl?.packagingMode || 'box',
     dimensionsMm: dims,
-    dimsDefaulted: true,
+    dimsDefaulted: !keepUserDims,
   }
   const offer = recommendStructures(next)
   const label = tmpl ? (STRUCTURE_LABEL[tmpl.structureId] ?? tmpl.title) : templateId
@@ -191,8 +194,12 @@ function selectStructureResult(brief: DesignBrief, templateId: string, text: str
     awaiting: 'templateId',
     replies: [
       isLabel
-        ? `${label} seçildi. Etiket ${dims.L}×${dims.H} mm — sağda değiştir, sonra “Etiketi başlat”.`
-        : `${label} seçildi. Şablon ölçüsü ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştir, sonra “Tasarımı başlat”.`,
+        ? keepUserDims
+          ? `${label} seçildi. Senin ölçünle: ${dims.L}×${dims.H} mm — sağda değiştirebilirsin, sonra “Etiketi başlat”.`
+          : `${label} seçildi. Etiket ${dims.L}×${dims.H} mm — sağda değiştir, sonra “Etiketi başlat”.`
+        : keepUserDims
+          ? `${label} seçildi. Senin ölçünle: ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştirebilirsin, sonra “Tasarımı başlat”.`
+          : `${label} seçildi. Şablon ölçüsü ${dims.L}×${dims.W || '—'}×${dims.H} mm — sağda değiştir, sonra “Tasarımı başlat”.`,
     ],
     shouldGenerate: false,
     showTemplates: true,

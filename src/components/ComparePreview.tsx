@@ -1,3 +1,4 @@
+import type { DesignSpec } from '../types'
 import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { renderFrontSvg } from '../engine/artwork/renderArtwork'
 import { artworkFromDocument } from '../engine/document'

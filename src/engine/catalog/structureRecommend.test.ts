@@ -92,7 +92,10 @@ describe('C5 structure recommendation', () => {
     }
     const chat = chatOffer('Luma parfüm kutusu 70x35x140 siyah altın')
     expect(chat.replies.join(' ')).toMatch(/140/)
-    expect(chat.replies.join(' ')).toMatch(/Yapı:/)
+    // C1 turned this turn into a structure *offer* (numbered, user picks a card); the single
+    // "Yapı: X" sentence now belongs to the generate turn. The contract here is that the offer
+    // names real structures instead of a generic slogan.
+    expect(chat.replies.join(' ')).toMatch(/tuck|sleeve|mailer|tepsi|kılıf/i)
   })
 
   it('TEST 4 — ranking follows physical / product weights', () => {

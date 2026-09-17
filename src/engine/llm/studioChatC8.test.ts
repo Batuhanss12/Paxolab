@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { DesignBrief } from '../../types'
 import { runConversation } from '../conversation'
 import { emptyBrief, mergeBrief } from '../fields'
 import { FormaLocalEngine } from '../FormaLocalEngine'
@@ -24,22 +25,22 @@ function fakeProvider(answer: (request: StructuredRequest) => unknown): LLMProvi
   }
 }
 
-function coffee(extra: Record<string, unknown> = {}) {
+function coffee(extra: Partial<DesignBrief> = {}): DesignBrief {
   return {
     ...emptyBrief(),
     brandName: 'Elite Brew',
     productName: 'Night',
     sector: 'gıda',
     subProduct: 'kahve',
-    packagingMode: 'box' as const,
+    packagingMode: 'box',
     templateId: 'coffee-box',
     dimensionsMm: { L: 80, W: 50, H: 180 },
-    styleType: 'luxury' as const,
+    styleType: 'luxury',
     ...extra,
   }
 }
 
-function generate(brief: ReturnType<typeof coffee>, direction?: ReturnType<typeof sanitizeStudioDirection>) {
+function generate(brief: DesignBrief, direction?: ReturnType<typeof sanitizeStudioDirection>) {
   return new FormaLocalEngine().generate({
     brief,
     overridePatch: { studio: true, ...(direction ? { direction } : {}) },
@@ -249,7 +250,7 @@ describe('C8 LLM brief + direction', () => {
     expect(brief.templateId).toBe('')
     const offer = recommendStructures({ ...brief, dimensionsMm: { L: 180, W: 120, H: 60 } })
     expect(offer.candidates.length).toBeGreaterThan(0)
-    expect(offer.candidates.every((row) => row.structureId !== '')).toBe(true)
+    expect(offer.candidates.every((row) => row.structureId.length > 0)).toBe(true)
   })
 
   it('TEST 12 — C6 why/veto still works when LLM is off', () => {

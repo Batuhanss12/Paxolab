@@ -76,10 +76,7 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
     if (SKIP_UTTERANCE.test(cleaned)) return { addressDefaulted: true }
     return { manufacturerAddress: cleaned, addressDefaulted: false }
   }
-  if (/^(evet|hayır|ok|tamam|olur|yok|bilmiyorum)$/i.test(cleaned)) {
-    if (awaiting === 'colors' && /yok|bilmiyorum|hayır/i.test(cleaned)) return { colors: 'Motor paleti' }
-    return {}
-  }
+  if (/^(evet|hayır|ok|tamam|olur|yok|bilmiyorum)$/i.test(cleaned)) return {}
   if (awaiting === 'packagingMode') {
     if (/kutu.+(etiket|label)|(etiket|label).+kutu|\+/i.test(cleaned)) {
       return { packagingMode: 'box', deliverables: ['box', 'label'] }

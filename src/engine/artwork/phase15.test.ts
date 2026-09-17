@@ -199,8 +199,10 @@ describe('Phase 15 blank-canvas director', () => {
     expect(tech.finish.decor).toBe('none')
   })
 
-  it('chat copy treats chips as mood and mentions colors', () => {
+  it('chat copy treats chips as mood and asks for colour in plain language', () => {
     expect(askCopy(emptyBrief(), 'styleType')).toMatch(/ruh hali/i)
-    expect(askCopy(emptyBrief(), 'colors')).toMatch(/hex/i)
+    // C2 moved the intake off hex codes: the director asks for colour / stance / story.
+    expect(askCopy(emptyBrief(), 'colors')).toMatch(/renk/i)
+    expect(askCopy(emptyBrief(), 'colors')).not.toMatch(/hex/i)
   })
 })

@@ -40,8 +40,8 @@ describe('appReducer', () => {
 
   it('keeps box and label designs in separate slots', () => {
     const base = createInitialAppState()
-    const box = { id: 'box-1', kind: 'box' as const, brief: { ...base.brief, packagingMode: 'box' as const }, revision: 1 } as NonNullable<AppState['design']>
-    const label = { id: 'label-1', kind: 'label' as const, brief: { ...base.brief, packagingMode: 'label' as const }, revision: 1 } as NonNullable<AppState['design']>
+    const box = { id: 'box-1', kind: 'box' as const, brief: { ...base.brief, packagingMode: 'box' as const }, revision: 1 } as unknown as NonNullable<AppState['design']>
+    const label = { id: 'label-1', kind: 'label' as const, brief: { ...base.brief, packagingMode: 'label' as const }, revision: 1 } as unknown as NonNullable<AppState['design']>
     const withBox = appReducer({ ...base, design: box }, { type: 'generation.finish', design: box, printReady: false })
     const withLabel = appReducer(withBox, { type: 'generation.finish', design: label, printReady: false })
     const backToBox = appReducer(withLabel, { type: 'surfaceView', surface: 'box' })

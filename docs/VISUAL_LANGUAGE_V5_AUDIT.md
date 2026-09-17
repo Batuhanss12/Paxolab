@@ -1,5 +1,9 @@
 # VISUAL LANGUAGE V5 AUDIT
 
+> **POST-IMPLEMENTATION NOTU (2026-09-17).** §6 "bu dilimde yapılmayan" listesi artık geçerli değil: **VL-5b uygulandı.** `visualLanguageFor` bugün `base(style × sector × sub)` + **character modifikatörü** çalıştırıyor (`air` / `restrained` → `quiet-line` append) — kod yorumu birebir "VL-5b" diyor. `character` / `density` / `negativeSpace` / `metallic` hâlâ birincil anahtar değil (doğru karar, §4'teki çarpışma analizi geçerli).
+>
+> **Hâlâ açık:** VL-3 invert, VL-4 tie-break, AD-2 (pattern ∩ dil), `subProduct`'ın `DesignIntent`'e taşınması. Güncel plan: `docs/PAXOLAB_MASTER_ROADMAP.md` → R6.
+
 Ürün: Grapxor. Tarih: 15 Eyl 2026.  
 Kapsam: `DesignIntentBlock`, `VisualIntent`, `Density`, `visualLanguageFor`, `LANGUAGES`, `styleRule`, call-site’lar.  
 Kod değişikliği yok. 29 set-0 freeze dokunulmaz. AD-2 (pattern ∩ dil) bekletildi; bu dilim mimari soru.

@@ -121,6 +121,26 @@ export function buildUserExportFiles(spec: DesignSpec): UserExportFile[] | null 
   ]
 }
 
+/**
+ * Delivery files with every glyph converted to a path.
+ *
+ * The printed faces must not depend on fonts installed where the file is opened — `local()`
+ * declarations silently fall back and shift every fitted line. The dieline/knife files carry no
+ * studio type, so they pass through untouched.
+ */
+export async function buildOutlinedExportFiles(spec: DesignSpec): Promise<UserExportFile[] | null> {
+  const files = buildUserExportFiles(spec)
+  if (!files) return null
+  const { outlineSvgText } = await import('../studio/outlineText')
+  return Promise.all(
+    files.map(async (file) => {
+      if (!/-(artwork|combined)\.svg$/.test(file.name) || typeof file.data !== 'string') return file
+      const { markup } = await outlineSvgText(file.data)
+      return { ...file, data: markup }
+    }),
+  )
+}
+
 function triggerDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -146,8 +166,8 @@ export function downloadDxf(spec: DesignSpec): boolean {
   return true
 }
 
-export function downloadZip(spec: DesignSpec): boolean {
-  const files = buildUserExportFiles(spec)
+export async function downloadZip(spec: DesignSpec): Promise<boolean> {
+  const files = await buildOutlinedExportFiles(spec)
   if (!files) return false
   const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
   triggerDownload(zipStore(files), `${slug}-forma.zip`)

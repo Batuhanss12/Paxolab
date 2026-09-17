@@ -59,7 +59,8 @@ describe('D4 P1 honesty — kit metadata is not the studio face', () => {
   it('captions the painted studio DNA, not the kit hero family', () => {
     const spec = generate()
     expect(spec.studio?.direction.archetype).toBe('marble-frame')
-    const hero = spec.designPlan?.heroGraphic.family
+    // Kit HeroFamily and studio archetype ids are separate string spaces; compare as text.
+    const hero: string = spec.designPlan?.heroGraphic.family ?? ''
     expect(studioFaceLabel(spec)).toBe('marble-frame · marble')
     if (hero && hero !== 'marble-frame') expect(studioFaceLabel(spec)).not.toContain(hero)
     expect(studioProcessSummary(spec)).toMatch(/marble-frame|marble frame/)
@@ -90,7 +91,8 @@ describe('D4 P1 honesty — kit metadata is not the studio face', () => {
     expect(spec.studio).toBeFalsy()
     expect(spec.artwork.language).toBe('food-harvest')
     expect(studioLanguageCaption(spec)).toBe('food-harvest')
-    const hero = spec.designPlan?.heroGraphic.family
+    // Kit HeroFamily and studio archetype ids are separate string spaces; compare as text.
+    const hero: string = spec.designPlan?.heroGraphic.family ?? ''
     if (hero && hero !== 'none') {
       expect(studioFaceLabel(spec)).toContain(hero)
       expect(spec.preflight.items.find((row) => row.id === 'proof')?.detail).toContain(hero)
