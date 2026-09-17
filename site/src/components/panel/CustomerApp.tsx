@@ -9,6 +9,7 @@ import {
   getCreditBalance,
   loadAuth,
   logout,
+  saveAuth,
   studioHandoffUrl,
   type AuthState,
 } from "@/lib/auth";
@@ -29,8 +30,11 @@ type Sub = {
 } | null;
 type Credits = {
   balance: number;
+  billingUserId?: string;
+  isShared?: boolean;
   buckets?: { included: number; purchased: number; bonus: number; total: number };
 };
+type Pack = { id: string; credits: number; priceTry: number; label: string; currency: string };
 type Usage = {
   id: string;
   operationId: string;
@@ -59,6 +63,22 @@ type Plan = {
   enabled?: boolean;
 };
 
+/** Invite token stashed before login; accepted once a session exists. */
+const INVITE_KEY = "grapxor.pendingInvite.v1";
+
+function stripInviteParam(): void {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("invite")) return;
+  params.delete("invite");
+  const next = params.toString();
+  window.history.replaceState(
+    {},
+    "",
+    `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`,
+  );
+}
+
 export function CustomerApp() {
   const pathname = usePathname() || "/hesap";
   const locale = localeFromPath(pathname);
@@ -76,12 +96,18 @@ export function CustomerApp() {
   const [ledger, setLedger] = useState<Ledger[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [packs, setPacks] = useState<Pack[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [studioUrl, setStudioUrl] = useState("");
 
   const boot = useCallback(() => {
+    // Stash a pending team invite before any redirect drops the query param.
+    if (typeof window !== "undefined") {
+      const inviteToken = new URLSearchParams(window.location.search).get("invite");
+      if (inviteToken) sessionStorage.setItem(INVITE_KEY, inviteToken);
+    }
     const auth = loadAuth();
     setSession(auth);
     setStudioUrl(auth ? studioHandoffUrl() : "");
@@ -94,12 +120,17 @@ export function CustomerApp() {
       consoleRequest<{ projects: Project[] }>("/api/projects").catch(() => ({ projects: [] })),
       consoleRequest<{ subscription: Sub }>("/api/billing/subscription").catch(() => ({ subscription: null })),
       consoleRequest<Credits>("/api/billing/credits").catch(() => null),
-      consoleRequest<{ usage?: Usage[]; operations?: Usage[] }>("/api/billing/usage?limit=50").catch(() => ({})),
-      consoleRequest<{ ledger?: Ledger[]; transactions?: Ledger[] }>("/api/billing/ledger?limit=50").catch(() => ({})),
+      consoleRequest<{ usage?: Usage[]; operations?: Usage[] }>("/api/billing/usage?limit=50").catch(
+        (): { usage?: Usage[]; operations?: Usage[] } => ({}),
+      ),
+      consoleRequest<{ ledger?: Ledger[]; transactions?: Ledger[] }>("/api/billing/ledger?limit=50").catch(
+        (): { ledger?: Ledger[]; transactions?: Ledger[] } => ({}),
+      ),
       consoleRequest<{ orders: Order[] }>("/api/billing/orders").catch(() => ({ orders: [] })),
       consoleRequest<{ plans: Plan[] }>("/api/billing/plans").catch(() => ({ plans: [] })),
+      consoleRequest<{ packs: Pack[] }>("/api/billing/packs").catch(() => ({ packs: [] })),
     ])
-      .then(([proj, sub, cr, use, led, ord, pl]) => {
+      .then(([proj, sub, cr, use, led, ord, pl, pk]) => {
         setProjects(proj.projects ?? []);
         setSubscription(sub.subscription ?? null);
         setCredits(cr);
@@ -107,6 +138,7 @@ export function CustomerApp() {
         setLedger(led.ledger ?? led.transactions ?? []);
         setOrders(ord.orders ?? []);
         setPlans((pl.plans ?? []).filter((p) => p.enabled !== false));
+        setPacks(pk.packs ?? []);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Yüklenemedi."));
   }, [locale, router]);
@@ -116,6 +148,38 @@ export function CustomerApp() {
     window.addEventListener(AUTH_EVENT, boot);
     return () => window.removeEventListener(AUTH_EVENT, boot);
   }, [boot]);
+
+  // The invite param has been stashed; keep it out of the URL so a refresh
+  // cannot replay a consumed invite.
+  useEffect(() => {
+    stripInviteParam();
+  }, []);
+
+  // Accept a stashed invite once a session exists (covers the
+  // "invite link → log in on the site → land back on /hesap" path).
+  useEffect(() => {
+    if (!session) return;
+    const token = sessionStorage.getItem(INVITE_KEY);
+    if (!token) return;
+    sessionStorage.removeItem(INVITE_KEY);
+    setBusy(true);
+    setError(null);
+    consoleRequest(`/api/orgs/invites/${token}/accept`, { method: "POST" })
+      .then(() => {
+        setNote(tr ? "Davet kabul edildi." : "Invite accepted.");
+        router.replace(customerHref(locale, "team"));
+      })
+      .catch((err) =>
+        setError(
+          err instanceof Error
+            ? err.message
+            : tr
+              ? "Davet alınamadı."
+              : "Invite could not be accepted.",
+        ),
+      )
+      .finally(() => setBusy(false));
+  }, [session, tr, locale, router]);
 
   if (!session) return null;
 
@@ -184,6 +248,85 @@ export function CustomerApp() {
       boot();
     } catch (err) {
       setError(err instanceof Error ? err.message : "İptal edilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Checkout: mock mode completes in place (after a confirm); iyzico redirects
+  // to the hosted payment page and returns to the studio (?billing=success).
+  async function onTopUp(packId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await consoleRequest<{ orderId: string; paymentPageUrl: string; mode: "mock" | "iyzico" }>(
+        "/api/billing/checkout",
+        { method: "POST", body: { packId } },
+      );
+      if (res.mode === "iyzico") {
+        window.location.href = res.paymentPageUrl;
+        return;
+      }
+      if (!window.confirm(tr ? "Mock ödemeyi onaylıyor musunuz?" : "Confirm the mock payment?")) {
+        boot();
+        return;
+      }
+      const done = await consoleRequest<{ creditsGranted: number; balance: number; alreadyPaid: boolean }>(
+        "/api/billing/mock/complete",
+        { method: "POST", body: { orderId: res.orderId } },
+      );
+      setNote(
+        done.alreadyPaid
+          ? tr
+            ? "Bu sipariş zaten ödenmişti."
+            : "This order was already paid."
+          : `+${done.creditsGranted} kr · ${tr ? "bakiye" : "balance"}: ${done.balance}`,
+      );
+      boot();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr ? "Ödeme tamamlanamadı." : "Checkout failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveProfile(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await consoleRequest<{ user: AuthState["user"] }>("/api/auth/me", {
+        method: "PATCH",
+        body: { name: String(fd.get("name") ?? "").trim() || null },
+      });
+      const auth = loadAuth();
+      if (auth) saveAuth({ ...auth, user: res.user });
+      setNote(tr ? "Profil güncellendi." : "Profile updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr ? "Profil güncellenemedi." : "Profile update failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onChangePassword(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      await consoleRequest("/api/auth/password", {
+        method: "POST",
+        body: {
+          currentPassword: String(fd.get("currentPassword") ?? ""),
+          newPassword: String(fd.get("newPassword") ?? ""),
+        },
+      });
+      setNote(tr ? "Şifre güncellendi." : "Password updated.");
+      e.currentTarget.reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr ? "Şifre değiştirilemedi." : "Password change failed.");
     } finally {
       setBusy(false);
     }
@@ -281,7 +424,7 @@ export function CustomerApp() {
                           {new Date(p.updated_at).toLocaleString(tr ? "tr-TR" : "en-US")}
                         </td>
                         <td className="py-2.5 text-right">
-                          <a href={studioUrl} className="mr-3 text-xs text-copper" rel="noopener noreferrer">
+                          <a href={studioHandoffUrl(p.id)} className="mr-3 text-xs text-copper" rel="noopener noreferrer">
                             {tr ? "Stüdyoda aç" : "Open in studio"}
                           </a>
                           <button
@@ -312,6 +455,39 @@ export function CustomerApp() {
                 { label: tr ? "Bonus" : "Bonus", value: credits?.buckets?.bonus ?? "—" },
               ]}
             />
+            {credits?.isShared && (
+              <p className="text-sm text-cream/50">
+                {tr
+                  ? "Fatura cüzdanı ekibin planına bağlı — bu bakiye sahip cüzdanından düşer."
+                  : "Billing wallet is shared with your team owner."}
+              </p>
+            )}
+            <PanelCard title={tr ? "Kredi yükle" : "Top up"}>
+              {packs.length === 0 ? (
+                <EmptyState>{tr ? "Paket listesi boş." : "No packs available."}</EmptyState>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {packs.map((pack) => (
+                    <li
+                      key={pack.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cream/10 px-3 py-2"
+                    >
+                      <span>
+                        {pack.label} · {pack.credits} kr · {pack.priceTry} ₺
+                      </span>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink-975"
+                        onClick={() => void onTopUp(pack.id)}
+                      >
+                        {tr ? "Satın al" : "Buy"}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </PanelCard>
             <PanelCard title={tr ? "Kredi defteri" : "Credit ledger"}>
               {ledger.length === 0 ? (
                 <EmptyState>{tr ? "Henüz işlem yok." : "No transactions yet."}</EmptyState>
@@ -320,9 +496,18 @@ export function CustomerApp() {
                   {ledger.map((row) => (
                     <li key={row.id} className="flex justify-between gap-3 py-2">
                       <span>{row.kind}</span>
-                      <span className={row.amount >= 0 ? "text-copper" : "text-red-300/80"}>
-                        {row.amount >= 0 ? "+" : ""}
-                        {row.amount}
+                      <span className="flex items-center gap-3">
+                        <span className="text-xs text-cream/35">
+                          {(row.createdAt ?? row.created_at)
+                            ? new Date(row.createdAt ?? row.created_at ?? "").toLocaleDateString(
+                                tr ? "tr-TR" : "en-US",
+                              )
+                            : ""}
+                        </span>
+                        <span className={row.amount >= 0 ? "text-copper" : "text-red-300/80"}>
+                          {row.amount >= 0 ? "+" : ""}
+                          {row.amount}
+                        </span>
                       </span>
                     </li>
                   ))}
@@ -406,7 +591,16 @@ export function CustomerApp() {
                     <span>
                       {u.operationId} · {u.status}
                     </span>
-                    <span>-{u.creditCost} kr</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-xs text-cream/35">
+                        {(u.createdAt ?? u.created_at)
+                          ? new Date(u.createdAt ?? u.created_at ?? "").toLocaleDateString(
+                              tr ? "tr-TR" : "en-US",
+                            )
+                          : ""}
+                      </span>
+                      <span>-{u.creditCost} kr</span>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -415,18 +609,67 @@ export function CustomerApp() {
         )}
 
         {section === "account" && (
-          <PanelCard title={tr ? "Hesap" : "Account"}>
-            <dl className="grid gap-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-cream/40">{tr ? "E-posta" : "Email"}</dt>
-                <dd className="mt-1">{session.user.email}</dd>
-              </div>
-              <div>
-                <dt className="text-cream/40">{tr ? "Ad" : "Name"}</dt>
-                <dd className="mt-1">{session.user.name || "—"}</dd>
-              </div>
-            </dl>
-          </PanelCard>
+          <>
+            <PanelCard title={tr ? "Hesap" : "Account"}>
+              <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-cream/40">{tr ? "E-posta" : "Email"}</dt>
+                  <dd className="mt-1">{session.user.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-cream/40">{tr ? "Ad" : "Name"}</dt>
+                  <dd className="mt-1">{session.user.name || "—"}</dd>
+                </div>
+              </dl>
+            </PanelCard>
+            <PanelCard title={tr ? "Profil düzenle" : "Edit profile"}>
+              <form className="flex flex-wrap gap-2" onSubmit={(e) => void onSaveProfile(e)}>
+                <input
+                  key={session.user.name ?? "no-name"}
+                  name="name"
+                  defaultValue={session.user.name ?? ""}
+                  placeholder={tr ? "Ad" : "Name"}
+                  maxLength={80}
+                  className="min-w-[12rem] flex-1 rounded-sm border border-cream/15 bg-ink-975 px-3 py-2 text-sm text-cream outline-none focus:border-copper"
+                />
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-full bg-cream px-4 py-2 text-sm font-semibold text-ink-975 disabled:opacity-60"
+                >
+                  {tr ? "Kaydet" : "Save"}
+                </button>
+              </form>
+            </PanelCard>
+            <PanelCard title={tr ? "Şifre değiştir" : "Change password"}>
+              <form className="flex flex-wrap gap-2" onSubmit={(e) => void onChangePassword(e)}>
+                <input
+                  name="currentPassword"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  placeholder={tr ? "Mevcut şifre" : "Current password"}
+                  className="min-w-[12rem] flex-1 rounded-sm border border-cream/15 bg-ink-975 px-3 py-2 text-sm text-cream outline-none focus:border-copper"
+                />
+                <input
+                  name="newPassword"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder={tr ? "Yeni şifre (min 8)" : "New password (min 8)"}
+                  className="min-w-[12rem] flex-1 rounded-sm border border-cream/15 bg-ink-975 px-3 py-2 text-sm text-cream outline-none focus:border-copper"
+                />
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-full bg-cream px-4 py-2 text-sm font-semibold text-ink-975 disabled:opacity-60"
+                >
+                  {tr ? "Şifreyi güncelle" : "Update password"}
+                </button>
+              </form>
+            </PanelCard>
+          </>
         )}
 
         {section === "team" && <TeamSection />}

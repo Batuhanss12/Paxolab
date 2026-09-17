@@ -77,6 +77,12 @@ function readFiles(list: FileList | null): Promise<Attachment[]> {
   )
 }
 
+/** Panel deep-link: /?handoff=…&project=<id> targets one cloud project. */
+function readDeepLinkProjectId(): string | null {
+  if (typeof window === 'undefined') return null
+  return new URLSearchParams(window.location.search).get('project')
+}
+
 export default function App() {
   const [state, dispatch] = useReducer(appReducer, undefined, restoredAppState)
   const {
@@ -172,9 +178,33 @@ export default function App() {
   }, [flashNote])
 
   const authUserIdRef = useRef<string | null>(loadAuth()?.user?.id ?? null)
+  const deepLinkProjectRef = useRef<string | null>(readDeepLinkProjectId())
+
+  const onLoadCloudProject = useCallback(
+    async (projectId: string) => {
+      const result = await loadCloudProjectById(projectId)
+      if (result.kind === 'loaded') {
+        dispatch({ type: 'hydrate', state: result.state })
+        if (result.state.design) designRef.current = result.state.design
+        if (result.state.brief) briefRef.current = result.state.brief
+        if (result.state.awaiting !== undefined) awaitingRef.current = result.state.awaiting ?? null
+        if (result.state.messages && result.state.messages.length > 0) startedRef.current = true
+      }
+      flashNote(result.note)
+    },
+    [flashNote],
+  )
 
   const onAuthChange = useCallback(
     (user: AuthUser | null) => {
+      // Deep-link wins over "latest project" hydration; consumed exactly once.
+      const deepLinkProjectId = deepLinkProjectRef.current
+      if (deepLinkProjectId && user) {
+        deepLinkProjectRef.current = null
+        authUserIdRef.current = user.id
+        void onLoadCloudProject(deepLinkProjectId)
+        return
+      }
       const nextId = user?.id ?? null
       if (authUserIdRef.current === nextId) return
       const wasLoggedIn = !!authUserIdRef.current
@@ -195,22 +225,7 @@ export default function App() {
         flashNote(result.note)
       })
     },
-    [flashNote],
-  )
-
-  const onLoadCloudProject = useCallback(
-    async (projectId: string) => {
-      const result = await loadCloudProjectById(projectId)
-      if (result.kind === 'loaded') {
-        dispatch({ type: 'hydrate', state: result.state })
-        if (result.state.design) designRef.current = result.state.design
-        if (result.state.brief) briefRef.current = result.state.brief
-        if (result.state.awaiting !== undefined) awaitingRef.current = result.state.awaiting ?? null
-        if (result.state.messages && result.state.messages.length > 0) startedRef.current = true
-      }
-      flashNote(result.note)
-    },
-    [flashNote],
+    [flashNote, onLoadCloudProject],
   )
 
   const reset = useCallback(() => {

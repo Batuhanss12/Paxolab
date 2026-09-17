@@ -132,6 +132,25 @@ export function activateSubscription(
   userId: string,
   planId: string,
 ): Subscription {
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const sub = activateSubscriptionUnlocked(db, userId, planId)
+    db.exec('COMMIT')
+    return sub
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK')
+    } catch { /* ignore */ }
+    throw err
+  }
+}
+
+/** Must be called inside an open IMMEDIATE transaction (order fulfillment). */
+export function activateSubscriptionUnlocked(
+  db: FormaDb,
+  userId: string,
+  planId: string,
+): Subscription {
   const plan = getPlan(db, planId)
   if (!plan) throw new Error(`Plan bulunamadı: ${planId}`)
   if (!plan.enabled) throw new Error(`Plan devre dışı: ${planId}`)
@@ -139,72 +158,63 @@ export function activateSubscription(
   const now = new Date()
   const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
 
-  db.exec('BEGIN IMMEDIATE')
-  try {
-    // Cancel existing active subscription
-    const existing = getActiveSubscription(db, userId)
-    if (existing) {
-      db.prepare(
-        `UPDATE subscriptions SET status = 'cancelled', cancelled_at = ?, updated_at = ? WHERE id = ?`,
-      ).run(now.toISOString(), now.toISOString(), existing.id)
-    }
-
-    // Create new subscription
-    const id = newId()
+  // Cancel existing active subscription
+  const existing = getActiveSubscription(db, userId)
+  if (existing) {
     db.prepare(
-      `INSERT INTO subscriptions (id, user_id, plan_id, status, current_period_start, current_period_end, next_renewal_at, cancelled_at, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', ?, ?, ?, NULL, ?, ?)`,
-    ).run(
-      id,
-      userId,
-      planId,
-      now.toISOString(),
-      periodEnd.toISOString(),
-      periodEnd.toISOString(),
-      now.toISOString(),
-      now.toISOString(),
-    )
-
-    // Grant monthly credits to 'included' bucket with expiry = period end
-    if (plan.monthlyCredits > 0) {
-      grantToBucket(db, userId, 'included', plan.monthlyCredits, {
-        expiresAt: periodEnd.toISOString(),
-        sourceRef: id,
-      })
-      // Update wallet balance
-      const walletBalance = (
-        db.prepare(`SELECT balance FROM wallets WHERE user_id = ?`).get(userId) as { balance: number }
-      ).balance
-      db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
-        walletBalance + plan.monthlyCredits,
-        now.toISOString(),
-        userId,
-      )
-      // Ledger the grant
-      db.prepare(
-        `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
-         VALUES (?, ?, 'subscription_grant', ?, ?, ?, ?, ?)`,
-      ).run(
-        newId(),
-        userId,
-        plan.monthlyCredits,
-        walletBalance + plan.monthlyCredits,
-        id,
-        JSON.stringify({ reason: 'subscription_grant', planId, subscriptionId: id }),
-        now.toISOString(),
-      )
-    }
-
-    db.exec('COMMIT')
-    return rowToSubscription(
-      db.prepare(`SELECT * FROM subscriptions WHERE id = ?`).get(id) as SubscriptionRow,
-    )
-  } catch (err) {
-    try {
-      db.exec('ROLLBACK')
-    } catch { /* ignore */ }
-    throw err
+      `UPDATE subscriptions SET status = 'cancelled', cancelled_at = ?, updated_at = ? WHERE id = ?`,
+    ).run(now.toISOString(), now.toISOString(), existing.id)
   }
+
+  // Create new subscription
+  const id = newId()
+  db.prepare(
+    `INSERT INTO subscriptions (id, user_id, plan_id, status, current_period_start, current_period_end, next_renewal_at, cancelled_at, created_at, updated_at)
+     VALUES (?, ?, ?, 'active', ?, ?, ?, NULL, ?, ?)`,
+  ).run(
+    id,
+    userId,
+    planId,
+    now.toISOString(),
+    periodEnd.toISOString(),
+    periodEnd.toISOString(),
+    now.toISOString(),
+    now.toISOString(),
+  )
+
+  // Grant monthly credits to 'included' bucket with expiry = period end
+  if (plan.monthlyCredits > 0) {
+    grantToBucket(db, userId, 'included', plan.monthlyCredits, {
+      expiresAt: periodEnd.toISOString(),
+      sourceRef: id,
+    })
+    // Update wallet balance
+    const walletBalance = (
+      db.prepare(`SELECT balance FROM wallets WHERE user_id = ?`).get(userId) as { balance: number }
+    ).balance
+    db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(
+      walletBalance + plan.monthlyCredits,
+      now.toISOString(),
+      userId,
+    )
+    // Ledger the grant
+    db.prepare(
+      `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
+       VALUES (?, ?, 'subscription_grant', ?, ?, ?, ?, ?)`,
+    ).run(
+      newId(),
+      userId,
+      plan.monthlyCredits,
+      walletBalance + plan.monthlyCredits,
+      id,
+      JSON.stringify({ reason: 'subscription_grant', planId, subscriptionId: id }),
+      now.toISOString(),
+    )
+  }
+
+  return rowToSubscription(
+    db.prepare(`SELECT * FROM subscriptions WHERE id = ?`).get(id) as SubscriptionRow,
+  )
 }
 
 /** Cancel a subscription (keeps it active until period end). */

@@ -29,14 +29,18 @@ import {
   reserveCredits,
   reserveCreditsForCatalog,
   costForCatalog,
+  sweepStaleReservations,
   type MeteredOperation,
 } from './credits.ts'
 import { CREDIT_PACKS } from './billing/catalog.ts'
 import { SUBSCRIPTION_PLANS } from './billing/plansCatalog.ts'
 import {
   createPendingOrder,
+  createPendingPlanOrder,
   fulfillPaidOrder,
+  fulfillPaidSubscriptionOrder,
   getOrder,
+  isPlanOrder,
   listOrdersForUser,
   listRecentOrders,
   markOrderFailed,
@@ -240,6 +244,53 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   app.get('/api/auth/me', requireAuth(db), (c) => {
     return c.json({ user: c.get('user') as PublicUser })
+  })
+
+  // Profile edit (name only; email/role are immutable here).
+  app.patch('/api/auth/me', requireAuth(db), async (c) => {
+    const user = c.get('user') as PublicUser
+    let body: { name?: string | null }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    let name: string | null = null
+    if (typeof body.name === 'string') {
+      name = body.name.trim()
+      if (name.length > 80) return c.json({ error: 'Ad en fazla 80 karakter olabilir.' }, 400)
+      if (!name) name = null
+    }
+    db.prepare(`UPDATE users SET name = ? WHERE id = ?`).run(name, user.id)
+    const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(user.id) as UserRow
+    return c.json({ user: toPublicUser(row) })
+  })
+
+  // Password change (email+password accounts only).
+  app.post('/api/auth/password', requireAuth(db), async (c) => {
+    const user = c.get('user') as PublicUser
+    let body: { currentPassword?: string; newPassword?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'Geçersiz JSON.' }, 400)
+    }
+    const current = typeof body.currentPassword === 'string' ? body.currentPassword : ''
+    if (!current) return c.json({ error: 'Mevcut şifre gerekli.' }, 400)
+    const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(user.id) as UserRow
+    if (isOauthPasswordHash(row.password_hash) && row.auth_provider === 'google') {
+      return c.json({ error: 'Bu hesap Google ile giriş yapıyor; şifre ayarlanamaz.' }, 400)
+    }
+    if (!verifyPassword(current, row.password_hash)) {
+      return c.json({ error: 'Mevcut şifre hatalı.' }, 400)
+    }
+    const passErr = validatePassword(body.newPassword ?? '')
+    if (passErr) return c.json({ error: passErr }, 400)
+    db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(
+      hashPassword(body.newPassword!),
+      user.id,
+    )
+    return c.json({ ok: true })
   })
 
   mountGoogleAuth(app, db)
@@ -622,12 +673,13 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   // Release/refund (reuse existing /api/credits/refund)
 
-  // Balance breakdown with buckets
+  // Balance breakdown with buckets (shared wallet when the user belongs to an org with a plan)
   app.get('/api/billing/credits', requireAuth(db), (c) => {
     const user = c.get('user') as PublicUser
-    const balance = getBalance(db, user.id)
-    const summary = bucketSummary(db, user.id)
-    const sub = getActiveSubscription(db, user.id)
+    const billingId = resolveBillingUserId(db, user.id)
+    const balance = getBalance(db, billingId)
+    const summary = bucketSummary(db, billingId)
+    const sub = getActiveSubscription(db, billingId)
     return c.json({
       balance,
       currency: 'credits',
@@ -640,6 +692,8 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
             nextRenewalAt: sub.nextRenewalAt,
           }
         : null,
+      billingUserId: billingId,
+      isShared: billingId !== user.id,
     })
   })
 
@@ -666,6 +720,13 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   app.post('/api/billing/subscribe', requireAuth(db), async (c) => {
     const user = c.get('user') as PublicUser
+    // Paid iyzico mode: subscriptions must go through the checkout flow.
+    if (hasIyzicoKeys()) {
+      return c.json(
+        { error: 'Ödeme gerekli — abonelik satın alma akışını kullanın (checkout).' },
+        403,
+      )
+    }
     let body: { planId?: string }
     try {
       body = await c.req.json()
@@ -863,25 +924,46 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   app.post('/api/billing/checkout', rateLimit('checkout'), requireAuth(db), async (c) => {
     const user = c.get('user') as PublicUser
-    let body: { packId?: string }
+    let body: { packId?: string; planId?: string }
     try {
       body = await c.req.json()
     } catch {
       return c.json({ error: 'Geçersiz JSON.' }, 400)
     }
-    if (!body.packId || typeof body.packId !== 'string') {
-      return c.json({ error: 'packId gerekli.' }, 400)
-    }
-    let pack
-    try {
-      pack = resolvePackOrThrow(body.packId)
-    } catch (err) {
-      const mapped = asBillingHttp(err)
-      if (mapped) return c.json({ error: mapped.error }, mapped.status)
-      throw err
+    if (body.packId && body.planId) {
+      return c.json({ error: 'packId veya planId — yalnızca biri.' }, 400)
     }
 
-    const order = createPendingOrder(db, user.id, pack)
+    let order
+    let label: string
+    if (body.planId) {
+      const plan = getPlan(db, body.planId)
+      if (!plan || !plan.enabled) {
+        return c.json({ error: 'Plan bulunamadı veya devre dışı.' }, 400)
+      }
+      order = createPendingPlanOrder(db, user.id, {
+        id: plan.id,
+        label: plan.label,
+        monthlyPrice: plan.monthlyPrice,
+        monthlyCredits: plan.monthlyCredits,
+      })
+      label = plan.label
+    } else {
+      if (!body.packId || typeof body.packId !== 'string') {
+        return c.json({ error: 'packId veya planId gerekli.' }, 400)
+      }
+      let pack
+      try {
+        pack = resolvePackOrThrow(body.packId)
+      } catch (err) {
+        const mapped = asBillingHttp(err)
+        if (mapped) return c.json({ error: mapped.error }, mapped.status)
+        throw err
+      }
+      order = createPendingOrder(db, user.id, pack)
+      label = pack.label
+    }
+
     const useIyzico = hasIyzicoKeys()
 
     if (!useIyzico) {
@@ -890,11 +972,12 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         paymentPageUrl: `/billing/mock-pay?orderId=${encodeURIComponent(order.id)}`,
         token: null,
         mode: 'mock' as const,
+        label,
       })
     }
 
     const callbackUrl = `${publicApiUrl()}/api/billing/iyzico/callback`
-    const priceStr = pack.priceTry.toFixed(2)
+    const priceStr = order.amount_try.toFixed(2)
     const nameParts = (user.name ?? user.email.split('@')[0] ?? 'FORMA').trim().split(/\s+/)
     const buyerName = nameParts[0] || 'FORMA'
     const buyerSurname = nameParts.slice(1).join(' ') || 'User'
@@ -926,9 +1009,9 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         },
         basketItems: [
           {
-            id: pack.id,
-            name: pack.label,
-            category1: 'Credits',
+            id: body.planId ?? String(body.packId ?? 'item'),
+            name: label,
+            category1: body.planId ? 'Subscription' : 'Credits',
             itemType: 'VIRTUAL',
             price: priceStr,
           },
@@ -949,6 +1032,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         paymentPageUrl: init.paymentPageUrl,
         token: init.token,
         mode: 'iyzico' as const,
+        label,
       })
     } catch (err) {
       markOrderFailed(db, order.id)
@@ -976,6 +1060,24 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     if (order.user_id !== user.id) return c.json({ error: 'Sipariş bu kullanıcıya ait değil.' }, 403)
 
     try {
+      // Subscription orders activate the plan; pack orders grant credits.
+      if (isPlanOrder(order)) {
+        const result = fulfillPaidSubscriptionOrder(db, order.id, {
+          expectedUserId: user.id,
+          paymentId: 'mock',
+        })
+        return c.json({
+          ok: true,
+          orderId: result.order.id,
+          status: result.order.status,
+          balance: getBalance(db, user.id),
+          planId: isPlanOrder(result.order) ? result.order.pack_id.slice('plan:'.length) : null,
+          subscription: result.subscription,
+          alreadyPaid: result.alreadyPaid,
+          mode: 'mock',
+        })
+      }
+
       const result = fulfillPaidOrder(db, order.id, { expectedUserId: user.id, paymentId: 'mock' })
       return c.json({
         ok: true,
@@ -1053,9 +1155,15 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       }
 
       if (order.status === 'pending' || order.status === 'paid') {
-        fulfillPaidOrder(db, order.id, {
-          paymentId: retrieved.paymentId ? String(retrieved.paymentId) : null,
-        })
+        if (isPlanOrder(order)) {
+          fulfillPaidSubscriptionOrder(db, order.id, {
+            paymentId: retrieved.paymentId ? String(retrieved.paymentId) : null,
+          })
+        } else {
+          fulfillPaidOrder(db, order.id, {
+            paymentId: retrieved.paymentId ? String(retrieved.paymentId) : null,
+          })
+        }
       }
 
       if (c.req.header('accept')?.includes('application/json')) {
@@ -1078,6 +1186,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   // ---- Phase 9 admin ----
   const admin = new Hono<AppEnv>()
+  admin.use('*', rateLimit('admin'))
   admin.use('*', requireAuth(db))
   admin.use('*', async (c, next) => {
     const user = c.get('user') as PublicUser
@@ -1086,6 +1195,24 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     }
     await next()
   })
+
+  /**
+   * memberUserId → billing (org owner) userId map, single query.
+   * Members of an org whose owner has an active subscription bill that wallet.
+   */
+  function billingUserIdMap(db: FormaDb): Map<string, string> {
+    const rows = db
+      .prepare(
+        `SELECT m.user_id AS memberId, o.created_by AS billingUserId
+         FROM organization_members m
+         JOIN organizations o ON o.id = m.org_id
+         JOIN subscriptions s ON s.user_id = o.created_by AND s.status = 'active'
+         WHERE m.user_id != o.created_by
+         GROUP BY m.user_id`,
+      )
+      .all() as { memberId: string; billingUserId: string }[]
+    return new Map(rows.map((row) => [row.memberId, row.billingUserId]))
+  }
 
   admin.get('/users', (c) => {
     const q = (c.req.query('q') ?? '').trim().toLowerCase()
@@ -1106,6 +1233,8 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       auth_provider: string | null
       balance: number
     }[]
+    const billingMap = billingUserIdMap(db)
+    const ownerBalanceCache = new Map<string, number>()
     const users = rows
       .filter((r) => {
         if (!q) return true
@@ -1115,15 +1244,27 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
           r.id.toLowerCase().includes(q)
         )
       })
-      .map((r) => ({
-        id: r.id,
-        email: r.email,
-        name: r.name,
-        role: r.role,
-        created_at: r.created_at,
-        auth_provider: r.auth_provider ?? 'password',
-        balance: r.balance,
-      }))
+      .map((r) => {
+        const billingUserId = billingMap.get(r.id) ?? r.id
+        let billingBalance = r.balance
+        if (billingUserId !== r.id) {
+          const cached = ownerBalanceCache.get(billingUserId)
+          billingBalance = cached ?? getBalance(db, billingUserId)
+          ownerBalanceCache.set(billingUserId, billingBalance)
+        }
+        return {
+          id: r.id,
+          email: r.email,
+          name: r.name,
+          role: r.role,
+          created_at: r.created_at,
+          auth_provider: r.auth_provider ?? 'password',
+          balance: r.balance,
+          billingUserId,
+          billingBalance,
+          sharedWallet: billingUserId !== r.id,
+        }
+      })
     return c.json({ users })
   })
 
@@ -1206,6 +1347,15 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       }
     }
     db.prepare(`UPDATE users SET role = ? WHERE id = ?`).run(body.role, targetId)
+    // Audit trail for admin actions (best-effort).
+    try {
+      recordEvent(db, {
+        userId: targetId,
+        eventType: 'admin_role_changed',
+        amount: 0,
+        meta: { by: adminUser.id, role: body.role },
+      })
+    } catch { /* events are best-effort */ }
     const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(targetId) as UserRow
     return c.json({ user: toPublicUser(row) })
   })
@@ -1363,6 +1513,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
   })
 
   admin.patch('/plans/:id', async (c) => {
+    const adminUser = c.get('user') as PublicUser
     const planId = c.req.param('id')
     let body: Partial<{ label: string; monthlyPrice: number; monthlyCredits: number; maxProjects: number; maxActiveSessions: number; rolloverPolicy: string; rolloverMax: number; topupEligible: boolean; enabled: boolean; displayOrder: number; description: string }>
     try {
@@ -1372,6 +1523,14 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     }
     try {
       const plan = upsertPlan(db, planId, body)
+      try {
+        recordEvent(db, {
+          userId: adminUser.id,
+          eventType: 'admin_plan_updated',
+          amount: 0,
+          meta: { planId, fields: Object.keys(body) },
+        })
+      } catch { /* events are best-effort */ }
       return c.json({ plan })
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : 'Plan güncellenemedi.' }, 400)
@@ -1443,8 +1602,10 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       | undefined
     if (!userRow) return c.json({ error: 'Kullanıcı bulunamadı.' }, 404)
     const balance = getBalance(db, userId)
-    const summary = bucketSummary(db, userId)
-    const sub = getActiveSubscription(db, userId)
+    const billingUserId = resolveBillingUserId(db, userId)
+    const billingBalance = billingUserId !== userId ? getBalance(db, billingUserId) : balance
+    const summary = bucketSummary(db, billingUserId)
+    const sub = getActiveSubscription(db, billingUserId)
     const plan = sub ? getPlan(db, sub.planId) : undefined
     const projects = db
       .prepare(
@@ -1470,6 +1631,9 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         auth_provider: userRow.auth_provider ?? 'password',
       },
       balance,
+      billingUserId,
+      billingBalance,
+      sharedWallet: billingUserId !== userId,
       buckets: summary,
       reservedCredits: reservations
         .filter((r) => r.status === 'pending' || r.status === 'reserved')

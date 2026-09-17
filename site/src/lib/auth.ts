@@ -115,9 +115,9 @@ export async function register(input: {
 
 /**
  * Build studio URL carrying site session when logged in.
- * Use only when the user already has site auth.
+ * Pass a projectId to deep-link a specific project (studio reads ?project=).
  */
-export function studioHandoffUrl(_pathOrStudioRoot?: string): string {
+export function studioHandoffUrl(projectId?: string): string {
   const auth = loadAuth();
   if (!auth?.token) return STUDIO_URL;
   // Unicode-safe base64 (btoa only supports Latin1)
@@ -125,7 +125,8 @@ export function studioHandoffUrl(_pathOrStudioRoot?: string): string {
   const b64 = typeof window !== "undefined"
     ? btoa(unescape(encodeURIComponent(json)))
     : Buffer.from(json, "utf-8").toString("base64");
-  return `${STUDIO_URL}?handoff=${encodeURIComponent(b64)}`;
+  const project = projectId ? `&project=${encodeURIComponent(projectId)}` : "";
+  return `${STUDIO_URL}?handoff=${encodeURIComponent(b64)}${project}`;
 }
 
 export async function getCreditBalance(token: string): Promise<number | null> {

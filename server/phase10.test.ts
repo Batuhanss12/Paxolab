@@ -618,4 +618,129 @@ describe('Phase 10 credit economy', () => {
       expect(credits.balance).toBe(STARTING_CREDITS - INITIAL_DESIGN_COST)
     })
   })
+
+  describe('Profile and password', () => {
+    it('updates the profile name', async () => {
+      const reg = await register(app, 'profile@test.local', 'Test1234!')
+      const res = await app.request('/api/auth/me', {
+        method: 'PATCH',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ name: 'Yeni Ad' }),
+      })
+      expect(res.status).toBe(200)
+      const data = await res.json() as { user: { name: string | null } }
+      expect(data.user.name).toBe('Yeni Ad')
+
+      // Empty name clears it.
+      const clear = await app.request('/api/auth/me', {
+        method: 'PATCH',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ name: '  ' }),
+      })
+      expect(clear.status).toBe(200)
+      const cleared = await clear.json() as { user: { name: string | null } }
+      expect(cleared.user.name).toBeNull()
+    })
+
+    it('rejects an overlong profile name', async () => {
+      const reg = await register(app, 'profilename@test.local')
+      const res = await app.request('/api/auth/me', {
+        method: 'PATCH',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ name: 'x'.repeat(81) }),
+      })
+      expect(res.status).toBe(400)
+    })
+
+    it('changes the password with the current one verified', async () => {
+      const reg = await register(app, 'password@test.local', 'OldPass123!')
+      const res = await app.request('/api/auth/password', {
+        method: 'POST',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ currentPassword: 'OldPass123!', newPassword: 'NewPass1234!' }),
+      })
+      expect(res.status).toBe(200)
+
+      // Old password no longer works; new one does.
+      const oldLogin = await app.request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'password@test.local', password: 'OldPass123!' }),
+      })
+      expect(oldLogin.status).toBe(401)
+      const newLogin = await app.request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'password@test.local', password: 'NewPass1234!' }),
+      })
+      expect(newLogin.status).toBe(200)
+    })
+
+    it('rejects a wrong current password and a short new one', async () => {
+      const reg = await register(app, 'passwordwrong@test.local', 'OldPass123!')
+      const wrong = await app.request('/api/auth/password', {
+        method: 'POST',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ currentPassword: 'Nope12345', newPassword: 'NewPass1234!' }),
+      })
+      expect(wrong.status).toBe(400)
+
+      const short = await app.request('/api/auth/password', {
+        method: 'POST',
+        headers: authHeaders(reg.token),
+        body: JSON.stringify({ currentPassword: 'OldPass123!', newPassword: 'short' }),
+      })
+      expect(short.status).toBe(400)
+    })
+  })
+
+  describe('Shared wallet balance', () => {
+    it('reports the org owner wallet as billing user for members', async () => {
+      const owner = await register(app, 'wallet-owner@test.local', 'Test1234!', 'Owner')
+      // Owner activates a plan → seats + shared wallet.
+      await app.request('/api/billing/subscribe', {
+        method: 'POST',
+        headers: authHeaders(owner.token),
+        body: JSON.stringify({ planId: 'plus' }),
+      })
+      // Owner creates an org and invites the member.
+      const orgRes = await app.request('/api/orgs', {
+        method: 'POST',
+        headers: authHeaders(owner.token),
+        body: JSON.stringify({ name: 'Wallet Org' }),
+      })
+      expect(orgRes.status).toBe(201)
+      const org = await orgRes.json() as { organization: { id: string } }
+
+      const member = await register(app, 'wallet-member@test.local', 'Test1234!', 'Member')
+      const inviteRes = await app.request(`/api/orgs/${org.organization.id}/invites`, {
+        method: 'POST',
+        headers: authHeaders(owner.token),
+        body: JSON.stringify({ email: 'wallet-member@test.local', role: 'member' }),
+      })
+      expect(inviteRes.status).toBe(201)
+      const invite = await inviteRes.json() as { invite: { token: string } }
+      const acceptRes = await app.request('/api/orgs/invites/' + invite.invite.token + '/accept', {
+        method: 'POST',
+        headers: authHeaders(member.token),
+      })
+      expect(acceptRes.status).toBe(200)
+
+      // Member's billing balance is the owner's wallet, and the flag says shared.
+      const res = await app.request('/api/billing/credits', {
+        headers: authHeaders(member.token),
+      })
+      expect(res.status).toBe(200)
+      const data = await res.json() as { billingUserId: string; isShared: boolean; balance: number }
+      expect(data.billingUserId).toBe(owner.user.id)
+      expect(data.isShared).toBe(true)
+
+      const own = await app.request('/api/billing/credits', {
+        headers: authHeaders(owner.token),
+      })
+      const ownData = await own.json() as { billingUserId: string; isShared: boolean }
+      expect(ownData.billingUserId).toBe(owner.user.id)
+      expect(ownData.isShared).toBe(false)
+    })
+  })
 })

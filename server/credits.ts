@@ -670,6 +670,15 @@ export function adjustCredits(
       now,
     )
     db.exec('COMMIT')
+    // Admin audit trail (best-effort, outside the money transaction).
+    try {
+      recordEvent(db, {
+        userId: targetUserId,
+        eventType: 'admin_credit_adjusted',
+        amount,
+        meta: { by: adminUserId, reason: reason ?? null },
+      })
+    } catch { /* events are best-effort */ }
     return { balance: newBalance, amount }
   } catch (err) {
     if (err instanceof CreditsError) throw err
@@ -763,4 +772,34 @@ export function grantPurchaseCreditsUnlocked(
     now,
   )
   return { balance: newBalance, granted: true }
+}
+
+const STALE_RESERVATION_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Auto-refund pending reservations older than maxAgeMs. The wallet was
+ * debited on reserve; if the client died before commit/refund the credits
+ * stay visually spent — the sweep releases them back to the payer wallet.
+ * Called at API startup; safe to call repeatedly (only pending rows match).
+ */
+export function sweepStaleReservations(
+  db: FormaDb,
+  maxAgeMs = STALE_RESERVATION_MS,
+): { swept: number; ids: string[] } {
+  const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
+  const stale = db
+    .prepare(
+      `SELECT id, user_id FROM credit_reservations WHERE status = 'pending' AND created_at < ?`,
+    )
+    .all(cutoff) as { id: string; user_id: string }[]
+  const ids: string[] = []
+  for (const row of stale) {
+    try {
+      refundReservation(db, row.user_id, row.id, 'stale_sweep')
+      ids.push(row.id)
+    } catch {
+      /* skip broken rows; they stay pending for manual admin refund */
+    }
+  }
+  return { swept: ids.length, ids }
 }

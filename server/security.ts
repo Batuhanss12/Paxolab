@@ -11,6 +11,7 @@ const SECRET_KEY_RE = /password|passwd|secret|token|authorization|api[_-]?key|co
 
 export const DEFAULT_AUTH_RATE_PER_MIN = 20
 export const DEFAULT_CHECKOUT_RATE_PER_MIN = 30
+export const DEFAULT_ADMIN_RATE_PER_MIN = 120
 export const DEFAULT_MAX_BODY_BYTES = 2 * 1024 * 1024
 export const RATE_LIMIT_WINDOW_MS = 60_000
 /** Hard-clear the in-memory map this often so it cannot grow forever. */
@@ -33,6 +34,11 @@ export function authRatePerMinute(): number {
 export function checkoutRatePerMinute(): number {
   const n = Number(process.env.FORMA_RATE_LIMIT_CHECKOUT ?? DEFAULT_CHECKOUT_RATE_PER_MIN)
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_CHECKOUT_RATE_PER_MIN
+}
+
+export function adminRatePerMinute(): number {
+  const n = Number(process.env.FORMA_RATE_LIMIT_ADMIN ?? DEFAULT_ADMIN_RATE_PER_MIN)
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_ADMIN_RATE_PER_MIN
 }
 
 export function maxBodyBytes(): number {
@@ -97,15 +103,20 @@ export function checkRateLimit(
 
 /**
  * Per-IP limiter. `auth` is a shared bucket for login + register.
- * `checkout` is its own bucket.
+ * `checkout` and `admin` have their own buckets.
  */
-export function rateLimit(scope: 'auth' | 'checkout'): MiddlewareHandler {
+export function rateLimit(scope: 'auth' | 'checkout' | 'admin'): MiddlewareHandler {
   return async (c, next) => {
     if (isRateLimitDisabled()) {
       await next()
       return
     }
-    const limit = scope === 'auth' ? authRatePerMinute() : checkoutRatePerMinute()
+    const limit =
+      scope === 'auth'
+        ? authRatePerMinute()
+        : scope === 'checkout'
+          ? checkoutRatePerMinute()
+          : adminRatePerMinute()
     const ip = clientIp(c)
     const result = checkRateLimit(`${scope}:${ip}`, limit)
     if (!result.ok) {

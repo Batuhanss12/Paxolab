@@ -1,21 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { localeFromPath } from "@/lib/i18n";
 import { AUTH_EVENT, loadAuth, type AuthState } from "@/lib/auth";
 import { consoleRequest, type OrgDetail } from "@/lib/consoleApi";
 import { ConsoleCard } from "./ConsoleShell";
 
+type OrgUsageRow = {
+  userId: string;
+  email: string;
+  operationId: string;
+  creditCost: number;
+  status: string;
+  createdAt: string;
+};
+
 export function TeamSection() {
   const pathname = usePathname() || "/hesap";
   const locale = localeFromPath(pathname);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const tr = locale !== "en";
   const panelPath = locale === "en" ? "/en/account" : "/hesap";
   const [session, setSession] = useState<AuthState | null>(() => loadAuth());
   const [detail, setDetail] = useState<OrgDetail | null>(null);
+  const [usage, setUsage] = useState<OrgUsageRow[]>([]);
   const [name, setName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
@@ -23,57 +31,52 @@ export function TeamSection() {
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async (auth: AuthState) => {
+  const load = useCallback(async () => {
     const list = await consoleRequest<{ organizations: { id: string }[] }>("/api/orgs");
     const current = list.organizations[0];
     if (!current) {
       setDetail(null);
+      setUsage([]);
       return;
     }
     setDetail(await consoleRequest<OrgDetail>(`/api/orgs/${current.id}`));
+    const u = await consoleRequest<{ usage: OrgUsageRow[] }>(`/api/orgs/${current.id}/usage`).catch(
+      () => ({ usage: [] as OrgUsageRow[] }),
+    );
+    setUsage(u.usage);
   }, []);
 
   useEffect(() => {
     const auth = loadAuth();
     setSession(auth);
-    if (auth) void load(auth).catch((err) => setError(err instanceof Error ? err.message : "Yüklenemedi."));
+    if (auth) void load().catch((err) => setError(err instanceof Error ? err.message : "Yüklenemedi."));
   }, [load]);
 
   useEffect(() => {
     function onAuth() {
       const auth = loadAuth();
       setSession(auth);
-      if (auth) void load(auth);
+      if (auth) void load();
     }
     window.addEventListener(AUTH_EVENT, onAuth);
     return () => window.removeEventListener(AUTH_EVENT, onAuth);
   }, [load]);
 
-  useEffect(() => {
-    const token = searchParams.get("invite");
-    if (!token || !session) return;
-    setBusy(true);
-    void consoleRequest(`/api/orgs/invites/${token}/accept`, { method: "POST" })
-      .then(() => {
-        setNote(tr ? "Davet kabul edildi." : "Invite accepted.");
-        router.replace(panelPath);
-        return load(session);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Davet alınamadı."))
-      .finally(() => setBusy(false));
-  }, [searchParams, session, load, tr, router, panelPath]);
+  // Invite links are accepted by CustomerApp (?invite=) before this section mounts.
 
   if (!session) return null;
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
+    const auth = session;
+    if (!auth) return;
     setBusy(true);
     setError(null);
     try {
       await consoleRequest("/api/orgs", { method: "POST", body: { name } });
       setName("");
       setNote(tr ? "Ekip oluşturuldu." : "Team created.");
-      await load(session);
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Oluşturulamadı.");
     } finally {
@@ -83,7 +86,8 @@ export function TeamSection() {
 
   async function onInvite(e: FormEvent) {
     e.preventDefault();
-    if (!detail) return;
+    const auth = session;
+    if (!auth || !detail) return;
     setBusy(true);
     setError(null);
     try {
@@ -93,7 +97,7 @@ export function TeamSection() {
       });
       setInviteEmail("");
       setNote(tr ? "Davet oluşturuldu." : "Invite created.");
-      await load(session);
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Davet gönderilemedi.");
     } finally {
@@ -166,7 +170,7 @@ export function TeamSection() {
                             void consoleRequest(`/api/orgs/${detail.organization.id}/members/${m.userId}`, {
                               method: "DELETE",
                             })
-                              .then(() => load(session))
+                              .then(() => load())
                               .catch((err) => setError(err instanceof Error ? err.message : "Silinemedi."));
                           }}
                         >
@@ -224,6 +228,26 @@ export function TeamSection() {
               ))}
             </ul>
           )}
+        </ConsoleCard>
+      )}
+      {detail && usage.length > 0 && (
+        <ConsoleCard title={tr ? "Son kullanım" : "Recent usage"}>
+          <ul className="text-sm">
+            {usage.map((row, i) => (
+              <li
+                key={`${i}-${row.userId}-${row.createdAt}`}
+                className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] py-2"
+              >
+                <span>
+                  {row.email} · {row.operationId} · {row.status}
+                </span>
+                <span>
+                  {row.creditCost} kr ·{" "}
+                  {new Date(row.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}
+                </span>
+              </li>
+            ))}
+          </ul>
         </ConsoleCard>
       )}
       {note ? <p className="text-sm text-copper">{note}</p> : null}

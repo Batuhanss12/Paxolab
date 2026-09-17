@@ -2,8 +2,11 @@ import type { FormaDb } from '../db.ts'
 import { newId } from '../auth.ts'
 import { grantPurchaseCreditsUnlocked } from '../credits.ts'
 import { getPack, type CreditPack } from './catalog.ts'
+import { activateSubscriptionUnlocked, type Subscription } from '../credit/subscriptions.ts'
 
 export type PaymentOrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
+
+export const PLAN_ORDER_PREFIX = 'plan:'
 
 export type PaymentOrderRow = {
   id: string
@@ -19,6 +22,10 @@ export type PaymentOrderRow = {
   created_at: string
   updated_at: string
   paid_at: string | null
+}
+
+export function isPlanOrder(order: Pick<PaymentOrderRow, 'pack_id'>): boolean {
+  return order.pack_id.startsWith(PLAN_ORDER_PREFIX)
 }
 
 function nowIso(): string {
@@ -39,6 +46,24 @@ export function createPendingOrder(
         iyzico_token, iyzico_payment_id, conversation_id, created_at, updated_at, paid_at)
      VALUES (?, ?, ?, ?, ?, 'TRY', 'pending', NULL, NULL, ?, ?, ?, NULL)`,
   ).run(id, userId, pack.id, pack.credits, pack.priceTry, conversationId, now, now)
+  return db.prepare(`SELECT * FROM payment_orders WHERE id = ?`).get(id) as PaymentOrderRow
+}
+
+/** Subscription order: pack_id = "plan:<planId>", credits = monthly credits. */
+export function createPendingPlanOrder(
+  db: FormaDb,
+  userId: string,
+  plan: { id: string; label: string; monthlyPrice: number; monthlyCredits: number },
+): PaymentOrderRow {
+  const id = newId()
+  const conversationId = id
+  const now = nowIso()
+  db.prepare(
+    `INSERT INTO payment_orders
+       (id, user_id, pack_id, credits, amount_try, currency, status,
+        iyzico_token, iyzico_payment_id, conversation_id, created_at, updated_at, paid_at)
+     VALUES (?, ?, ?, ?, ?, 'TRY', 'pending', NULL, NULL, ?, ?, ?, NULL)`,
+  ).run(id, userId, `${PLAN_ORDER_PREFIX}${plan.id}`, plan.monthlyCredits, plan.monthlyPrice, conversationId, now, now)
   return db.prepare(`SELECT * FROM payment_orders WHERE id = ?`).get(id) as PaymentOrderRow
 }
 
@@ -126,6 +151,76 @@ export function fulfillPaidOrder(
       granted: grant.granted,
       alreadyPaid: false,
     }
+  } catch (err) {
+    if (err instanceof OrderError) throw err
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* ignore */
+    }
+    throw err
+  }
+}
+
+export type FulfillSubscriptionResult = {
+  order: PaymentOrderRow
+  subscription: Subscription | null
+  alreadyPaid: boolean
+}
+
+/**
+ * Mark a subscription order paid + activate the plan (idempotent).
+ * pack_id must be "plan:<planId>". Must NOT be nested inside another tx.
+ */
+export function fulfillPaidSubscriptionOrder(
+  db: FormaDb,
+  orderId: string,
+  opts?: { paymentId?: string | null; expectedUserId?: string | null },
+): FulfillSubscriptionResult {
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const order = db.prepare(`SELECT * FROM payment_orders WHERE id = ?`).get(orderId) as
+      | PaymentOrderRow
+      | undefined
+    if (!order) {
+      db.exec('ROLLBACK')
+      throw new OrderError(404, 'Sipariş bulunamadı.')
+    }
+    if (opts?.expectedUserId && order.user_id !== opts.expectedUserId) {
+      db.exec('ROLLBACK')
+      throw new OrderError(403, 'Sipariş bu kullanıcıya ait değil.')
+    }
+
+    if (order.status === 'paid') {
+      const existingSub = db
+        .prepare(
+          `SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+        )
+        .get(order.user_id) as Record<string, unknown> | undefined
+      db.exec('COMMIT')
+      return { order, subscription: (existingSub as Subscription) ?? null, alreadyPaid: true }
+    }
+    if (order.status !== 'pending') {
+      db.exec('ROLLBACK')
+      throw new OrderError(409, `Sipariş durumu uygun değil: ${order.status}`)
+    }
+
+    const now = nowIso()
+    const paymentId = opts?.paymentId ?? null
+    db.prepare(
+      `UPDATE payment_orders
+       SET status = 'paid', paid_at = ?, updated_at = ?, iyzico_payment_id = COALESCE(?, iyzico_payment_id)
+       WHERE id = ? AND status = 'pending'`,
+    ).run(now, now, paymentId, orderId)
+
+    const planId = order.pack_id.slice(PLAN_ORDER_PREFIX.length)
+    const subscription = activateSubscriptionUnlocked(db, order.user_id, planId)
+
+    const updated = db
+      .prepare(`SELECT * FROM payment_orders WHERE id = ?`)
+      .get(orderId) as PaymentOrderRow
+    db.exec('COMMIT')
+    return { order: updated, subscription, alreadyPaid: false }
   } catch (err) {
     if (err instanceof OrderError) throw err
     try {
