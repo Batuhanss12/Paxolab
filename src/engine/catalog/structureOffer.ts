@@ -2,8 +2,10 @@
  * Structure offer — name the carton/label grammar in chat.
  * Catalog cards stay; the conversation must not pick them silently without saying so.
  */
-import type { DesignBrief, FormaTemplate, PackagingMode, StructureId } from '../../types'
-import { activeTemplates, getTemplate, pickTemplate } from './catalog'
+import type { DesignBrief, DimensionsMm, FormaTemplate, PackagingMode, StructureId } from '../../types'
+import { activeTemplates, getTemplate, pickTemplate, sectorHits } from './catalog'
+import { estimateCartonMm } from './volumeCarton'
+import { resolveDimensions } from '../dieline/buildDieline'
 import { recommendStructures, type StructureRecommendation } from './structureRecommend'
 
 export const STRUCTURE_LABEL: Record<StructureId, string> = {
@@ -90,3 +92,47 @@ export function formatTemplateLabel(templateId: string): string {
 }
 
 export { parseOfferChoice, recommendStructures } from './structureRecommend'
+
+/**
+ * The size a structure card should show, for this brief.
+ *
+ * Sibling of the defect `structureKeepsDims.test.ts` covers. That one was "picking a structure must
+ * not throw away the size the user gave"; this is "the card must not *offer* a size it will not
+ * build". Measured 2026-09-17: a brief of 70×45×150 produced cards reading 100×50×150, 80×40×80 and
+ * 70×35×120 — and since each card draws its own net from these numbers, the customer was comparing
+ * three boxes of the wrong *shape*, while the large preview beside them showed the size they had
+ * actually typed. Two answers to one question, on one screen.
+ *
+ * So a typed size goes through the engine's own resolver and every card shows what will be built.
+ * With nothing typed there is no instruction to honour, and each structure's own characteristic
+ * size is more use than one shared fallback repeated across the row.
+ */
+export function structureCardDims(brief: DesignBrief, template: FormaTemplate): DimensionsMm {
+  const typed = brief.dimensionsMm.L > 0 || brief.dimensionsMm.H > 0
+  if (typed) return resolveDimensions({ ...brief, templateId: template.id })
+  return estimateCartonMm(brief.volume, brief, template) ?? template.defaultsMm
+}
+
+/**
+ * The structure cards to offer, in the order the engine ranks them.
+ *
+ * There used to be two lists on one screen. The chat named the engine's top three — for a cream
+ * brief: A60 tuck-top, *Krem kutusu*, ters tuck — while the cards came from `pickerTemplates`,
+ * which dedupes by structure keeping whichever template sits first in the catalogue. "Parfüm
+ * tuck-end" and "Krem kutusu" share the `tuck-end` structure, so the perfume box won on file order
+ * and the cream box — the engine's own second choice — never appeared at all. What the customer saw
+ * instead was a hexagon gift box and a pillow box.
+ *
+ * `evaluateStructures` already picks the right representative per structure (mode, then sector,
+ * then sub-product) and already scores them, so the cards are simply that list. One question, one
+ * answer.
+ */
+export function structureCards(brief: DesignBrief, opts?: { includeAll?: boolean }): FormaTemplate[] {
+  const eligible = recommendStructures(brief).all.filter((row) => row.eligible)
+  const templates = eligible
+    .map((row) => getTemplate(row.templateId))
+    .filter((tmpl): tmpl is FormaTemplate => Boolean(tmpl))
+  if (opts?.includeAll || !brief.sector) return templates
+  const onSector = templates.filter((tmpl) => sectorHits(tmpl, brief.sector))
+  return onSector.length ? onSector : templates
+}

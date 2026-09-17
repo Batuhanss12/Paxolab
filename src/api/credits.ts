@@ -84,3 +84,10 @@ export async function fetchDownloadQuote(): Promise<DownloadQuote> {
 export async function chargeDownload(designKey: string): Promise<{ charged: number; balance: number; covered: boolean }> {
   return apiRequest('/api/credits/download', { method: 'POST', body: { designKey } })
 }
+
+export type CreditCosts = { generate: number; revise: number; download: number }
+
+/** Prices, so a control can show what it will cost before it is pressed. */
+export async function fetchCreditCosts(): Promise<CreditCosts> {
+  return apiRequest<CreditCosts>('/api/credits/costs')
+}

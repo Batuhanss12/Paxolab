@@ -11,10 +11,28 @@ export type StructureWeights = {
   product: number
 }
 
+/**
+ * What decides which structure leads.
+ *
+ * `physical` used to carry 0.55 — the largest term — and it measures how close the customer's size
+ * is to the *template's catalogue default*. But the nets are parametric and the box is built at the
+ * customer's size either way, so that closeness does not constrain the result. Measured 2026-09-17
+ * on a cream brief of 70×45×150: the shortlist was A60 tuck-top 0.874 against "Krem kutusu" 0.871,
+ * and the catalogue-specific cream carton lost first place by 0.003 on a number with no effect on
+ * the output. Meanwhile `product` — "this structure exists for this product" — was capped at 0.15,
+ * so the gap between a dedicated carton and a merely same-sector one was worth 0.05.
+ *
+ * It is not zero information, though: it is a weak proxy for the *scale* a structure is made for.
+ * Dropping it entirely offered a pillow box for a 300 mm cube, which no pillow box can be. So it
+ * stays as a tie-breaker and the category decides.
+ *
+ * `aspect` keeps 0.3 and does the job it always did — it is what rules a tuck-end out of a flat
+ * 95×95×40 form, where a mailer is genuinely the right structure.
+ */
 export const DEFAULT_STRUCTURE_WEIGHTS: StructureWeights = {
-  physical: 0.55,
+  physical: 0.15,
   aspect: 0.3,
-  product: 0.15,
+  product: 0.55,
 }
 
 export type StructureCandidate = {
@@ -146,16 +164,24 @@ function groundedReason(
     return `${label} etiket yüzeyinde aktif.`
   }
   if (hasStructurePhysics(brief)) {
+    /*
+     * These used to end with the structure's catalogue size — "… katalog varsayılanı 100×50×150 mm".
+     * That made sense while the cards showed that size. They now show the size the customer typed,
+     * so quoting a number the box will not be built at is noise at best: the card reads 70×45×150
+     * and the sentence beside it talks about 100×50×150. The reason still cites the real
+     * measurements, and says what about this structure suits them.
+     */
+    const given = `${d.L}×${d.W || '—'}×${d.H} mm`
     if (kind === 'portrait' && PORTRAIT_FAMILIES.has(row.structureId)) {
-      return `${d.H} mm yüksekliğindeki dar form (${d.L}×${d.W || '—'}×${d.H} mm) için dikey ön yüz; ${label} katalog varsayılanı ${row.defaultsMm.L}×${row.defaultsMm.W}×${row.defaultsMm.H} mm.`
+      return `${d.H} mm yüksekliğindeki dar form (${given}) için dikey ön yüz — ${label} bu oranı taşıyor.`
     }
     if (kind === 'low' && LOW_FAMILIES.has(row.structureId)) {
-      return `${d.L}×${d.W || '—'} mm geniş taban, ${d.H} mm alçak gövde — yatay / sevkiyat formu; ${label} varsayılanı ${row.defaultsMm.L}×${row.defaultsMm.W}×${row.defaultsMm.H} mm.`
+      return `${d.L}×${d.W || '—'} mm geniş taban, ${d.H} mm alçak gövde — yatay / sevkiyat formu; ${label} bu orana oturuyor.`
     }
     if (fits.physical >= 0.7) {
-      return `Ölçü ${d.L}×${d.W || '—'}×${d.H} mm, ${label} varsayılanına (${row.defaultsMm.L}×${row.defaultsMm.W}×${row.defaultsMm.H} mm) yakın.`
+      return `Ölçü ${given} — ${label} bu ölçü aralığında çalışan bir yapı.`
     }
-    return `Ölçü ${d.L}×${d.W || '—'}×${d.H} mm; ${label} bu yüzeyde aktif (${row.defaultsMm.L}×${row.defaultsMm.W}×${row.defaultsMm.H} mm).`
+    return `Ölçü ${given} — ${label} bu yüzeyde aktif; ölçü bu yapıya uygulanır.`
   }
   if (brief.subProduct && fits.product >= 0.7) {
     return `${brief.subProduct} için katalogda ${label} ailesi var.`

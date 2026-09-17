@@ -128,18 +128,38 @@ export function rateLimit(scope: 'auth' | 'checkout' | 'admin'): MiddlewareHandl
 }
 
 /**
- * API-oriented headers. CSP is JSON-safe and does not execute scripts;
- * the iyzico callback HTML is a meta-refresh + text link (no inline JS).
+ * `default-src 'none'` is right for JSON and wrong for an application.
+ *
+ * This process also serves the built studio in production (see `server/index.ts`), and the strict
+ * API policy blocked the studio's own bundle and stylesheet: the page loaded, the title appeared and
+ * the body stayed empty. Nothing in development shows it, because there Vite serves the studio and
+ * only `/api` reaches this middleware.
+ *
+ * So the policy follows the response. API paths keep the policy that cannot execute anything; the
+ * studio gets one scoped to its own origin. `'unsafe-inline'` for styles is not cosmetic: the
+ * engine emits `<style>` inside its SVG markup, and the on-screen faces pull their webfonts from
+ * Google (the export path substitutes a local subset, which is why production files are font
+ * independent while the preview is not).
  */
+const API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+
+const STUDIO_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'none'",
+].join('; ')
+
 export function securityHeaders(): MiddlewareHandler {
   return async (c, next) => {
     c.header('X-Content-Type-Options', 'nosniff')
     c.header('X-Frame-Options', 'DENY')
     c.header('Referrer-Policy', 'no-referrer')
-    c.header(
-      'Content-Security-Policy',
-      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
-    )
+    c.header('Content-Security-Policy', c.req.path.startsWith('/api/') ? API_CSP : STUDIO_CSP)
     await next()
   }
 }

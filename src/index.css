@@ -408,9 +408,15 @@ h2 {
 .topbar-popover {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;
+  /* Opens from the anchor's left edge, not its right.
+     Every button that owns a popover (Stil, Girdiler, Öğrenme) sits at the left of the top bar, so
+     anchoring the panel's right edge to theirs made it grow leftwards and off the window: measured
+     at 760 px the style panel sat at x = -79, putting its first column of chips — Lüks and Koyu
+     lüks — outside the viewport with no way to scroll to them. */
+  left: 0;
+  right: auto;
   z-index: 80;
-  width: min(420px, 92vw);
+  width: min(420px, calc(100vw - 24px));
   background: var(--surface-2, #111);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -712,6 +718,43 @@ h2 {
 
 .style-chip.is-active .style-chip__swatch {
   box-shadow: 0 0 0 1px #0003;
+}
+
+/* Price sits beside the control's own label, not in a tooltip: a cost you have to hover to find
+   is a cost the customer discovers after they have already spent it. */
+.style-bar__price {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #ffffff14;
+  color: #c9a86c;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.style-chip:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.style-bar__blocked {
+  margin: 8px 0 0;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: #5a1f1f66;
+  border: 1px solid #a8474766;
+  color: #f0d7d7;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.style-bar__blocked a {
+  color: #ffd9a3;
+}
+
+.style-bar__vary:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
 }
 
 /* Two dots per mood — the ground it will paint and the accent it will pair with it, both derived

@@ -33,6 +33,7 @@ import {
   type MeteredOperation,
   quoteDownload,
   chargeDownload,
+  CREDIT_COSTS,
 } from './credits.ts'
 import { CREDIT_PACKS } from './billing/catalog.ts'
 import { SUBSCRIPTION_PLANS } from './billing/plansCatalog.ts'
@@ -64,6 +65,7 @@ import {
   updateOperationMeta,
   type OperationDef,
 } from './credit/catalog.ts'
+import { DOWNLOAD_COST } from './billing/plansCatalog.ts'
 import { bucketSummary } from './credit/buckets.ts'
 import { classifyFeedback, classifyOperation, toLegacyOperation } from './credit/classify.ts'
 import {
@@ -466,6 +468,20 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       if (mapped) return c.json({ error: mapped.error }, mapped.status)
       throw err
     }
+  })
+
+  /**
+   * What each action costs, so the interface can put the price on the button.
+   *
+   * A customer who only discovers the price after clicking has been surprised, and surprise is what
+   * produces refund requests — not the price itself.
+   */
+  credits.get('/costs', (c) => {
+    return c.json({
+      generate: CREDIT_COSTS.generate,
+      revise: CREDIT_COSTS.revise,
+      download: DOWNLOAD_COST,
+    })
   })
 
   credits.get('/download/quote', (c) => {

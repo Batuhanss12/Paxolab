@@ -14,8 +14,11 @@ import { analyzeReferenceImageRich, analysisToBriefPatch } from './engine/refere
 import { ApiError, loadAuth, type AuthUser } from './api/client'
 import {
   commitReservation,
+  fetchCreditCosts,
+  getBalance,
   refundReservation,
   reserveCredits,
+  type CreditCosts,
 } from './api/credits'
 import {
   hydrateFromCloudAfterLogin,
@@ -117,10 +120,29 @@ export default function App() {
   const [syncNote, setSyncNote] = useState<string | null>(null)
   const syncNoteTimer = useRef(0)
   const [creditsRefreshKey, setCreditsRefreshKey] = useState(0)
+  /**
+   * Balance and prices, so a control can say what it costs before it is pressed and go quiet when
+   * it cannot be afforded. Without this the interface offered every action at every balance and
+   * only revealed the truth after the click.
+   */
+  const [credits, setCredits] = useState<{ balance: number | null; costs: CreditCosts | null }>({
+    balance: null,
+    costs: null,
+  })
 
   useEffect(() => {
     stateRef.current = state
   }, [state])
+
+  useEffect(() => {
+    if (!loadAuth()?.token) {
+      setCredits({ balance: null, costs: null })
+      return
+    }
+    void Promise.all([getBalance().catch(() => null), fetchCreditCosts().catch(() => null)]).then(
+      ([wallet, costs]) => setCredits({ balance: wallet?.balance ?? null, costs }),
+    )
+  }, [creditsRefreshKey])
 
   // Initialize persistent design memory + load active project from IndexedDB.
   useEffect(() => {
@@ -271,6 +293,19 @@ export default function App() {
     result?: Partial<Pick<ReturnType<typeof runConversation>, 'overridePatch' | 'copyPatch' | 'feedback'>> & {
       feedbackFromLlm?: boolean
     },
+    /**
+     * What this attempt promised, and what to put back if it never happens.
+     *
+     * The interface used to say "repainting from scratch" the moment a chip was pressed, and only
+     * then ask whether the customer could pay for it. On an empty wallet that produced a promise
+     * followed by a refusal, an unchanged design, and a chip highlighting a mood that was never
+     * applied — the interface reporting an intention as though it were a result. Measured on a live
+     * session: six moods in a row, six identical files, six promises.
+     *
+     * So the sentence is held until the reservation clears, and the brief is restored if it does
+     * not. State follows the outcome, never the intent.
+     */
+    intent?: { announce?: string; revert?: DesignBrief },
   ) => {
     dispatch({ type: 'generation.start' })
     const attemptId = uid()
@@ -284,11 +319,24 @@ export default function App() {
 
     const finishFail = (message: string) => {
       dispatch({ type: 'generation.abort' })
+      // Put the brief back, so a chip cannot stay lit for a change that never landed.
+      if (intent?.revert) {
+        briefRef.current = intent.revert
+        dispatch({ type: 'brief', brief: intent.revert })
+      }
       dispatch({
         type: 'messages.add',
         messages: [{ id: uid(), role: 'assistant', content: message }],
       })
       flashNote(message)
+    }
+
+    const announce = () => {
+      if (!intent?.announce) return
+      dispatch({
+        type: 'messages.add',
+        messages: [{ id: uid(), role: 'assistant', content: intent.announce }],
+      })
     }
 
     void (async () => {
@@ -305,13 +353,17 @@ export default function App() {
             setCreditsRefreshKey((k) => k + 1)
           } catch (err) {
             if (err instanceof ApiError && err.status === 402) {
-              finishFail('Krediniz yetersiz')
+              finishFail(
+                `Krediniz yetersiz — ${operation === 'generate' ? 'yeni tasarım' : 'değişiklik'} yapılamadı. Kredi yükleyip tekrar deneyin.`,
+              )
               return
             }
             finishFail(err instanceof Error ? err.message : 'Kredi rezervasyonu başarısız.')
             return
           }
         }
+        // Paid for: now it is safe to say it is happening.
+        announce()
 
         await new Promise((r) => window.setTimeout(r, 720))
 
@@ -592,11 +644,10 @@ export default function App() {
     dispatch({ type: 'awaiting', awaiting: awaitingRef.current })
     if (stateRef.current.showTemplates) return
     if (!liveOnSurface(designRef.current, next)) return
-    dispatch({
-      type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `${styleLabel(style)} hale çekiyorum — palet ve tipografi sıfırdan.` }],
+    runGenerate(next, undefined, {
+      announce: `${styleLabel(style)} hale çekiyorum — palet ve tipografi sıfırdan.`,
+      revert: held,
     })
-    runGenerate(next)
   }, [runGenerate])
 
   /**
@@ -609,18 +660,17 @@ export default function App() {
   const onTone = useCallback((temperament: Temperament) => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
-    const next = { ...briefRef.current, studioTemperament: temperament, directionVariation: 0 }
+    const held = briefRef.current
+    const next = { ...held, studioTemperament: temperament, directionVariation: 0 }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
-    dispatch({
-      type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `${temperamentTalk(temperament)} tona çekiyorum — aynı iskelet, yeni palet.` }],
-    })
     const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
     if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
-    runGenerate(next, {
-      overridePatch: { variationIndex: 0, direction: { temperament, source: 'user' } },
-    })
+    runGenerate(
+      next,
+      { overridePatch: { variationIndex: 0, direction: { temperament, source: 'user' } } },
+      { announce: `${temperamentTalk(temperament)} tona çekiyorum — aynı iskelet, yeni palet.`, revert: held },
+    )
   }, [runGenerate])
 
   const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
@@ -628,8 +678,9 @@ export default function App() {
     if (!liveOnSurface(current, briefRef.current)) return
     const hit = current.studio?.offer?.candidates.find((row) => row.index === index)
     if (!hit || hit.selected) return
+    const held = briefRef.current
     const next = {
-      ...briefRef.current,
+      ...held,
       studioFamily: family,
       studioFamilyLocked: true,
       studioTemperament: undefined,
@@ -637,41 +688,36 @@ export default function App() {
     }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
-    dispatch({
-      type: 'messages.add',
-      messages: [{ id: uid(), role: 'assistant', content: `${index}. yön: ${familyTalk(family)}.` }],
-    })
     const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
     if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
     const surface = next.packagingMode === 'label' ? 'label' : 'box'
-    runGenerate(next, {
-      overridePatch: {
-        variationIndex: 0,
-        direction: { ...hintsFromFamily(family, surface), source: 'user' },
+    runGenerate(
+      next,
+      {
+        overridePatch: {
+          variationIndex: 0,
+          direction: { ...hintsFromFamily(family, surface), source: 'user' },
+        },
       },
-    })
+      { announce: `${index}. yön: ${familyTalk(family)}.`, revert: held },
+    )
   }, [runGenerate])
 
   const onVary = useCallback(() => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
     const nextIndex = (current.designPlan?.variationIndex ?? 0) + 1
-    const next = { ...briefRef.current, directionVariation: nextIndex }
+    const held = briefRef.current
+    const next = { ...held, directionVariation: nextIndex }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
-    dispatch({
-      type: 'messages.add',
-      messages: [
-        {
-          id: uid(),
-          role: 'assistant',
-          content: 'Aynı brief, yeni bir kompozisyon deniyorum.',
-        },
-      ],
-    })
     const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
     if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
-    runGenerate(next, { overridePatch: { variationIndex: nextIndex } })
+    runGenerate(
+      next,
+      { overridePatch: { variationIndex: nextIndex } },
+      { announce: 'Aynı brief, yeni bir kompozisyon deniyorum.', revert: held },
+    )
   }, [runGenerate])
 
   const onUndo = useCallback(() => {
@@ -772,6 +818,7 @@ export default function App() {
           onCopyCommit={onCopyCommit}
           onStyle={onStyle}
           onTone={onTone}
+          credits={credits}
           onDirectionPick={onDirectionPick}
           onVary={onVary}
           tab={tab}

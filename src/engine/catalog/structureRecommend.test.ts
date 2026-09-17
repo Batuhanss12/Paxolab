@@ -113,7 +113,13 @@ describe('C5 structure recommendation', () => {
     expect(physical.candidates[0]?.structureId).not.toBe('tuck-end-box')
     expect(product.candidates[0]?.structureId).toBe('tuck-end-box')
     expect(physical.candidates.map((r) => r.structureId)).not.toEqual(product.candidates.map((r) => r.structureId))
-    expect(DEFAULT_STRUCTURE_WEIGHTS.physical).toBeGreaterThan(DEFAULT_STRUCTURE_WEIGHTS.product)
+    // This used to assert the opposite: that physical closeness outweighed product fit. It no
+    // longer should. `physicalFit` compares the brief to a template's *catalogue default*, and the
+    // net is parametric — the box is built at the size the customer gave either way, so that
+    // closeness does not constrain the output. It cost the dedicated cream carton first place on a
+    // cream brief by 0.003. It stays in the mix as a scale tie-breaker, below the category.
+    expect(DEFAULT_STRUCTURE_WEIGHTS.product).toBeGreaterThan(DEFAULT_STRUCTURE_WEIGHTS.physical)
+    expect(DEFAULT_STRUCTURE_WEIGHTS.physical, 'scale still has to count for something').toBeGreaterThan(0)
   })
 
   it('TEST 5 — opposite-surface structures stay gated even with high product fit', () => {

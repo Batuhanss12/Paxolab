@@ -3,6 +3,7 @@ import { ApiError, loadAuth, saveAuth, type AuthState, type AuthUser } from '../
 import * as authApi from '../api/auth'
 import { getBalance } from '../api/credits'
 import { getHealth } from '../api/health'
+import { siteUrl } from '../api/urls'
 
 type AuthPanelProps = {
   onAuthChange?: (user: AuthUser | null) => void
@@ -11,11 +12,6 @@ type AuthPanelProps = {
   onLoadProject?: (projectId: string) => void | Promise<void>
   /** @deprecated Marketing deep-link; ignored — auth lives on the site. */
   initialMode?: 'login' | 'register'
-}
-
-function siteUrl(path: string): string {
-  const base = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:3000'
-  return `${base}${path}`
 }
 
 function stripQueryParam(key: string) {

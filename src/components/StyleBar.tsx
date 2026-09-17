@@ -4,6 +4,7 @@ import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { STYLE_OPTIONS } from '../engine/styles'
 import { TEMPERAMENT_OPTIONS } from '../engine/studio/temperament'
 import { moodPreview, tonePreview } from '../engine/studio/direction'
+import { creditsUrl } from '../api/urls'
 import type { Temperament } from '../engine/studio/types'
 
 type StyleBarProps = {
@@ -11,13 +12,25 @@ type StyleBarProps = {
   design: DesignSpec | null
   onStyle: (style: StyleType) => void
   onTone?: (temperament: Temperament) => void
+  /** Balance and prices. Absent while signed out, when nothing is metered. */
+  credits?: { balance: number | null; costs: { generate: number; revise: number; download: number } | null }
   onDims: (dims: DimensionsMm) => void
   onVary?: () => void
   className?: string
   variant?: 'rail'
 }
 
-export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, className, variant }: StyleBarProps) {
+export function StyleBar({ brief, design, onStyle, onTone, credits, onDims, onVary, className, variant }: StyleBarProps) {
+  /*
+   * Every control here spends a credit, so every control says so and stops offering itself when the
+   * wallet cannot cover it. Before this, an empty wallet still showed six live mood chips: pressing
+   * one produced a promise, a silent refusal, and an unchanged design.
+   */
+  const price = credits?.costs?.revise ?? null
+  const balance = credits?.balance ?? null
+  const affordable = price == null || balance == null || balance >= price
+  const priceTag = price == null ? '' : ` · ${price} kr`
+  const blockedHint = affordable ? undefined : `Krediniz yetersiz — bu değişiklik ${price} kr, bakiyeniz ${balance} kr.`
   const studio = Boolean(design?.studio)
   const activeStyle = brief.styleType || design?.brief.styleType || 'luxury'
   const activeTone = brief.studioTemperament || design?.studio?.direction.temperament || 'dark-luxe'
@@ -52,7 +65,10 @@ export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, class
 
   return (
     <section className={rootClass} aria-label="Ruh hali">
-      <p className="style-bar__kicker">Ruh hali</p>
+      <p className="style-bar__kicker">
+        Ruh hali
+        {price != null && <span className="style-bar__price">{price} kr</span>}
+      </p>
       <div className="style-chips" role="listbox" aria-label="Ruh hali">
         {STYLE_OPTIONS.map((opt) => (
           <button
@@ -60,7 +76,8 @@ export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, class
             type="button"
             role="option"
             aria-selected={activeStyle === opt.id}
-            title={opt.hint}
+            title={blockedHint ?? `${opt.hint}${priceTag}`}
+            disabled={!affordable}
             className={`style-chip ${activeStyle === opt.id ? 'is-active' : ''}`}
             onClick={() => onStyle(opt.id)}
           >
@@ -74,7 +91,10 @@ export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, class
       </div>
       {studio && onTone ? (
         <>
-          <p className="style-bar__kicker">Ton</p>
+          <p className="style-bar__kicker">
+            Ton
+            {price != null && <span className="style-bar__price">{price} kr</span>}
+          </p>
           <div className="style-chips" role="listbox" aria-label="Ton">
             {TEMPERAMENT_OPTIONS.map((opt) => (
               <button
@@ -82,7 +102,8 @@ export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, class
                 type="button"
                 role="option"
                 aria-selected={activeTone === opt.id}
-                title={opt.hint}
+                title={blockedHint ?? `${opt.hint}${priceTag}`}
+                disabled={!affordable}
                 className={`style-chip ${activeTone === opt.id ? 'is-active' : ''}`}
                 onClick={() => onTone(opt.id)}
               >
@@ -116,9 +137,14 @@ export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, class
           <span className="style-bar__dims-unit">mm</span>
         </div>
       )}
+      {!affordable && (
+        <p className="style-bar__blocked">
+          Krediniz yetersiz. <a href={creditsUrl()}>Kredi yükleyin</a> — bu kontroller o zaman açılır.
+        </p>
+      )}
       {design && onVary && (
-        <button type="button" className="style-bar__vary" onClick={onVary}>
-          6 yeni tasarım
+        <button type="button" className="style-bar__vary" onClick={onVary} disabled={!affordable} title={blockedHint}>
+          {`Yeni kompozisyon${priceTag}`}
           <span className="style-bar__vary-set">
             {design.studio ? studioFaceLabel(design) : `Set ${(design.designPlan?.variationIndex ?? 0) + 1}/6`}
           </span>

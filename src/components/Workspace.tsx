@@ -59,6 +59,7 @@ type WorkspaceProps = {
   onCopyCommit?: () => void
   onStyle: (style: StyleType) => void
   onTone?: (temperament: Temperament) => void
+  credits?: { balance: number | null; costs: { generate: number; revise: number; download: number } | null }
   onDirectionPick?: (family: StudioFamily, index: number) => void
   onVary?: () => void
   tab: TabId
@@ -148,6 +149,7 @@ export function Workspace({
   onCopyCommit,
   onStyle,
   onTone,
+  credits,
   onDirectionPick,
   onVary,
   tab,
@@ -291,6 +293,7 @@ export function Workspace({
                   design={design}
                   onStyle={onStyle}
                   onTone={onTone}
+                  credits={credits}
                   onDims={onDims}
                   onVary={onVary}
                   variant="rail"

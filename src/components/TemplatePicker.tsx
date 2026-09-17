@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import type { DesignBrief, DimensionsMm, FormaTemplate } from '../types'
-import { getTemplate, pickerTemplates } from '../engine/catalog/catalog'
-import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
+import { getTemplate } from '../engine/catalog/catalog'
+import { STRUCTURE_LABEL, structureCardDims, structureCards } from '../engine/catalog/structureOffer'
 import { recommendStructures } from '../engine/catalog/structureRecommend'
-import { estimateCartonMm } from '../engine/catalog/volumeCarton'
 import { buildDieline } from '../engine/dieline/buildDieline'
 import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
 import { CartonShell } from './CartonShell'
@@ -16,34 +15,39 @@ type TemplatePickerProps = {
   livePreview?: boolean
 }
 
-function dimsFor(brief: DesignBrief, template: FormaTemplate): DimensionsMm {
-  return estimateCartonMm(brief.volume, brief, template) ?? template.defaultsMm
-}
-
+/**
+ * What this structure will actually be built at, for this brief.
+ *
+ * Deliberately the engine's own `resolveDimensions` rather than a second opinion: a size the
+ * customer typed is an instruction, and the card has to show the box they are choosing between,
+ * not the catalogue's stock size. It used to estimate from the volume and fall back to
+ * `template.defaultsMm`, ignoring `brief.dimensionsMm` entirely — so a customer who asked for
+ * 70×45×150 was offered "100×50×150", "80×40×80" and "70×35×120", and the net drawn on each card
+ * was the wrong *shape*, not merely the wrong caption. The large preview beside them already
+ * honoured the typed size, so the two disagreed on screen.
+ */
 function netSvg(brief: DesignBrief, template: FormaTemplate, dims: DimensionsMm): string {
   return renderDielineSvg(buildDieline(template.structureId, { ...brief, templateId: template.id, dimensionsMm: dims }))
 }
 
 export function TemplatePicker({ brief, onSelect, onPick, onDims, livePreview = true }: TemplatePickerProps) {
   const [showAll, setShowAll] = useState(false)
-  const offer = recommendStructures(brief)
-  const ranked = offer.all.filter((row) => row.eligible)
+  // The cards are the engine's ranking, not a second list assembled here. See `structureCards`:
+  // the two used to disagree, and the chat's own second recommendation for a cream brief never
+  // appeared on screen at all.
+  const cards = structureCards(brief, { includeAll: showAll })
+  const ranked = recommendStructures(brief).all.filter((row) => row.eligible)
   const rankById = new Map(ranked.map((row, i) => [row.templateId, { ...row, rank: i }]))
   const rankByStruct = new Map(ranked.map((row, i) => [row.structureId, { ...row, rank: i }]))
-  const cards = [...pickerTemplates(brief, { includeMismatched: showAll })].sort((a, b) => {
-    const as = rankById.get(a.id)?.score ?? rankByStruct.get(a.structureId)?.score ?? -1
-    const bs = rankById.get(b.id)?.score ?? rankByStruct.get(b.structureId)?.score ?? -1
-    return bs - as || a.structureId.localeCompare(b.structureId)
-  })
-  const extras = showAll ? 0 : pickerTemplates(brief, { includeMismatched: true }).length - cards.length
+  const extras = showAll ? 0 : structureCards(brief, { includeAll: true }).length - cards.length
   const selected = brief.templateId ? getTemplate(brief.templateId) : undefined
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
       ? brief.dimensionsMm
       : selected
-        ? dimsFor(brief, selected)
+        ? structureCardDims(brief, selected)
         : cards[0]
-          ? dimsFor(brief, cards[0])
+          ? structureCardDims(brief, cards[0])
           : { L: 80, W: 40, H: 120 }
   const live =
     livePreview && selected
@@ -63,7 +67,7 @@ export function TemplatePicker({ brief, onSelect, onPick, onDims, livePreview = 
       {cards.length === 0 && <p className="templates__empty">Bu sektör için kutu şablonu yok.</p>}
       <div className="templates__grid">
         {cards.map((t: FormaTemplate) => {
-          const cardDims = dimsFor(brief, t)
+          const cardDims = structureCardDims(brief, t)
           const meta = rankById.get(t.id) ?? rankByStruct.get(t.structureId)
           const thumb = livePreview ? netSvg(brief, t, cardDims) : ''
           const label = STRUCTURE_LABEL[t.structureId] ?? t.structureId
