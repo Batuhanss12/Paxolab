@@ -52,6 +52,15 @@ export type CreditTransactionRow = {
   created_at: string
 }
 
+export type DownloadEntitlementRow = {
+  id: string
+  user_id: string
+  reservation_id: string | null
+  granted_at: string
+  consumed_at: string | null
+  design_key: string | null
+}
+
 export type CreditReservationRow = {
   id: string
   user_id: string
@@ -62,8 +71,6 @@ export type CreditReservationRow = {
   created_at: string
   finalized_at: string | null
   billing_user_id?: string | null
-  /** Bitmask of variation indices this reservation has served. See SHOT_VARIATIONS. */
-  served_variations?: number
 }
 
 export type CreditBucketRow = {
@@ -278,7 +285,6 @@ export function migrate(db: DatabaseSync): void {
       status TEXT NOT NULL,
       operation TEXT NOT NULL,
       client_request_id TEXT,
-      served_variations INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       finalized_at TEXT
     );
@@ -489,6 +495,25 @@ export function migrate(db: DatabaseSync): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_refunds_user ON refunds(user_id, created_at DESC);
+
+    /*
+     * What a design purchase actually buys: the right to take one file away.
+     *
+     * The big charge is for ownership of one artwork, not for the act of clicking download, so the
+     * entitlement is a row that is granted when the design is paid for and consumed when a file is
+     * taken. Any download without an unconsumed entitlement is a new purchase.
+     */
+    CREATE TABLE IF NOT EXISTS download_entitlements (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reservation_id TEXT,
+      granted_at TEXT NOT NULL,
+      consumed_at TEXT,
+      design_key TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_download_entitlements_open
+      ON download_entitlements(user_id, consumed_at);
   `)
   try {
     db.exec(`ALTER TABLE subscription_plans ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0`)
@@ -514,15 +539,6 @@ export function migrate(db: DatabaseSync): void {
   }
   try {
     db.exec(`ALTER TABLE credit_reservations ADD COLUMN billing_user_id TEXT`)
-  } catch {
-    /* column already exists */
-  }
-  try {
-    // One credit buys one shot, and a shot is worth several variations. This is a bitmask of the
-    // variation indices already served, not a request counter: re-rendering a variation the customer
-    // has already seen — because they edited a line of copy — must not eat their allowance. The
-    // allowance is enforced here, where the balance lives, not in the client that happens to ask.
-    db.exec(`ALTER TABLE credit_reservations ADD COLUMN served_variations INTEGER NOT NULL DEFAULT 1`)
   } catch {
     /* column already exists */
   }

@@ -41,7 +41,7 @@ import { darken, isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, claimLine, liveClaim, nutritionRows, usageCopy } from './copyBank'
 import { fitLabelBarcode } from '../barcode'
 import { cityLine, identOf, isLandscape, isTiny, marginFor, seamMark, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
-import { Ledger, fitSize, textEl, textWidth, typeSize, wrapByWidth } from './text'
+import { Ledger, fitSize, fitsAtFloor, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
@@ -327,18 +327,39 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
   const chips = d.chips.slice(0, 2)
   const chipSize = 1.5
   const chipBlock = (cx: number, y: number, span: number) => {
-    // two spaced chips around a small mark
-    if (chips[0]) parts.push(spacedLine(ledger, cx - span * 0.28, y, chips[0], chipSize, ink, span * 0.42))
+    // Two spaced chips flanking a small mark. The gap is measured from the mark's own width rather
+    // than taken as a fraction of the span: at ±0.28 span with 0.42 span of width each, a chip that
+    // used its full allowance reached the mark once the panel was narrow enough, and the ledger
+    // caught it on a food brief at 70 mm.
+    const markBox = 3.6
+    const gutter = markBox + 1.4
+    const half = (span - gutter) / 2
+    const claim = claimLine(copy, d.chips)
+    const fits = (t: string) => fitsAtFloor(t.toLocaleUpperCase('tr'), half, 'sans', 0.34)
+    // Not every face this archetype now reaches is wide enough for two chips around a mark, and the
+    // chips cannot shrink to make room: they are already at the print floor. Asking whether they
+    // *fit* rather than assuming a fraction of the span is the whole difference — measured, the
+    // assumed fraction overlapped the mark on a food brief and ran off a narrow label.
+    if (half < 6 || !fits(chips[0] ?? '') || !fits(chips[1] ? claim : '')) {
+      const single = chips[0] ?? ''
+      if (single && fitsAtFloor(single.toLocaleUpperCase('tr'), span, 'sans', 0.34)) {
+        parts.push(spacedLine(ledger, cx, y, single, chipSize, ink, span))
+      }
+      parts.push(brandMark(markKind, cx, y - 0.6, 1.6, accent))
+      return
+    }
+    const offset = gutter / 2 + half / 2
+    if (chips[0]) parts.push(spacedLine(ledger, cx - offset, y, chips[0], chipSize, ink, half))
     if (chips[1]) {
       parts.push(
         spacedLine(
           ledger,
-          cx + span * 0.28,
+          cx + offset,
           y,
-          claimLine(copy, d.chips),
+          claim,
           chipSize,
           ink,
-          span * 0.42,
+          half,
           'middle',
           'sans',
           d.surface === 'label' ? 'cta' : undefined,
@@ -346,7 +367,7 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
       )
     }
     parts.push(brandMark(markKind, cx, y - 0.6, 1.6, accent))
-    ledger.add('element', 'foot-mark', cx - 1.8, y - 2.4, 3.6, 3.6)
+    ledger.add('element', 'foot-mark', cx - markBox / 2, y - 2.4, markBox, 3.6)
   }
   const window = (winX: number, winY: number, winW: number, winH: number, badgeOverlap: number) => {
     const arch = archWindow(ctx.uid, winX, winY, winW, winH)

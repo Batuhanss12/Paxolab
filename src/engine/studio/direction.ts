@@ -42,6 +42,14 @@ export type DirectionInput = {
   palette: Palette
   locale: CopyLocale
   variationIndex: number
+  /**
+   * Step past the archetype the mood would otherwise pick.
+   *
+   * Used when the chosen face turned out not to fit this panel: the engine paints, reads the
+   * ledger, and asks for the next candidate rather than shipping something broken. Separate from
+   * `variationIndex` so the variation the customer is looking at keeps its number.
+   */
+  archetypeStep?: number
   copy: { brand: string; product: string; tagline: string; volume: string }
   hints?: DirectionHints[]
 }
@@ -115,6 +123,22 @@ function temperamentFor(sector: SectorId, style: StyleType, palette: Palette, _b
 export function moodPreview(brief: DesignBrief, mood: StyleType): { ground: string; accent: string; ink: string } {
   const base = ensureAccentContrast(paletteFromBrief(brief, mood))
   const pal = studioPalette(base, temperamentFor(resolveSector(brief), mood, base, brief))
+  return { ground: pal.ground, accent: pal.accent, ink: pal.ink }
+}
+
+/**
+ * The same, for the tone knob: what *this* treatment would do to *this* brief.
+ *
+ * Tone is a second, deliberate dimension on top of the mood. Six moods alone give six palettes;
+ * six tones against them give thirty-six, and that range is the difference between a customer who
+ * keeps clicking and one who concludes the engine only knows one answer.
+ */
+export function tonePreview(
+  brief: DesignBrief,
+  mood: StyleType,
+  temperament: Temperament,
+): { ground: string; accent: string; ink: string } {
+  const pal = studioPalette(ensureAccentContrast(paletteFromBrief(brief, mood)), temperament)
   return { ground: pal.ground, accent: pal.accent, ink: pal.ink }
 }
 
@@ -644,14 +668,49 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
     })
     .sort((a, b) => b.score - a.score || a.dna.id.localeCompare(b.dna.id))
   const scores: DirectionScoreRow[] = scored.map((row) => ({ id: row.dna.id as StudioArchetype, score: row.score, parts: row.parts }))
+  // Only a pin the customer set themselves is absolute — an explicit direction pick, or a family
+  // they locked in the UI. A guess the engine made from the sector or from a word in the brief
+  // still scores heavily in `hintPin`, which keeps it at the top of the ranking; it just no longer
+  // forbids the mood from looking further down.
+  const userPinned = hints.pinSource === 'user' || hints.pinSource === 'family' || hints.source === 'user'
   const pinned =
-    hints.archetype && !avoided.has(hints.archetype) ? scored.find((c) => c.dna.id === hints.archetype) : undefined
+    userPinned && hints.archetype && !avoided.has(hints.archetype)
+      ? scored.find((c) => c.dna.id === hints.archetype)
+      : undefined
   const eligible = scored.filter((c) => !avoided.has(c.dna.id as StudioArchetype))
   const ranked = eligible.length ? eligible : scored
   const pool = uniqueFamilyRows(ranked, 3)
   const walk = uniqueFamilyRows(ranked, 6)
-  const pick = pinned ?? walk[input.variationIndex % Math.max(1, walk.length)] ?? ranked[0] ?? scored[0]
+  const step = MOOD_WALK_OFFSET[input.style] ?? 0
+  const pick =
+    pinned ??
+    walk[(input.variationIndex + step + (input.archetypeStep ?? 0)) % Math.max(1, walk.length)] ??
+    ranked[0] ??
+    scored[0]
   return { hints, temperamentGuess, scored, scores, ranked, pool, pick }
+}
+
+/**
+ * Where each mood starts walking the ranked archetypes.
+ *
+ * Measured 2026-09-17: on 3 of 4 briefs, clicking through all six moods returned the *same*
+ * skeleton, the same background family and the same layout variant — only the paint moved. The
+ * cause was `hintPin`, worth +2 against a scoring range of roughly 1: once the sector or a visual
+ * word had named an archetype, nothing else could outvote it, so every mood repainted one face.
+ *
+ * The owner's call is maximum range: a mood may move the composition, not merely its colours. So
+ * the mood chooses *where in the ranking* to look rather than trying to out-argue the pin. Every
+ * candidate it can reach is still a well-scored one — suitability lives in the ranking — but six
+ * moods now reach six different faces. A pin the user set themselves still wins outright; a guess
+ * the engine made from the sector does not.
+ */
+const MOOD_WALK_OFFSET: Record<StyleType, number> = {
+  luxury: 0,
+  classic: 1,
+  minimal: 2,
+  modern: 3,
+  eco: 4,
+  playful: 5,
 }
 
 function userHoldsTemperament(hints: DirectionHints): boolean {

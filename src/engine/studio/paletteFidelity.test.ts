@@ -90,13 +90,24 @@ describe('L2 — the studio face follows the brief palette', () => {
     expect(hueGap(palette.ground, '#e59bb0')).toBeLessThan(60)
   })
 
-  it('a visual word still outranks the neutral rule', () => {
-    expect(faceOf(boxOf('mermer · altın', 'kozmetik', 'krem')).archetype).toBe('marble-frame')
+  /**
+   * These two asserted that a visual word and a sector guess *locked* the archetype. They no longer
+   * do: the mood is allowed to move the composition, which is what makes each press produce a
+   * visibly different design. What must still hold is that the word and the sector are heard —
+   * their archetype stays reachable rather than being ignored.
+   */
+  const MOODS = ['luxury', 'minimal', 'modern', 'eco', 'classic', 'playful'] as const
+
+  function archetypesAcrossMoods(colors: string, sector: string, sub: string): Set<string> {
+    return new Set(MOODS.map((styleType) => faceOf({ ...boxOf(colors, sector, sub), styleType }).archetype))
+  }
+
+  it('a visual word in the brief is heard', () => {
+    expect([...archetypesAcrossMoods('mermer · altın', 'kozmetik', 'krem')], 'marble never reached').toContain('marble-frame')
   })
 
-  it('a silent brief keeps the sector default', () => {
-    const silent = faceOf(boxOf('', 'kozmetik', 'krem'))
-    expect(silent.archetype).toBe('botanical-card')
+  it('a silent brief can still reach the sector default', () => {
+    expect([...archetypesAcrossMoods('', 'kozmetik', 'krem')], 'sector default never reached').toContain('botanical-card')
   })
 
   it('the same brief is deterministic', () => {

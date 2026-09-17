@@ -13,8 +13,6 @@ export type ReserveResponse = {
   balance: number
   operation: CreditOperation
   idempotent?: boolean
-  /** Variations left in this shot. The server decides; the client only displays it. */
-  usesLeft?: number | null
 }
 
 export type FinalizeResponse = {
@@ -46,9 +44,7 @@ export async function listTransactions(limit = 50): Promise<CreditTransaction[]>
 
 export async function reserveCredits(input: {
   operation: CreditOperation
-  /** The shot this generation belongs to. The same id means "another variation of what I paid for". */
   clientRequestId?: string
-  variationIndex?: number
 }): Promise<ReserveResponse> {
   return apiRequest<ReserveResponse>('/api/credits/reserve', {
     method: 'POST',
@@ -71,4 +67,20 @@ export async function refundReservation(
     method: 'POST',
     body: { reservationId, reason },
   })
+}
+
+export type DownloadQuote = {
+  cost: number
+  covered: boolean
+  entitlements: number
+  balance: number
+}
+
+/** What the next download will cost — asked *before* the customer commits to it. */
+export async function fetchDownloadQuote(): Promise<DownloadQuote> {
+  return apiRequest<DownloadQuote>('/api/credits/download/quote')
+}
+
+export async function chargeDownload(designKey: string): Promise<{ charged: number; balance: number; covered: boolean }> {
+  return apiRequest('/api/credits/download', { method: 'POST', body: { designKey } })
 }

@@ -1,5 +1,5 @@
-import type { FormaDb } from './db.ts'
-import { STARTING_CREDIT_GRANT, INITIAL_DESIGN_COST, REVISION_COST, EXPORT_COST } from './billing/plansCatalog.ts'
+import type { FormaDb, DownloadEntitlementRow } from './db.ts'
+import { STARTING_CREDIT_GRANT, INITIAL_DESIGN_COST, REVISION_COST, EXPORT_COST, DOWNLOAD_COST } from './billing/plansCatalog.ts'
 import { resolveBillingUserId } from './orgs.ts'
 import { userHasUnlimitedDesigns } from './credit/subscriptions.ts'
 import { newId } from './auth.ts'
@@ -162,24 +162,6 @@ export type ReserveResult = {
   balance: number
   operation: MeteredOperation
   idempotent: boolean
-  /** Variations still included in this shot. Absent means a fresh shot with the full allowance. */
-  usesLeft?: number
-}
-
-/**
- * How many designs one credit buys.
- *
- * A customer who pays per click stops exploring, and a packaging brief is not something anyone
- * gets right on the first frame. So a credit buys a *shot*: the same decision rendered several
- * ways, free to browse. Changing the brief, the mood or the direction is a new decision, and that
- * is what costs.
- */
-export const SHOT_VARIATIONS = 6
-
-function popcount(mask: number): number {
-  let n = 0
-  for (let m = mask; m; m >>>= 1) n += m & 1
-  return n
 }
 
 /**
@@ -194,7 +176,6 @@ export function reserveCredits(
   userId: string,
   operation: MeteredOperation,
   clientRequestId?: string | null,
-  variationIndex?: number,
 ): ReserveResult {
   const amount = costFor(operation)
   const clientId =
@@ -215,33 +196,6 @@ export function reserveCredits(
           db.exec('ROLLBACK')
           throw new CreditsError(409, 'Bu istek için rezervasyon iade edilmiş.')
         }
-        // A shot is one credit and several variations: reusing the same client request id is how
-        // the client asks for another variation of something already paid for. What is counted is
-        // the set of *distinct* variations served, not the number of requests — re-rendering one
-        // the customer has already seen, because they fixed a line of copy, must be free.
-        const servedBefore = existing.served_variations ?? 1
-        const index = Math.floor(variationIndex ?? 0)
-        // Out of range is refused, not clamped. Folding index 6 onto index 5 would make it look
-        // like a variation the customer had already seen, so the seventh design would be free.
-        if (index < 0 || index >= SHOT_VARIATIONS) {
-          db.exec('ROLLBACK')
-          throw new CreditsError(
-            409,
-            `Bu çekimin ${SHOT_VARIATIONS} varyasyonu kullanıldı. Yeni bir tasarım için brief, ruh hali veya yönü değiştirin.`,
-          )
-        }
-        const bit = 1 << index
-        if (!(servedBefore & bit) && popcount(servedBefore) >= SHOT_VARIATIONS) {
-          db.exec('ROLLBACK')
-          throw new CreditsError(
-            409,
-            `Bu çekimin ${SHOT_VARIATIONS} varyasyonu kullanıldı. Yeni bir tasarım için brief, ruh hali veya yönü değiştirin.`,
-          )
-        }
-        const served = servedBefore | bit
-        if (served !== servedBefore) {
-          db.prepare(`UPDATE credit_reservations SET served_variations = ? WHERE id = ?`).run(served, existing.id)
-        }
         const billTo = existing.billing_user_id || userId
         const balance = getBalanceUnlocked(db, billTo)
         db.exec('COMMIT')
@@ -251,7 +205,6 @@ export function reserveCredits(
           balance,
           operation: existing.operation as MeteredOperation,
           idempotent: true,
-          usesLeft: SHOT_VARIATIONS - popcount(served),
         }
       }
     }
@@ -299,6 +252,15 @@ export function reserveCredits(
       billTo,
     )
 
+    // Paying for a design buys the right to take one file away with it. Revisions do not: they are
+    // exploration, and exploration is what the small charges are for.
+    if (operation === 'generate') {
+      db.prepare(
+        `INSERT INTO download_entitlements (id, user_id, reservation_id, granted_at, consumed_at, design_key)
+         VALUES (?, ?, ?, ?, NULL, NULL)`,
+      ).run(newId(), billTo, reservationId, now)
+    }
+
     db.prepare(
       `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
        VALUES (?, ?, 'reserve', ?, ?, ?, ?, ?)`,
@@ -331,7 +293,6 @@ export function reserveCredits(
       balance: newBalance,
       operation,
       idempotent: false,
-      usesLeft: SHOT_VARIATIONS - 1,
     }
   } catch (err) {
     if (err instanceof CreditsError) throw err
@@ -850,4 +811,117 @@ export function sweepStaleReservations(
     }
   }
   return { swept: ids.length, ids }
+}
+
+/* ------------------------------------------------------------- downloads */
+
+export type DownloadQuote = {
+  /** What this download will cost right now. */
+  cost: number
+  /** True when a design purchase has already covered it. */
+  covered: boolean
+  /** Unconsumed entitlements the customer is holding. */
+  entitlements: number
+  balance: number
+}
+
+function openEntitlement(db: FormaDb, billTo: string): DownloadEntitlementRow | undefined {
+  return db
+    .prepare(
+      `SELECT * FROM download_entitlements
+        WHERE user_id = ? AND consumed_at IS NULL
+        ORDER BY granted_at ASC LIMIT 1`,
+    )
+    .get(billTo) as DownloadEntitlementRow | undefined
+}
+
+/**
+ * What the next download will cost, before the customer commits to it.
+ *
+ * Quoted rather than discovered: the charge is the same size as the design itself, and a customer
+ * who finds that out *after* clicking has been surprised by a large number. Surprise is what
+ * generates refund requests — not the price.
+ */
+export function quoteDownload(db: FormaDb, userId: string): DownloadQuote {
+  const billTo = billingUserId(db, userId)
+  const open = db
+    .prepare(`SELECT COUNT(*) AS n FROM download_entitlements WHERE user_id = ? AND consumed_at IS NULL`)
+    .get(billTo) as { n: number }
+  const covered = open.n > 0 || userHasUnlimitedDesigns(db, billTo)
+  return {
+    cost: covered ? 0 : DOWNLOAD_COST,
+    covered,
+    entitlements: open.n,
+    balance: getBalanceUnlocked(db, billTo),
+  }
+}
+
+export type DownloadResult = { charged: number; balance: number; covered: boolean }
+
+/**
+ * Take one file away.
+ *
+ * Consumes a held entitlement if there is one; otherwise this is a fresh purchase of the right to
+ * own this artwork and is charged accordingly. `designKey` is recorded on the entitlement so the
+ * ledger says *which* design was taken, not merely that one was.
+ */
+export function chargeDownload(db: FormaDb, userId: string, designKey: string | null): DownloadResult {
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const billTo = billingUserId(db, userId)
+    const now = nowIso()
+    if (userHasUnlimitedDesigns(db, billTo)) {
+      db.exec('COMMIT')
+      return { charged: 0, balance: getBalanceUnlocked(db, billTo), covered: true }
+    }
+    const held = openEntitlement(db, billTo)
+    if (held) {
+      db.prepare(`UPDATE download_entitlements SET consumed_at = ?, design_key = ? WHERE id = ?`).run(
+        now,
+        designKey,
+        held.id,
+      )
+      db.exec('COMMIT')
+      return { charged: 0, balance: getBalanceUnlocked(db, billTo), covered: true }
+    }
+
+    const balance = getBalanceUnlocked(db, billTo)
+    if (balance < DOWNLOAD_COST) {
+      db.exec('ROLLBACK')
+      throw new CreditsError(402, 'Krediniz yetersiz')
+    }
+    const newBalance = balance - DOWNLOAD_COST
+    try {
+      debitFromBuckets(db, billTo, DOWNLOAD_COST)
+    } catch {
+      /* legacy wallet without buckets — the wallet debit below is authoritative */
+    }
+    db.prepare(`UPDATE wallets SET balance = ?, updated_at = ? WHERE user_id = ?`).run(newBalance, now, billTo)
+    const entitlementId = newId()
+    db.prepare(
+      `INSERT INTO download_entitlements (id, user_id, reservation_id, granted_at, consumed_at, design_key)
+       VALUES (?, ?, NULL, ?, ?, ?)`,
+    ).run(entitlementId, billTo, now, now, designKey)
+    db.prepare(
+      `INSERT INTO credit_transactions (id, user_id, kind, amount, balance_after, ref_id, meta_json, created_at)
+       VALUES (?, ?, 'reserve', ?, ?, ?, ?, ?)`,
+    ).run(
+      newId(),
+      billTo,
+      -DOWNLOAD_COST,
+      newBalance,
+      entitlementId,
+      JSON.stringify({ operation: 'download', designKey, actorUserId: userId }),
+      now,
+    )
+    db.exec('COMMIT')
+    return { charged: DOWNLOAD_COST, balance: newBalance, covered: false }
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* already rolled back */
+    }
+    throw err
+  }
 }

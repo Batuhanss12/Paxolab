@@ -10,7 +10,7 @@ import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
 import { darken, isDark, lighten, mix } from './color'
 import { categoryBesideProduct } from './copyBank'
-import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
+import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, fitsAtFloor, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
 import {
   clampStudioScale,
   type BenefitIcon,
@@ -180,9 +180,19 @@ export function stackedLockup(
       y += painted * 2 + size * 0.55
     }
   }
-  const baseline = y + size * 0.82
-  brandOut += textEl({ x: cx, y: baseline, text: brandUpper, size, face: faces.brand, fill: color, anchor: 'middle', tracking: size * tracking })
-  ledger.text('brand', cx, baseline, textWidth(brandUpper, size, faces.brand, size * tracking), size, 'middle')
+  // A long brand on a narrow face cannot be solved by shrinking: `fitSize` stops at the print
+  // floor, and below that the name is not legible on press anyway. Measured on a 38 mm label,
+  // "Verda Botanicals Apothecary" came back at the floor and ran off the panel. So it wraps, which
+  // is what a designer does with a three-word brand in a narrow column.
+  const brandLines = fitsAtFloor(brandUpper, maxW, faces.brand, tracking)
+    ? [brandUpper]
+    : wrapByWidth(brandUpper, maxW, size, faces.brand, 2, size * tracking)
+  let baseline = y + size * 0.82
+  for (const line of brandLines) {
+    brandOut += textEl({ x: cx, y: baseline, text: line, size, face: faces.brand, fill: color, anchor: 'middle', tracking: size * tracking })
+    ledger.text('brand', cx, baseline, textWidth(line, size, faces.brand, size * tracking), size, 'middle')
+    if (line !== brandLines[brandLines.length - 1]) baseline += size * 1.12
+  }
   y = baseline + size * 0.32
   let subOut = ''
   if (sub) {
@@ -402,6 +412,17 @@ export function claimBand(ledger: Ledger, d: DesignDirection, x: number, y: numb
 }
 
 /** "PROFESSIONAL · STEP 1" style chip: label on a pill, last token inverted. */
+/**
+ * How wide a chip will be, without drawing it or booking it.
+ *
+ * A caller that lays chips in a row has to know whether the next one fits *before* committing it:
+ * `chip` writes to the ledger as it draws, so a caller that drew first and measured afterwards left
+ * a booked element that was never painted, and preflight reported it out of bounds.
+ */
+export function chipWidth(text: string, size = 1.9): number {
+  return textWidth(text, size, 'sans-heavy', size * 0.14) + size * 0.9 * 2
+}
+
 export function chip(ledger: Ledger, d: DesignDirection, x: number, y: number, text: string, opts: { color?: string; fill?: string; size?: number; anchor?: 'start' | 'middle'; edit?: string } = {}): { markup: string; w: number; h: number } {
   const size = opts.size ?? 1.9
   const color = opts.color ?? d.palette.ink

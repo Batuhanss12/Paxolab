@@ -28,9 +28,9 @@ import {
 import { getActiveProjectId, loadProject, saveProject } from './storage'
 import { initDecisionLog, initDesignKnowledge, initDesignMemory, initLearning } from './engine/brain'
 import { applyVetoToHints, familyTalk, hintsFromFamily } from './engine/studio/family'
-import type { StudioFamily } from './engine/studio/types'
+import { temperamentTalk } from './engine/studio/temperament'
+import type { StudioFamily, Temperament } from './engine/studio/types'
 import { recommendBottleShape } from './engine/label/bottleShape'
-import { shotKeyOf } from './engine/shot'
 import { recomposeCopy, type CopyField } from './engine/studio/recomposeCopy'
 import type { Attachment, BottleShape, ChatMessage, DesignBrief, DesignSpec, DimensionsMm, StyleType, TabId } from './types'
 
@@ -108,8 +108,6 @@ export default function App() {
   } = state
 
   const briefRef = useRef(brief)
-  /** The shot the customer has already paid for: same key → same reservation → no new charge. */
-  const shotRef = useRef<{ key: string; id: string } | null>(null)
   const awaitingRef = useRef(awaiting)
   const designRef = useRef(design)
   const copyBaseRef = useRef<DesignSpec | null>(null)
@@ -275,12 +273,10 @@ export default function App() {
     },
   ) => {
     dispatch({ type: 'generation.start' })
-    // One credit buys one shot; stepping through that shot's variations reuses its reservation and
-    // costs nothing more. The id only changes when a priced part of the brief changes.
-    const shotKey = shotKeyOf(nextBrief)
-    if (shotRef.current?.key !== shotKey) shotRef.current = { key: shotKey, id: uid() }
-    const shotId = shotRef.current.id
-    const variationIndex = result?.overridePatch?.variationIndex ?? nextBrief.directionVariation ?? 0
+    const attemptId = uid()
+    // Every press that produces a design is its own charge: exploring is the product, and a control
+    // that costs nothing is a control the customer stops reading. The id is per *attempt*, not per
+    // click, so a network retry of the same attempt still cannot double-charge.
     const wantedKind = surfaceKind(nextBrief)
     const prev = prevForSurface(stateRef.current, wantedKind)
     const hasPrev = !!prev
@@ -303,8 +299,7 @@ export default function App() {
           try {
             const reserved = await reserveCredits({
               operation,
-              clientRequestId: shotId,
-              variationIndex,
+              clientRequestId: attemptId,
             })
             reservationId = reserved.reservationId
             setCreditsRefreshKey((k) => k + 1)
@@ -582,7 +577,15 @@ export default function App() {
   }, [])
 
   const onStyle = useCallback((style: StyleType) => {
-    const next = { ...briefRef.current, styleType: style }
+    // Release the family the engine stamped on the last result. It is a record of what was painted,
+    // not a choice — leaving it in place is what made the mood knob unable to move the composition
+    // after the first generation. A direction the customer picked themselves still holds.
+    const held = briefRef.current
+    const next = {
+      ...held,
+      styleType: style,
+      ...(held.studioFamilyLocked ? {} : { studioFamily: undefined }),
+    }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
     awaitingRef.current = awaitingRef.current === 'styleType' ? null : awaitingRef.current
@@ -596,6 +599,30 @@ export default function App() {
     runGenerate(next)
   }, [runGenerate])
 
+  /**
+   * Tone: the second colour dimension, on top of the mood.
+   *
+   * This knob was removed once, on the reasoning that the mood should own colour alone. That was
+   * wrong twice over — it cut the reachable palettes from thirty-six to six, and it removed a
+   * control the customer was using. Layer 2 owning colour does not mean layer 2 is one button.
+   */
+  const onTone = useCallback((temperament: Temperament) => {
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    const next = { ...briefRef.current, studioTemperament: temperament, directionVariation: 0 }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
+    dispatch({
+      type: 'messages.add',
+      messages: [{ id: uid(), role: 'assistant', content: `${temperamentTalk(temperament)} tona çekiyorum — aynı iskelet, yeni palet.` }],
+    })
+    const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
+    if (stay !== stateRef.current.tab) dispatch({ type: 'tab', tab: stay })
+    runGenerate(next, {
+      overridePatch: { variationIndex: 0, direction: { temperament, source: 'user' } },
+    })
+  }, [runGenerate])
+
   const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
@@ -604,6 +631,7 @@ export default function App() {
     const next = {
       ...briefRef.current,
       studioFamily: family,
+      studioFamilyLocked: true,
       studioTemperament: undefined,
       directionVariation: 0,
     }
@@ -743,6 +771,7 @@ export default function App() {
           onCopyChange={onCopyChange}
           onCopyCommit={onCopyCommit}
           onStyle={onStyle}
+          onTone={onTone}
           onDirectionPick={onDirectionPick}
           onVary={onVary}
           tab={tab}

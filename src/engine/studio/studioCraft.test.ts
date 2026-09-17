@@ -45,7 +45,9 @@ describe('studio craft — flap / top anatomy (STAGE D4)', () => {
     expect(lock).toContain('data-art="flap"')
     expect(lock).toMatch(/FERAH/)
     expect(lock).toMatch(/data-art="net-quantity"/)
-    expect(layer(spec, 'front')).toMatch(/data-bg="wave"/)
+    // The front's background is no longer fixed by the sector — the mood moves the composition —
+    // and this test is about what the flaps carry, not which face the front landed on.
+    expect(layer(spec, 'front')).toMatch(/data-bg="/)
   })
 
   it('reverse-tuck flaps paint brand + volume', () => {

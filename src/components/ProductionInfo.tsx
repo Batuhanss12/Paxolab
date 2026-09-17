@@ -1,8 +1,20 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { DesignSpec } from '../types'
 import { studioProcessSummary } from '../engine/studio/faceCaption'
 import { downloadZip } from '../engine/production/exportDoc'
+import { chargeDownload, fetchDownloadQuote, type DownloadQuote } from '../api/credits'
+import { loadAuth } from '../api/client'
 import { RatingBar } from './RatingBar'
+
+/**
+ * Which design this file is. Taking a *different* design away is a separate purchase, so the
+ * ledger records what was taken rather than only that something was.
+ */
+function designKeyOf(design: DesignSpec): string {
+  return [design.copy.brand, design.copy.product, design.kind, design.studio?.direction.archetype ?? '', design.designPlan?.variationIndex ?? 0]
+    .join('|')
+    .slice(0, 200)
+}
 
 type ProductionInfoProps = {
   design: DesignSpec
@@ -11,22 +23,51 @@ type ProductionInfoProps = {
 export function ProductionInfo({ design }: ProductionInfoProps) {
   const [exportNote, setExportNote] = useState('')
   const [zipping, setZipping] = useState(false)
+  const [quote, setQuote] = useState<DownloadQuote | null>(null)
+  const signedIn = Boolean(loadAuth()?.token)
+
+  // Quoted up front, never discovered afterwards: this charge is the size of the design itself,
+  // and a customer who only finds that out after clicking has been surprised by a large number.
+  const refreshQuote = useCallback(() => {
+    if (!signedIn) return
+    void fetchDownloadQuote().then(setQuote).catch(() => setQuote(null))
+  }, [signedIn])
+
+  useEffect(refreshQuote, [refreshQuote])
   const passed = design.preflight.items.filter((i) => i.status === 'pass').length
   const blocked = design.preflight.blocking
   const summary = studioProcessSummary(design)
 
   async function onZip() {
+    if (signedIn && quote && quote.cost > 0) {
+      const ok = window.confirm(
+        `Bu dosyayı indirmek ${quote.cost} kredi. Bakiyeniz ${quote.balance}.
+
+` +
+          'Bir tasarımın ücreti bir dosya indirme hakkı içerir; bu tasarımınkini kullandınız. İndirilsin mi?',
+      )
+      if (!ok) return
+    }
     setZipping(true)
     setExportNote('Yazılar vektöre çevriliyor…')
     try {
+      // Charged before the file is built: a wallet that cannot cover it must stop here, not after
+      // the customer has already been handed the artwork.
+      if (signedIn) {
+        const charged = await chargeDownload(designKeyOf(design))
+        refreshQuote()
+        if (charged.charged > 0) setExportNote(`${charged.charged} kredi düşüldü — dosya hazırlanıyor…`)
+      }
       const ok = await downloadZip(design)
       setExportNote(ok ? 'Teslim ZIP indirildi — yazılar outline.' : 'ZIP yok — kapı kırmızı.')
-    } catch {
-      setExportNote('ZIP üretilemedi.')
+    } catch (err) {
+      setExportNote(err instanceof Error && /kredi/i.test(err.message) ? 'Krediniz yetersiz — indirme yapılmadı.' : 'ZIP üretilemedi.')
     } finally {
       setZipping(false)
     }
   }
+
+  const priceLabel = !signedIn || !quote ? '' : quote.cost > 0 ? ` · ${quote.cost} kredi` : ' · dahil'
 
   return (
     <div className="prod">
@@ -73,7 +114,7 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
           onClick={() => void onZip()}
           disabled={zipping || !design.preflight.exportOk}
         >
-          {zipping ? 'Hazırlanıyor…' : 'Teslim ZIP'}
+          {zipping ? 'Hazırlanıyor…' : `Teslim ZIP${priceLabel}`}
         </button>
         {exportNote && <span className="prod__export-note">{exportNote}</span>}
       </div>

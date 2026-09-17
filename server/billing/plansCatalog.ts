@@ -4,6 +4,15 @@ export const INITIAL_DESIGN_COST = 117
 export const REVISION_COST = 3
 export const EXPORT_COST = 1
 
+/**
+ * Taking a file away costs what the design cost.
+ *
+ * The small charges buy exploration — seeing what is possible. This one buys ownership of a
+ * specific artwork, so it is priced like the design itself. A design purchase includes one
+ * entitlement, so the first download of what you just paid for is already covered.
+ */
+export const DOWNLOAD_COST = INITIAL_DESIGN_COST
+
 /** Signup grant: one first design + one revision. */
 export const STARTING_CREDIT_GRANT = INITIAL_DESIGN_COST + REVISION_COST
 

@@ -2,25 +2,36 @@ import { useMemo } from 'react'
 import type { DesignBrief, DesignSpec, DimensionsMm, StyleType } from '../types'
 import { studioFaceLabel } from '../engine/studio/faceCaption'
 import { STYLE_OPTIONS } from '../engine/styles'
-import { moodPreview } from '../engine/studio/direction'
+import { TEMPERAMENT_OPTIONS } from '../engine/studio/temperament'
+import { moodPreview, tonePreview } from '../engine/studio/direction'
+import type { Temperament } from '../engine/studio/types'
 
 type StyleBarProps = {
   brief: DesignBrief
   design: DesignSpec | null
   onStyle: (style: StyleType) => void
+  onTone?: (temperament: Temperament) => void
   onDims: (dims: DimensionsMm) => void
   onVary?: () => void
   className?: string
   variant?: 'rail'
 }
 
-export function StyleBar({ brief, design, onStyle, onDims, onVary, className, variant }: StyleBarProps) {
+export function StyleBar({ brief, design, onStyle, onTone, onDims, onVary, className, variant }: StyleBarProps) {
+  const studio = Boolean(design?.studio)
   const activeStyle = brief.styleType || design?.brief.styleType || 'luxury'
+  const activeTone = brief.studioTemperament || design?.studio?.direction.temperament || 'dark-luxe'
   // Swatches come from the customer's *own* brief, not from a fixed sample, so the row shows where
   // each mood actually goes before a credit is spent on finding out.
   const swatches = useMemo(
     () => new Map(STYLE_OPTIONS.map((opt) => [opt.id, moodPreview(brief, opt.id)])),
     [brief],
+  )
+  // Tone is the second dimension: six moods alone give six palettes, six tones against them give
+  // thirty-six. Its swatches are previewed the same way, against the customer's own colours.
+  const toneSwatches = useMemo(
+    () => new Map(TEMPERAMENT_OPTIONS.map((opt) => [opt.id, tonePreview(brief, activeStyle, opt.id)])),
+    [brief, activeStyle],
   )
   const dims =
     brief.dimensionsMm.L || brief.dimensionsMm.H
@@ -61,6 +72,30 @@ export function StyleBar({ brief, design, onStyle, onDims, onVary, className, va
           </button>
         ))}
       </div>
+      {studio && onTone ? (
+        <>
+          <p className="style-bar__kicker">Ton</p>
+          <div className="style-chips" role="listbox" aria-label="Ton">
+            {TEMPERAMENT_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="option"
+                aria-selected={activeTone === opt.id}
+                title={opt.hint}
+                className={`style-chip ${activeTone === opt.id ? 'is-active' : ''}`}
+                onClick={() => onTone(opt.id)}
+              >
+                <span className="style-chip__pair" aria-hidden="true">
+                  <span className="style-chip__swatch" style={{ background: toneSwatches.get(opt.id)?.ground ?? opt.swatch }} />
+                  <span className="style-chip__swatch style-chip__swatch--accent" style={{ background: toneSwatches.get(opt.id)?.accent ?? opt.swatch }} />
+                </span>
+                <span className="style-chip__name">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
       {showDims && (
         <div className="style-bar__dims">
           <span className="style-bar__dims-label">Ölçü</span>

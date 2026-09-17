@@ -154,6 +154,24 @@ export function typeSize(mm: number): number {
 }
 
 /** Largest size in [min, max] whose measured width fits `maxWidth`. */
+/**
+ * Whether `text` can sit inside `maxWidth` without dropping below the print floor.
+ *
+ * `fitSize` never returns a size under `STUDIO_TYPE_FLOOR_MM`, because type below that does not
+ * survive print. That is the right call and it must not change — but it means a `maxWidth` narrower
+ * than the text's own floor width simply cannot be honoured, and `fitSize` returns the floor and
+ * overflows silently. Measured 2026-09-17: "SEÇİLMİŞ ÇEKİRDEK" asked to fit 20 mm comes back
+ * 23.8 mm wide, and the ledger reports it as a collision with whatever was sitting beside it.
+ *
+ * A layout with a real alternative — one line instead of two, a stack instead of a row — asks this
+ * first and picks the composition that fits, which is what a designer does when copy will not sit
+ * in a column at a legible size. Shrinking past legibility is never the answer.
+ */
+export function fitsAtFloor(text: string, maxWidth: number, face: Face = 'sans', trackingEm = 0): boolean {
+  if (!text) return true
+  return textWidth(text, STUDIO_TYPE_FLOOR_MM, face, STUDIO_TYPE_FLOOR_MM * trackingEm) <= maxWidth
+}
+
 export function fitSize(text: string, maxWidth: number, max: number, min: number, face: Face, trackingEm = 0): number {
   const floor = typeSize(min)
   if (!text) return Math.max(max, floor)

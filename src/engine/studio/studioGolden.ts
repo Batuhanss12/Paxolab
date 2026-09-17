@@ -48,27 +48,41 @@ export type StudioFaceFreeze = {
  * mean the mood had started deciding composition as well, and the layering would be back where it
  * started. The 29 kit fingerprints are untouched — the kit path still paints from `paletteFor`.
  *
+ * L2-H is the largest move so far and the only one where the **DNA** was meant to shift: 13 of 18
+ * archetypes changed, deliberately. The owner reported that clicking through the moods barely
+ * changed anything, and measurement agreed — on 3 of 4 briefs all six moods returned the same
+ * skeleton, the same background and the same layout. Two things were holding it: `hintPin` was
+ * worth +2 against a scoring range of about 1, so a sector guess could not be outvoted; and the
+ * engine stamps `studioFamily` onto every brief it returns, which pinned the composition for the
+ * rest of the session after the first generation.
+ *
+ * The owner chose maximum range, so a sector guess is now a strong preference rather than a lock
+ * and the mood walks the ranked archetypes. The cost is visible in this table: honey moved to
+ * marble, electronics to dark-landscape, baby care to marble. Those are defensible but they are no
+ * longer the reference face the sector implies. If that trades away too much, the knob is the
+ * `MOOD_WALK_OFFSET` table in `direction.ts` — all-zero restores the old behaviour exactly.
+ *
  * Update via `npx vite-node scripts/dump-studio-golden.ts`.
  */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
   '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: 'a3b6fa920bb512c7' },
   '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: 'b69b47c732c2ab2b' },
-  '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: '0d7ef418e4cc2cf9' },
-  '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: '85dbc11d834185bb' },
-  '03-serum-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'a551338af36eb372' },
-  '03-serum-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'c8465fb935b5a0f0' },
-  '04-gida-bal-kutu': { archetype: 'landscape-window', background: 'landscape-meadow', family: 'landscape', hash: 'c7b5acec64883268' },
-  '04-gida-bal-etiket': { archetype: 'landscape-badge', background: 'landscape-meadow', family: 'landscape', hash: '1859d69ac6bde662' },
+  '02-krem-kutu': { archetype: 'ink-wash', background: 'ink-wash', family: 'ink', hash: 'ec675e536b647884' },
+  '02-krem-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: '3c1d571a6f0a1cd2' },
+  '03-serum-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '95bff77845c10c6c' },
+  '03-serum-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: 'ec10e03236ab8fbc' },
+  '04-gida-bal-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '46c77adab12faf8f' },
+  '04-gida-bal-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'c2e6b4e889891537' },
   '05-kahve-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '9e9ea449036aec01' },
   '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '5d272b1ba329a782' },
-  '06-elektronik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: 'f30e79fb2fa06c2f' },
-  '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '4ee48a6738adf632' },
-  '07-bebek-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '05a33d48326f47f6' },
+  '06-elektronik-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: '4f4e7c281868293a' },
+  '06-elektronik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'a80aa3bd736b77ce' },
+  '07-bebek-kutu': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: 'c612ab1e134979c1' },
   '07-bebek-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: 'e2f44a393b04cff8' },
-  '08-saglik-kutu': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '82c02d17ca9bc048' },
-  '08-saglik-etiket': { archetype: 'line-scene', background: 'line-scene', family: 'line-scene', hash: '0c2a65daef36ab39' },
-  '09-temizlik-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '4a0c1638045045b8' },
-  '09-temizlik-etiket': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '13563fa041b5d5bd' },
+  '08-saglik-kutu': { archetype: 'ink-wash', background: 'ink-wash', family: 'ink', hash: 'd180551e0767d17e' },
+  '08-saglik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: 'ed75129fece1219c' },
+  '09-temizlik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: 'ac9332c9fd6dbab1' },
+  '09-temizlik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: 'a9a310029e2756eb' },
 }
 
 export function hashStudioFace(markup: string): string {

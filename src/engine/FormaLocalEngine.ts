@@ -165,7 +165,7 @@ export class FormaLocalEngine implements EnginePort {
 
     const hero = findHeroPanel(dieline.panels)
     const studioKnowledge = studioOn ? studioHintsFromKnowledge(brief) : null
-    const paint = (plan: typeof designPlan, identityDelta?: StudioRepairDelta) => {
+    const paint = (plan: typeof designPlan, identityDelta?: StudioRepairDelta, archetypeStep = 0) => {
       const system = applyPlanToSystem(
         resolveDesignSystem(brief, template.structureId, { blankCanvas }),
         plan,
@@ -195,6 +195,7 @@ export class FormaLocalEngine implements EnginePort {
           palette: studioBase,
           locale: brief.copyLocale ?? 'tr',
           variationIndex,
+          archetypeStep,
           copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },
           hints: assembleStudioHints(planBrief, surface, [
             ...(studioKnowledge?.hints ?? []),
@@ -252,6 +253,24 @@ export class FormaLocalEngine implements EnginePort {
         const retry = paint(designPlan, delta)
         if (retry.studio && ledgerHits(retry.studio) < ledgerHits(pack.studio)) {
           pack = { ...retry, studio: { ...retry.studio, repaired: delta.reason } }
+        }
+      }
+      /*
+       * If the face still will not sit, take the next archetype instead of shipping it.
+       *
+       * The mood is now allowed to move the composition, which is what gives each press a visibly
+       * different design — but it also sends archetypes onto panels they were never exercised
+       * against. Measured: an `eco` tiny label landed on `line-scene`, which cannot hold a 38×44 mm
+       * face, and the brand ran off the panel. Variety is worth a great deal and never worth a
+       * broken face, so the engine paints, reads its own ledger, and steps on if it is dirty.
+       *
+       * Bounded and monotonic: at most three alternatives, each kept only if it is strictly
+       * cleaner, so this can add work but can never make the result worse.
+       */
+      for (let step = 1; step <= 3 && ledgerHits(pack.studio) > 0; step++) {
+        const alt = paint(designPlan, undefined, step)
+        if (alt.studio && ledgerHits(alt.studio) < ledgerHits(pack.studio)) {
+          pack = { ...alt, studio: { ...alt.studio, repaired: `arketip ${step} adım kaydırıldı — yüz sığmadı` } }
         }
       }
     }

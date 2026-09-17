@@ -7,7 +7,7 @@ import type { SurfaceView } from '../appState'
 import { learnedPreferenceLine } from '../engine/brain'
 import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
 import { familyOf, familyTalk } from '../engine/studio/family'
-import type { StudioFamily } from '../engine/studio/types'
+import type { StudioFamily, Temperament } from '../engine/studio/types'
 import { DirectionOfferStrip } from './DirectionOfferStrip'
 import { Chat } from './Chat'
 import { LearningPanel } from './LearningPanel'
@@ -58,6 +58,7 @@ type WorkspaceProps = {
   onCopyChange?: (field: CopyField, value: string) => void
   onCopyCommit?: () => void
   onStyle: (style: StyleType) => void
+  onTone?: (temperament: Temperament) => void
   onDirectionPick?: (family: StudioFamily, index: number) => void
   onVary?: () => void
   tab: TabId
@@ -146,6 +147,7 @@ export function Workspace({
   onCopyChange,
   onCopyCommit,
   onStyle,
+  onTone,
   onDirectionPick,
   onVary,
   tab,
@@ -288,6 +290,7 @@ export function Workspace({
                   brief={brief}
                   design={design}
                   onStyle={onStyle}
+                  onTone={onTone}
                   onDims={onDims}
                   onVary={onVary}
                   variant="rail"

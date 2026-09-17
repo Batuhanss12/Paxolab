@@ -113,6 +113,15 @@ export type DesignBrief = {
    */
   studioFamily?: import('./engine/studio/types').StudioFamily
   /**
+   * True only when the customer picked the direction themselves.
+   *
+   * The engine stamps `studioFamily` onto every brief it returns, and that stamp is a hard pin. So
+   * without this flag the first generation silently locked the composition for the rest of the
+   * session: changing the mood repainted the colours and could never move the skeleton again.
+   * A stamp is a record of what happened; a lock is a decision, and only the customer makes one.
+   */
+  studioFamilyLocked?: boolean
+  /**
    * Families the user vetoed this conversation. Catalog omits.
    * Scoring excludes their archetypes; generate must not re-pin them.
    */

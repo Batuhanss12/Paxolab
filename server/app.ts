@@ -31,6 +31,8 @@ import {
   costForCatalog,
   sweepStaleReservations,
   type MeteredOperation,
+  quoteDownload,
+  chargeDownload,
 } from './credits.ts'
 import { CREDIT_PACKS } from './billing/catalog.ts'
 import { SUBSCRIPTION_PLANS } from './billing/plansCatalog.ts'
@@ -435,7 +437,7 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
 
   credits.post('/reserve', async (c) => {
     const user = c.get('user') as PublicUser
-    let body: { operation?: string; clientRequestId?: string; variationIndex?: number }
+    let body: { operation?: string; clientRequestId?: string }
     try {
       body = await c.req.json()
     } catch {
@@ -451,7 +453,6 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         user.id,
         operation as MeteredOperation,
         body.clientRequestId ?? null,
-        typeof body.variationIndex === 'number' ? body.variationIndex : 0,
       )
       return c.json({
         reservationId: result.reservationId,
@@ -459,8 +460,30 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
         balance: result.balance,
         operation: result.operation,
         idempotent: result.idempotent,
-        usesLeft: result.usesLeft ?? null,
       })
+    } catch (err) {
+      const mapped = asCreditsHttp(err)
+      if (mapped) return c.json({ error: mapped.error }, mapped.status)
+      throw err
+    }
+  })
+
+  credits.get('/download/quote', (c) => {
+    const user = c.get('user') as PublicUser
+    return c.json(quoteDownload(db, user.id))
+  })
+
+  credits.post('/download', async (c) => {
+    const user = c.get('user') as PublicUser
+    let body: { designKey?: string } = {}
+    try {
+      body = await c.req.json()
+    } catch {
+      /* designKey is optional; an empty body just means "no key recorded" */
+    }
+    try {
+      const key = typeof body.designKey === 'string' ? body.designKey.slice(0, 200) : null
+      return c.json(chargeDownload(db, user.id, key))
     } catch (err) {
       const mapped = asCreditsHttp(err)
       if (mapped) return c.json({ error: mapped.error }, mapped.status)

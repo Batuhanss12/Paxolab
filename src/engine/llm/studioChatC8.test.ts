@@ -124,8 +124,9 @@ describe('C8 LLM brief + direction', () => {
       colors: 'beyaz klinik',
       provenance: { colors: { source: 'LLM_INFERRED', confidence: 0.75 } },
     })
-    expect(inspectStudioDirection(dark).winnerId).toBe('marble-frame')
-    expect(inspectStudioDirection(light).winnerId).toBe('line-scene')
+    // Authority means the field changes the outcome. It used to be asserted as a specific winner,
+    // which was really asserting that a brief word locked the archetype; the mood can move that now.
+    expect(inspectStudioDirection(dark).winnerId).not.toBe(inspectStudioDirection(light).winnerId)
     expect(faceHash(generate(dark))).not.toBe(faceHash(generate(light)))
   })
 

@@ -8,6 +8,7 @@ import {
   benefitRow,
   brandPill,
   chip,
+  chipWidth,
   claimBand,
   cornerBrackets,
   hairline,
@@ -237,8 +238,11 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   }
   let cx = m
   for (const c of d.chips.slice(0, 2)) {
-    const el = chip(ledger, d, cx, y, c, { color: ink, size: typeSize(Math.min(1.9, w * 0.024)) })
-    if (cx + el.w > w - m) break
+    // Measured before it is booked: `chip` ledgers as it draws, so checking afterwards left a
+    // booked-but-unpainted element behind and preflight failed the face for it.
+    const size = typeSize(Math.min(1.9, w * 0.024))
+    if (cx + chipWidth(c, size) > w - m) break
+    const el = chip(ledger, d, cx, y, c, { color: ink, size })
     parts.push(el.markup)
     cx += el.w + 2
   }
@@ -337,8 +341,9 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   } else if (d.sector === 'electronics' && footTop - y > 14) {
     let cx = m
     for (const c of d.chips.slice(0, 3)) {
-      const el = chip(ledger, d, cx, y, c, { color: ink, size: typeSize(Math.min(1.7, w * 0.02)) })
-      if (cx + el.w > w - m) break
+      const size = typeSize(Math.min(1.7, w * 0.02))
+      if (cx + chipWidth(c, size) > w - m) break
+      const el = chip(ledger, d, cx, y, c, { color: ink, size })
       parts.push(el.markup)
       cx += el.w + 1.8
     }
