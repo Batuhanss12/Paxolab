@@ -45,6 +45,9 @@ export type DirectionInput = {
   hints?: DirectionHints[]
 }
 
+/** Arrangements available inside one archetype. Keep in sync with the layout `switch`es. */
+export const LAYOUT_VARIANTS = 3
+
 export function hashSeed(text: string): number {
   let h = 2166136261
   for (let i = 0; i < text.length; i++) {
@@ -664,6 +667,8 @@ function materializeDirection(
   return {
     surface,
     archetype: dna.id as StudioArchetype,
+    // Shifted off the texture rng so the arrangement and the background grain do not move together.
+    variant: (seed >>> 5) % LAYOUT_VARIANTS,
     background,
     typePairing: hints.typePairing ?? dna.typePairing,
     temperament,

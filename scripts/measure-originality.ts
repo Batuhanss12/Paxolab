@@ -80,7 +80,7 @@ function briefOf(job: Job): DesignBrief {
   }
 }
 
-type Row = { job: Job; archetype: string; background: string; temperament: string; hash: string }
+type Row = { job: Job; archetype: string; background: string; temperament: string; variant: number; hash: string }
 
 function run(job: Job): Row {
   resetArtMemory()
@@ -94,6 +94,7 @@ function run(job: Job): Row {
     archetype: spec.studio?.direction.archetype ?? '?',
     background: spec.studio?.direction.background ?? '?',
     temperament: spec.studio?.direction.temperament ?? '?',
+    variant: spec.studio?.direction.variant ?? 0,
     hash: createHash('sha256').update(face).digest('hex').slice(0, 10),
   }
 }
@@ -127,6 +128,7 @@ console.log('benzersiz temperament  :', new Set(rows.map((r) => r.temperament)).
 
 // Pairs are adjacent: each sector contributes two deliberately contrasting briefs.
 let sameArch = 0
+let sameArchSameVariant = 0
 const pairs: string[] = []
 for (let i = 0; i < rows.length; i += 2) {
   const a = rows[i]
@@ -134,10 +136,17 @@ for (let i = 0; i < rows.length; i += 2) {
   if (!b) break
   if (a.archetype === b.archetype) {
     sameArch += 1
-    pairs.push(`${a.job.label} ↔ ${b.job.label} → ${a.archetype}`)
+    const split = a.variant !== b.variant
+    if (!split) sameArchSameVariant += 1
+    pairs.push(`${a.job.label} ↔ ${b.job.label} → ${a.archetype} (yerleşim ${a.variant}/${b.variant}${split ? ' — ayrıştı' : ' — aynı'})`)
   }
 }
 const pairCount = Math.floor(rows.length / 2)
 console.log('\n--- aynı kategori, zıt brief ---')
-console.log('aynı arketipe düşen çift:', sameArch, '/', pairCount, `(${pct(sameArch, pairCount)})`)
+console.log('aynı arketipe düşen çift   :', sameArch, '/', pairCount, `(${pct(sameArch, pairCount)})`)
+console.log('aynı arketip VE aynı yerleşim:', sameArchSameVariant, '/', pairCount, `(${pct(sameArchSameVariant, pairCount)})`)
 for (const p of pairs) console.log('  ', p)
+
+const variants = new Map<number, number>()
+for (const r of rows) variants.set(r.variant, (variants.get(r.variant) ?? 0) + 1)
+console.log('\nyerleşim dağılımı:', [...variants.entries()].sort().map(([v, n]) => `v${v}:${n}`).join('  '))

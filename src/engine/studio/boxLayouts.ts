@@ -127,14 +127,16 @@ function marbleFront(ctx: LayoutCtx): string {
   const accent = d.palette.accent
   const bx = m * 1.6
   const bw = w - bx * 2
-  const by = h * 0.09
+  // Same bracket-and-stack skeleton, three rhythms: tight/high, standard, airy/low.
+  const by = h * (d.variant === 1 ? 0.06 : d.variant === 2 ? 0.16 : 0.09)
+  const stackY = h * (d.variant === 1 ? 0.58 : d.variant === 2 ? 0.76 : 0.7)
   const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax: Math.min(bw * 0.15, 11) }))
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
   const cat = categoryCaption(ctx)
   if (cat) parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, cat, 1.5, ink, bw))
-  const stack = productStack(ledger, d, w / 2, h * 0.7, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
+  const stack = productStack(ledger, d, w / 2, Math.max(stackY, by + bh + 8), w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(8.5, w * 0.11) }))
   parts.push(stack.markup)
   if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
   return parts.join('')
@@ -148,7 +150,16 @@ function botanicalCardFront(ctx: LayoutCtx): string {
   const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6, identOf(ctx))
   parts.push(pill.markup)
   const cardW = w - m * 2
-  const cardY = Math.max(pill.box.y + pill.box.h + h * 0.14, h * 0.4)
+  const footY = h - m * 0.9
+  // Same skeleton, three weights: block near the pill, block mid-face, block at the foot.
+  // Clamped so the band + sentence + net quantity always keep their room above the foot.
+  const wanted =
+    d.variant === 1
+      ? Math.max(pill.box.y + pill.box.h + h * 0.05, h * 0.26)
+      : d.variant === 2
+        ? Math.max(pill.box.y + pill.box.h + h * 0.2, h * 0.56)
+        : Math.max(pill.box.y + pill.box.h + h * 0.14, h * 0.4)
+  const cardY = Math.min(wanted, footY - h * 0.3)
   const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
   parts.push(card.markup)
   const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
@@ -156,7 +167,6 @@ function botanicalCardFront(ctx: LayoutCtx): string {
   // Net quantity is pinned to the foot, so the sentence above it must give way, not overprint.
   const sentenceSize = Math.max(1.6, Math.min(2.3, cardW * 0.045))
   const volSize = Math.max(1.9, Math.min(2.6, w * 0.032))
-  const footY = h - m * 0.9
   const sentenceLines = linesThatFit(band.bottom + 2.2, footY - volSize * 1.3, sentenceSize, 2)
   if (sentenceLines > 0) {
     const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, sentenceSize, 'sans', ink, sentenceLines, 'middle', false, 'tagline')

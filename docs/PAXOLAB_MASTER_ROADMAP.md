@@ -397,7 +397,26 @@ Yapılanlar: stüdyo yolu artık `paletteFromBrief` kullanıyor (**kit yolu `pal
 
 **Aynı kategori + zıt brief → aynı arketip: %36 → %29.** Şampuan çifti ayrıştı. **+9 test.** Golden: 17 yüz güncellendi, **DNA 18'inde de sabit**.
 
-**Kalan (B seçeneği):** 4/14 çift hâlâ aynı arketipte — ikisi de renkli ve kategoriyle tutarlı olan brief'ler. Bu, 8 arketiplik tavanın kendisi; çözümü arketip *içinde* parametrik varyasyon. Ayrıca kör kalite değerlendirmesi yapılmadı.
+**L2-3 uygulandı — arketip içi yerleşim (B seçeneği: "tavanı kaldır"):**
+
+Arketip iskeleti belirler; **yerleşim varyantı ağırlığın nereye oturduğunu** belirler. `DesignDirection.variant` (0–2) brief'in kendi seed'inden türüyor — ek kullanıcı girdisi gerekmiyor, `variationIndex` de seed'in parçası olduğu için "yeni tasarım" varyantları da dolaşıyor.
+
+Uygulandığı 5 yüz (8 kutu arketipinin 5'i): `botanical-card`, `marble-frame`, `landscape-window`, `line-scene`, `wave-panel`. Her birinde üç gerçek ritim — blok üstte/ortada/ayakta, pencere-rozet örtüşmesi, lockup yüksekliği.
+
+**Ölçülen sonuç:**
+
+| Ölçüt | L2 öncesi | L2 sonrası |
+|---|---|---|
+| Aynı kategori + zıt brief → aynı arketip | %36 | %29 |
+| **Aynı arketip VE aynı yerleşim** | **%29** | **%0 (0/14)** |
+| Benzersiz yüz hash | 28/28 | 28/28 |
+| Yerleşim dağılımı (28 brief) | — | v0:11 · v1:12 · v2:5 |
+
+Kalan dört aynı-arketip çiftinin **dördü de** farklı yerleşim alıyor (serum 1/2, bal 1/2, temizlik 0/1, çay 0/1). Etkin kompozisyon sayısı 8 → **~24**.
+
+**+6 test.** Golden'da 6 yüz güncellendi, DNA sabit; 18 galeri yüzünde ledger bulgusu **1** (değişmedi), en küçük punto 1.50 mm.
+
+**Kalan:** `dark-landscape`, `ink-wash`, `diagonal-tech` henüz tek yerleşimli (o arketiplere düşen iki brief hâlâ aynı düzeni alır). Kör kalite değerlendirmesi (FAILURE_CATALOG referans-bar yöntemi) hâlâ yapılmadı.
 1. **Sektör-motif sadakati** — zeytinyağına çam çizilmemeli. Arketip↔sektör uyumu için motif katmanı (zeytin dalı, bahçe, damla) veya arketip seçiminde sert sektör vetosu.
 2. **Palet sadakati** — brief'teki renk, boyanan yüzde ölçülebilir şekilde baskın olsun (ölçüt: üretilen SVG'deki renk dağılımı brief paletine yakınsıyor mu).
 3. **Özgünlük ölçümü** — 25–30 sentetik brief → arketip dağılımı + yüz hash çeşitliliği. **Tavanın nerede olduğunu bilmiyoruz.** Sonuç, arketip havuzunu mu büyütmek yoksa arketip *içinde* parametrik kompozisyona mı geçmek gerektiğini söyleyecek.
@@ -441,3 +460,4 @@ Yalnızca doğrulaması çalıştırılmış işler buraya yazılır.
 | 2026-09-17 | L2-ölçüm | 28 brief ile özgünlük ölçüldü: 28/28 benzersiz yüz ama **%36 çift aynı arketipe** düşüyor; tavan 8 kutu arketipi | `scripts/measure-originality.ts` |
 | 2026-09-17 | L2-1 | `species.ts`: kompozisyon arketipte, **ne çizildiği üründen**. Zeytinyağı artık zeytinlik, bal buğday çiziyor (ikisi de çamdı) | **569/569 SPA** · 0 lint hatası · 2 golden bilinçli güncel · tarayıcıda doğrulandı |
 | 2026-09-17 | L2-2 | Palet sadakati: brief renkleri stüdyoya hiç ulaşmıyormuş. 3 katmanlı kök sebep kazıldı; "siyah·beyaz" turkuaz yerine siyah, "pembe·mor" turuncu yerine pembe. Çökme %36→%29 | **578/578 SPA · 71/71 server** · 0 lint hatası · 17 golden bilinçli güncel (DNA sabit) · 29 kit hash'i sağlam |
+| 2026-09-17 | L2-3 | Arketip içi yerleşim varyantı (5 yüzde 3 ritim), brief seed'inden. Aynı arketip + aynı yerleşim oranı %29 → **%0** | **584/584 SPA · 71/71 server** · 0 lint hatası · 6 golden bilinçli güncel (DNA sabit) · ledger bulgusu değişmedi |

@@ -95,6 +95,13 @@ export type CopySource = 'user' | 'brief' | 'bank'
 export type DesignDirection = {
   surface: StudioSurface
   archetype: StudioArchetype
+  /**
+   * Arrangement inside the archetype (0–2). The archetype fixes the skeleton; this decides where
+   * the weight sits — top, middle or foot. Derived from the brief's own seed, so two brands that
+   * land on the same archetype do not get the same face. `variationIndex` is part of that seed,
+   * so "yeni tasarım" also walks the arrangements.
+   */
+  variant: number
   background: BackgroundFamily
   typePairing: TypePairing
   temperament: Temperament

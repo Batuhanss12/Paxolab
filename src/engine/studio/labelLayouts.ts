@@ -245,7 +245,11 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const wa = textWidth(a, size, 'sans-light', track)
   const wb = b ? textWidth(` ${b}`, size, 'sans-heavy', track) : 0
   const startX = w / 2 - (wa + wb) / 2
-  const titleY = brandY + size * 2.6
+  // Same stack-over-scene skeleton, three rhythms: tight title with a taller scene, standard,
+  // airy title with a shallower scene.
+  const titleGap = d.variant === 1 ? 1.9 : d.variant === 2 ? 3.4 : 2.6
+  const sceneSpan = d.variant === 1 ? 0.52 : d.variant === 2 ? 0.4 : 0.46
+  const titleY = brandY + size * titleGap
   let productBlock = textEl({ x: startX, y: titleY, text: a, size, face: 'sans-light', fill: d.palette.accent2, tracking: track, weight: 400 })
   if (b) productBlock += textEl({ x: startX + wa, y: titleY, text: ` ${b}`, size, face: 'sans-heavy', fill: ink, tracking: track })
   parts.push(`<g data-edit="product">${productBlock}</g>`)
@@ -254,7 +258,7 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const sceneCat = categoryCaption(ctx)
   if (sceneCat) parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, sceneCat, subSize, ink, w - m * 2))
   // scene
-  parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: 0.46 }))
+  parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: sceneSpan }))
   // volume
   if (d.volumeLine) {
     const vs = Math.max(2, Math.min(2.8, w * 0.034))
@@ -278,7 +282,10 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
   const parts: string[] = [paintBackground('wave', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid })]
   const ink = d.palette.ink
   const accent = d.palette.accent
-  const lock = stackedLockup(ledger, d, w / 2, m * 1.5, w - m * 2, copy.brand, '', withIdent(ctx, {
+  // Same lockup-over-stack skeleton, three rhythms: high and tight, standard, low and open.
+  const lockTop = m * (d.variant === 1 ? 1.1 : d.variant === 2 ? 2.3 : 1.5)
+  const stackGap = h * (d.variant === 1 ? 0.05 : d.variant === 2 ? 0.12 : 0.08)
+  const lock = stackedLockup(ledger, d, w / 2, lockTop, w - m * 2, copy.brand, '', withIdent(ctx, {
     color: ink,
     mark: true,
     markColor: accent,
@@ -287,7 +294,7 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
   parts.push(lock.markup)
   const waveCat = categoryCaption(ctx)
   if (waveCat) parts.push(spacedLine(ledger, w / 2, lock.bottom + 2.6, waveCat, Math.max(1.5, Math.min(2.2, w * 0.03)), ink, w - m * 2))
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.08, w - m * 2, copy.product, withIdent(ctx, {
+  const stack = productStack(ledger, d, w / 2, lock.bottom + stackGap, w - m * 2, copy.product, withIdent(ctx, {
     color: ink,
     accent,
     max: Math.min(8, w * 0.11),
@@ -379,11 +386,15 @@ export function paintLandscapeWindowFace(ctx: LayoutCtx, opts: { frameInset?: nu
     // reserve the foot: badge overhang + chips + tagline, then let the window fill the rest
     const winX = m * 1.6
     const winW = w - winX * 2
-    const winY = lock.bottom + preSize * 2
+    // Same window-and-badge skeleton, three proportions: tight with a deep badge, standard,
+    // airy with the badge sitting mostly below the window.
+    const gap = d.variant === 1 ? 1.2 : d.variant === 2 ? 3 : 2
+    const overlap = d.variant === 1 ? 0.72 : d.variant === 2 ? 0.38 : 0.55
+    const winY = lock.bottom + preSize * gap
     const badgeH = productBadgeHeight(d, winW * 0.78, copy.product, d.categoryLine, d.volumeLine, ctx.titleScale)
     const footNeed = badgeH * 0.45 + 3.4 + chipSize * 1.2 + 4.2
     const winH = Math.max(winW * 0.55, h - m * 1.1 - footNeed - winY)
-    const badge = window(winX, winY, winW, winH, 0.55)
+    const badge = window(winX, winY, winW, winH, overlap)
     const chipY = Math.min(h - m * 1.6, badge.bottom + 3.4)
     chipBlock(w / 2, chipY, winW)
     const foot = h - m * 0.75
