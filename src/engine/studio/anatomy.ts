@@ -78,6 +78,26 @@ export function brandMark(kind: MarkKind, cx: number, cy: number, r: number, col
   }
 }
 
+/**
+ * How far below the lead line the second one sits.
+ *
+ * Measured 2026-09-17 across ten briefs: in eight of them the brand and the product name came back
+ * within 1.4× of each other, and five shared the *identical* pair 8.3 mm / 7.7 mm. That was not
+ * content — each was clamped by its own hand-tuned ceiling, and the ceilings happened to land near
+ * each other. Nothing in the layout had decided which element leads, so nothing led, and the face
+ * read flat however well it was composed.
+ *
+ * The two faces that did read well, `dark-landscape` (12 / 6.5) and `botanical-card`, were only
+ * accidentally right — their two numbers happened to be far apart.
+ *
+ * So the subordinate ceiling is derived from the lead's instead of being tuned beside it. 0.55
+ * gives roughly the 1.8× a packaging front wants: enough that the eye knows where to start,
+ * not so much that the second line stops being readable.
+ */
+export function secondaryMax(leadMax: number): number {
+  return leadMax * 0.55
+}
+
 /** Below this radius the slot stays a vector mark even when a user logo is present. */
 export const STUDIO_MIN_LOGO_R = 2.5
 
@@ -136,7 +156,20 @@ export function hairline(x1: number, y: number, x2: number, color: string, opaci
 
 /* ------------------------------------------------------------------ lockups */
 
-export type LockupResult = { markup: string; bottom: number; top: number }
+export type LockupResult = {
+  markup: string
+  bottom: number
+  top: number
+  /**
+   * The size the brand was actually drawn at.
+   *
+   * Relating the second line to the brand's *ceiling* is not enough: on the column variant of
+   * `line-scene` the brand is boxed into a narrow column and came out at 4.4 mm while the product,
+   * which has the full width, reached 6.0 mm on two lines — the brand smaller than the product it
+   * belongs to. Only the achieved size can keep the relationship true in every layout.
+   */
+  brandSize: number
+}
 
 /** Stacked brand lockup: optional mark, brand, tracked sub line. Centered on cx. */
 export function stackedLockup(
@@ -210,9 +243,15 @@ export function stackedLockup(
       markup: `<g data-art="lockup" data-lockup="stacked"><g data-edit="brand">${brandOut}</g><g data-edit="${opts.subEdit}">${subOut}</g></g>`,
       bottom: y,
       top,
+      brandSize: size,
     }
   }
-  return { markup: `<g data-art="lockup" data-lockup="stacked" data-edit="brand">${brandOut}${subOut}</g>`, bottom: y, top }
+  return {
+    markup: `<g data-art="lockup" data-lockup="stacked" data-edit="brand">${brandOut}${subOut}</g>`,
+    bottom: y,
+    top,
+    brandSize: size,
+  }
 }
 
 /** White rounded pill with the brand — woo.originals top-right. Returns the pill box. */
@@ -288,7 +327,7 @@ export function monogramLockup(
   const track = brandSize * 0.3
   out += textEl({ x: cx, y: bBase, text: brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans', fill: color, anchor: 'middle', tracking: track })
   ledger.text('brand', cx, bBase, textWidth(brand.toLocaleUpperCase('tr'), brandSize, 'sans', track), brandSize, 'middle')
-  return { markup: `<g data-art="lockup" data-lockup="monogram" data-edit="brand">${out}</g>`, bottom: bBase + brandSize * 0.5, top }
+  return { markup: `<g data-art="lockup" data-lockup="monogram" data-edit="brand">${out}</g>`, bottom: bBase + brandSize * 0.5, top, brandSize }
 }
 
 /* -------------------------------------------------------------- product set */

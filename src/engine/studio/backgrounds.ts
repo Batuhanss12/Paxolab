@@ -54,6 +54,8 @@ export function paintBackground(family: BackgroundFamily, w: number, h: number, 
       return landscapeMeadow(w, h, pal, seed, opts)
     case 'ink-wash':
       return inkWash(w, h, pal, seed, opts)
+    case 'gradient-wash':
+      return gradientWash(w, h, pal, seed, opts)
     case 'line-scene':
       return lineScene(w, h, pal, seed, opts)
     case 'wave':
@@ -527,6 +529,81 @@ export function inkWash(w: number, h: number, pal: StudioPalette, seed: number, 
   }
   parts.push(`<g data-texture="flecks">${flecks}</g>`)
   return `<g data-bg="ink-wash" data-art="hero">${parts.join('')}</g>`
+}
+
+/* ---------------------------------------------------------- gradient wash */
+
+/**
+ * Soft multi-point colour bleed — the only background here with no drawn subject and no edge.
+ *
+ * `ink-wash` is already a wash, so this had to earn its place by being a different *kind*. Ink-wash
+ * anchors an opaque blob in one corner and works by contrast; this spreads several low-contrast
+ * clouds across the whole field and works by transition. Side by side they read as two languages,
+ * which is the point — the reference shops carry both and the repertoire only had one.
+ *
+ * Every hue comes from the palette. Nothing is invented here: the brief owns which colours exist
+ * and the mood owns what they do, so a background that mixed its own would quietly become a third
+ * colour knob and undo the layering. Each cloud is a palette colour pulled partway back to the
+ * ground, which is also what keeps the field reading as one lit surface instead of three inks
+ * fighting over a card.
+ *
+ * The softness is built from gradient stops rather than a blur filter. `<filter>` rasterises at the
+ * RIP, and this markup is a print file — a resolution-dependent smudge in the middle of an
+ * otherwise vector document is exactly the thing the export gate exists to prevent.
+ */
+export function gradientWash(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
+  const rng = mulberry32(seed)
+  const k = opts.intensity ?? 0.7
+  const R = Math.max(w, h)
+  // Keep the cloud centres out of the column the lockup owns, so type never lands on a colour edge.
+  const rightLimit = opts.clearRight ? w * (1 - opts.clearRight) : w
+
+  /*
+   * Three values, not three hues. Measured first with `accent`/`accent2`/`deep` all mixed halfway
+   * back to the ground, and on a one-colour brief the result read as flat paint: those three
+   * palette roles are hue siblings, so there was nothing for the field to bleed *between*.
+   *
+   * The fix cannot be to invent a second hue — that would make the background a colour knob and
+   * break the layering. So the spread is taken in *lightness* instead, which the brief already
+   * owns: an accent-tinted cloud, a bloom that is the ground lifted, and a pool that is the deep
+   * surface. A single-hue brief still gets depth; a two-hue brief still gets its own two hues.
+   */
+  const hues = [mix(pal.accent, pal.ground, 0.25), lighten(pal.ground, 0.16), mix(pal.deep, pal.ground, 0.35)]
+
+  const defs: string[] = []
+  const parts: string[] = [ground(w, h, pal.ground)]
+
+  hues.forEach((hue, i) => {
+    const id = `${opts.uid}-gw${i}`
+    const cx = rng() * rightLimit
+    const cy = rng() * h
+    const r = R * (0.45 + rng() * 0.45)
+    const peak = (0.5 + rng() * 0.3) * k
+    defs.push(
+      `<radialGradient id="${id}" cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" gradientUnits="userSpaceOnUse">` +
+        `<stop offset="0" stop-color="${hue}" stop-opacity="${f(peak)}" />` +
+        `<stop offset="0.55" stop-color="${hue}" stop-opacity="${f(peak * 0.45)}" />` +
+        `<stop offset="1" stop-color="${hue}" stop-opacity="0" />` +
+        `</radialGradient>`,
+    )
+    parts.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}" fill="url(#${id})" />`)
+  })
+
+  /*
+   * One vertical veil over the top. Without it three round clouds read as decoration floating on a
+   * flat card; with it the face has a top and a bottom and reads as a single surface catching
+   * light. It also pulls the peaks back down, which is what keeps type legible on the result.
+   */
+  const veil = `${opts.uid}-gwv`
+  defs.push(
+    `<linearGradient id="${veil}" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0" stop-color="${lighten(pal.ground, 0.08)}" stop-opacity="${f(0.2 * k)}" />` +
+      `<stop offset="1" stop-color="${darken(pal.ground, 0.12)}" stop-opacity="${f(0.22 * k)}" />` +
+      `</linearGradient>`,
+  )
+  parts.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}" fill="url(#${veil})" />`)
+
+  return `<g data-bg="gradient-wash" data-art="hero"><defs>${defs.join('')}</defs>${parts.join('')}</g>`
 }
 
 /* -------------------------------------------------------------- line scene */

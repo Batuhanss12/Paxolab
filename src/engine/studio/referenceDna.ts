@@ -45,7 +45,9 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     id: 'card-on-art',
     surface: 'label',
     reference: 'woo.originals — Restorative Shampoo / Care Cream',
-    backgrounds: ['botanical', 'wave'],
+    // `gradient-wash` is appended, never placed first: variation 0 is what the golden set captures,
+    // so a new background joins the rotation without moving a single frozen face.
+    backgrounds: ['botanical', 'wave', 'gradient-wash'],
     typePairing: 'script-accent/sans-heavy',
     temperaments: ['vivid-mono'],
     frame: 'rounded-card',
@@ -135,6 +137,8 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     id: 'wave-panel',
     surface: 'label',
     reference: 'FERAH / surface-care wave system',
+    // Not `gradient-wash`: `paintWavePanelFace` hardcodes its own background, so listing one here
+    // would change the reported direction without changing the painted face.
     backgrounds: ['wave'],
     typePairing: 'sans-light/sans-heavy',
     temperaments: ['clean-clinical', 'vivid-mono', 'natural-warm'],
@@ -213,7 +217,7 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'botanical-card',
     surface: 'box',
     reference: 'woo.originals botanical system on a carton',
-    backgrounds: ['botanical', 'wave'],
+    backgrounds: ['botanical', 'wave', 'gradient-wash'],
     typePairing: 'script-accent/sans-heavy',
     temperaments: ['vivid-mono'],
     frame: 'rounded-card',
@@ -294,6 +298,7 @@ export const ALL_BACKGROUNDS: BackgroundFamily[] = [
   'landscape-moon',
   'landscape-meadow',
   'ink-wash',
+  'gradient-wash',
   'line-scene',
   'paper',
   'wave',

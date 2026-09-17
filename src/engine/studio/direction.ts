@@ -163,7 +163,18 @@ function deepSurface(ground: string, ink: string, step: number): string {
 export function studioPalette(base: Palette, temperament: Temperament): StudioPalette {
   const accentH = hsl(base.accent)
   const bgH = hsl(base.bg)
-  const warmAccent = accentH.s > 0.15 && ((accentH.h >= 20 && accentH.h <= 60) || accentH.h < 12 || accentH.h > 340)
+  /*
+   * "Warm" requires a hue the eye can actually see.
+   *
+   * This tested saturation and hue but not lightness, and the table's cream — `#f5f0e8`, the colour
+   * a brief means by "krem" — reports hue 37° at saturation 0.39 and lightness 0.94. No hue reads at
+   * that lightness, but the check fired, and a "yeşil · krem" brief came back with a gold accent and
+   * a brown sibling: two colours nobody asked for, on the face. Same defect `isNeutral` fixed on the
+   * palette side; this copy never got the rule.
+   */
+  const accentReadable = accentH.l > 0.12 && accentH.l < 0.9
+  const warmAccent =
+    accentH.s > 0.15 && accentReadable && ((accentH.h >= 20 && accentH.h <= 60) || accentH.h < 12 || accentH.h > 340)
   const gold = warmAccent ? fromHsl(accentH.h, Math.max(0.45, accentH.s), 0.56) : '#c9a45c'
   switch (temperament) {
     case 'dark-luxe': {
@@ -225,7 +236,25 @@ export function studioPalette(base: Palette, temperament: Temperament): StudioPa
       // Ink and accent were hardcoded browns, so three different briefs came back with the same
       // type colour in eco — the mood held but the brief stopped showing through it.
       const ink = isDark(base.fg) ? base.fg : fromHsl(bgH.s > 0.12 ? bgH.h : 30, 0.4, 0.2)
-      const accent = separateAccent(ground, warmAccent ? gold : darken(base.accent, 0.08))
+      /*
+       * The accent comes from the brief before it comes from the mood.
+       *
+       * "yeşil · krem" put the cream in the accent slot, and cream has nothing to say against a pale
+       * sage ground — `separateAccent` pushed it until it separated, and what came out was ochre.
+       * A green-and-cream brief was returning a brown face with no green accent anywhere.
+       *
+       * Eco's warmth belongs in the treatment — paper-toned ground, warm ink — not in inventing a
+       * colour. So when the brief's accent carries no usable hue, the accent is drawn from the hue
+       * the brief *did* give, deepened until it reads. Gold stays as the last resort, for briefs
+       * that named nothing usable at all.
+       */
+      const briefHue = accentReadable ? accentH : bgH.s > 0.12 ? bgH : null
+      const naturalAccent = briefHue
+        ? fromHsl(briefHue.h, Math.max(0.3, Math.min(0.6, briefHue.s)), 0.32)
+        : warmAccent
+          ? gold
+          : '#b8892f'
+      const accent = separateAccent(ground, naturalAccent)
       return {
         ground,
         ink,
@@ -680,7 +709,36 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
   const eligible = scored.filter((c) => !avoided.has(c.dna.id as StudioArchetype))
   const ranked = eligible.length ? eligible : scored
   const pool = uniqueFamilyRows(ranked, 3)
-  const walk = uniqueFamilyRows(ranked, 6)
+  /*
+   * The mood may walk, but only among faces the sector recognises.
+   *
+   * The walk used to take whatever sat at its offset, however unrelated. On a baby-care brief —
+   * mood `playful`, offset 5 — it stepped five places down and landed on `marble-frame`: stone
+   * veining on a baby product. That is not range, it is the ranking being ignored.
+   *
+   * Windowing by *score* cannot fix it: measured, the scores are one clear leader and then a large
+   * drop, so a window wide enough to keep any variety (4.2 archetypes per brief) is wide enough to
+   * reach marble anyway, and a window tight enough to block marble collapses variety to 1.3.
+   *
+   * The useful distinction is not "low score", it is "the sector does not know this face". Each
+   * archetype's DNA lists the sectors it serves — `line-scene` scores 1 on baby, `landscape-window`
+   * 0.4, `wave-panel` 0.3, while marble, ink-wash and dark-landscape do not appear at all. Walking
+   * among the ones that appear keeps five faces reachable for a baby brief and none of them absurd.
+   */
+  /*
+   * 0.3, chosen by sweeping it. At 0.25 the baby brief reaches `botanical-card`, which the reference
+   * knowledge rejects for baby care; at 0.4 range drops to 2.8 archetypes per brief for no further
+   * gain. 0.3 keeps 3.0 and lets the sector's own reference stay reachable.
+   */
+  const sectorFloor = 0.3
+  // A word in the brief outranks the sector's opinion of it. "elektronik kutu ama mermer" means
+  // marble, even though marble lists no electronics affinity — the customer is telling us something
+  // the table does not know. The floor exists to stop the *mood* wandering, not to overrule them.
+  const spoken = hints.archetype
+  const recognised = input.brief.sector
+    ? ranked.filter((row) => row.dna.id === spoken || (row.dna.sectors[input.sector] ?? 0) >= sectorFloor)
+    : ranked
+  const walk = uniqueFamilyRows(recognised.length ? recognised : ranked, 6)
   const step = MOOD_WALK_OFFSET[input.style] ?? 0
   const pick =
     pinned ??

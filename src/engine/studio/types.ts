@@ -43,6 +43,7 @@ export type BackgroundFamily =
   | 'landscape-moon'
   | 'landscape-meadow'
   | 'ink-wash'
+  | 'gradient-wash'
   | 'line-scene'
   | 'paper'
   | 'wave'

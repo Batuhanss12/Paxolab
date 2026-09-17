@@ -27,6 +27,7 @@ import {
   productBadge,
   productBadgeHeight,
   productStack,
+  secondaryMax,
   linesThatFit,
   spacedLine,
   stackedLockup,
@@ -131,7 +132,8 @@ function marbleFrame(ctx: LayoutCtx): string {
   if (marbleCat) parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, marbleCat, catSize, ink, bw))
   // product at the foot: script prefix + heavy product
   const volSize = d.volumeLine ? Math.max(2, Math.min(2.8, w * 0.032, h * 0.07)) : 0
-  const stackMax = Math.min(8.5, w * 0.11, landscape || h < 55 ? Math.max(2.8, h * 0.18) : 8.5)
+  // Tied to the brand that was actually drawn, not to a ceiling beside it — see `secondaryMax`.
+  const stackMax = Math.min(secondaryMax(lock.brandSize), w * 0.11, landscape || h < 55 ? Math.max(2.8, h * 0.18) : 8.5)
   const stackH = stackMax * (d.productPrefix ? 1.9 : 1.35) + (volSize ? volSize * 2.4 : 2)
   const productTop = Math.max(lock.bottom + 4, Math.min(h * 0.7, h - m - stackH))
   const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: stackMax }))
@@ -285,11 +287,12 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
   // Same lockup-over-stack skeleton, three rhythms: high and tight, standard, low and open.
   const lockTop = m * (d.variant === 1 ? 1.1 : d.variant === 2 ? 2.3 : 1.5)
   const stackGap = h * (d.variant === 1 ? 0.05 : d.variant === 2 ? 0.12 : 0.08)
+  const brandMax = Math.min(11, w * 0.16)
   const lock = stackedLockup(ledger, d, w / 2, lockTop, w - m * 2, copy.brand, '', withIdent(ctx, {
     color: ink,
     mark: true,
     markColor: accent,
-    brandMax: Math.min(11, w * 0.16),
+    brandMax,
   }))
   parts.push(lock.markup)
   const waveCat = categoryCaption(ctx)
@@ -297,7 +300,7 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
   const stack = productStack(ledger, d, w / 2, lock.bottom + stackGap, w - m * 2, copy.product, withIdent(ctx, {
     color: ink,
     accent,
-    max: Math.min(8, w * 0.11),
+    max: Math.min(secondaryMax(lock.brandSize), w * 0.11),
   }))
   parts.push(stack.markup)
   if (d.volumeLine) {
@@ -438,9 +441,10 @@ function inkPanel(ctx: LayoutCtx): string {
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.8))
-  const lock = stackedLockup(ledger, d, w / 2, m * 1.8, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(10, w * 0.14) }))
+  const brandMax = Math.min(10, w * 0.14)
+  const lock = stackedLockup(ledger, d, w / 2, m * 1.8, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.06, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.13) }))
+  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.06, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(secondaryMax(lock.brandSize), w * 0.13) }))
   parts.push(stack.markup)
   // stacked tagline
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.6, 'sans', 3, 0.5)
