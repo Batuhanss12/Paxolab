@@ -33,7 +33,7 @@ export type StudioFaceFreeze = {
  * Update via `npx vite-node scripts/dump-studio-golden.ts`.
  */
 export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
-  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: '654650d57b42c1c8' },
+  '01-parfum-kutu': { archetype: 'dark-landscape', background: 'landscape-moon', family: 'dark-luxe', hash: 'c51dd96c2dea87c5' },
   '01-parfum-etiket': { archetype: 'ink-panel', background: 'ink-wash', family: 'ink', hash: 'b8d087f467c63fae' },
   '02-krem-kutu': { archetype: 'botanical-card', background: 'botanical', family: 'botanical', hash: 'c436a017f8e33644' },
   '02-krem-etiket': { archetype: 'card-on-art', background: 'botanical', family: 'botanical', hash: '3f8c72cc1a5fa310' },

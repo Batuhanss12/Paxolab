@@ -87,3 +87,34 @@ describe('L2-B — the same archetype produces different arrangements', () => {
     expect(all.size).toBeGreaterThan(1)
   })
 })
+
+/** Every box archetype that carries arrangements must actually spread across them. */
+const VARIED_FACES: { label: string; brief: (brand: string) => DesignBrief }[] = [
+  {
+    label: 'dark-landscape',
+    brief: (brand) => ({ ...coffee(brand, 'Seri'), sector: 'kozmetik', subProduct: 'parfüm', colors: 'siyah · altın', styleType: 'luxury' }),
+  },
+  {
+    label: 'diagonal-tech',
+    brief: (brand) => ({ ...coffee(brand, 'Seri'), sector: 'elektronik', subProduct: 'kulaklık', colors: 'antrasit · turuncu', styleType: 'modern' }),
+  },
+  {
+    label: 'botanical-card',
+    brief: (brand) => ({ ...coffee(brand, 'Onarıcı'), sector: 'kozmetik', subProduct: 'şampuan', colors: 'yeşil · krem', styleType: 'eco' }),
+  },
+  {
+    label: 'wave-panel',
+    brief: (brand) => ({ ...coffee(brand, 'Limon'), sector: 'temizlik', subProduct: 'deterjan', colors: 'mavi · beyaz', styleType: 'modern' }),
+  },
+]
+
+describe('L2-B — every varied archetype spreads', () => {
+  for (const face of VARIED_FACES) {
+    it(`${face.label}: seven brands land on more than one arrangement, with distinct faces`, () => {
+      const rows = BRANDS.map((b) => run(face.brief(b)))
+      expect(new Set(rows.map((r) => r.variant)).size, 'arrangements').toBeGreaterThan(1)
+      expect(new Set(rows.map((r) => r.hash)).size, 'faces').toBe(BRANDS.length)
+      expect(rows.reduce((n, r) => n + r.hits, 0), 'ledger hits').toBe(0)
+    })
+  }
+})

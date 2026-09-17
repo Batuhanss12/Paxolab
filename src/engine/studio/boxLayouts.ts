@@ -66,12 +66,16 @@ function darkLandscape(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, d.palette.ground)]
-  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: 0.66 }))
+  // Same moonlit-landscape skeleton, three horizons: scene high and close, standard, scene low.
+  const span = d.variant === 1 ? 0.76 : d.variant === 2 ? 0.56 : 0.66
+  const lockTop = h * (d.variant === 1 ? 0.05 : d.variant === 2 ? 0.12 : 0.08)
+  const stackGap = h * (d.variant === 1 ? 0.01 : d.variant === 2 ? 0.03 : 0.015)
+  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span }))
   const ink = d.palette.ink
   const accent = d.palette.accent
-  const lock = stackedLockup(ledger, d, w / 2, h * 0.08, w - m * 2, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent }))
+  const lock = stackedLockup(ledger, d, w / 2, lockTop, w - m * 2, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(12, w * 0.17), markColor: accent }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.015, w - m * 2, copy.product, withIdent(ctx, { color: accent, accent, category: d.categoryLine, max: Math.min(6.5, w * 0.085) }))
+  const stack = productStack(ledger, d, w / 2, lock.bottom + stackGap, w - m * 2, copy.product, withIdent(ctx, { color: accent, accent, category: d.categoryLine, max: Math.min(6.5, w * 0.085) }))
   parts.push(stack.markup)
   // tagline above the foot
   const tagY = h * 0.86
@@ -95,16 +99,21 @@ function darkLandscape(ctx: LayoutCtx): string {
 function inkWashFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: 'bl' })]
+  // Same wash-and-frame skeleton; the wash enters from a different corner and the stack breathes
+  // differently. The corner is the most visible of the three arrangements.
+  const washCorner = d.variant === 1 ? 'br' : d.variant === 2 ? 'tl' : 'bl'
+  const lockTop = m * (d.variant === 1 ? 1.4 : d.variant === 2 ? 2.8 : 2)
+  const gap = h * (d.variant === 1 ? 0.035 : d.variant === 2 ? 0.07 : 0.05)
+  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: washCorner })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.85))
-  const lock = stackedLockup(ledger, d, w / 2, m * 2, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(11, w * 0.16) }))
+  const lock = stackedLockup(ledger, d, w / 2, lockTop, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax: Math.min(11, w * 0.16) }))
   parts.push(lock.markup)
-  const stack = productStack(ledger, d, w / 2, lock.bottom + h * 0.05, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.14) }))
+  const stack = productStack(ledger, d, w / 2, lock.bottom + gap, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(9, w * 0.14) }))
   parts.push(stack.markup)
   const tagWords = wrapByWidth(d.taglineLine.toLocaleUpperCase('tr'), w * 0.5, 1.5, 'sans', 3, 0.5)
-  const tag = stackedWords(ledger, w / 2, stack.bottom + h * 0.05, tagWords, 1.6, ink, w * 0.55)
+  const tag = stackedWords(ledger, w / 2, stack.bottom + gap, tagWords, 1.6, ink, w * 0.55)
   parts.push(`<g data-edit="tagline">${tag.markup}</g>`)
   // foot on the wash → card colour
   const footY = h - m * 1.1
@@ -197,7 +206,9 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const colW = w - m * 2
   const titleMax = Math.min(9, colW * 0.16) * ctx.titleScale
   const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
-  let y = Math.max(mono.bottom + 6, h * 0.42)
+  // Same corner-brand + diagonal skeleton, three drops for the product block.
+  const dropAt = d.variant === 1 ? 0.32 : d.variant === 2 ? 0.54 : 0.42
+  let y = Math.max(mono.bottom + 6, h * dropAt)
   let productBlock = ''
   if (first) {
     productBlock += textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 })
