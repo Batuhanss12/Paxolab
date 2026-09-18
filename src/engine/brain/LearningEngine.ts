@@ -27,6 +27,7 @@ import {
   type KnowledgeScopeLevel,
 } from './DesignKnowledgeStore'
 import type { DirectorCue } from './DesignPlan'
+import { principleForRecommendation } from './DesignKnowledge'
 
 export const LEARNING_THRESHOLDS = {
   /**
@@ -382,6 +383,8 @@ export function deriveKnowledgeCandidates(patterns: LearningPattern[] = aggregat
             ? 'critic'
             : 'user_feedback',
         evidence: pattern.evidence,
+        // The lesson behind the rule, when there is one — so the panel can name it.
+        principle: principleForRecommendation(pattern.recommendation),
       }),
     )
   }

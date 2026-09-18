@@ -14,6 +14,20 @@ export const DEFAULT_AUTH_RATE_PER_MIN = 20
 export const DEFAULT_CHECKOUT_RATE_PER_MIN = 30
 export const DEFAULT_ADMIN_RATE_PER_MIN = 120
 export const DEFAULT_MAX_BODY_BYTES = 2 * 1024 * 1024
+
+/**
+ * The delivery endpoint carries a whole design, which is larger than any other request the API
+ * takes. Measured: a perfume carton serialises to 770 KB, a honey carton 642 KB, a wrap label
+ * 332 KB — the thirteen painted panels are most of it. The general 2 MB ceiling would hold today
+ * and fail on the first design more elaborate than the ones we measured, so this route gets its
+ * own headroom rather than everything getting a looser limit.
+ */
+export const EXPORT_MAX_BODY_BYTES = 8 * 1024 * 1024
+
+export function exportMaxBodyBytes(): number {
+  const n = Number(process.env.FORMA_EXPORT_MAX_BODY_BYTES ?? EXPORT_MAX_BODY_BYTES)
+  return Number.isFinite(n) && n > 0 ? n : EXPORT_MAX_BODY_BYTES
+}
 export const RATE_LIMIT_WINDOW_MS = 60_000
 /** Hard-clear the in-memory map this often so it cannot grow forever. */
 export const RATE_LIMIT_MAP_RESET_MS = 10 * 60 * 1000

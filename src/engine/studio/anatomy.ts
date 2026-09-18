@@ -8,9 +8,10 @@ import { iconEmark, iconFlammable, iconGlassFork, iconKeepAway, iconKeepDry, ico
 import { perfumeAssetMark } from '../marks/perfumeAssets'
 import { escapeSvg } from '../artwork/svgGeometry'
 import { mulberry32 } from './backgrounds'
-import { darken, isDark, lighten, mix } from './color'
+import { darken, isDark, lighten, mix, separateAccent } from './color'
+import { type HeroInk } from './species'
 import { categoryBesideProduct } from './copyBank'
-import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, fitsAtFloor, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
+import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
 import {
   clampStudioScale,
   type BenefitIcon,
@@ -87,13 +88,49 @@ export function brandMark(kind: MarkKind, cx: number, cy: number, r: number, col
  * each other. Nothing in the layout had decided which element leads, so nothing led, and the face
  * read flat however well it was composed.
  *
- * The two faces that did read well, `dark-landscape` (12 / 6.5) and `botanical-card`, were only
+ * The two faces that did read well, `noir-stack` (12 / 6.5) and `botanical-card`, were only
  * accidentally right — their two numbers happened to be far apart.
  *
  * So the subordinate ceiling is derived from the lead's instead of being tuned beside it. 0.55
  * gives roughly the 1.8× a packaging front wants: enough that the eye knows where to start,
  * not so much that the second line stops being readable.
  */
+/**
+ * The palette a drawn subject wears.
+ *
+ * `speciesHero` takes every colour as a parameter precisely so the illustration answers to the
+ * brief instead of to whatever was scanned; this is where the studio palette is translated into
+ * those five roles.
+ *
+ * Two rules do the work. The lead tone is the brief's accent pushed off the ground if it sits too
+ * close to it — a gold branch on a black carton and a deep green one on cream are the same rule.
+ * And the receding tone is mixed *towards the ground* rather than simply darkened: on a dark
+ * ground darkening walks the back leaves into the background and they vanish, while receding
+ * toward the ground is both self-limiting and what distance actually looks like.
+ */
+export function heroInk(p: StudioPalette): HeroInk {
+  const lead = separateAccent(p.ground, p.accent)
+  const focal = separateAccent(p.ground, p.accent2)
+  return {
+    /*
+     * Four values along the leaf rather than one flat fill. A leaf is darker where it joins the
+     * stem and lighter where it turns to the light, and that single gradient is most of the
+     * distance between a drawn shape and a printed silhouette. The lit end travels toward the
+     * palette's own light panel on a dark ground and simply lifts on a pale one, so it stays
+     * inside the brief's colours either way.
+     */
+    leafLight: isDark(p.ground) ? mix(lead, p.card, 0.42) : lighten(lead, 0.2),
+    leaf: lead,
+    leafMid: mix(lead, p.ground, 0.16),
+    leafDeep: mix(lead, p.ground, 0.32),
+    fruit: focal,
+    // The shaded side of a fruit is the one place a true darkening reads better than receding,
+    // because it sits inside the silhouette rather than behind it.
+    fruitDeep: isDark(p.ground) ? mix(focal, p.ground, 0.42) : darken(focal, 0.2),
+    stem: mix(lead, p.ink, 0.35),
+  }
+}
+
 export function secondaryMax(leadMax: number): number {
   return leadMax * 0.55
 }
@@ -148,6 +185,83 @@ export function thinDoubleFrame(w: number, h: number, inset: number, color: stri
 
 export function cornerBrackets(x: number, y: number, w: number, h: number, color: string, arm: number, sw = 0.36): string {
   return `<g data-art="frame" data-frame="corner-brackets" fill="none" stroke="${color}" stroke-width="${f(sw)}" stroke-linecap="square"><path d="M${f(x)} ${f(y + arm)} V${f(y)} H${f(x + arm)}" /><path d="M${f(x + w)} ${f(y + h - arm)} V${f(y + h)} H${f(x + w - arm)}" /></g>`
+}
+
+/** Solid band with a hairline inside it — the Diako / Odette plate edge. */
+export function bandHairlineFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const band = Math.max(0.5, inset * 0.32)
+  const gap = Math.max(0.4, inset * 0.22)
+  return (
+    `<g data-art="frame" data-frame="band-hairline" fill="none" stroke="${color}" stroke-opacity="${f(opacity)}">` +
+    `<rect x="${f(inset)}" y="${f(inset)}" width="${f(w - inset * 2)}" height="${f(h - inset * 2)}" stroke-width="${f(band)}" />` +
+    `<rect x="${f(inset + band + gap)}" y="${f(inset + band + gap)}" width="${f(w - (inset + band + gap) * 2)}" height="${f(h - (inset + band + gap) * 2)}" stroke-width="0.14" />` +
+    `</g>`
+  )
+}
+
+/** One flourish in each corner and one at the top centre — the Heeva plate. Not a continuous frame. */
+export function fleuronCrownFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const s = Math.max(2.2, Math.min(w, h) * 0.085)
+  const sw = Math.max(0.16, s * 0.07)
+  // A fleuron is a small three-lobed sprig; drawn once and reflected into the corners.
+  const sprig = `M0 0 C${f(s * 0.45)} ${f(-s * 0.1)} ${f(s * 0.7)} ${f(-s * 0.45)} ${f(s)} ${f(-s * 0.15)} M0 0 C${f(s * 0.1)} ${f(-s * 0.45)} ${f(s * 0.45)} ${f(-s * 0.7)} ${f(s * 0.15)} ${f(-s)} M0 0 C${f(s * 0.32)} ${f(-s * 0.32)} ${f(s * 0.55)} ${f(-s * 0.55)} ${f(s * 0.62)} ${f(-s * 0.62)}`
+  const at = (x: number, y: number, sx: number, sy: number) =>
+    `<path transform="translate(${f(x)} ${f(y)}) scale(${sx} ${sy})" d="${sprig}" />`
+  const crown = `<path transform="translate(${f(w / 2)} ${f(inset + s * 0.9)})" d="M${f(-s * 0.9)} 0 Q0 ${f(-s * 0.9)} ${f(s * 0.9)} 0 M${f(-s * 0.35)} 0 Q0 ${f(-s * 0.45)} ${f(s * 0.35)} 0 M0 0 V${f(-s * 0.9)}" />`
+  return (
+    `<g data-art="frame" data-frame="fleuron-crown" fill="none" stroke="${color}" stroke-opacity="${f(opacity)}" stroke-width="${f(sw)}" stroke-linecap="round">` +
+    at(inset, inset + s, 1, -1) +
+    at(w - inset, inset + s, -1, -1) +
+    at(inset, h - inset - s, 1, 1) +
+    at(w - inset, h - inset - s, -1, 1) +
+    crown +
+    `</g>`
+  )
+}
+
+/** Metallic rim on a disc or oval; a no-op on a rectangle, where a bezel has nothing to sit on. */
+export function bezelFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const rx = w / 2 - inset
+  const ry = h / 2 - inset
+  return (
+    `<g data-art="frame" data-frame="bezel" fill="none" stroke="${color}" stroke-opacity="${f(opacity)}">` +
+    `<ellipse cx="${f(w / 2)}" cy="${f(h / 2)}" rx="${f(rx)}" ry="${f(ry)}" stroke-width="${f(Math.max(0.6, inset * 0.5))}" />` +
+    `<ellipse cx="${f(w / 2)}" cy="${f(h / 2)}" rx="${f(rx - inset * 0.7)}" ry="${f(ry - inset * 0.7)}" stroke-width="0.14" />` +
+    `</g>`
+  )
+}
+
+/**
+ * The frame the direction decided, not the one the painter assumed.
+ *
+ * Front faces used to call `thinDoubleFrame` by name, which made the frame a property of the
+ * archetype: the same face wore the same edge whatever the brief, the brain or the customer said.
+ * Routing through the direction turns it into a decision. `corner-brackets` and `rounded-card`
+ * are deliberately not drawn here — brackets sit around a lockup and a card *is* a composition, so
+ * both stay with the painter that owns the geometry.
+ */
+export function paintFrame(
+  d: DesignDirection,
+  w: number,
+  h: number,
+  opts: { inset: number; color: string; opacity?: number; round?: boolean },
+): string {
+  const op = opts.opacity ?? 0.9
+  switch (d.frame) {
+    case 'thin-double':
+      return thinDoubleFrame(w, h, opts.inset, opts.color, op)
+    case 'band-hairline':
+      return bandHairlineFrame(w, h, opts.inset, opts.color, op)
+    case 'fleuron-crown':
+      return fleuronCrownFrame(w, h, opts.inset, opts.color, op)
+    case 'bezel':
+      return opts.round ? bezelFrame(w, h, opts.inset, opts.color, op) : ''
+    case 'corner-brackets':
+    case 'rounded-card':
+    case 'none':
+    default:
+      return ''
+  }
 }
 
 export function hairline(x1: number, y: number, x2: number, color: string, opacity = 0.8, sw = 0.22): string {
@@ -217,7 +331,16 @@ export function stackedLockup(
   // floor, and below that the name is not legible on press anyway. Measured on a 38 mm label,
   // "Verda Botanicals Apothecary" came back at the floor and ran off the panel. So it wraps, which
   // is what a designer does with a three-word brand in a narrow column.
-  const brandLines = fitsAtFloor(brandUpper, maxW, faces.brand, tracking)
+  /*
+   * The wrap decision has to use the *same* floor the size clamp uses. It used `fitsAtFloor`,
+   * which measures at the 1.5 mm print floor, while `fitSize` above stops at `brandMin` (2.4 mm):
+   * a brand that fits at 1.5 but not at 2.4 was judged "fits", drawn at 2.4, and ran off the
+   * panel — measured on a 38 mm face, "VERDA BOTANICALS APOTHECARY" at 44.8 mm wide. It stayed
+   * hidden while the tracked-serif pairing happened to fail the 1.5 mm check too.
+   */
+  const brandFloor = typeSize((opts.brandMin ?? 2.4) * titleScale)
+  const fitsOneLine = textWidth(brandUpper, brandFloor, faces.brand, brandFloor * tracking) <= maxW
+  const brandLines = fitsOneLine
     ? [brandUpper]
     : wrapByWidth(brandUpper, maxW, size, faces.brand, 2, size * tracking)
   let baseline = y + size * 0.82
@@ -374,7 +497,18 @@ export function productStack(
   const text = opts.upper === false ? product : product.toLocaleUpperCase('tr')
   const lines = wrapByWidth(text, maxW, 1, faces.product, 2).length > 1 && textWidth(text, (opts.max ?? 8) * titleScale, faces.product) > maxW ? splitTitle(text) : [text]
   const max = (opts.max ?? 8) * titleScale
-  const size = Math.min(...lines.map((l) => fitSize(l, maxW, max, 2.6 * titleScale, faces.product, faces.product === 'sans-heavy' ? 0.02 : 0.06)))
+  /*
+   * The product's floor may not climb over its own ceiling.
+   *
+   * It was a flat 2.6 mm. Callers pass `max: secondaryMax(brandSize)` precisely so the product
+   * stays under the brand, but when the face is tight enough that the brand itself sits on the
+   * print floor, that ceiling drops below 2.6 and the floor won — measured on a 40 mm lid with
+   * "Verda Botanicals": brand 2.4 mm, product 2.6 mm, the hierarchy inverted on the one rule the
+   * owner asked never to loosen. The floor now yields to the ceiling, and only the print floor
+   * itself is absolute.
+   */
+  const floor = Math.max(STUDIO_TYPE_FLOOR_MM, Math.min(2.6 * titleScale, max))
+  const size = Math.min(...lines.map((l) => fitSize(l, maxW, max, floor, faces.product, faces.product === 'sans-heavy' ? 0.02 : 0.06)))
   const track = size * (faces.product === 'sans-heavy' ? 0.02 : 0.06)
   for (const line of lines) {
     const base = y + size * 0.95
@@ -577,19 +711,30 @@ export function legalColumn(
   const tx = anchor === 'middle' ? x + w / 2 : x
   let out = ''
   let cy = y
+  /*
+   * `maxBottom` is a promise, not a hint.
+   *
+   * The room calculation used to be `Math.max(1, …)`, which drew a body line even when there was
+   * none — harmless on a tall rectangular back, and a collision as soon as the band is tight. It
+   * surfaced on a 40 mm lid, where the round back's legal column ran into the barcode. A section
+   * that cannot fit its title *and* one line is not started at all.
+   */
+  const advance = size * 1.36
   for (const s of sections) {
     if (!s.body.trim()) continue
     if (cy + lineH * 2 > maxBottom) break
+    const tSize = size * 1.05
+    const titleH = s.title ? tSize + size * 0.55 : 0
+    const room = Math.floor((maxBottom - cy - titleH) / advance)
+    if (room < 1) break
     let section = ''
     if (s.title) {
-      const tSize = size * 1.05
       const track = tSize * 0.24
       const base = cy + tSize
       section += textEl({ x: tx, y: base, text: s.title.toLocaleUpperCase('tr'), size: tSize, face: 'sans-heavy', fill: opts.titleColor ?? color, anchor, tracking: track })
       ledger.text('legal-title', tx, base, textWidth(s.title.toLocaleUpperCase('tr'), tSize, 'sans-heavy', track), tSize, anchor)
       cy = base + size * 0.55
     }
-    const room = Math.max(1, Math.floor((maxBottom - cy) / lineH))
     const lines = wrapByWidth(s.body, w, size, 'sans', Math.min(opts.maxLines ?? 12, room))
     for (const line of lines) {
       const base = cy + size
@@ -826,16 +971,31 @@ export function notesTable(ledger: Ledger, x: number, y: number, w: number, head
   ]
   const top = y + size * 3
   let bottom = top
+  /*
+   * A column's contents are fitted to the column, and the heading is shortened when even the print
+   * floor will not fit it.
+   *
+   * The headings were drawn at a fixed size, so on a 45 mm carton back "TEPE NOTALAR" measured
+   * 15.5 mm inside a 13 mm column and the three of them overlapped each other — `notes-head ×
+   * notes-head`, which blocked the export of every narrow perfume carton. Shrinking cannot solve
+   * it: at 1.5 mm the string is still 15.5 mm. The table already carries "KOKU PİRAMİDİ" as its
+   * own title, so repeating "NOTALAR" in each column was redundant anyway — the first word is what
+   * a perfume box actually prints.
+   */
+  const inner = colW * 0.92
   cols.forEach((col, i) => {
     const cx = x + colW * (i + 0.5)
     let cy = top
-    const headSize = typeSize(size * 0.9)
-    out += textEl({ x: cx, y: cy, text: col.h, size: headSize, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: size * 0.2 })
-    ledger.text('notes-head', cx, cy, textWidth(col.h, headSize, 'sans-heavy', size * 0.2), headSize, 'middle')
+    const headTrack = size * 0.2
+    const head = textWidth(col.h, STUDIO_TYPE_FLOOR_MM, 'sans-heavy', headTrack) <= inner ? col.h : col.h.split(/\s+/)[0]
+    const headSize = fitSize(head, inner, typeSize(size * 0.9), STUDIO_TYPE_FLOOR_MM, 'sans-heavy', headTrack)
+    out += textEl({ x: cx, y: cy, text: head, size: headSize, face: 'sans-heavy', fill: color, anchor: 'middle', tracking: headTrack })
+    ledger.text('notes-head', cx, cy, textWidth(head, headSize, 'sans-heavy', headTrack), headSize, 'middle')
     cy += size * 1.6
     for (const item of col.items.slice(0, 3)) {
-      out += textEl({ x: cx, y: cy, text: item, size, face: 'sans', fill: color, anchor: 'middle' })
-      ledger.text('notes-item', cx, cy, textWidth(item, size, 'sans'), size, 'middle')
+      const itemSize = fitSize(item, inner, size, STUDIO_TYPE_FLOOR_MM, 'sans')
+      out += textEl({ x: cx, y: cy, text: item, size: itemSize, face: 'sans', fill: color, anchor: 'middle' })
+      ledger.text('notes-item', cx, cy, textWidth(item, itemSize, 'sans'), itemSize, 'middle')
       cy += size * 1.45
     }
     bottom = Math.max(bottom, cy)

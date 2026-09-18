@@ -91,7 +91,7 @@ describe('L2-B — the same archetype produces different arrangements', () => {
 /** Every box archetype that carries arrangements must actually spread across them. */
 const VARIED_FACES: { label: string; brief: (brand: string) => DesignBrief }[] = [
   {
-    label: 'dark-landscape',
+    label: 'noir-stack',
     brief: (brand) => ({ ...coffee(brand, 'Seri'), sector: 'kozmetik', subProduct: 'parfüm', colors: 'siyah · altın', styleType: 'luxury' }),
   },
   {

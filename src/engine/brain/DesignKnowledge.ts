@@ -84,3 +84,32 @@ const TOPIC_TO_PRINCIPLE: Record<string, PrincipleId> = {
 export function principleForCriticTopic(topic: string): PrincipleId | undefined {
   return TOPIC_TO_PRINCIPLE[topic]
 }
+
+/**
+ * The principle a learned recommendation is an instance of, via the critic-topic table so the
+ * table stays the single source. A quiet ornament, a dropped frame, an avoided heavy motif and a
+ * tightening cue are all the same lesson — negative space is luxury; stacked motif families are
+ * style leakage. Preferences with no principle behind them (an archetype, a pairing) return
+ * undefined rather than a forced fit.
+ */
+export function principleForRecommendation(rec: {
+  kind: string
+  prefer?: boolean
+  tokens?: string[]
+  cue?: string
+  frame?: string
+  ornament?: string
+}): PrincipleId | undefined {
+  switch (rec.kind) {
+    case 'avoid-motif':
+      return rec.tokens?.some((t) => /dense|stack|pattern/.test(t)) ? principleForCriticTopic('styleLeakage') : principleForCriticTopic('restraint')
+    case 'director-cue':
+      return rec.cue === 'luxury-tighten' || rec.cue === 'open-air' ? principleForCriticTopic('density') : undefined
+    case 'studio-ornament':
+      return (rec.prefer && rec.ornament === 'quiet') || (!rec.prefer && rec.ornament === 'rich') ? principleForCriticTopic('restraint') : undefined
+    case 'studio-frame':
+      return rec.prefer && rec.frame === 'none' ? principleForCriticTopic('density') : undefined
+    default:
+      return undefined
+  }
+}

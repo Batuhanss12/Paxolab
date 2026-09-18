@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { botanical, landscapeMoon, marble } from './backgrounds'
+import { botanical, gradientWash, marble, paintBackground } from './backgrounds'
 import { mix } from './color'
+import { ALL_BACKGROUNDS } from './referenceDna'
 import type { StudioPalette } from './types'
 
 const pal: StudioPalette = {
@@ -26,18 +27,18 @@ const cream: StudioPalette = {
 }
 
 describe('studio backgrounds — S5 density + seed', () => {
-  it('same seed paints identical marble, botanical, and moon paths', () => {
+  it('same seed paints identical marble, botanical, and gilded-field paths', () => {
     const a = marble(80, 180, pal, 42, { uid: 'm', intensity: 0.8 })
     const b = marble(80, 180, pal, 42, { uid: 'm', intensity: 0.8 })
     expect(a).toBe(b)
     expect(botanical(90, 140, cream, 7, { uid: 'b', intensity: 0.85 })).toBe(botanical(90, 140, cream, 7, { uid: 'b', intensity: 0.85 }))
-    expect(landscapeMoon(70, 140, pal, 11, { uid: 'lm', span: 0.66 })).toBe(landscapeMoon(70, 140, pal, 11, { uid: 'lm', span: 0.66 }))
+    expect(gradientWash(70, 140, pal, 11, { uid: 'gw' })).toBe(gradientWash(70, 140, pal, 11, { uid: 'gw' }))
   })
 
   it('a different seed changes the path data', () => {
     expect(marble(80, 180, pal, 1, { uid: 'm' })).not.toBe(marble(80, 180, pal, 2, { uid: 'm' }))
     expect(botanical(90, 140, cream, 1, { uid: 'b' })).not.toBe(botanical(90, 140, cream, 2, { uid: 'b' }))
-    expect(landscapeMoon(70, 140, pal, 1, { uid: 'lm' })).not.toBe(landscapeMoon(70, 140, pal, 2, { uid: 'lm' }))
+    expect(gradientWash(70, 140, pal, 1, { uid: 'gw' })).not.toBe(gradientWash(70, 140, pal, 2, { uid: 'gw' }))
   })
 
   /**
@@ -80,12 +81,38 @@ describe('studio backgrounds — S5 density + seed', () => {
     expect((svg.match(/fill-rule="evenodd"/g) ?? []).length).toBeGreaterThanOrEqual(4)
   })
 
-  it('moon landscape has a reflection column and cubic ridges', () => {
-    const svg = landscapeMoon(70, 140, pal, 11, { uid: 'lm', span: 0.66 })
-    expect(svg).toMatch(/data-bg="landscape-moon"/)
-    expect(svg).toMatch(/data-texture="reflection"/)
-    expect(svg).toMatch(/data-texture="ripples"/)
-    expect(svg).toMatch(/ C/)
-    expect((svg.match(/<path /g) ?? []).length).toBeGreaterThanOrEqual(4)
+  /**
+   * F-13: the owner asked for the landscape out of the system — "peyzajı tamamen kaldır". Two
+   * scenic grounds existed, the meadow behind the honey carton and the moonlit lake behind the
+   * perfume one, and the second survived a first pass because the family wearing it is called
+   * "karanlık lüks" in the UI rather than "peyzaj". It still drew mountain ridges, pines and a
+   * reflected moon, so it went too. This asserts on the painted output, not on the name: a scene
+   * reintroduced under any label fails here.
+   */
+  /**
+   * `line-scene` was a hard-coded seaside — sun, sea, three sailboats, clouds, two palms, a
+   * parasol — painted identically for a jar of honey, a detergent and a baby shampoo. It survived
+   * the landscape sweep because nothing in it was *called* a landscape, and it survived every
+   * sector test because it never read the sector to begin with.
+   *
+   * The contract that catches it is not a list of banned words but this: a background that draws a
+   * subject must answer to the brief. Two species, two drawings.
+   */
+  it('a background that draws a subject draws the brief’s own subject', () => {
+    const honey = paintBackground('line-scene', 70, 120, pal, 5, { uid: 'ls', species: 'blossom' })
+    const citrus = paintBackground('line-scene', 70, 120, pal, 5, { uid: 'ls', species: 'citrus' })
+    expect(honey).not.toBe(citrus)
+    // And it is a drawing, not an empty field.
+    expect(honey.length).toBeGreaterThan(400)
+  })
+
+  it('no background paints a scene — the landscape is gone, not merely renamed', () => {
+    expect(ALL_BACKGROUNDS).not.toContain('landscape-moon')
+    expect(ALL_BACKGROUNDS).not.toContain('landscape-meadow')
+    for (const family of ALL_BACKGROUNDS) {
+      const svg = paintBackground(family, 70, 140, pal, 11, { uid: `bg-${family}` })
+      expect(svg, `${family} names a landscape`).not.toMatch(/landscape|meadow|horizon/i)
+      expect(svg, `${family} paints a moon reflection`).not.toMatch(/data-texture="(reflection|ripples)"/)
+    }
   })
 })

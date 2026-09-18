@@ -6,7 +6,7 @@
  * near each other: eight of ten came back within 1.4×, and five shared the *identical* pair
  * 8.3 mm / 7.7 mm — proof it was not the content deciding. Nothing in any layout had decided which
  * element leads, so nothing led. The two faces that did read well were only accidentally right;
- * `dark-landscape` happened to be tuned 12 / 6.5.
+ * `noir-stack` happened to be tuned 12 / 6.5.
  *
  * The rule is now one function, `secondaryMax`, applied to the brand's **drawn** size rather than
  * its ceiling — because on the column variants the brand itself has to shrink, and relating the

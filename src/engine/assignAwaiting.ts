@@ -10,6 +10,30 @@ import { isGenericProductName, isPaletteName, isSectorOrSurfaceName, looksLikeNa
 import { NAME_STOP_RE, SKIP_UTTERANCE, normaliseSectorTypos } from './extractRules'
 import { isSpokenStory, isSpokenTagline } from './extractCopy'
 
+/**
+ * The name out of an answer that carried more than the name.
+ *
+ * Asked for a product, people answer "Gece Serisi, 50 ml, siyah altın" — the name, and then the
+ * rest of what they were thinking. The whole string used to become the product name, so the pack
+ * printed all three clauses on its largest line. The other fields are picked up separately by the
+ * free-text extractor, which is exactly why this one only needs the name.
+ *
+ * The first clause, minus any trailing measure or palette word.
+ */
+function leadingName(answer: string): string {
+  const first = answer.split(/[,;·]|\s+[-–]\s+/)[0]?.trim() ?? answer
+  const words = first.split(/\s+/).filter(Boolean)
+  while (words.length > 1) {
+    const last = words[words.length - 1]!
+    if (isPaletteName(last) || /^\d+([.,]\d+)?$/.test(last) || /^(ml|cl|l|gr|g|kg|adet|kapsül)$/i.test(last)) {
+      words.pop()
+      continue
+    }
+    break
+  }
+  return words.join(' ').replace(/[,;:]+$/, '').trim() || first
+}
+
 export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Partial<DesignBrief> {
   if (!awaiting) return {}
   const cleaned =
@@ -60,8 +84,9 @@ export function assignAwaiting(text: string, awaiting: AwaitingKey | null): Part
     if (SKIP_UTTERANCE.test(cleaned) || /^(yok|yoktur|sadece marka|marka yeter)$/i.test(cleaned)) {
       return { productSkipped: true }
     }
-    if (isGenericProductName(cleaned)) return { productSkipped: true }
-    return { productName: cleaned, productSkipped: false }
+    const name = leadingName(cleaned)
+    if (isGenericProductName(name)) return { productSkipped: true }
+    return { productName: name, productSkipped: false }
   }
   if (awaiting === 'barcode') {
     if (SKIP_UTTERANCE.test(cleaned) || /^(yok|üret|otomatik)$/i.test(cleaned)) return { barcodeDefaulted: true }

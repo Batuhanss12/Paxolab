@@ -1,4 +1,4 @@
-import type { DesignKind, DesignOverrides, DesignSpec } from '../types'
+import type { ArtworkModel, DesignKind, DesignOverrides, DesignSpec } from '../types'
 import {
   applyKnowledgeToBrief,
   applyPlanToSystem,
@@ -12,7 +12,9 @@ import {
   scoreDesign,
   scoreVisualCraft,
 } from './brain'
-import { ledgerHits, planStudioRepair, type StudioRepairDelta } from './studio/studioRepair'
+import { STUDIO_CRAFT_FLOOR, ledgerHits, planStudioRepair, type StudioRepairDelta } from './studio/studioRepair'
+import { isRound } from './studio/layoutContext'
+import { hintsFromBriefDepth, hintsFromPlan, intentFromPlan } from './studio/studioPlanBridge'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
@@ -29,6 +31,8 @@ import { uid } from './fields'
 import type { EnginePort, GenerateInput } from './EnginePort'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from './document'
 import { applyStudioPreflight, assembleStudioHints, composeStudioArtwork, decideDirection, familyOf, slimDirectionOffer, type StudioReport } from './studio'
+import { paintStudioFront } from './studio/composeStudioArtwork'
+import { renderPanelSvg } from './artwork/renderArtwork'
 import { studioHintsFromKnowledge } from './brain/studioKnowledge'
 import { mergeLlmCopy } from './llm/copyLlm'
 
@@ -109,6 +113,12 @@ export class FormaLocalEngine implements EnginePort {
       address: brief.manufacturerAddress,
       cta: input.copyPatch?.cta || input.prev?.copy.cta || '',
       usage: input.copyPatch?.usage || input.prev?.copy.usage || '',
+      // Perfume tiers: a patch wins, then the brief; there is no sample fallback because an
+      // invented attribution ("by Forma Atelier") would be a claim the customer never made.
+      concentration: input.copyPatch?.concentration || brief.concentration || '',
+      edition: input.copyPatch?.edition || brief.edition || '',
+      attribution: input.copyPatch?.attribution || brief.attribution || '',
+      origin: input.copyPatch?.origin || brief.origin || '',
     }
     overrides.barcodeVisible = true
 
@@ -165,12 +175,14 @@ export class FormaLocalEngine implements EnginePort {
 
     const hero = findHeroPanel(dieline.panels)
     const studioKnowledge = studioOn ? studioHintsFromKnowledge(brief) : null
+    const planHint = studioOn ? hintsFromPlan(designPlan) : null
+    const depthHint = studioOn ? hintsFromBriefDepth(planBrief) : null
     const paint = (plan: typeof designPlan, identityDelta?: StudioRepairDelta, archetypeStep = 0) => {
       const system = applyPlanToSystem(
         resolveDesignSystem(brief, template.structureId, { blankCanvas }),
         plan,
       )
-      let artwork
+      let artwork: ArtworkModel
       let studio: StudioReport | undefined
       if (studioOn) {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
@@ -192,15 +204,21 @@ export class FormaLocalEngine implements EnginePort {
           surface,
           faceW: hero?.w ?? dieline.dimensions.L,
           faceH: hero?.h ?? dieline.dimensions.H,
+          round: hero ? isRound(hero) : false,
           palette: studioBase,
           locale: brief.copyLocale ?? 'tr',
           variationIndex,
           archetypeStep,
           copy: { brand: copy.brand, product: copy.product, tagline: copy.tagline, volume: copy.volume },
+          // Weakest first: the brain's reading of the plan, then validated knowledge, then what
+          // the customer said — later hints win every key they touch.
           hints: assembleStudioHints(planBrief, surface, [
+            ...(planHint ? [planHint] : []),
+            ...(depthHint ? [depthHint] : []),
             ...(studioKnowledge?.hints ?? []),
             ...(overrides.direction ? [overrides.direction] : []),
           ]),
+          intent: intentFromPlan(designPlan),
         })
         const direction = decided.direction
         const composed = composeStudioArtwork({
@@ -216,7 +234,41 @@ export class FormaLocalEngine implements EnginePort {
           },
         })
         artwork = composed.artwork
-        studio = { ...composed.report, offer: slimDirectionOffer(decided.offer) }
+        const offer = slimDirectionOffer(decided.offer)
+        /*
+         * Every direction in the offer, painted. The strip used to show them as a swatch and a
+         * name; a studio shows the face. This is not a generation: no ledger, no repair loop, no
+         * credit — only the front is composed.
+         *
+         * F-13 added the selected row to this loop. It was skipped on the reasoning that it *is*
+         * the design and already fills the preview, which held while the strip was a row of
+         * alternatives to the one face on screen. The owner asked for something else: four
+         * finished designs offered together, the customer picks one. Under that reading a strip
+         * of three faces and one colour swatch is a strip with a hole in it, and the hole is
+         * always on the option the customer is being shown.
+         */
+        for (const row of offer.candidates) {
+          if (row.selected) {
+            // Reuse the composed face rather than repainting it: this one has already been through
+            // the repair loop, so a fresh paint could disagree with what the preview shows.
+            const front = artwork.layers.find((l) => l.panelId === artwork.frontPanelId)
+            if (front) row.face = renderPanelSvg(dieline, artwork, front.panelId, palette)
+            continue
+          }
+          const candidate = decided.offer.candidates.find((c) => c.index === row.index)
+          if (!candidate) continue
+          const front = paintStudioFront({
+            brief,
+            dieline,
+            copy,
+            direction: candidate.direction,
+            system,
+            identity: { logoHref: input.logoHref, logoScale: identityDelta?.logoScale ?? overrides.logoScale, titleScale: identityDelta?.titleScale ?? overrides.titleScale },
+          })
+          if (!front) continue
+          row.face = renderPanelSvg(dieline, { layers: [front], frontPanelId: front.panelId, language: artwork.language }, front.panelId, palette)
+        }
+        studio = { ...composed.report, offer }
       } else {
         artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
       }
@@ -271,6 +323,23 @@ export class FormaLocalEngine implements EnginePort {
         const alt = paint(designPlan, undefined, step)
         if (alt.studio && ledgerHits(alt.studio) < ledgerHits(pack.studio)) {
           pack = { ...alt, studio: { ...alt.studio, repaired: `arketip ${step} adım kaydırıldı — yüz sığmadı` } }
+        }
+      }
+      /*
+       * F-8: the craft score as a gate, not just a report. A clean face that the score still puts
+       * under `STUDIO_CRAFT_FLOOR` tries the next archetypes the same bounded, monotonic way the
+       * ledger repair does — kept only when the alternative is clean too and scores higher. The
+       * floor sits below every golden face (measured 57–76), so the frozen table is untouched.
+       */
+      const craftOf = (p: typeof pack) => scoreVisualCraft({ artwork: p.artwork, preflight: p.preflight, copy, kind }, p.plan).visualCraft
+      let craft = craftOf(pack)
+      for (let step = 1; step <= 3 && craft < STUDIO_CRAFT_FLOOR && ledgerHits(pack.studio) === 0; step++) {
+        const alt = paint(designPlan, undefined, step)
+        if (!alt.studio || ledgerHits(alt.studio) > 0) continue
+        const altCraft = craftOf(alt)
+        if (altCraft > craft) {
+          pack = { ...alt, studio: { ...alt.studio, repaired: `arketip ${step} adım kaydırıldı — zanaat puanı ${craft} → ${altCraft}` } }
+          craft = altCraft
         }
       }
     }

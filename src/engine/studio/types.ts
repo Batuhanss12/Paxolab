@@ -16,38 +16,42 @@ export type LabelArchetype =
   | 'marble-frame' // Elite Brew — marble field, corner-bracket lockup, script + bold product at the foot
   | 'diagonal-split' // Capelli Fellici — dark field with diagonal metallic blocks, two-column pro anatomy
   | 'line-scene' // DNA Pharma — white, two-tone title, line-drawn scene in the lower half
-  | 'landscape-badge' // Anadolu Bal — cream + thin double frame, landscape window, dark product badge
   | 'ink-panel' // Rebull Noir — cream panel, ink wash rising from a corner with metallic veins
   | 'wave-panel' // cleaning / care — horizontal wave bands, stacked sans lockup
+  | 'specimen-hero' // drawn subject at the centre, type stacked above and below it
+  | 'atelier-plate' // Diako — three-tier type plate: brand / product / attribution, band-hairline edge
+  | 'crest-panel' // Azzurra — roundel with a crest mark on a flat arabesque field
+  | 'noir-plate' // the dark-luxe family's label: deep field, centred type, tagline above the foot
 
 /** Box front archetypes. Back / side / top anatomy follows the same direction. */
 export type BoxArchetype =
-  | 'dark-landscape' // GUESS Sauvage — black + gold, moonlit landscape fading into the ground
+  | 'noir-stack' // GUESS Sauvage — black + gold, deep gilded field, centred lockup over a tagline
   | 'ink-wash' // Rebull Noir — cream front, navy ink from the corner, navy sides with stacked words
-  | 'landscape-window' // Anadolu Bal — arched landscape window, thin gold frame, benefit icons on sides
   | 'marble-frame' // marble field carton with corner-bracket lockup
   | 'botanical-card' // vivid tone-on-tone botanical carton with a white title card
   | 'diagonal-tech' // charcoal with diagonal blocks — electronics / pro care
   | 'line-scene' // DNA Pharma system on a carton — white field, two-tone title, line-drawn scene
   | 'wave-panel' // cleaning carton — wave bands, stacked sans lockup
+  | 'specimen-hero' // drawn subject at the centre, type stacked above and below it
+  | 'atelier-plate' // Diako — three-tier type plate on a carton front
+  | 'crest-panel' // Azzurra — roundel with a crest mark on a flat arabesque field
 
 export type StudioArchetype = LabelArchetype | BoxArchetype
 
 /** Shared visual system across box + label (companion generate keeps this key). */
-export type StudioFamily = 'marble' | 'botanical' | 'line-scene' | 'wave' | 'landscape' | 'ink' | 'dark-luxe' | 'tech'
+export type StudioFamily = 'marble' | 'botanical' | 'line-scene' | 'wave' | 'ink' | 'dark-luxe' | 'tech' | 'specimen' | 'atelier' | 'crest'
 
 export type BackgroundFamily =
   | 'marble'
   | 'botanical'
   | 'diagonal'
-  | 'landscape-moon'
-  | 'landscape-meadow'
   | 'ink-wash'
   | 'gradient-wash'
   | 'line-scene'
   | 'paper'
   | 'wave'
   | 'circuit'
+  | 'arabesque' // flat interlaced star lattice — the Azzurra field; geometry, not texture
 
 export type TypePairing =
   | 'serif-display/sans-meta' // GUESS / Anadolu — serif brand, spaced sans meta
@@ -63,7 +67,25 @@ export type Temperament =
   | 'clean-clinical'
   | 'tech-dark'
 
-export type FrameStyle = 'none' | 'thin-double' | 'corner-brackets' | 'rounded-card'
+/**
+ * Frame vocabulary.
+ *
+ * `band-hairline` is a solid band with a hairline inside it, separated by a gap — the Diako /
+ * Odette plate edge. `fleuron-crown` is not a continuous frame at all: an ornament in each corner
+ * and one at the top centre, which is how the Heeva plate reads. `bezel` is the metallic rim a
+ * disc or oval label carries and is ignored on a rectangular face.
+ */
+export type FrameStyle = 'none' | 'thin-double' | 'corner-brackets' | 'rounded-card' | 'band-hairline' | 'fleuron-crown' | 'bezel'
+
+/**
+ * How much decoration a face is allowed to carry.
+ *
+ * Until this existed, ornament was whatever the archetype's painter happened to draw, at whatever
+ * intensity was hardcoded into the call. It is now a decision of its own: the same archetype can be
+ * painted quiet (a 40 TL supermarket cream) or rich (a 400 TL boutique one) without changing its
+ * skeleton, and the brief's positioning can ask for either.
+ */
+export type OrnamentLevel = 'quiet' | 'measured' | 'rich'
 
 export type LockupStyle = 'stacked-center' | 'top-right-pill' | 'left-column' | 'monogram-right'
 
@@ -116,6 +138,8 @@ export type DesignDirection = {
   temperament: Temperament
   frame: FrameStyle
   lockup: LockupStyle
+  /** Decoration level — scales background intensity and frame weight. */
+  ornament: OrnamentLevel
   palette: StudioPalette
   /** Sector benefit icons + short labels (3–4). */
   benefits: BenefitItem[]
@@ -125,6 +149,17 @@ export type DesignDirection = {
   manifesto: string[]
   /** Category line under the product: "EAU DE PARFUM", "SAÇ BAKIM KREMİ". */
   categoryLine: string
+  /**
+   * Copy tiers a perfume plate carries below the product, empty when the brief did not give them.
+   *
+   * Distilled from the STİCKERR REF set (Diako, Heeva, Raavi): the references all speak in more
+   * registers than brand / product / net quantity — an edition ("No. 07", "LIMITED EDITION"), an
+   * attribution ("by Diako Atelier"), an origin ("İSTANBUL · 1998"). The painters that have a tier
+   * for them draw them; the others ignore them, which is the difference between a plate and a card.
+   */
+  editionLine: string
+  attributionLine: string
+  originLine: string
   /** Short tagline in spaced caps. */
   taglineLine: string
   /** Where taglineLine came from: user utterance, brief/LLM/sample, or copyBank. */
@@ -139,6 +174,19 @@ export type DesignDirection = {
   rationale: string[]
   source: DirectionSource
   seed: number
+  /**
+   * The seed a whole product *line* shares.
+   *
+   * `seed` carries the product name, which is right for jitter — two SKUs should not be byte
+   * identical. It is wrong for anything a range must hold in common: measured on a four-SKU Verda
+   * line, the drawn subject correctly changed per SKU (aloe, rose, chamomile, lavender) but so did
+   * the arrangement, giving a rosette, a crossed pair, a wreath and a sprig. Four compositions
+   * reads as four unrelated products on a shelf, not as a range.
+   *
+   * So this one drops the product and keeps brand, surface and variation: siblings share a
+   * composition, pressing "variation" still changes it, and a different brand still gets its own.
+   */
+  lineSeed: number
   sector: SectorId
   locale: CopyLocale
 }
@@ -151,6 +199,7 @@ export type DirectionHints = {
   typePairing?: TypePairing
   frame?: FrameStyle
   lockup?: LockupStyle
+  ornament?: OrnamentLevel
   productPrefix?: string
   taglineLine?: string
   categoryLine?: string
@@ -190,7 +239,13 @@ export type StudioPanelReport = {
   minTextMm: number
 }
 
-export type StudioCriticKind = 'quieter' | 'vary'
+/**
+ * `quieter` and `vary` are the ledger's two buttons. `vision` is the F-7 critic: an issue the
+ * vision model saw on the rendered face, with an `utterance` that is a design command
+ * ("süsü azalt", "çerçeveyi kaldır") — so "önerini uygula" runs it through the same parser as
+ * anything the customer could have typed.
+ */
+export type StudioCriticKind = 'quieter' | 'vary' | 'vision'
 
 /** C6 button the ledger recommends. Talk is reconstructed with talkForCritic(kind). */
 export type StudioCriticOffer = {
@@ -208,6 +263,12 @@ export type StudioDirectionCandidate = {
   temperament: Temperament
   score: number
   selected: boolean
+  /**
+   * The candidate's front, painted (a complete panel SVG). Every row carries one, the selected
+   * row included — the customer is shown four finished designs and picks one, so a row without a
+   * face is a hole in the set. Absent only if the engine could not paint that direction at all.
+   */
+  face?: string
 }
 
 export type StudioDirectionOffer = {

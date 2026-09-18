@@ -3,7 +3,7 @@
  * background) become closed-vocabulary DirectionHints. Empty store → no hints.
  */
 import type { DesignBrief } from '../../types'
-import { isArchetype, isBackground } from '../studio/referenceDna'
+import { isArchetype, isBackground, isFrame, isOrnament, isTypePairing } from '../studio/referenceDna'
 import type { DirectionHints } from '../studio/types'
 import { matchingKnowledge } from './applyKnowledge'
 
@@ -39,6 +39,26 @@ export function studioHintsFromKnowledge(brief: DesignBrief, ctx: { userId?: str
           }
         } else {
           hint.avoidBackgrounds?.push(rec.background)
+          applied.push(rule.id)
+        }
+      } else if (rec.kind === 'studio-typePairing' && isTypePairing(rec.typePairing)) {
+        // F-8: the three preference axes. A preference pins (the archetype may still refuse a
+        // value it does not list); an avoid is rationale only — there is no per-axis veto list.
+        if (rec.prefer && !hint.typePairing && rule.confidence >= PIN_CONFIDENCE) {
+          hint.typePairing = rec.typePairing
+          hint.rationale?.push(`Bilgi tabanı: ${rec.typePairing} tip ikilisi bu kapsamda onaylandı.`)
+          applied.push(rule.id)
+        }
+      } else if (rec.kind === 'studio-frame' && isFrame(rec.frame)) {
+        if (rec.prefer && !hint.frame && rule.confidence >= PIN_CONFIDENCE) {
+          hint.frame = rec.frame
+          hint.rationale?.push(`Bilgi tabanı: ${rec.frame} çerçevesi bu kapsamda onaylandı.`)
+          applied.push(rule.id)
+        }
+      } else if (rec.kind === 'studio-ornament' && isOrnament(rec.ornament)) {
+        if (rec.prefer && !hint.ornament && rule.confidence >= PIN_CONFIDENCE) {
+          hint.ornament = rec.ornament
+          hint.rationale?.push(`Bilgi tabanı: süs seviyesi ${rec.ornament} bu kapsamda onaylandı.`)
           applied.push(rule.id)
         }
       }

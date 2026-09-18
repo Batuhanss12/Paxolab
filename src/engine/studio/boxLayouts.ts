@@ -4,7 +4,6 @@
  */
 import {
   barcodeBlock,
-  benefitColumn,
   benefitRow,
   brandPill,
   chip,
@@ -14,6 +13,7 @@ import {
   hairline,
   legalColumn,
   legalTypeSize,
+  paintFrame,
   markKindFor,
   monogramLockup,
   netQuantity,
@@ -32,16 +32,16 @@ import {
   spacedLine,
   stackedLockup,
   stackedWords,
-  thinDoubleFrame,
   titleCard,
   verticalBrand,
   STUDIO_MIN_LOGO_R,
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
-import { darken, isDark, lighten, mix, readableInk } from './color'
+import { FIELD_INTENSITY, FIELD_MUTE, fieldPalette, secondaryField } from './panelField'
+import { isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
-import { paintLandscapeWindowFace, paintLineSceneFace, paintWavePanelFace } from './labelLayouts'
+import { paintAtelierPlateFace, paintCrestPanelFace, paintLineSceneFace, paintSpecimenHeroFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, identOf, marginFor, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { BoxArchetype, StudioPalette } from './types'
@@ -57,7 +57,6 @@ import type { BoxArchetype, StudioPalette } from './types'
  * modern one, and brown on a brief that asked for green.
  */
 function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
-  if (archetype === 'landscape-window') return p.ground
   if (archetype === 'ink-wash' || archetype === 'botanical-card' || archetype === 'line-scene' || archetype === 'wave-panel') {
     return p.deep
   }
@@ -66,14 +65,13 @@ function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
 
 function deepInk(p: StudioPalette, archetype: BoxArchetype): string {
   const g = deepGround(p, archetype)
-  if (archetype === 'landscape-window') return p.ink
   // Readable on whatever the deep surface turned out to be, rather than on an assumption about it.
   return readableInk(g, isDark(g) ? p.card : p.cardInk)
 }
 
 /* ------------------------------------------------------------------ fronts */
 
-function darkLandscape(ctx: LayoutCtx): string {
+function noirStack(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, d.palette.ground)]
@@ -81,7 +79,14 @@ function darkLandscape(ctx: LayoutCtx): string {
   const span = d.variant === 1 ? 0.76 : d.variant === 2 ? 0.56 : 0.66
   const lockTop = h * (d.variant === 1 ? 0.05 : d.variant === 2 ? 0.12 : 0.08)
   const stackGap = h * (d.variant === 1 ? 0.01 : d.variant === 2 ? 0.03 : 0.015)
-  parts.push(paintBackground('landscape-moon', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span }))
+  /*
+   * `d.background`, not a literal. This archetype's DNA offers `marble` as its second field and the
+   * painter never drew it — so variation 1 reported marble, painted moonlight, and the offer strip
+   * and golden table both repeated the claim. Measured across the eight multi-background
+   * archetypes, only this one and the `line-scene` carton had that mismatch; everywhere else a
+   * hardcoded family matches a single-entry DNA list and is simply the archetype being itself.
+   */
+  parts.push(paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span, ornament: d.ornament }))
   const ink = d.palette.ink
   const accent = d.palette.accent
   const brandMax = Math.min(12, w * 0.17)
@@ -116,10 +121,10 @@ function inkWashFront(ctx: LayoutCtx): string {
   const washCorner = d.variant === 1 ? 'br' : d.variant === 2 ? 'tl' : 'bl'
   const lockTop = m * (d.variant === 1 ? 1.4 : d.variant === 2 ? 2.8 : 2)
   const gap = h * (d.variant === 1 ? 0.035 : d.variant === 2 ? 0.07 : 0.05)
-  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: washCorner })]
+  const parts: string[] = [paintBackground('ink-wash', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, corner: washCorner, ornament: d.ornament })]
   const ink = d.palette.ink
   const accent = d.palette.accent
-  parts.push(thinDoubleFrame(w, h, m * 0.5, accent, 0.85))
+  parts.push(paintFrame(d, w, h, { inset: m * 0.5, color: accent, opacity: 0.85 }))
   const brandMax = Math.min(11, w * 0.16)
   const lock = stackedLockup(ledger, d, w / 2, lockTop, w - m * 3, copy.brand, cityLine(ctx.brief), withIdent(ctx, { color: ink, markColor: accent, brandMax }))
   parts.push(lock.markup)
@@ -136,15 +141,10 @@ function inkWashFront(ctx: LayoutCtx): string {
   return parts.join('')
 }
 
-function landscapeWindowFront(ctx: LayoutCtx): string {
-  // Same anatomy as the label face — the box front is just a taller canvas.
-  return paintLandscapeWindowFace(ctx, { brandMax: 10 })
-}
-
 function marbleFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.8 })]
+  const parts: string[] = [paintBackground('marble', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.8, ornament: d.ornament })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   const bx = m * 1.6
@@ -168,7 +168,7 @@ function marbleFront(ctx: LayoutCtx): string {
 function botanicalCardFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.85 })]
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.85, ornament: d.ornament })]
   const ink = d.palette.ink
   const pill = brandPill(ledger, d, w - m, m, copy.brand, w * 0.6, identOf(ctx))
   parts.push(pill.markup)
@@ -202,7 +202,7 @@ function botanicalCardFront(ctx: LayoutCtx): string {
 function diagonalTechFront(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid })]
+  const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, ornament: d.ornament })]
   const ink = d.palette.ink
   const accent = d.palette.accent
   // brand small top-left, monogram top-right
@@ -261,8 +261,6 @@ export function paintBoxFront(ctx: LayoutCtx): string {
   switch (ctx.d.archetype as BoxArchetype) {
     case 'ink-wash':
       return inkWashFront(ctx)
-    case 'landscape-window':
-      return landscapeWindowFront(ctx)
     case 'marble-frame':
       return marbleFront(ctx)
     case 'botanical-card':
@@ -273,9 +271,15 @@ export function paintBoxFront(ctx: LayoutCtx): string {
       return paintLineSceneFace(ctx, { rounded: false })
     case 'wave-panel':
       return paintWavePanelFace(ctx)
-    case 'dark-landscape':
+    case 'specimen-hero':
+      return paintSpecimenHeroFace(ctx)
+    case 'atelier-plate':
+      return paintAtelierPlateFace(ctx)
+    case 'crest-panel':
+      return paintCrestPanelFace(ctx)
+    case 'noir-stack':
     default:
-      return darkLandscape(ctx)
+      return noirStack(ctx)
   }
 }
 
@@ -285,47 +289,90 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const arche = d.archetype as BoxArchetype
-  const light = arche === 'ink-wash' || arche === 'landscape-window' || arche === 'line-scene'
+  const light = arche === 'ink-wash' || arche === 'line-scene' || arche === 'atelier-plate'
   const bg = light ? d.palette.card : arche === 'marble-frame' ? d.palette.ground : arche === 'botanical-card' || arche === 'wave-panel' ? d.palette.ground : d.palette.ground
   const ink = light ? d.palette.cardInk : d.palette.ink
   const accent = arche === 'botanical-card' ? '#ffffff' : d.palette.accent
   const parts: string[] = [ground(w, h, bg)]
-  if (arche === 'marble-frame') parts.push(paintBackground('marble', w, h, { ...d.palette, accent: mix(d.palette.accent, bg, 0.6) }, d.seed + 7, { species: ctx.species, uid: `${ctx.uid}-b`, intensity: 0.3 }))
-  if (arche === 'wave-panel') parts.push(paintBackground('wave', w, h, d.palette, d.seed + 7, { species: ctx.species, uid: `${ctx.uid}-b` }))
-  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, m * 0.55, accent, 0.8))
+  // The back carries the densest type on the carton, so its field is a whisper of the front's
+  // system rather than a repeat of it — present enough that the panel belongs to the box, quiet
+  // enough that the ingredient column stays the thing you read.
+  parts.push(
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.back), d.seed + 7, {
+      species: ctx.species,
+      uid: `${ctx.uid}-b`,
+      intensity: FIELD_INTENSITY.back,
+    }),
+  )
+  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.8 }))
   const hdr = backHeaders(d.locale)
   // header lockup
-  const brandMax = Math.min(7, w * 0.1)
+  /*
+   * The back's header answers to the panel's height as well as its width. Sized on width alone,
+   * a 140 x 40 pillow back spent 18 of its 40 mm on brand + product + category and left the
+   * mandatory legal block 4.2 mm — room for a heading and not for a line under it.
+   */
+  const brandMax = Math.min(7, w * 0.1, h * 0.12)
   const lock = stackedLockup(ledger, d, w / 2, m * 1.4, w - m * 3, copy.brand, '', withIdent(ctx, { color: ink, markColor: accent, brandMax }))
   parts.push(lock.markup)
   const stack = productStack(ledger, d, w / 2, lock.bottom + 1, w - m * 3, copy.product, withIdent(ctx, { color: ink, accent, category: d.categoryLine, max: Math.min(secondaryMax(lock.brandSize), w * 0.065) }))
   parts.push(stack.markup)
-  let y = stack.bottom + 3
-  // story
-  const bodySize = typeSize(Math.min(1.8, w * 0.024))
-  const story = paragraph(ledger, m * 1.4, y, w - m * 2.8, d.story, bodySize, pairingFaces(d.typePairing).body, ink, 4, 'middle')
-  parts.push(story.markup)
-  y = story.bottom + 2
+  let y = stack.bottom + Math.min(3, Math.max(1.2, h * 0.03))
   const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
   // footer reserve: pictos + barcode + producer
   const barH = Math.max(7, Math.min(10, h * 0.07))
-  const footTop = h - m - barH - 9
+  /*
+   * The strip under the barcode holds the producer line. It was a flat 9 mm, which is a fifth
+   * of a 40 mm pillow-box back — enough on its own to leave the mandatory legal block with no
+   * room at all. It scales with the panel now, so a short back spends its height on content.
+   */
+  const footTop = h - m - barH - Math.min(9, Math.max(4.5, h * 0.13))
+
+  /*
+   * The legal block is mandatory; the brand story is not.
+   *
+   * The story used to take four lines unconditionally, before anything measured what was left. On
+   * a tall carton that is fine. On a wide, short back — a pillow box, a tray, a carrier, a rigid
+   * gift base, all roughly 40–50 mm tall — the header and those four lines ran past the footer
+   * reserve, `legalColumn` found `y` already below its limit and drew *nothing*, and the export
+   * gate correctly refused the file for having no regulatory stack. Measured across the catalogue:
+   * 7 of the 41 realistic template × sector pairings failed this way.
+   *
+   * So the mandatory block is reserved first and the story takes what is genuinely spare.
+   */
+  const sectionCount = d.sector === 'food' || d.sector === 'beverage' ? 2 : 3
+  const legalFloor = typeSize(1.5)
+  const perSection = legalFloor * 4.06 // title + one body line + the gap after it
+  const legalReserve = Math.min(perSection * sectionCount, Math.max(perSection, (footTop - y) * 0.55))
+
+  // story
+  const bodySize = typeSize(Math.min(1.8, w * 0.024))
+  const storyLines = linesThatFit(y, footTop - legalReserve, bodySize, 4)
+  if (storyLines > 0) {
+    const story = paragraph(ledger, m * 1.4, y, w - m * 2.8, d.story, bodySize, pairingFaces(d.typePairing).body, ink, storyLines, 'middle')
+    parts.push(story.markup)
+    y = story.bottom + 2
+  }
   // sector block: notes (perfume) / nutrition + benefits (food) / spec chips (electronics)
+  // Every sector block stops short of the legal reserve too — the notes table and the nutrition
+  // table are informative, not mandatory, and on a short back they used to consume the room the
+  // regulatory stack needed (and, unbounded, to overlap themselves: `notes-head × notes-head`).
+  const blockLimit = footTop - legalReserve
   if (d.sector === 'perfume') {
     const pyramid = scentPyramid(ctx.brief)
-    if (pyramid && footTop - y > 22) {
+    if (pyramid && blockLimit - y > 22) {
       parts.push(spacedLine(ledger, w / 2, y + 1.6, d.taglineLine, 1.5, accent, w - m * 3, 'middle', 'sans', 'tagline'))
       const notes = notesTable(ledger, m, y + 4.5, w - m * 2, hdr.notes, pyramid, ink, accent)
       parts.push(notes.markup)
       y = notes.bottom + 1.5
     }
-  } else if ((d.sector === 'food' || d.sector === 'beverage') && footTop - y > 26) {
+  } else if ((d.sector === 'food' || d.sector === 'beverage') && blockLimit - y > 26) {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
     parts.push(row.markup)
     y = row.bottom + 2.5
     const tableSize = typeSize(Math.min(1.58, w * 0.02))
     // leave room for at least the usage / warnings block under the table
-    const tableLimit = footTop - Math.max(14, (footTop - y) * 0.42)
+    const tableLimit = Math.min(blockLimit, footTop - Math.max(14, (footTop - y) * 0.42))
     if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
       const tableW = Math.min(w - m * 2, Math.max(28, (w - m * 2) * 0.58))
       const table = nutritionTable(ledger, m, y, tableW, hdr.nutrition, nutritionRows(d.locale, blob), ink, tableSize, tableLimit)
@@ -343,7 +390,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
         y = table.bottom + 1.5
       }
     }
-  } else if (d.sector === 'electronics' && footTop - y > 14) {
+  } else if (d.sector === 'electronics' && blockLimit - y > 14) {
     let cx = m
     for (const c of d.chips.slice(0, 3)) {
       const size = typeSize(Math.min(1.7, w * 0.02))
@@ -353,7 +400,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
       cx += el.w + 1.8
     }
     y += 6
-  } else if (footTop - y > 22) {
+  } else if (blockLimit - y > 22) {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 3), accent, { labelColor: ink, r: Math.min(3.4, w * 0.055) })
     parts.push(row.markup)
     y = row.bottom + 2.5
@@ -364,7 +411,14 @@ export function paintBoxBack(ctx: LayoutCtx): string {
     { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]
-  const legal = legalColumn(ledger, m * 1.2, y, w - m * 2.4, footTop, sections, ink, { size: legalTypeSize(w, footTop - y), anchor: 'middle', titleColor: accent === ink ? ink : accent })
+  /*
+   * The reserve is a floor, not a target. The blocks above stop at `footTop - legalReserve`, but
+   * each leaves a gap after itself, and that gap pushed the start past the reserve — measured on
+   * a 160 x 40 food tray, the legal block was left 4.36 mm where it needed 4.44 and drew nothing
+   * at all. Clamping the start guarantees the mandatory block the room that was set aside for it.
+   */
+  const legalTop = Math.min(y, Math.max(0, footTop - legalReserve))
+  const legal = legalColumn(ledger, m * 1.2, legalTop, w - m * 2.4, footTop, sections, ink, { size: legalTypeSize(w, footTop - legalTop), anchor: 'middle', titleColor: accent === ink ? ink : accent })
   parts.push(legal.markup)
   // footer: pictos left, volume middle, barcode right
   const rowY = h - m - barH - 5.5
@@ -399,42 +453,19 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   const bg = deepGround(d.palette, arche)
   const ink = deepInk(d.palette, arche)
   const m = marginFor(w, h)
-  const parts: string[] = []
-  if (arche === 'dark-landscape' || arche === 'marble-frame') {
-    parts.push(paintBackground('marble', w, h, { ...d.palette, ground: bg, accent: mix(d.palette.accent, bg, arche === 'dark-landscape' ? 0.35 : 0) }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
-  } else if (arche === 'botanical-card') {
-    parts.push(paintBackground('botanical', w, h, { ...d.palette, ground: bg, accent2: darken(bg, 0.08) }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}`, intensity: 0.5 }))
-  } else if (arche === 'diagonal-tech') {
-    parts.push(paintBackground('circuit', w, h, d.palette, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}` }))
-  } else if (arche === 'wave-panel') {
-    parts.push(paintBackground('wave', w, h, { ...d.palette, ground: bg }, d.seed + 11 + index, { species: ctx.species, uid: `${ctx.uid}-s${index}` }))
-  } else {
-    parts.push(ground(w, h, bg))
-  }
-  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, Math.min(m * 0.5, 1.8), d.palette.accent, 0.75))
+  const parts: string[] = [ground(w, h, bg)]
+  parts.push(
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.side), d.seed + 11 + index, {
+      species: ctx.species,
+      uid: `${ctx.uid}-s${index}`,
+      intensity: FIELD_INTENSITY.side,
+    }),
+  )
+  parts.push(paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.8), color: d.palette.accent, opacity: 0.75 }))
   // Three side regimes: full column (≥ 28 mm wide, ≥ 60 mm tall), compact (≥ 20 mm wide), spine (rotated text only).
   const full = w >= 28 && h >= 60
   const compact = !full && w >= 20 && h >= 40
   const colW = w - m * 1.6
-  if (arche === 'landscape-window' && full) {
-    // Anadolu Bal side: brand small, "DOĞADAN SOFRANIZA" words, benefit column with icons
-    const lock = stackedLockup(ledger, d, w / 2, m, colW, copy.brand, '', withIdent(ctx, { color: ink, brandMax: Math.min(4.6, w * 0.16), markColor: d.palette.accent }))
-    parts.push(lock.markup)
-    const words = stackedWords(ledger, w / 2, lock.bottom + 3, d.manifesto.slice(0, 3), Math.min(2.2, w * 0.075), d.palette.accent2, colW)
-    parts.push(words.markup)
-    const colBottom = h - m * 3.4
-    const col = benefitColumn(ledger, d, m * 0.8, words.bottom + 4, colW, d.benefits.slice(0, 4), d.palette.accent, Math.max(2, h * 0.02), colBottom)
-    parts.push(col.markup)
-    if (col.bottom < h - 16) {
-      const tagSize = Math.min(2.4, w * 0.08)
-      const tagY = Math.min(h - m * 3.2, col.bottom + 6)
-      const tag = d.taglineLine.toLocaleLowerCase('tr')
-      parts.push(textEl({ x: w / 2, y: tagY, text: tag, size: tagSize, face: 'serif-italic', fill: d.palette.accent2, anchor: 'middle', italic: true }))
-      ledger.text('side-tagline', w / 2, tagY, textWidth(tag, tagSize, 'serif-italic'), tagSize, 'middle')
-    }
-    parts.push(verticalBrand(ledger, w - m * 0.55, h / 2, `${copy.brand} · ${d.categoryLine}`, 1.5, mix(ink, bg, 0.5), h - m * 4))
-    return parts.join('')
-  }
   if (full) {
     // GUESS / Rebull side: mark top, stacked manifesto middle, brand bottom, spine text along the edge
     const r = Math.min(w * 0.14, 5)
@@ -492,7 +523,15 @@ export function paintBoxTop(ctx: LayoutCtx, which: 'top' | 'bottom'): string {
   const ink = deepInk(d.palette, arche)
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, bg)]
-  if (d.frame === 'thin-double') parts.push(thinDoubleFrame(w, h, Math.min(m * 0.5, 1.6), d.palette.accent, 0.7))
+  // The lid is the panel a customer sees first on a shelf, so it wears the field too.
+  parts.push(
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.lid), d.seed + 19, {
+      species: ctx.species,
+      uid: `${ctx.uid}-${which}`,
+      intensity: FIELD_INTENSITY.lid,
+    }),
+  )
+  parts.push(paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.6), color: d.palette.accent, opacity: 0.7 }))
   const tall = h >= 14
   const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w - m * 2, Math.min(tall ? 5 : 3.4, h * 0.34) * ctx.titleScale, 1.6 * ctx.titleScale, pairingFaces(d.typePairing).brand, 0.16)
   const by = h / 2 + (tall ? -0.5 : brandSize * 0.35)
@@ -513,7 +552,17 @@ export function paintBoxFlap(ctx: LayoutCtx): string {
   const vol = d.volumeLine
   const canBrand = h >= 8 && w >= 16
   const canVol = Boolean(vol) && h >= 12 && w >= 22
-  const parts: string[] = [`<g data-art="flap">${ground(w, h, bg)}`]
+  // Tuck flaps are folded away on the built box, but the customer reads the dieline flat before
+  // anything is folded — a plain strip between two textured panels is the seam that made the
+  // carton look assembled from parts.
+  const parts: string[] = [
+    `<g data-art="flap">${ground(w, h, bg)}`,
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.flap), d.seed + 23, {
+      species: ctx.species,
+      uid: `${ctx.uid}-flap`,
+      intensity: FIELD_INTENSITY.flap,
+    }),
+  ]
   if (canBrand) {
     const brand = copy.brand.toLocaleUpperCase('tr')
     const face = pairingFaces(d.typePairing).brand

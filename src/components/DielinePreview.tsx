@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DesignSpec } from '../types'
 import { artworkMarkup, clipDefs } from '../engine/artwork/composeArtwork'
 import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
@@ -20,8 +20,35 @@ export function DielinePreview({ design, onCopyChange, onCopyCommit }: DielinePr
   const [dockOpen, setDockOpen] = useState(true)
   const canvasRef = useRef<HTMLDivElement>(null)
   const artwork = artworkFromDocument(design.document)
-  const svg = renderDielineSvg(design.dieline, {
+
+  /*
+   * The label set shows the two faces, and nothing else.
+   *
+   * A wrap label's die carries a glue tab on the right of the front, and drawing the whole net put
+   * it beside the design with the front's own cut line running past it — so the front looked like
+   * it had an empty strip attached, and did not match the 2D view. Labelling the tab helped a
+   * little and was still the wrong answer: this view is the customer's proof of their two faces,
+   * not the knife file. The tab stays in the die and in the export; it comes out of the proof.
+   *
+   * Cartons keep their full net: there the flaps *are* the thing the Açılım view exists to show.
+   */
+  const model = useMemo(() => {
+    if (!labelSet || !design.dieline.glueIds.length) return design.dieline
+    const glue = new Set(design.dieline.glueIds)
+    const faces = design.dieline.panels.filter((panel) => !glue.has(panel.id))
+    if (!faces.length) return design.dieline
+    return {
+      ...design.dieline,
+      panels: faces,
+      glueIds: [],
+      cut: faces.map((panel) => panel.polygon),
+      crease: [],
+    }
+  }, [design.dieline, labelSet])
+
+  const svg = renderDielineSvg(model, {
     showArtwork: true,
+    // Clip ids come from the full die: the glue layer is still in the artwork, painting nothing.
     artworkMarkup: `<defs>${clipDefs(design.dieline)}</defs>${artworkMarkup(artwork)}`,
     safeInsetMm: design.overrides.printReady ? pressSafeMm(design.dieline) : 0,
   })

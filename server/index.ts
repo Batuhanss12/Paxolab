@@ -1,10 +1,25 @@
+/*
+ * The asset hook has to be registered before the engine is *linked*, not merely before it runs.
+ *
+ * ESM resolves and loads a module's whole dependency graph before any of its bodies execute, so a
+ * plain `import './rawAssets.ts'` at the top of this file is too late: `app.ts` pulls in the design
+ * engine during linking, and the engine's `.svg?raw` import fails there. The hook registers when
+ * this module's body runs, which is after that.
+ *
+ * So everything that reaches the engine is imported dynamically, below, once the hook is in place.
+ * The isolated check passed for exactly the wrong reason — a dynamic import in a test harness is
+ * not the same as a static one in the entry point.
+ */
+import './rawAssets.ts'
 import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { createApp } from './app.ts'
-import { openDb } from './db.ts'
 import { safeLog } from './security.ts'
+
+// Loaded after `rawAssets.ts` has registered its hook — see the note above.
+const { createApp } = await import('./app.ts')
+const { openDb } = await import('./db.ts')
 
 const port = Number(process.env.FORMA_API_PORT ?? process.env.PORT ?? 8787)
 const db = openDb()

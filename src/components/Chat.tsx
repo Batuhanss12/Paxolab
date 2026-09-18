@@ -11,6 +11,8 @@ type ChatProps = {
   onRemoveAttach: (id: string) => void
   onSend: () => void
   typing: boolean
+  /** Same notice the landing composer shows — a refused upload has to say so where it happened. */
+  note?: string | null
 }
 
 export function Chat({
@@ -22,6 +24,7 @@ export function Chat({
   onRemoveAttach,
   onSend,
   typing,
+  note,
 }: ChatProps) {
   const endRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -82,6 +85,7 @@ export function Chat({
           onKeyDown={onKey}
           rows={2}
         />
+        {note && <p className="composer__note">{note}</p>}
         {attachments.length > 0 && (
           <div className="thumbs">
             {attachments.map((a) => (

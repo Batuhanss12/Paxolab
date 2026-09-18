@@ -1,6 +1,6 @@
 import type { Attachment, DesignSpec, DimensionsMm } from '../types'
 import { studioFaceLabel, studioLanguageCaption } from '../engine/studio/faceCaption'
-import { facePanelId, renderFrontSvg, renderPanelSvg } from '../engine/artwork/renderArtwork'
+import { facePanelId, renderFrontSvg, renderPanelSvg, PREVIEW_PAD } from '../engine/artwork/renderArtwork'
 import { artworkFromDocument } from '../engine/document'
 import { useEffect, useRef, useState } from 'react'
 import { CopyCanvas, copyFieldFromTarget } from './CopyCanvas'
@@ -30,10 +30,27 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
     ? (() => {
         const panelId = facePanelId(design.dieline, design.artwork, labelFace)
         return panelId
-          ? renderPanelSvg(design.dieline, design.artwork, panelId, design.palette, { pad: 6, exportFonts: true })
+          ? renderPanelSvg(design.dieline, design.artwork, panelId, design.palette, { pad: PREVIEW_PAD, exportFonts: true })
           : renderFrontSvg(design.dieline, artwork, design.palette)
       })()
     : renderFrontSvg(design.dieline, artwork, design.palette)
+  /*
+   * The art is sized by its own proportion, not by width alone.
+   *
+   * `.art-svg` used to set a width and let the height fall out of the aspect ratio, which is fine
+   * until the height exceeds the stage — the canvas clips, and a tall carton lost its foot. It is
+   * a carton-only fault because labels are wide: measured on a 70×120 mm box at 1366×768, the art
+   * came out 642 px tall in a 478 px stage, so the customer saw 74% of their own design.
+   *
+   * Handing the wrapper the viewBox's ratio lets `max-height` do its job: the browser shrinks the
+   * width to satisfy the height and the whole face fits, at whichever axis is the tight one.
+   */
+  const aspectRatio = (() => {
+    const box = /viewBox="\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)/.exec(svg)
+    const w = Number(box?.[1])
+    const h = Number(box?.[2])
+    return w > 0 && h > 0 ? `${w} / ${h}` : undefined
+  })()
   const languageCaption = studioLanguageCaption(design)
 
   function selectField(field: CopyField | null, opts: { syncFace?: boolean } = {}) {
@@ -101,6 +118,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
           <button
             type="button"
             className={`ghost-btn copy-canvas__toggle${dockOpen ? ' is-active' : ''}`}
+            data-coach="copy"
             onClick={() => setDockOpen((open) => !open)}
           >
             Yazı
@@ -130,6 +148,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
         <div className="preview-stage__canvas" ref={canvasRef}>
           <div
             className={`art-svg ${isLabel ? 'art-svg--label' : ''} art-svg--live`}
+            style={aspectRatio ? { aspectRatio } : undefined}
             dangerouslySetInnerHTML={{ __html: svg }}
           />
         </div>

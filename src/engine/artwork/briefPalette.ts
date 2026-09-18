@@ -35,8 +35,15 @@ const NAMED: Array<[RegExp, string]> = [
   // read as chromatic and the vivid temperament derived a red ground from it.
   [/siyah|black/i, '#141414'],
   [/beyaz|white/i, '#f7f4ee'],
-  [/altın|altin|gold/i, '#c9a227'],
+  // Metallics first, and the compound names before the plain ones: "rose gold" must not fall
+  // through to `gold` (or worse, to `rose` → pink). Every entry here is also in `METALLIC`.
+  [/rose\s*gold|ros[eé]\s*alt[ıi]n/i, '#b76e79'],
+  // Every entry is tested against the whole brief, so "rose gold" would also hit `gold` here and
+  // `rose` in the pink row and hand back three colours for one word. Both are fenced off.
+  [/altın|altin|(?<!rose\s*)gold/i, '#c9a227'],
   [/g[uü]m[uü][sş]|silver/i, '#c5ccd6'],
+  [/platin|platinum/i, '#d9d9d3'],
+  [/pirin[cç]|brass/i, '#b5a642'],
   [/bak[ıi]r|copper|bronz|bronze/i, '#a9623a'],
   // Materials a packaging brief names as often as hues. "mermer · altın" used to reduce to gold
   // alone, because marble matched nothing — and a single surviving colour becomes the ground.
@@ -57,7 +64,7 @@ const NAMED: Array<[RegExp, string]> = [
   [/mavi|blue/i, '#2a5d9f'],
   [/mor|purple|lila|lavanta|lavender/i, '#6b4f9e'],
   [/fu[sş]ya|fuchsia|magenta/i, '#b8336a'],
-  [/pembe|pink|gül\s*kurusu|rose/i, '#e59bb0'],
+  [/pembe|pink|gül\s*kurusu|rose(?!\s*gold)/i, '#e59bb0'],
   [/k[ıi]rm[ıi]z[ıi]|red/i, '#b8331f'],
   [/bordo|burgundy|vi[sş]ne|cherry/i, '#6b1d2a'],
   [/turuncu|orange/i, '#de5e21'],
@@ -337,7 +344,26 @@ function paletteFromMood(hexes: string[], mood: StyleType): Palette {
  * asks for it. A named metallic is a request for foil, so it belongs on the accent slot while the
  * ground comes from whatever else the brief said, or from the sector default if it said nothing.
  */
-const METALLIC = new Set(['#c9a227', '#c5ccd6', '#a9623a'])
+const METALLIC = new Set(['#c9a227', '#c5ccd6', '#a9623a', '#b76e79', '#d9d9d3', '#b5a642'])
+
+/**
+ * The named foil, tinted until it separates from the ground — never swapped for another colour.
+ *
+ * Gold clears the contrast floor on any ground; rose gold, copper and brass do not on a dark one
+ * (measured: rose gold #b76e79 sits 0.18 in luminance above a luxury black, floor 0.22), and
+ * `ensureAccentContrast` answered by handing the accent to the paper colour. That is a cream
+ * label on a brief that asked for rose gold. A foil that is too dark for its ground is printed
+ * lighter, not replaced: the hue is the customer's, only the tint moves.
+ */
+function foilOn(bg: string, metal: string): string {
+  if (accentContrastsGround(bg, metal)) return metal
+  const toward = hexLuminance(bg) < 0.45 ? '#ffffff' : '#000000'
+  for (let t = 0.1; t <= 0.7; t += 0.1) {
+    const tinted = mixHex(metal, toward, t)
+    if (accentContrastsGround(bg, tinted)) return tinted
+  }
+  return metal
+}
 
 /** Production palette: colors[] win; mood only nudges contrast. */
 export function paletteFromBrief(brief: DesignBrief, mood: StyleType, premium = false): Palette {
@@ -348,5 +374,5 @@ export function paletteFromBrief(brief: DesignBrief, mood: StyleType, premium = 
     ? paletteFromMood(ground, mood)
     : ensureAccentContrast(tweakNeutrals(paletteFor(brief, mood, premium), mood))
   if (!metal) return base
-  return ensureAccentContrast({ ...base, accent: metal })
+  return ensureAccentContrast({ ...base, accent: foilOn(base.bg, metal) })
 }

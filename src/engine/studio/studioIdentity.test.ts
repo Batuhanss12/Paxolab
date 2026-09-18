@@ -84,7 +84,15 @@ describe('studio identity — logo + scales on P1', () => {
   it('does not auto-apply luxury-tighten 1.1 on studio; kit still does', () => {
     const studio = coffeeGenerate({ overridePatch: { directorCue: 'luxury-tighten' } })
     expect(studio.overrides.titleScale).toBe(1)
-    expect(hashStudioFace(heroMarkup(studio))).toBe(STUDIO_FACE_GOLDEN[COFFEE.slug].hash)
+    /*
+     * This used to assert the whole face hash against the golden — the cue had no route into the
+     * studio at all, so "unchanged" was the only possible outcome. Since F-3 the plan the cue
+     * shapes reaches the direction through `studioPlanBridge`, on the three preference axes only.
+     * What must still hold: the cue does not scale the type (above) and does not move the design
+     * — same archetype, same background. The pairing / frame / ornament may follow the cue.
+     */
+    expect(studio.studio?.direction.archetype).toBe(STUDIO_FACE_GOLDEN[COFFEE.slug].archetype)
+    expect(studio.studio?.direction.background).toBe(STUDIO_FACE_GOLDEN[COFFEE.slug].background)
 
     const kit = new FormaLocalEngine().generate({
       brief: {

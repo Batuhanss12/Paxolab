@@ -4,7 +4,7 @@ import type { DesignBrief } from '../../types'
 import { FormaLocalEngine } from '../FormaLocalEngine'
 import { runConversation } from '../conversation'
 import { emptyBrief } from '../fields'
-import { getTemplate } from './catalog'
+import { activeTemplates, getTemplate } from './catalog'
 import {
   DEFAULT_STRUCTURE_WEIGHTS,
   evaluateStructures,
@@ -80,8 +80,14 @@ describe('C5 structure recommendation', () => {
       sector: 'parfüm',
       dimensionsMm: { L: 90, W: 0, H: 70 },
     })
-    expect(labels.candidates.length).toBe(2)
-    expect(labels.candidates.every((row) => row.structureId === 'wrap-label' || row.structureId === 'flat-label')).toBe(true)
+    // Measured on this brief the order is wrap 0.74, flat 0.70, then the curved cuts — a perfume
+    // wrap still leads, which is the right shape of answer; on a 60×60 balm tin the same function
+    // puts the disc first at 0.85. The set of label formats is read off the live catalog rather
+    // than listed here: this line has gone stale twice (disc, then oval) for enumerating by hand.
+    const labelFormats = new Set(activeTemplates(true).filter((t) => t.packagingMode === 'label').map((t) => t.structureId))
+    expect(labels.candidates.length).toBe(3)
+    expect(labels.candidates.every((row) => labelFormats.has(row.structureId))).toBe(true)
+    expect(labels.candidates[0].structureId).toBe('wrap-label')
   })
 
   it('TEST 3 — reasons cite real L×W×H, not a generic slogan', () => {

@@ -3,9 +3,9 @@
  * Every painter is seeded and pure: same seed → same path data. Panel-local coordinates (0..w, 0..h).
  * No raster, no filters; print-safe vectors only.
  */
-import type { BackgroundFamily, StudioPalette } from './types'
+import type { BackgroundFamily, OrnamentLevel, StudioPalette } from './types'
 import { darken, lighten, mix } from './color'
-import { speciesLeaf, speciesTree, type Species } from './species'
+import { speciesHero, speciesLeaf, type HeroInk, type Species } from './species'
 
 export type Rng = () => number
 
@@ -25,8 +25,20 @@ const f = (n: number) => (Math.round(n * 100) / 100).toString()
 export type BackgroundOpts = {
   /** Unique id prefix for gradients / clips. */
   uid: string
-  /** 0–1 strength: how loud the texture is. */
+  /** 0–1 strength: how loud the texture is. Each painter has its own tuned default. */
   intensity?: number
+  /**
+   * The direction's ornament level, applied on top of `intensity`. `measured` (or nothing) is the
+   * identity, so every face painted before the axis existed comes back unchanged; `quiet` pulls
+   * the texture back to a little over half; `rich` pushes it up by a quarter.
+   *
+   * It is a multiplier on the intensity the painter asked for rather than a replacement, because
+   * those numbers were tuned per background by eye. The ceiling is 1.25, not 1: painters spend
+   * intensity on *counts* (marble bands, fronds, veins, flecks) as much as on opacity, and clamp
+   * every opacity where they write it. Capping at 1 made `rich` byte-identical to `measured` on
+   * the ink panel, whose base is already 1.
+   */
+  ornament?: OrnamentLevel
   /** Where an ink wash / scene sits. */
   corner?: 'bl' | 'br' | 'tl' | 'tr'
   /** For landscapes: vertical span (0–1 of h) the scene occupies from the bottom. */
@@ -40,6 +52,12 @@ export type BackgroundOpts = {
   species?: Species
 }
 
+/** The texture strength a painter should use: its own default, scaled by the direction's ornament level. */
+export function gain(opts: BackgroundOpts, base: number): number {
+  const k = opts.ornament === 'quiet' ? 0.55 : opts.ornament === 'rich' ? 1.25 : 1
+  return Math.min(1.25, (opts.intensity ?? base) * k)
+}
+
 export function paintBackground(family: BackgroundFamily, w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   switch (family) {
     case 'marble':
@@ -48,10 +66,6 @@ export function paintBackground(family: BackgroundFamily, w: number, h: number, 
       return botanical(w, h, pal, seed, opts)
     case 'diagonal':
       return diagonal(w, h, pal, seed, opts)
-    case 'landscape-moon':
-      return landscapeMoon(w, h, pal, seed, opts)
-    case 'landscape-meadow':
-      return landscapeMeadow(w, h, pal, seed, opts)
     case 'ink-wash':
       return inkWash(w, h, pal, seed, opts)
     case 'gradient-wash':
@@ -62,6 +76,8 @@ export function paintBackground(family: BackgroundFamily, w: number, h: number, 
       return wave(w, h, pal, seed, opts)
     case 'circuit':
       return circuit(w, h, pal, seed, opts)
+    case 'arabesque':
+      return arabesque(w, h, pal, seed, opts)
     case 'paper':
     default:
       return paper(w, h, pal, seed)
@@ -135,7 +151,7 @@ function veinRibbon(pts: Pt[], maxW: number, peak: number): string {
 
 export function marble(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
-  const k = opts.intensity ?? 0.8
+  const k = gain(opts, 0.8)
   const parts: string[] = [ground(w, h, pal.ground)]
   const area = Math.sqrt(w * h)
   // Veining reads as *stone* before it reads as colour, so it is mixed from the ground toward the
@@ -267,7 +283,7 @@ function edgeAnchor(rng: Rng, w: number, h: number): { cx: number; cy: number } 
 
 export function botanical(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
-  const k = opts.intensity ?? 0.8
+  const k = gain(opts, 0.8)
   const tones = [pal.accent2, darken(pal.accent2, 0.07), darken(pal.accent2, 0.14), mix(pal.accent2, pal.ground, 0.22)]
   const parts: string[] = [ground(w, h, pal.ground)]
   const diag = Math.sqrt(w * w + h * h)
@@ -306,7 +322,7 @@ export function botanical(w: number, h: number, pal: StudioPalette, seed: number
 
 export function diagonal(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
-  const k = opts.intensity ?? 0.8
+  const k = gain(opts, 0.8)
   const id = `${opts.uid}-dg`
   const warm = pal.accent
   const warm2 = pal.accent2
@@ -332,137 +348,6 @@ export function diagonal(w: number, h: number, pal: StudioPalette, seed: number,
   return `<g data-bg="diagonal">${parts.join('')}</g>`
 }
 
-/* ------------------------------------------------------------- landscapes */
-
-function ridge(rng: Rng, w: number, baseY: number, amp: number, peaks: number): string {
-  const ys: number[] = []
-  for (let i = 0; i <= peaks; i++) {
-    const taper = i === 0 || i === peaks ? 0.32 : 1
-    ys.push(baseY - amp * (0.18 + rng() * 0.82) * taper * (i % 2 === 0 ? 1 : 0.4))
-  }
-  let d = `M0 ${f(ys[0])}`
-  const step = w / peaks
-  for (let i = 1; i <= peaks; i++) {
-    const x0 = (i - 1) * step
-    const x1 = i * step
-    d += ` C${f(x0 + step * 0.42)} ${f(ys[i - 1])} ${f(x1 - step * 0.42)} ${f(ys[i])} ${f(x1)} ${f(ys[i])}`
-  }
-  return d
-}
-
-function pine(x: number, baseY: number, hgt: number, fill: string, opacity = 1): string {
-  const wdt = hgt * 0.38
-  return `<path d="M${f(x)} ${f(baseY - hgt)} L${f(x + wdt * 0.55)} ${f(baseY - hgt * 0.55)} L${f(x + wdt * 0.3)} ${f(baseY - hgt * 0.55)} L${f(x + wdt)} ${f(baseY - hgt * 0.15)} L${f(x + wdt * 0.6)} ${f(baseY - hgt * 0.15)} L${f(x + wdt * 0.6)} ${f(baseY)} L${f(x - wdt * 0.6)} ${f(baseY)} L${f(x - wdt * 0.6)} ${f(baseY - hgt * 0.15)} L${f(x - wdt)} ${f(baseY - hgt * 0.15)} L${f(x - wdt * 0.3)} ${f(baseY - hgt * 0.55)} L${f(x - wdt * 0.55)} ${f(baseY - hgt * 0.55)}Z" fill="${fill}" fill-opacity="${f(opacity)}" />`
-}
-
-export function landscapeMoon(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
-  const rng = mulberry32(seed)
-  const id = `${opts.uid}-lm`
-  const span = opts.span ?? 0.62
-  const top = h * (1 - span)
-  const bottom = h
-  const sceneH = bottom - top
-  const glow = mix(pal.ground, pal.accent, 0.35)
-  const parts: string[] = []
-  parts.push(`<defs>
-    <linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.ground}" stop-opacity="0" /><stop offset="0.35" stop-color="${mix(pal.ground, pal.accent, 0.16)}" /><stop offset="1" stop-color="${mix(pal.ground, pal.accent, 0.08)}" /></linearGradient>
-    <linearGradient id="${id}-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.ground}" stop-opacity="0" /><stop offset="1" stop-color="${pal.ground}" stop-opacity="1" /></linearGradient>
-    <radialGradient id="${id}-moon"><stop offset="0" stop-color="${lighten(pal.accent, 0.25)}" /><stop offset="0.7" stop-color="${pal.accent}" /><stop offset="1" stop-color="${darken(pal.accent, 0.1)}" /></radialGradient>
-  </defs>`)
-  parts.push(`<rect x="0" y="${f(top)}" width="${f(w)}" height="${f(sceneH)}" fill="url(#${id}-sky)" />`)
-  // stars
-  let stars = ''
-  for (let i = 0; i < Math.round(w * 0.9); i++) {
-    stars += `<circle cx="${f(rng() * w)}" cy="${f(top + rng() * sceneH * 0.5)}" r="${f(0.06 + rng() * 0.14)}" fill="${pal.accent}" fill-opacity="${f(0.25 + rng() * 0.6)}" />`
-  }
-  parts.push(`<g data-texture="stars">${stars}</g>`)
-  // moon
-  const moonR = Math.min(w, sceneH) * 0.16
-  const moonX = w * (0.42 + rng() * 0.16)
-  const moonY = top + sceneH * 0.32
-  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 2.15)}" fill="${glow}" fill-opacity="0.12" />`)
-  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR * 1.55)}" fill="${glow}" fill-opacity="0.2" />`)
-  parts.push(`<circle cx="${f(moonX)}" cy="${f(moonY)}" r="${f(moonR)}" fill="url(#${id}-moon)" />`)
-  // mountain ridges (far → near), cubic silhouettes
-  const layers = 4
-  for (let i = 0; i < layers; i++) {
-    const t = i / (layers - 1)
-    const baseY = top + sceneH * (0.46 + t * 0.22)
-    const amp = sceneH * (0.28 - t * 0.05)
-    const fill = mix(pal.ground, pal.accent, 0.32 - t * 0.1)
-    parts.push(`<path d="${ridge(rng, w, baseY, amp, 7 + i * 2)} L${f(w)} ${f(bottom)} L0 ${f(bottom)}Z" fill="${fill}" />`)
-  }
-  const treeBase = top + sceneH * 0.72
-  for (let i = 0; i < Math.round(w / 4.5); i++) {
-    const x = rng() * w
-    const hgt = sceneH * (0.055 + rng() * 0.09)
-    parts.push(pine(x, treeBase + rng() * sceneH * 0.03, hgt, darken(pal.ground, 0.03), 0.92 + rng() * 0.08))
-  }
-  const waterY = top + sceneH * 0.74
-  parts.push(`<path d="M0 ${f(waterY + sceneH * 0.02)} C${f(w * 0.28)} ${f(waterY - sceneH * 0.03)} ${f(w * 0.62)} ${f(waterY + sceneH * 0.04)} ${f(w)} ${f(waterY)} L${f(w)} ${f(bottom)} L0 ${f(bottom)}Z" fill="${mix(pal.ground, pal.accent, 0.12)}" />`)
-  const reflectH = sceneH * 0.16
-  parts.push(`<g data-texture="reflection">
-    <ellipse cx="${f(moonX)}" cy="${f(waterY + reflectH * 0.42)}" rx="${f(moonR * 0.42)}" ry="${f(reflectH * 0.55)}" fill="${pal.accent}" fill-opacity="0.2" />
-    <ellipse cx="${f(moonX)}" cy="${f(waterY + reflectH * 0.28)}" rx="${f(moonR * 0.22)}" ry="${f(reflectH * 0.32)}" fill="${lighten(pal.accent, 0.2)}" fill-opacity="0.28" />
-  </g>`)
-  let ripples = ''
-  for (let i = 0; i < 28; i++) {
-    const near = rng() < 0.55
-    const y = waterY + rng() * (bottom - waterY) * 0.68
-    const x = moonX + (rng() - 0.5) * w * (near ? 0.28 : 0.62)
-    const len = w * (0.025 + rng() * (near ? 0.07 : 0.12))
-    ripples += `<line x1="${f(x - len / 2)}" y1="${f(y)}" x2="${f(x + len / 2)}" y2="${f(y)}" stroke="${pal.accent}" stroke-opacity="${f(0.22 + rng() * 0.5)}" stroke-width="${f(0.1 + rng() * 0.22)}" />`
-  }
-  parts.push(`<g data-texture="ripples">${ripples}</g>`)
-  // fade to ground at the bottom so copy sits on solid colour
-  parts.push(`<rect x="0" y="${f(bottom - sceneH * 0.32)}" width="${f(w)}" height="${f(sceneH * 0.32)}" fill="url(#${id}-fade)" />`)
-  return `<g data-bg="landscape-moon" data-art="hero">${parts.join('')}</g>`
-}
-
-export function landscapeMeadow(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
-  const rng = mulberry32(seed)
-  const id = `${opts.uid}-me`
-  const sky = lighten(pal.ground, 0.03)
-  const skyDeep = mix(pal.ground, pal.accent, 0.3)
-  const rock = pal.accent2
-  const snow = pal.card
-  const meadow = mix(pal.accent2, '#6f8a3a', 0.55)
-  const meadowLight = lighten(meadow, 0.12)
-  const parts: string[] = []
-  parts.push(`<defs><linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky}" /><stop offset="1" stop-color="${skyDeep}" /></linearGradient></defs>`)
-  parts.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}" fill="url(#${id}-sky)" />`)
-  // sun glow
-  parts.push(`<circle cx="${f(w * 0.5)}" cy="${f(h * 0.38)}" r="${f(Math.min(w, h) * 0.32)}" fill="${pal.accent}" fill-opacity="0.18" />`)
-  // far snowy range
-  const far = ridge(rng, w, h * 0.46, h * 0.2, 7)
-  parts.push(`<path d="${far} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${mix(rock, sky, 0.35)}" />`)
-  // snow caps: same ridge, clipped high
-  parts.push(`<clipPath id="${id}-caps"><rect x="0" y="0" width="${f(w)}" height="${f(h * 0.4)}" /></clipPath>`)
-  parts.push(`<path d="${far} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${snow}" fill-opacity="0.85" clip-path="url(#${id}-caps)" />`)
-  // near range
-  parts.push(`<path d="${ridge(rng, w, h * 0.58, h * 0.14, 5)} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${rock}" />`)
-  // meadow hills
-  parts.push(`<path d="M0 ${f(h * 0.78)} C${f(w * 0.3)} ${f(h * 0.68)} ${f(w * 0.6)} ${f(h * 0.82)} ${f(w)} ${f(h * 0.72)} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${meadow}" />`)
-  parts.push(`<path d="M0 ${f(h * 0.88)} C${f(w * 0.35)} ${f(h * 0.8)} ${f(w * 0.7)} ${f(h * 0.94)} ${f(w)} ${f(h * 0.86)} L${f(w)} ${f(h)} L0 ${f(h)}Z" fill="${meadowLight}" />`)
-  // trees along the hill — an orchard for olive/citrus, stalks for grain, conifers otherwise
-  const species = opts.species ?? 'conifer'
-  for (let i = 0; i < Math.round(w / 5); i++) {
-    const x = rng() * w
-    const base = h * (0.74 + rng() * 0.06)
-    parts.push(speciesTree(species, x, base, h * (0.07 + rng() * 0.07), darken(meadow, 0.18)))
-  }
-  // flowers
-  let flowers = ''
-  const petals = [pal.accent, '#e9e2d0', '#c9a0d6', '#f2d16b']
-  for (let i = 0; i < Math.round(w * 0.7); i++) {
-    const x = rng() * w
-    const y = h * (0.86 + rng() * 0.12)
-    const r = 0.35 + rng() * 0.5
-    flowers += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="${petals[Math.floor(rng() * petals.length)]}" fill-opacity="0.9" />`
-  }
-  parts.push(`<g data-texture="flowers">${flowers}</g>`)
-  return `<g data-bg="landscape-meadow" data-art="hero">${parts.join('')}</g>`
-}
 
 /* ---------------------------------------------------------------- ink wash */
 
@@ -489,6 +374,10 @@ export function inkWash(w: number, h: number, pal: StudioPalette, seed: number, 
   const rng = mulberry32(seed)
   const corner = opts.corner ?? 'bl'
   const ink = pal.accent2
+  // Ornament gain: 1 is the face as it was always painted; below it the wash thins and the
+  // spray, veins and flecks grow fewer; above it (capped by `ornamentGain`) they multiply.
+  const k = gain(opts, 1)
+  const op = (o: number) => f(Math.min(1, o * k))
   const parts: string[] = [ground(w, h, pal.ground)]
   const ox = corner.includes('l') ? 0 : w
   const oy = corner.includes('b') ? h : 0
@@ -503,17 +392,17 @@ export function inkWash(w: number, h: number, pal: StudioPalette, seed: number, 
   for (const l of layers) {
     const cx = ox + dirX * R * l.r * 0.35
     const cy = oy + dirY * R * l.r * 0.3
-    parts.push(`<path d="${blob(rng, cx, cy, R * l.r * 0.75, R * l.r * 0.65)}" fill="${ink}" fill-opacity="${f(l.op)}" />`)
+    parts.push(`<path d="${blob(rng, cx, cy, R * l.r * 0.75, R * l.r * 0.65)}" fill="${ink}" fill-opacity="${op(l.op)}" />`)
   }
   // softer spray blobs
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < Math.round(4 * k); i++) {
     const cx = ox + dirX * R * (0.15 + rng() * 0.5)
     const cy = oy + dirY * R * (0.1 + rng() * 0.45)
-    parts.push(`<path d="${blob(rng, cx, cy, R * (0.05 + rng() * 0.08), R * (0.04 + rng() * 0.07))}" fill="${ink}" fill-opacity="${f(0.35 + rng() * 0.3)}" />`)
+    parts.push(`<path d="${blob(rng, cx, cy, R * (0.05 + rng() * 0.08), R * (0.04 + rng() * 0.07))}" fill="${ink}" fill-opacity="${op(0.35 + rng() * 0.3)}" />`)
   }
   // metallic veins along the wash edge
   let veins = ''
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < Math.round(9 * k); i++) {
     const x0 = ox + dirX * R * (0.05 + rng() * 0.55)
     const y0 = oy + dirY * R * (0.05 + rng() * 0.5)
     const len = R * (0.15 + rng() * 0.3)
@@ -524,8 +413,8 @@ export function inkWash(w: number, h: number, pal: StudioPalette, seed: number, 
   }
   parts.push(`<g data-texture="veins">${veins}</g>`)
   let flecks = ''
-  for (let i = 0; i < Math.round(R * 0.8); i++) {
-    flecks += `<circle cx="${f(ox + dirX * R * rng() * 0.7)}" cy="${f(oy + dirY * R * rng() * 0.6)}" r="${f(0.08 + rng() * 0.25)}" fill="${pal.accent}" fill-opacity="${f(0.4 + rng() * 0.5)}" />`
+  for (let i = 0; i < Math.round(R * 0.8 * k); i++) {
+    flecks += `<circle cx="${f(ox + dirX * R * rng() * 0.7)}" cy="${f(oy + dirY * R * rng() * 0.6)}" r="${f(0.08 + rng() * 0.25)}" fill="${pal.accent}" fill-opacity="${op(0.4 + rng() * 0.5)}" />`
   }
   parts.push(`<g data-texture="flecks">${flecks}</g>`)
   return `<g data-bg="ink-wash" data-art="hero">${parts.join('')}</g>`
@@ -553,7 +442,7 @@ export function inkWash(w: number, h: number, pal: StudioPalette, seed: number, 
  */
 export function gradientWash(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
-  const k = opts.intensity ?? 0.7
+  const k = gain(opts, 0.7)
   const R = Math.max(w, h)
   // Keep the cloud centres out of the column the lockup owns, so type never lands on a colour edge.
   const rightLimit = opts.clearRight ? w * (1 - opts.clearRight) : w
@@ -608,106 +497,140 @@ export function gradientWash(w: number, h: number, pal: StudioPalette, seed: num
 
 /* -------------------------------------------------------------- line scene */
 
-function palm(x: number, baseY: number, hgt: number, stroke: string, sw: number, lean: number): string {
-  const topX = x + lean * hgt * 0.25
-  const topY = baseY - hgt
-  let g = `<path d="M${f(x)} ${f(baseY)} Q${f(x + lean * hgt * 0.05)} ${f(baseY - hgt * 0.55)} ${f(topX)} ${f(topY)}" fill="none" stroke="${stroke}" stroke-width="${f(sw * 1.6)}" stroke-linecap="round" />`
-  for (let i = 0; i < 6; i++) {
-    const a = -Math.PI * 0.95 + (i / 5) * Math.PI * 0.9
-    const len = hgt * (0.32 + (i % 2) * 0.08)
-    const ex = topX + Math.cos(a) * len
-    const ey = topY + Math.sin(a) * len + len * 0.35
-    g += `<path d="M${f(topX)} ${f(topY)} Q${f((topX + ex) / 2)} ${f(topY - len * 0.25)} ${f(ex)} ${f(ey)}" fill="none" stroke="${stroke}" stroke-width="${f(sw)}" stroke-linecap="round" />`
-    // leaflet ticks
-    for (let k = 1; k <= 4; k++) {
-      const t = k / 5
-      const px = topX + (ex - topX) * t
-      const py = topY + (ey - topY) * t - len * 0.12 * (1 - t)
-      g += `<line x1="${f(px)}" y1="${f(py)}" x2="${f(px + Math.cos(a + 1.2) * len * 0.12)}" y2="${f(py + Math.sin(a + 1.2) * len * 0.12 + len * 0.08)}" stroke="${stroke}" stroke-width="${f(sw * 0.8)}" stroke-linecap="round" />`
-    }
-  }
-  return g
-}
 
+/**
+ * A line-drawn subject in the lower half — the DNA Pharma system.
+ *
+ * This used to be a hard-coded seaside: sun, sea horizon, waves, three sailboats, clouds, two palm
+ * trees, a parasol and a sand line. It ignored the brief entirely, so a jar of honey, a detergent
+ * and a baby shampoo all got the same holiday postcard. That is both of the things the owner has
+ * asked to be rid of at once — a landscape, and a drawing with nothing to do with the sector.
+ *
+ * The archetype itself is sound and stays: pale field, type above, one drawn subject below, thin
+ * rule under it. What is drawn is now the product's own species, in the engraved line language the
+ * system already speaks, so honey gets its flowering stem and a shampoo gets its botanical.
+ */
 export function lineScene(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
-  const rng = mulberry32(seed)
   const span = opts.span ?? 0.5
   const top = h * (1 - span)
   const sceneH = h - top
   const ink = pal.ink
   const sw = Math.max(0.16, Math.min(w, h) * 0.0035)
   const parts: string[] = []
-  const horizon = top + sceneH * 0.5
-  // sun
-  const sunR = sceneH * 0.11
-  const sunX = w * 0.55
-  const sunY = horizon - sunR * 0.5
-  parts.push(`<circle cx="${f(sunX)}" cy="${f(sunY)}" r="${f(sunR)}" fill="${pal.accent}" />`)
-  for (let i = 1; i <= 3; i++) {
-    parts.push(`<path d="M${f(sunX - sunR * 1.3)} ${f(sunY + sunR * 0.2 * i)} q${f(sunR * 0.4)} ${f(-sunR * 0.18)} ${f(sunR * 0.8)} 0 t${f(sunR * 0.8)} 0 t${f(sunR * 0.8)} 0" fill="none" stroke="${pal.ground}" stroke-width="${f(sw * 1.4)}" />`)
+
+  // Monoline: every plane of the drawing is the one ink, which is what makes it read as a line
+  // drawing rather than a small tonal illustration that happens to have no colour.
+  const line: HeroInk = {
+    leafLight: ink,
+    leaf: ink,
+    leafMid: ink,
+    leafDeep: ink,
+    fruit: pal.accent,
+    fruitDeep: pal.accent,
+    stem: ink,
   }
-  // horizon + waves
-  parts.push(`<line x1="${f(w * 0.05)}" y1="${f(horizon)}" x2="${f(w * 0.95)}" y2="${f(horizon)}" stroke="${ink}" stroke-width="${f(sw)}" />`)
-  for (let i = 0; i < 6; i++) {
-    const y = horizon + sceneH * (0.08 + i * 0.05)
-    const x = w * (0.08 + rng() * 0.5)
-    const len = w * (0.08 + rng() * 0.16)
-    parts.push(`<path d="M${f(x)} ${f(y)} q${f(len * 0.25)} ${f(-sceneH * 0.03)} ${f(len * 0.5)} 0 t${f(len * 0.5)} 0" fill="none" stroke="${ink}" stroke-width="${f(sw)}" stroke-linecap="round" />`)
-  }
-  // sailboats
-  for (let i = 0; i < 3; i++) {
-    const x = w * (0.12 + rng() * 0.4)
-    const y = horizon - sceneH * 0.01 - i * sceneH * 0.03
-    const s = sceneH * (0.06 + rng() * 0.04)
-    parts.push(`<path d="M${f(x)} ${f(y)} L${f(x)} ${f(y - s)} L${f(x + s * 0.55)} ${f(y - s * 0.15)}Z M${f(x - s * 0.35)} ${f(y)} L${f(x + s * 0.55)} ${f(y)} L${f(x + s * 0.4)} ${f(y + s * 0.15)} L${f(x - s * 0.25)} ${f(y + s * 0.15)}Z" fill="none" stroke="${ink}" stroke-width="${f(sw)}" stroke-linejoin="round" />`)
-  }
-  // clouds
-  for (let i = 0; i < 3; i++) {
-    const x = w * (0.1 + rng() * 0.7)
-    const y = top + sceneH * (0.05 + rng() * 0.2)
-    const s = sceneH * 0.06
-    parts.push(`<path d="M${f(x)} ${f(y)} a${f(s * 0.5)} ${f(s * 0.5)} 0 0 1 ${f(s)} 0 a${f(s * 0.4)} ${f(s * 0.4)} 0 0 1 ${f(s * 0.8)} ${f(s * 0.2)} h${f(-s * 2.2)} a${f(s * 0.4)} ${f(s * 0.4)} 0 0 1 ${f(s * 0.4)} ${f(-s * 0.2)}Z" fill="none" stroke="${ink}" stroke-width="${f(sw)}" stroke-linejoin="round" />`)
-  }
-  // palms right, umbrella left
-  parts.push(palm(w * 0.82, h * 0.98, sceneH * 0.62, ink, sw, -0.6))
-  parts.push(palm(w * 0.9, h * 0.99, sceneH * 0.44, ink, sw, -0.3))
-  const ux = w * 0.24
-  const uy = h * 0.72
-  const ur = sceneH * 0.17
-  parts.push(`<path d="M${f(ux - ur)} ${f(uy)} Q${f(ux)} ${f(uy - ur * 0.9)} ${f(ux + ur)} ${f(uy)} Z" fill="none" stroke="${ink}" stroke-width="${f(sw)}" />`)
-  for (let i = 1; i < 4; i++) {
-    const t = -1 + (i / 4) * 2
-    parts.push(`<path d="M${f(ux)} ${f(uy - ur * 0.9)} Q${f(ux + t * ur * 0.5)} ${f(uy - ur * 0.6)} ${f(ux + t * ur)} ${f(uy)}" fill="none" stroke="${ink}" stroke-width="${f(sw * 0.8)}" />`)
-  }
-  parts.push(`<line x1="${f(ux)}" y1="${f(uy)}" x2="${f(ux)}" y2="${f(h * 0.97)}" stroke="${ink}" stroke-width="${f(sw)}" />`)
-  // sand line
-  parts.push(`<path d="M0 ${f(h * 0.9)} Q${f(w * 0.3)} ${f(h * 0.86)} ${f(w * 0.6)} ${f(h * 0.9)} T${f(w)} ${f(h * 0.88)}" fill="none" stroke="${ink}" stroke-width="${f(sw)}" />`)
+
+  const size = Math.min(w * 0.62, sceneH * 0.82)
+  const cx = w / 2
+  const cy = top + sceneH * 0.48
+  parts.push(
+    speciesHero(opts.species ?? 'flora', cx, cy, size, line, seed, {
+      uid: `${opts.uid}-ls`,
+      style: 'engraved',
+      layout: 'sprig',
+    }),
+  )
+
+  // The rule the subject stands on. A straight hairline, not a horizon: nothing behind it, nothing
+  // below it, so it reads as the archetype's baseline rather than the edge of a scene.
+  const ruleY = h * 0.93
+  parts.push(
+    `<line x1="${f(w * 0.18)}" y1="${f(ruleY)}" x2="${f(w * 0.82)}" y2="${f(ruleY)}" stroke="${ink}" stroke-width="${f(sw)}" stroke-opacity="0.5" />`,
+  )
   return `<g data-bg="line-scene" data-art="hero">${parts.join('')}</g>`
 }
 
 /* -------------------------------------------------------------------- wave */
 
-export function wave(w: number, h: number, pal: StudioPalette, seed: number, _opts: BackgroundOpts): string {
+export function wave(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
+  const k = gain(opts, 1)
   const parts: string[] = [ground(w, h, pal.ground)]
   const bands = 5
   for (let i = 0; i < bands; i++) {
     const y = h * (0.15 + (i / bands) * 0.9)
     const amp = h * (0.06 + rng() * 0.06)
     const d = `M0 ${f(y)} C${f(w * 0.25)} ${f(y - amp)} ${f(w * 0.5)} ${f(y + amp)} ${f(w)} ${f(y - amp * 0.4)} L${f(w)} ${f(h)} L0 ${f(h)}Z`
-    parts.push(`<path d="${d}" fill="${pal.accent2}" fill-opacity="${f(0.18 + i * 0.12)}" />`)
+    parts.push(`<path d="${d}" fill="${pal.accent2}" fill-opacity="${f(Math.min(1, (0.18 + i * 0.12) * k))}" />`)
   }
   return `<g data-bg="wave">${parts.join('')}</g>`
 }
 
+/* --------------------------------------------------------------- arabesque */
+
+/**
+ * A flat interlaced star lattice — the Azzurra field from the STİCKERR REF set.
+ *
+ * Everything else in this file is a *texture*: veins, fronds, washes, ridges, all irregular and
+ * seeded. This is the first background that is geometry — an eight-point star repeating on a
+ * square grid with the connecting rhombi drawn as hairlines, which is how girih and Andalusian
+ * tilework read at label scale. It is flat on purpose: the reference plates are printed in one
+ * ink and one foil, and the eye reads the pattern as a surface, not as depth.
+ *
+ * The seed decides only the phase of the grid (where the first star sits), so two faces on the
+ * same brief are not tile-identical; the cell size follows the short side so a 45 mm oval and a
+ * 150 mm carton carry the same number of stars across.
+ */
+export function arabesque(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
+  const rng = mulberry32(seed)
+  const k = gain(opts, 0.8)
+  const cell = Math.max(6, Math.min(w, h) / (5 + Math.round(k * 2)))
+  const phaseX = rng() * cell
+  const phaseY = rng() * cell
+  const line = pal.accent2
+  const sw = Math.max(0.12, cell * 0.018)
+  // Quiet enough for small type to sit directly on it: at 0.42 / 0.1 the category line on a cream
+  // field read as part of the pattern; the eye wants the lattice a step behind the plate.
+  const strokeOp = Math.min(1, 0.34 * k)
+  const fillOp = Math.min(1, 0.07 * k)
+  // One eight-point star: two squares, one rotated 45°, inscribed in the cell.
+  const star = (cx: number, cy: number, r: number): string => {
+    const pts: string[] = []
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      const rr = i % 2 === 0 ? r : r * 0.62
+      pts.push(`${f(cx + Math.cos(a) * rr)} ${f(cy + Math.sin(a) * rr)}`)
+    }
+    return `M${pts.join(' L')}Z`
+  }
+  let stars = ''
+  let lattice = ''
+  const r = cell * 0.46
+  for (let y = -cell + phaseY; y < h + cell; y += cell) {
+    for (let x = -cell + phaseX; x < w + cell; x += cell) {
+      stars += `<path d="${star(x, y, r)}" />`
+      // The rhombus between four stars — drawn once per cell, to the right and below.
+      lattice += `<path d="M${f(x + r)} ${f(y)} L${f(x + cell / 2)} ${f(y + cell / 2 - r * 0.62)} L${f(x + cell - r)} ${f(y)} L${f(x + cell / 2)} ${f(y - cell / 2 + r * 0.62)}Z" />`
+      lattice += `<path d="M${f(x)} ${f(y + r)} L${f(x + cell / 2 - r * 0.62)} ${f(y + cell / 2)} L${f(x)} ${f(y + cell - r)} L${f(x - cell / 2 + r * 0.62)} ${f(y + cell / 2)}Z" />`
+    }
+  }
+  return (
+    `<g data-bg="arabesque">${ground(w, h, pal.ground)}` +
+    `<g data-texture="stars" fill="${line}" fill-opacity="${f(fillOp)}" stroke="${line}" stroke-opacity="${f(strokeOp)}" stroke-width="${f(sw)}" stroke-linejoin="round">${stars}</g>` +
+    `<g data-texture="lattice" fill="none" stroke="${line}" stroke-opacity="${f(strokeOp * 0.7)}" stroke-width="${f(sw * 0.8)}" stroke-linejoin="round">${lattice}</g>` +
+    `</g>`
+  )
+}
+
 /* ----------------------------------------------------------------- circuit */
 
-export function circuit(w: number, h: number, pal: StudioPalette, seed: number, _opts: BackgroundOpts): string {
+export function circuit(w: number, h: number, pal: StudioPalette, seed: number, opts: BackgroundOpts): string {
   const rng = mulberry32(seed)
+  const k = gain(opts, 1)
   const parts: string[] = [ground(w, h, pal.ground)]
   const step = Math.max(4, Math.min(w, h) / 9)
   let traces = ''
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < Math.round(14 * k); i++) {
     let x = Math.round((rng() * w) / step) * step
     let y = Math.round((rng() * h) / step) * step
     let d = `M${f(x)} ${f(y)}`

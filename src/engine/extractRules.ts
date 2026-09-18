@@ -120,6 +120,17 @@ export function normaliseSectorTypos(text: string): string {
 }
 
 /** Skip-utterance tokens that mean "no answer / use default". */
+/**
+ * Hello is not a brand.
+ *
+ * The brand heuristic takes the first word of the first message whenever it looks like a name, and
+ * "Merhaba" looks exactly like one. Measured on two ordinary openers — "Merhaba" and "Merhaba,
+ * Noctis diye bir parfüm markam var…" — the customer's pack came back branded **Merhaba**, and
+ * nothing anywhere said so. Greetings, thanks and filler are never names.
+ */
+export const GREETING_RE =
+  /^(merhaba|merhabalar|selam|selamlar|selamün\s*aleyküm|günaydın|iyi\s*(günler|akşamlar|geceler|çalışmalar)|hey|hi|hello|hola|naber|nasılsın|nasılsınız|teşekkürler|teşekkür\s*ederim|sağ\s*ol|sağol|eyvallah|merhabaa+)$/i
+
 export const SKIP_UTTERANCE = /^(şablon|varsayılan|örnek|geç|fark\s*etmez|farketmez|olsun|bilmiyorum|tamam|ok)$/i
 
 /** Palette name tokens — not valid brand/product names. */
@@ -154,4 +165,4 @@ export function stripBrandTail(phrase: string): string {
 
 /** Stop words for brand/product name extraction. */
 export const NAME_STOP_RE =
-  /^(için|bir|ve|ile|adı|adın|adını|olsun|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum|yeni|istiyorum|biraz|çok|henüz|emin|değilim|yapmak|çıktı|doğal|içerikli|yüz|tonlarında|editorial|contemporary|special|series|kahve|coffee|şampuan|shampoo|sabun|temizlik|deterjan|takviye|vitamin|bebek|içecek|teknoloji|tasarım|tasarla|lazım|gerek|istiyoruz|etiketi|kutusunu)$/i
+  /^(var|yok|vardı|olacak|açtım|kurdum|kurduk|için|bir|ve|ile|adı|adın|adını|olsun|marka|brand|ürün|product|kozmetik|kutusu|kutu|ambalaj|etiket|gıda|elektronik|luxury|modern|minimal|eco|playful|classic|daha|premium|lüks|parfüm|perfume|krem|serum|yeni|istiyorum|biraz|çok|henüz|emin|değilim|yapmak|çıktı|doğal|içerikli|yüz|tonlarında|editorial|contemporary|special|series|kahve|coffee|şampuan|shampoo|sabun|temizlik|deterjan|takviye|vitamin|bebek|içecek|teknoloji|tasarım|tasarla|lazım|gerek|istiyoruz|etiketi|kutusunu)$/i

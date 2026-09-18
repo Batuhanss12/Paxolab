@@ -1,5 +1,6 @@
 import type { DesignBrief, DesignOverrides, DesignSpec, StyleType } from '../../types'
 import type { DirectionHints, StudioFamily } from '../studio/types'
+import { DESIGN_COMMAND_WORDS, parseDesignCommands } from './parseDesignCommands'
 
 export type IterateIntent = {
   overridePatch: Partial<DesignOverrides>
@@ -123,6 +124,19 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
     notes.push('Yönü daha canlı tek tona aldım.')
   }
 
+  // Frame / ornament / pairing / lockup / copy tiers / family words — the direction's own vocabulary.
+  const cmds = parseDesignCommands(text)
+  if (Object.keys(cmds.direction).length) {
+    overridePatch.direction = {
+      ...overridePatch.direction,
+      ...cmds.direction,
+      rationale: [...(overridePatch.direction?.rationale ?? []), ...(cmds.direction.rationale ?? [])],
+      source: 'user',
+    }
+  }
+  Object.assign(briefPatch, cmds.briefPatch)
+  notes.push(...cmds.notes)
+
   if (/baskıya\s*hazırla|üretime\s*gönder|print\s*ready/i.test(text)) {
     overridePatch.printReady = true
     notes.push('Üretim ön kontrolünü çalıştırdım.')
@@ -170,7 +184,9 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
 }
 
 export function isIteration(text: string): boolean {
-  return /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga|yoğun|dolu|sıkışık|kalabalık/i.test(
-    text,
+  return (
+    /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga|yoğun|dolu|sıkışık|kalabalık/i.test(
+      text,
+    ) || DESIGN_COMMAND_WORDS.test(text)
   )
 }

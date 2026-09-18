@@ -851,153 +851,142 @@ h2 {
   padding: 14px 18px 8px;
 }
 
-.preview-stack > .direction-offer {
-  flex: 0 0 auto;
-}
-
-.preview-stack .preview-stage__meta {
-  margin-bottom: 10px;
-}
-
-.preview-stack .preview-stage__work,
-.preview-stack .preview-stage__canvas {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.preview-stack .preview-stage__canvas--wide {
-  width: 100%;
-  padding: 0 4px 4px;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-.preview-stack .art-svg,
-.preview-stack .art-svg--label {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.preview-stack .art-svg svg {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-}
-
-.preview-stack .dieline-svg {
-  flex: 1 1 auto;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.preview-stack .dieline-svg svg {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.preview-stack .copy-canvas {
-  flex-basis: 200px;
-  width: 200px;
-  max-width: 200px;
-}
-
+.preview-stack > /* --------------------------------------------------------- direction strip
+ * A quiet switcher. Faces only, one row, fixed order, with the current one
+ * named once at the left and "Tümü" back to the full chooser. The previous
+ * version repeated a thumbnail + number + family name for every candidate,
+ * which at eight of them filled a deep band and still clipped the names.
+ */
 .direction-offer {
   flex: 0 0 auto;
   display: flex;
-  flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 12px;
+  padding: 8px 14px;
   border-top: 1px solid var(--line);
-  background: #080808;
-  overflow-x: auto;
+  background: #070707;
+  min-width: 0;
+}
+
+.direction-offer__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 120px;
 }
 
 .direction-offer__label {
-  flex-shrink: 0;
-  margin: 0 4px 0 0;
   font-size: 9px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--dim);
 }
 
-.direction-offer__card {
-  display: inline-flex;
+.direction-offer__current {
+  font-size: 12px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.direction-offer__rail {
+  display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: thin;
+}
+
+.direction-tile {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.direction-tile:hover:not(:disabled) {
+  border-color: #4a4a4a;
+  transform: translateY(-2px);
+}
+
+.direction-tile:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.direction-tile.is-selected {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.direction-tile__face,
+.direction-tile__blank {
+  display: block;
+  width: 100%;
+  height: 100%;
+  line-height: 0;
+}
+
+.direction-tile__blank {
+  background: linear-gradient(160deg, #2a2a2a, #111);
+}
+
+.direction-tile__face svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The number rides the corner so the face keeps the whole tile. */
+.direction-tile__index {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  min-width: 13px;
+  height: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.direction-tile.is-selected .direction-tile__index {
+  background: var(--danger);
+  color: #000;
+}
+
+.direction-offer__all {
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   background: transparent;
-  color: #c8c8c8;
-  border-radius: 8px;
-  padding: 3px 8px 3px 4px;
-  text-align: left;
-}
-
-.direction-offer__card:hover:not(:disabled) {
-  background: #111;
-  border-color: #333;
-}
-
-.direction-offer__card.is-selected {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-}
-
-.direction-offer__face {
-  display: grid;
-  grid-template-rows: 1fr 5px 4px;
-  width: 14px;
-  height: 20px;
-  border-radius: 3px;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid #0003;
-}
-
-.direction-offer__face span {
-  display: block;
-}
-
-.direction-offer__meta {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 5px;
-  min-width: 0;
-}
-
-.direction-offer__index {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--dim);
-}
-
-.direction-offer__card.is-selected .direction-offer__index {
-  color: #666;
-}
-
-.direction-offer__name {
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 13px;
   font-size: 11px;
-  text-transform: capitalize;
-  white-space: nowrap;
+  cursor: pointer;
 }
 
-.direction-offer__temp {
-  display: none;
+.direction-offer__all:hover:not(:disabled) {
+  border-color: #3a3a3a;
+  color: var(--fg);
 }
 
 /* ——— Chat ——— */
@@ -1215,8 +1204,28 @@ h2 {
   width: min(420px, 92%);
 }
 
+/*
+ * A label is not a smaller kind of design.
+ *
+ * Labels were capped at 360px while a carton got 420px; raising the cap to match still left a
+ * fixed ceiling, and measured on a 924×675 canvas a 70×45 oval filled 45% of the width and 41% of
+ * the height — a stamp in the middle of an empty board, which is what the owner was looking at.
+ * A cap in pixels cannot know how much room there is. The wrapper takes the slot instead, and the
+ * SVG's own `xMidYMid meet` sizes the artwork to the largest that fits without distorting it, so a
+ * wide label is limited by the height and a tall one by the width.
+ */
 .preview-stage--edit .art-svg--label {
-  width: min(360px, 86%);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.preview-stage--edit .art-svg--label svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
 }
 
 .preview-stage--edit .art-svg--live [data-edit] {
@@ -1959,12 +1968,31 @@ h2 {
   line-height: 1.55;
 }
 
+/*
+ * Width *and* height, because a carton is tall. Sizing on width alone let a 70×120 mm front render
+ * 642 px tall inside a 478 px stage and the clip took the bottom quarter of the design. The
+ * wrapper carries the viewBox's own ratio (set inline by `Preview2D`), so `max-height` can shrink
+ * the width instead of the stage cutting the art.
+ */
 .art-svg {
   width: min(380px, 70%);
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+/*
+ * The shadow sits on the drawing, not on the wrapper. When the stage is the short axis the wrapper
+ * is clamped and the art letterboxes inside it; a shadow on the wrapper would then outline a
+ * rectangle the design does not fill. On the svg it follows what is actually painted.
+ */
+.art-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
   filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.7));
 }
 
-.art-svg svg,
 .dieline-svg svg,
 .templates__svg svg {
   width: 100%;
@@ -2923,4 +2951,475 @@ h2 {
 
 .billing-panel__plan:last-child {
   border-bottom: none;
+}
+
+/* ---------------------------------------------------------- direction choice
+ * The four-design offer, at the size an offer has to be. The old strip showed
+ * candidates at 34×44 px, which is a swatch, not a preview — the customer could
+ * not tell there was anything to choose. Cards here are sized so the painted
+ * front is legible: brand, product and the field are all readable at a glance.
+ */
+.dirchoice {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 30px 30px;
+  overflow-y: auto;
+  /* Measured against the preview column, not the window: this panel lives beside the chat, so
+     the viewport width says nothing useful about how many cards actually fit. */
+  container-type: inline-size;
+}
+
+.dirchoice__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex: 0 0 auto;
+}
+
+.dirchoice__eyebrow {
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+.dirchoice__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.12;
+  color: var(--fg);
+}
+
+.dirchoice__sub {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.dirchoice__keep {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.dirchoice__keep:hover:not(:disabled) {
+  border-color: #3a3a3a;
+  color: var(--fg);
+}
+
+.dirchoice__keep:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dirchoice__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* Two-by-two, or one row when the column is wide enough. Never 3 + 1: an offer of four reads as
+     a set, and a set with one card orphaned on its own row reads as three plus an afterthought. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+@container (min-width: 680px) {
+  .dirchoice__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.dirchoice__grid > li {
+  display: flex;
+}
+
+.dirchoice__card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 12px 12px 14px;
+  text-align: left;
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.dirchoice__card:hover:not(:disabled) {
+  border-color: #3d3d3d;
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+.dirchoice__card:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dirchoice__card.is-current {
+  border-color: var(--danger);
+}
+
+/*
+ * No fixed aspect. All four candidates are the same panel, so letting each face keep its own
+ * proportion makes the cards agree anyway — and a forced 3:4 box put white bars down the sides of
+ * a tall carton, which reads as a badly cropped photo rather than a design.
+ */
+.dirchoice__faceWrap {
+  position: relative;
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.dirchoice__face {
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.dirchoice__face svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dirchoice__badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dirchoice__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+}
+
+.dirchoice__name {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.dirchoice__index {
+  min-width: 17px;
+  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.dirchoice__desc {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.dirchoice__tone {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.dirchoice__cta {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  border-top: 1px solid var(--line-soft);
+}
+
+.dirchoice__card:hover:not(:disabled) .dirchoice__cta,
+.dirchoice__card.is-current .dirchoice__cta {
+  color: var(--danger);
+}
+
+@media (max-width: 1100px) {
+  .dirchoice {
+    padding: 20px;
+  }
+  .dirchoice__title {
+    font-size: 24px;
+  }
+}
+
+/* ------------------------------------------------------------------- coach
+ * First-run walkthrough. The ring is a hole punched in a full-screen scrim by
+ * an enormous spread shadow, so the highlighted control stays fully legible
+ * and everything else recedes without a second overlay element.
+ */
+.coach {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.coach__ring {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.64);
+  outline: 2px solid var(--danger);
+  outline-offset: 0;
+  transition: top 0.18s ease, left 0.18s ease, width 0.18s ease, height 0.18s ease;
+}
+
+.coach__card {
+  position: fixed;
+  pointer-events: auto;
+  background: #0d0d0d;
+  border: 1px solid #2c2c2c;
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+
+.coach__count {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--danger);
+}
+
+.coach__title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.coach__body {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.coach__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.coach__skip {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font-size: 12px;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+
+.coach__skip:hover {
+  color: var(--muted);
+}
+
+.coach__next {
+  border: 1px solid var(--fg);
+  background: var(--fg);
+  color: #000;
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coach__next:hover {
+  background: #e6e6e6;
+}
+
+/* ------------------------------------------------------------------ auth form
+ * The studio's own way in. Before this the signed-out panel was a label with no
+ * control on it, and the only route to an account was a handoff parameter from
+ * the marketing site — so a bookmarked studio was a permanent guest.
+ */
+.auth-form {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  z-index: 60;
+  width: 264px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #0b0b0b;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  text-align: left;
+}
+
+.auth-form__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.auth-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.auth-form__input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #050505;
+  color: var(--fg);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.auth-form__input:focus {
+  outline: none;
+  border-color: #3d3d3d;
+}
+
+.auth-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.auth-form__submit {
+  border: 1px solid var(--fg);
+  background: var(--fg);
+  color: #000;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-form__submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.auth-form__switch {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.auth-form__switch:hover {
+  color: var(--fg);
+}
+
+.auth-form__error {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #e08080;
+}
+
+.auth-panel {
+  position: relative;
+}
+
+/* The composer's own notice — a refused upload says so where the upload happened. */
+.composer__note {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid #3a2f22;
+  border-radius: 8px;
+  background: #171208;
+  color: #e0c48a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------- proof state
+ * Print-ready was a phrase typed into the chat, with no control and no visible
+ * state — so the bundle with proof guides and the bundle without arrived under
+ * the same button with the same label.
+ */
+.prod__proof {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.prod__proof.is-on {
+  border-color: #2f4a34;
+  background: #0d130f;
+}
+
+.prod__proof strong {
+  display: block;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.prod__proof small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.prod__proof.is-on strong {
+  color: #9bd2a8;
 }

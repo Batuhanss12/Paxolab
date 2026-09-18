@@ -9,6 +9,8 @@ import { STRUCTURE_LABEL } from '../engine/catalog/structureOffer'
 import { familyOf, familyTalk } from '../engine/studio/family'
 import type { StudioFamily, Temperament } from '../engine/studio/types'
 import { DirectionOfferStrip } from './DirectionOfferStrip'
+import { DirectionChoice } from './DirectionChoice'
+import { Coach, coachSeen, studioCoachSteps } from './Coach'
 import { Chat } from './Chat'
 import { LearningPanel } from './LearningPanel'
 import { ComparePreview } from './ComparePreview'
@@ -65,6 +67,8 @@ type WorkspaceProps = {
   tab: TabId
   onTab: (tab: TabId) => void
   onReset: () => void
+  /** The wordmark's action. Scrolls/returns to the top of the current project — never destructive. */
+  onHome?: () => void
   onAuthChange?: (user: AuthUser | null) => void
   syncNote?: string | null
   creditsRefreshKey?: number
@@ -76,6 +80,12 @@ type WorkspaceProps = {
   bottleShape?: BottleShape | null
   onBottleShape?: (shape: BottleShape) => void
   onStartLabel?: () => void
+  /** The four-design choice — open right after a fresh generation, closed once answered. */
+  directionChoiceOpen?: boolean
+  onDirectionChoiceClose?: () => void
+  onDirectionChoiceOpen?: () => void
+  /** Print-ready proof toggle for the Üretim tab. */
+  onProof?: (on: boolean) => void
 }
 
 function ConversationBrief({
@@ -155,6 +165,7 @@ export function Workspace({
   tab,
   onTab,
   onReset,
+  onHome,
   onAuthChange,
   syncNote,
   creditsRefreshKey = 0,
@@ -166,6 +177,10 @@ export function Workspace({
   bottleShape = null,
   onBottleShape,
   onStartLabel,
+  directionChoiceOpen = false,
+  onDirectionChoiceClose,
+  onDirectionChoiceOpen,
+  onProof,
 }: WorkspaceProps) {
   const dualFromChat = messages.some((m) =>
     /kutu\s*(ve|ile|\+)\s*(şişe\s*)?etiket|(etiket|label)\s*(ve|ile|\+)\s*kutu/i.test(m.content),
@@ -182,10 +197,32 @@ export function Workspace({
   const showStyles = !!design || showTemplates || isCoreReady(brief)
   const copyOn2D = !!design && design.kind === 'label'
   const copyOnDieline = !!design && design.kind !== 'label'
-  const hasCopyCanvas = !showPicker && ((tab === 'vektor' && copyOn2D) || (tab === 'dieline' && copyOnDieline))
+  /*
+   * The chooser takes the whole preview column while it is up. It is a decision, not a panel
+   * beside the design: showing a face *and* four candidates for that face at once is what made
+   * the old strip read as decoration.
+   */
+  const showChoice =
+    !generating && !showPicker && directionChoiceOpen && (design?.studio?.offer?.candidates.length ?? 0) > 1
+  const hasCopyCanvas =
+    !showPicker && !showChoice && ((tab === 'vektor' && copyOn2D) || (tab === 'dieline' && copyOnDieline))
   const viewingLabel = Boolean(labelPicker || design?.kind === 'label' || surfaceView === 'label')
   const [toolsMenu, setToolsMenu] = useState<ToolsMenu>('none')
   const toolsRef = useRef<HTMLDivElement>(null)
+  const [coachOn, setCoachOn] = useState(false)
+
+  /*
+   * The walkthrough waits for the design to actually be on screen — not while generating, not
+   * behind the format picker, and not while the four-design choice is up, since the customer is
+   * already being asked a question there. The short delay lets the layout settle so the first
+   * ring lands on the control rather than on where it used to be.
+   */
+  useEffect(() => {
+    if (coachOn || coachSeen()) return
+    if (!design || generating || showPicker || showChoice) return
+    const timer = window.setTimeout(() => setCoachOn(true), 700)
+    return () => window.clearTimeout(timer)
+  }, [coachOn, design, generating, showPicker, showChoice])
 
   useEffect(() => {
     if (toolsMenu === 'none') return
@@ -207,7 +244,15 @@ export function Workspace({
   return (
     <div className="workspace">
       <header className="topbar">
-        <button type="button" className="wordmark wordmark--btn" onClick={onReset}>
+        {/*
+          * The wordmark goes home; it does not delete the project.
+          *
+          * It used to call `onReset`, which wipes the state and — 250 ms later, through the save
+          * effect — overwrites both stores with the empty one. No confirm, no undo, no trash. One
+          * misplaced click on the thing every other web app treats as "go home" and hours were
+          * gone. Resetting is still available, on the button that says `Yeni` and asks first.
+          */}
+        <button type="button" className="wordmark wordmark--btn" onClick={onHome}>
           Grapxor
         </button>
         {showTabs && (
@@ -217,6 +262,7 @@ export function Workspace({
                 key={t.id}
                 type="button"
                 className={`tabs__btn ${tab === t.id ? 'is-active' : ''}`}
+                data-coach={`tab-${t.id}`}
                 onClick={() => onTab(t.id)}
               >
                 {t.id === 'dieline' && design?.kind === 'label' ? 'Set' : t.label}
@@ -263,6 +309,7 @@ export function Workspace({
                 <button
                   type="button"
                   className={`ghost-btn ${toolsMenu === 'style' ? 'is-active' : ''}`}
+                  data-coach="style"
                   aria-expanded={toolsMenu === 'style'}
                   onClick={() => setToolsMenu((m) => (m === 'style' ? 'none' : 'style'))}
                 >
@@ -277,6 +324,11 @@ export function Workspace({
                   Girdiler
                 </button>
               </>
+            )}
+            {!!design && (
+              <button type="button" className="ghost-btn" onClick={() => setCoachOn(true)} title="Adımları yeniden göster">
+                Tur
+              </button>
             )}
             <button
               type="button"
@@ -331,7 +383,15 @@ export function Workspace({
             <button type="button" className="ghost-btn" onClick={onRedo} disabled={!canRedo}>
               Yinele
             </button>
-            <button type="button" className="ghost-btn" onClick={onReset}>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => {
+                const hasWork = !!design || messages.length > 0
+                if (hasWork && !window.confirm('Yeni bir tasarıma başlansın mı? Buradaki sohbet ve tasarım kapanır.')) return
+                onReset()
+              }}
+            >
               Yeni
             </button>
           </div>
@@ -350,6 +410,7 @@ export function Workspace({
             onRemoveAttach={onRemoveAttach}
             onSend={onSend}
             typing={typing}
+            note={syncNote}
           />
         </aside>
 
@@ -367,10 +428,24 @@ export function Workspace({
             {!generating && showPicker && brief.packagingMode !== 'label' && (
               <TemplatePicker brief={brief} onSelect={onSelectTemplate} onPick={onPickTemplate} onDims={onDims} />
             )}
-            {!generating && !showPicker && tab === 'konusma' && design && (
+            {showChoice && design && (
+              <DirectionChoice
+                offer={design.studio?.offer}
+                surface={design.kind === 'label' ? 'label' : 'box'}
+                brandName={design.copy.brand}
+                productName={design.copy.product}
+                busy={generating}
+                onPick={(family, index) => {
+                  onDirectionChoiceClose?.()
+                  onDirectionPick?.(family, index)
+                }}
+                onKeep={() => onDirectionChoiceClose?.()}
+              />
+            )}
+            {!generating && !showPicker && !showChoice && tab === 'konusma' && design && (
               <ConversationBrief messages={messages} design={design} />
             )}
-            {!generating && !showPicker && tab === 'vektor' && design && (
+            {!generating && !showPicker && !showChoice && tab === 'vektor' && design && (
               <div className="preview-stack">
                 <Preview2D
                   design={design}
@@ -383,15 +458,16 @@ export function Workspace({
                   <DirectionOfferStrip
                     offer={design.studio?.offer}
                     onPick={onDirectionPick}
+                    onOpenAll={onDirectionChoiceOpen}
                     disabled={generating}
                   />
                 )}
               </div>
             )}
-            {!generating && !showPicker && tab === 'karsilastir' && design && (
+            {!generating && !showPicker && !showChoice && tab === 'karsilastir' && design && (
               <ComparePreview current={design} previous={designHistory.filter((d) => d.kind === design.kind).at(-1)} />
             )}
-            {!generating && !showPicker && tab === 'dieline' && design && (
+            {!generating && !showPicker && !showChoice && tab === 'dieline' && design && (
               <div className="preview-stack">
                 <DielinePreview
                   design={design}
@@ -402,12 +478,13 @@ export function Workspace({
                   <DirectionOfferStrip
                     offer={design.studio?.offer}
                     onPick={onDirectionPick}
+                    onOpenAll={onDirectionChoiceOpen}
                     disabled={generating}
                   />
                 )}
               </div>
             )}
-            {!generating && !showPicker && tab === 'onizleme3d' && design && (
+            {!generating && !showPicker && !showChoice && tab === 'onizleme3d' && design && (
               <Preview3D
                 design={design}
                 attachments={allAttachments}
@@ -415,10 +492,15 @@ export function Workspace({
                 onBottleShape={onBottleShape}
               />
             )}
-            {!generating && !showPicker && tab === 'uretim' && design && <ProductionInfo design={design} />}
+            {!generating && !showPicker && !showChoice && tab === 'uretim' && design && (
+              <ProductionInfo design={design} onProof={onProof} busy={generating} />
+            )}
           </section>
         )}
       </div>
+      {coachOn && design && (
+        <Coach steps={studioCoachSteps(design.kind === 'label' ? 'label' : 'box')} onDone={() => setCoachOn(false)} />
+      )}
     </div>
   )
 }

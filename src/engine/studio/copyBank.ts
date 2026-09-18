@@ -380,6 +380,28 @@ export function samePackLine(a: string, b: string): boolean {
   return left.toLocaleUpperCase('tr') === right.toLocaleUpperCase('tr')
 }
 
+/**
+ * The concentration a perfume brief names, spelled the way a plate spells it.
+ *
+ * Perfume labels read the category line as a legal register — EAU DE PARFUM is a claim about the
+ * juice, not a product type. The bank has always answered EAU DE PARFUM for the sector; that was
+ * right when the brief could not say otherwise and wrong the moment it could. Short forms and
+ * common misspellings map to the canonical French line; anything else is trusted as typed.
+ */
+export function concentrationLine(raw: string | undefined): string {
+  const t = (raw ?? '').trim()
+  if (!t) return ''
+  const key = t.toLocaleLowerCase('en').replace(/[.\s_-]+/g, ' ')
+  if (/^(edp|eau de parfum|parfum spray)$/.test(key)) return 'EAU DE PARFUM'
+  if (/^(edt|eau de toilette)$/.test(key)) return 'EAU DE TOILETTE'
+  if (/^(edc|eau de cologne|kolonya|cologne)$/.test(key)) return 'EAU DE COLOGNE'
+  if (/^(extrait|extrait de parfum|ekstre|parfum extrait)$/.test(key)) return 'EXTRAIT DE PARFUM'
+  if (/^(parfum|perfume|parfüm)$/.test(key)) return 'PARFUM'
+  if (/^(eau fraiche|eau fraîche)$/.test(key)) return 'EAU FRAÎCHE'
+  // French / English register, so a dotless-i rule must not turn "ambiance" into "AMBİANCE".
+  return t.toLocaleUpperCase('en-US')
+}
+
 /** Category under the product — empty when the product already is the category (EAU DE PARFUM ×2). */
 export function categoryBesideProduct(product: string, category: string): string {
   const cat = category.trim()
@@ -418,7 +440,13 @@ export function volumeLine(volume: string, locale: CopyLocale): string {
     return `${trimNum(value)} g ℮ · ${oz.toFixed(oz >= 10 ? 1 : 2)} oz`
   }
   if (unit === 'kg') return `${trimNum(value)} kg ℮ · ${(value * 2.20462).toFixed(2)} lb`
-  if (/adet|kapsül|capsule/.test(unit)) return locale === 'en' ? `${trimNum(value)} capsules` : `${trimNum(value)} kapsül`
+  /*
+   * Count units stay the unit the customer typed. These three used to share one branch that
+   * returned "kapsül" for all of them, so the earbuds carton in the gallery — brief volume
+   * "1 adet" — printed "1 kapsül" on its front, and the English side said "1 capsules".
+   */
+  if (/adet|piece|pcs?\b/.test(unit)) return locale === 'en' ? `${trimNum(value)} ${value === 1 ? 'pc' : 'pcs'}` : `${trimNum(value)} adet`
+  if (/kapsül|capsule/.test(unit)) return locale === 'en' ? `${trimNum(value)} ${value === 1 ? 'capsule' : 'capsules'}` : `${trimNum(value)} kapsül`
   return raw
 }
 

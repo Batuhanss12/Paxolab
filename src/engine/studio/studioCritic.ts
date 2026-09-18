@@ -19,6 +19,14 @@ export function talkForCritic(kind: StudioCriticKind): DirectionTalk {
       note: 'Aileyi koruyorum; yönü daha sakin bir varyasyona alıyorum.',
     }
   }
+  if (kind === 'vision') {
+    // The offer's own utterance is the change; the talk only keeps the family and re-paints.
+    return {
+      kind: 'pin',
+      vetoFamilies: [],
+      note: 'Görsel kritiğin önerisini aynı ailede uyguluyorum.',
+    }
+  }
   return {
     kind: 'vary',
     vetoFamilies: [],

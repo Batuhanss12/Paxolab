@@ -8,6 +8,21 @@ const PERFUME_OK = /EAU DE PARFUM|EAU DE COLOGNE/
 const EN_CATEGORY = /FACE CREAM|CONCENTRATE SERUM|ARTISAN FOOD|EXTRA VIRGIN|NET WEIGHT|WIRELESS AUDIO|POWER ACCESSORY|PRECISION SERIES|SURFACE CARE|FERMENTED TEA|CRAFT BEVERAGE|DAILY SUPPLEMENT|GENTLE BABY CARE/
 const INCI_OK = /NIACINAMIDE|HYALURONIC|CERAMIDE|AQUA|PARFUM|GLYCERIN|TOCOPHEROL|LINALOOL/
 
+/**
+ * English words a product line actually uses, matched on word boundaries.
+ *
+ * The mixed-language check used to decide "this product name is English" from the *absence* of
+ * ç/ğ/ı/ö/ş/ü, which is not a test for English — it is a test for diacritics. Plenty of ordinary
+ * Turkish names carry none: "Gece Serisi", "Beyaz Sabun", "Altin Seri". Measured, a Turkish
+ * perfume label named "Gece Serisi" was refused a print-ready export as a language mix, so the
+ * last step of the funnel was closed to a whole class of Turkish names.
+ *
+ * Asking for a known English word instead is both stricter and kinder: "Night Serum" still trips
+ * it, "Gece Serisi" does not. The word boundaries matter — `series` must not match `Serisi`.
+ */
+const EN_PRODUCT_WORD =
+  /\b(night|day|daily|face|facial|body|hand|hair|skin|cream|serum|oil|water|milk|foam|balm|mask|scrub|soap|care|repair|renew|glow|shine|smooth|soft|silk|pure|fresh|natural|organic|deep|light|rich|gold|golden|silver|black|white|blue|green|rose|honey|ocean|forest|wild|power|force|precision|wireless|surface|concentrate|extract|essence|edition|limited|collection|series|premium|classic|original|advanced|intense|ultra)\b/i
+
 export function resolveCopyLocale(brief?: Pick<DesignBrief, 'copyLocale'> | null): CopyLocale {
   return brief?.copyLocale === 'en' ? 'en' : 'tr'
 }
@@ -63,10 +78,10 @@ export function detectCopyLocaleMix(
     const enCat = EN_CATEGORY.test(category) && !PERFUME_OK.test(category)
     const trTag = hasTurkishCopy(tagline)
     if (enCat && trTag) return { mix: true, detail: `EN kategori (${category}) + TR slogan` }
-    const namedEn = /\b(NIGHT CREAM|FACE CREAM|CONCENTRATE|WIRELESS|SURFACE)\b/i.test(product)
     const sampleTr = /^(gece kremi|gece|yüzey|konsantre|kurabiye)$/i.test(product.trim())
-    const latinPhrase = /[A-Za-z]{3,}/.test(product) && /\s/.test(product) && !hasTurkishCopy(product) && !sampleTr
-    if ((namedEn || latinPhrase) && trTag && !isAllowedLocaleException(product) && !sampleTr) {
+    // A known English word, not merely the absence of Turkish letters — see `EN_PRODUCT_WORD`.
+    const namedEn = EN_PRODUCT_WORD.test(product)
+    if (namedEn && trTag && !isAllowedLocaleException(product) && !sampleTr) {
       return { mix: true, detail: `EN ürün satırı + TR slogan — kullanıcı metni çevrilmedi` }
     }
   }

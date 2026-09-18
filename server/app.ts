@@ -94,9 +94,11 @@ import {
 import { recordLlmCost, listLlmCosts, llmCostSummary } from './credit/llmCost.ts'
 import { recordEvent, listUserEvents } from './credit/events.ts'
 import { bodyLimit } from 'hono/body-limit'
+import { ExportBlocked, buildDeliveryZip } from './exportBundle.ts'
 import {
   BODY_TOO_LARGE_TR,
   corsOriginChecker,
+  exportMaxBodyBytes,
   maxBodyBytes,
   rateLimit,
   securityHeaders,
@@ -506,6 +508,63 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
       throw err
     }
   })
+
+  /**
+   * The delivery bundle — the one thing the customer actually pays for.
+   *
+   * It used to be built in the browser and downloaded unconditionally: the client called the
+   * credit endpoint first, but only out of politeness, and skipping that call cost nothing. The
+   * bytes are produced here now, behind `requireAuth`, and the client no longer ships an exporter.
+   *
+   * Order matters. Preflight is recomputed from the submitted design — a spec is JSON the caller
+   * wrote, so its own `exportOk` proves nothing — then the ZIP is built, and only then is the
+   * credit taken. Nobody is charged for a file that was never produced.
+   */
+  credits.post(
+    '/export',
+    bodyLimit({ maxSize: exportMaxBodyBytes(), onError: (c) => c.json({ error: BODY_TOO_LARGE_TR }, 413) }),
+    async (c) => {
+      const user = c.get('user') as PublicUser
+      let body: { spec?: unknown; designKey?: string; preview?: unknown }
+      try {
+        body = await c.req.json()
+      } catch {
+        return c.json({ error: 'Geçersiz JSON.' }, 400)
+      }
+      if (!body.spec || typeof body.spec !== 'object') {
+        return c.json({ error: 'Tasarım gönderilmedi.' }, 400)
+      }
+
+      let bundle: Awaited<ReturnType<typeof buildDeliveryZip>>
+      try {
+        bundle = await buildDeliveryZip(body.spec as Parameters<typeof buildDeliveryZip>[0], body.preview)
+      } catch (err) {
+        if (err instanceof ExportBlocked) {
+          return c.json({ error: err.message, items: err.items }, 422)
+        }
+        return c.json({ error: 'Paket üretilemedi.' }, 500)
+      }
+
+      try {
+        const key = typeof body.designKey === 'string' ? body.designKey.slice(0, 200) : null
+        chargeDownload(db, user.id, key)
+      } catch (err) {
+        const mapped = asCreditsHttp(err)
+        if (mapped) return c.json({ error: mapped.error }, mapped.status)
+        throw err
+      }
+
+      return new Response(bundle.bytes as unknown as BodyInit, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/zip',
+          'Content-Disposition': `attachment; filename="${bundle.name}"`,
+          'Content-Length': String(bundle.bytes.byteLength),
+          'Cache-Control': 'no-store',
+        },
+      })
+    },
+  )
 
   credits.post('/commit', async (c) => {
     const user = c.get('user') as PublicUser

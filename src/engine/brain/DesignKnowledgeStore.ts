@@ -12,6 +12,7 @@
  * Empty store = baseline deterministic rules. Persistence is best-effort IndexedDB.
  */
 import { idbGetMemory, idbPutMemory } from '../../storage'
+import type { PrincipleId } from './DesignKnowledge'
 import type { DirectorCue } from './DesignPlan'
 
 export const DESIGN_KNOWLEDGE_SCHEMA = 'designKnowledge.v1'
@@ -39,6 +40,14 @@ export type KnowledgeRecommendation =
   | { kind: 'studio-archetype'; archetype: string; prefer: boolean }
   /** Studio layer: prefer / avoid a procedural background family. */
   | { kind: 'studio-background'; background: string; prefer: boolean }
+  /**
+   * Studio layer, F-8: the three preference axes the direction decides. `prefer: true` pins the
+   * value when the archetype allows it; `prefer: false` is recorded as rationale only — the
+   * direction has no per-axis avoid list, and inventing one would be a second ranking.
+   */
+  | { kind: 'studio-typePairing'; typePairing: string; prefer: boolean }
+  | { kind: 'studio-frame'; frame: string; prefer: boolean }
+  | { kind: 'studio-ornament'; ornament: string; prefer: boolean }
 
 export type KnowledgeState = 'candidate' | 'validated' | 'active' | 'deprecated' | 'rejected'
 
@@ -70,6 +79,12 @@ export type DesignKnowledgeRule = {
   /** Observation ids backing the rule. */
   evidence: string[]
   history: KnowledgeTransition[]
+  /**
+   * The design principle this rule is an instance of, when the critic topic that raised it maps
+   * to one (`principleForCriticTopic`). Ties a learned preference back to the reason it exists,
+   * so the knowledge panel can say "negative space is luxury" instead of "rule 7".
+   */
+  principle?: PrincipleId
 }
 
 export type KnowledgeVersionEntry = {
@@ -155,17 +170,29 @@ export function brandScopeKey(brand: string | undefined): string {
 }
 
 export function recommendationKey(rec: KnowledgeRecommendation): string {
-  if (rec.kind === 'avoid-motif') return `avoid-motif:${[...rec.tokens].sort().join(',')}`
-  if (rec.kind === 'studio-archetype') return `studio-archetype:${rec.prefer ? 'prefer' : 'avoid'}:${rec.archetype}`
-  if (rec.kind === 'studio-background') return `studio-background:${rec.prefer ? 'prefer' : 'avoid'}:${rec.background}`
-  return `director-cue:${rec.cue}`
+  switch (rec.kind) {
+    case 'avoid-motif':
+      return `avoid-motif:${[...rec.tokens].sort().join(',')}`
+    case 'studio-archetype':
+      return `studio-archetype:${rec.prefer ? 'prefer' : 'avoid'}:${rec.archetype}`
+    case 'studio-background':
+      return `studio-background:${rec.prefer ? 'prefer' : 'avoid'}:${rec.background}`
+    case 'studio-typePairing':
+      return `studio-typePairing:${rec.prefer ? 'prefer' : 'avoid'}:${rec.typePairing}`
+    case 'studio-frame':
+      return `studio-frame:${rec.prefer ? 'prefer' : 'avoid'}:${rec.frame}`
+    case 'studio-ornament':
+      return `studio-ornament:${rec.prefer ? 'prefer' : 'avoid'}:${rec.ornament}`
+    case 'director-cue':
+      return `director-cue:${rec.cue}`
+  }
 }
 
 /** prefers / avoids relationship implied by a recommendation. */
 export function recommendationRelationship(rec: KnowledgeRecommendation): 'avoids' | 'prefers' {
   if (rec.kind === 'avoid-motif') return 'avoids'
-  if (rec.kind === 'studio-archetype' || rec.kind === 'studio-background') return rec.prefer ? 'prefers' : 'avoids'
-  return 'prefers'
+  if (rec.kind === 'director-cue') return 'prefers'
+  return rec.prefer ? 'prefers' : 'avoids'
 }
 
 export function scopeKey(scope: KnowledgeScope): string {
@@ -229,6 +256,7 @@ export function upsertKnowledgeRule(input: {
   sampleCount: number
   source: KnowledgeSource
   evidence: string[]
+  principle?: PrincipleId
 }): DesignKnowledgeRule {
   void hydrate()
   const id = knowledgeRuleId(input.scope, input.condition, input.recommendation)
@@ -239,6 +267,7 @@ export function upsertKnowledgeRule(input: {
     existing.sampleCount = input.sampleCount
     existing.evidence = [...new Set([...existing.evidence, ...input.evidence])]
     existing.updatedAt = at
+    if (input.principle && !existing.principle) existing.principle = input.principle
     void persist()
     return existing
   }
@@ -251,6 +280,7 @@ export function upsertKnowledgeRule(input: {
     confidence: Math.round(Math.max(0, Math.min(1, input.confidence)) * 100) / 100,
     sampleCount: input.sampleCount,
     source: input.source,
+    ...(input.principle ? { principle: input.principle } : {}),
     version: store.currentVersion,
     state: 'candidate',
     createdAt: at,

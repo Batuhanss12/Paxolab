@@ -4,10 +4,49 @@ import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { PERFUME_VIEWBOXES } from '../marks/perfumeAssets'
 import type { DesignSystem } from './types'
 import { foodFamilyFromBlob } from '../artwork/foodFamily'
+import { backHeaders } from '../studio/copyBank'
 
 function item(id: string, label: string, detail: string, status: PreflightItem['status']): PreflightItem {
   return { id, label, detail, status }
 }
+
+/**
+ * What counts as a regulatory stack on a box back, derived from the headers the painters actually
+ * write rather than from a second list kept in step by hand.
+ *
+ * The hand-written list asked for `İÇERİK`; `backHeaders('tr').ingredients` is `İÇİNDEKİLER`. So a
+ * back that carried nothing *but* its ingredients section — which is exactly what a short back has
+ * room for — was judged to have no regulatory stack at all and its export was blocked. Measured
+ * across the catalogue, that mismatch alone accounted for the 160 × 50 rigid-gift base.
+ */
+const REGULATORY_BACK = new RegExp(
+  [
+    /*
+     * The kit path writes its own wording and predates the studio headers, so these stay. Dropping
+     * them when the derived list went in turned every frozen kit fingerprint red at once — the two
+     * painters do not share a vocabulary, and the gate has to know both.
+     */
+    'COMPOSITION',
+    'INCI',
+    'INGREDIENTS',
+    'CONTENTS',
+    'SPECIFICATION',
+    'DIRECTIONS',
+    'İÇERİK',
+    'KULLANIM',
+    'SAKLAMA',
+    'YANICI',
+    'ÖZELLİKLER',
+    'AKTİF',
+    // …and whatever the studio back painters actually print today.
+    ...(['tr', 'en'] as const).flatMap((locale) => {
+      const h = backHeaders(locale)
+      return [h.usage, h.warnings, h.ingredients, h.storage, h.producer]
+    }),
+  ]
+    .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|'),
+)
 
 function hexLum(hex: string): number {
   const raw = hex.replace('#', '')
@@ -78,20 +117,37 @@ export function evaluateDesignGates(
     .map((l) => l.markup)
     .join('\n')
   const labelBackArt =
-    layers.find((l) => l.panelId === labelBackId || l.panelId === 'labelBack' || l.panelId === 'warnLabel')?.markup ?? ''
+    layers.find(
+      (l) =>
+        l.panelId === labelBackId ||
+        l.panelId === 'labelBack' ||
+        l.panelId === 'warnLabel' ||
+        l.panelId === 'tagBack' ||
+        l.panelId === 'cardBack',
+    )?.markup ?? ''
+
+  /*
+   * A swing tag and a thank-you card travel as `label` because they are flat printed pieces, but
+   * they are not labels and the label surface rules do not describe them: a tag has no regulatory
+   * back and a card has no ingredients, by design rather than by omission. Applied anyway, the
+   * label-back rule and the food-family rule both failed every kit piece and blocked the export —
+   * which is the gate reporting that the piece is not a label, something already known from its
+   * structure id.
+   */
+  const kitPiece = spec.structureId === 'hang-tag' || spec.structureId === 'insert-card'
+
+  /** Every panel that counts as a regulatory back, whatever the structure calls it. */
+  const BACK_PANEL_IDS = new Set(['labelBack', 'warnLabel', 'tagBack', 'cardBack', labelBackId])
 
   const boxLegalOnFace = /COMPOSITION|FLAMMABLE · CAUTION|DIRECTIONS · CAUTION|CONTENTS \/ SPEC|YANICI · UYARI|İÇERİK \/ SPEC/.test(faceArt)
   const seriesOnLabel = spec.kind === 'label' && /Nº 0[12]/.test(faceArt)
   const wrapMissingSeam = system.wrapSeam && !/>SEAM</.test(faceArt) && !faceArt.includes('SEAM') && !faceArt.includes('data-art="seam"')
-  const labelMissingBack = spec.kind === 'label' && !labelBackArt
+  const labelMissingBack = spec.kind === 'label' && !kitPiece && !labelBackArt
   const faceBarcode = /data-mark="barcode"/.test(faceArt)
   const labelSpine = spec.kind === 'label' && /rotate\(-90\)/.test(faceArt)
   const boxHasSeam = spec.kind !== 'label' && system.grammar === 'box' && faceArt.includes('SEAM')
   const boxMissingBack =
-    spec.kind !== 'label' &&
-    system.grammar === 'box' &&
-    !!faceArt &&
-    !/COMPOSITION|INCI|INGREDIENTS|CONTENTS|SPECIFICATION|DIRECTIONS|İÇERİK|KULLANIM|SAKLAMA|YANICI|ÖZELLİKLER|AKTİF/.test(backArt)
+    spec.kind !== 'label' && system.grammar === 'box' && !!faceArt && !REGULATORY_BACK.test(backArt)
   const boxMissingSpine =
     spec.kind !== 'label' &&
     system.grammar === 'box' &&
@@ -184,7 +240,9 @@ export function evaluateDesignGates(
   const labelFaceLeak =
     spec.kind === 'label' &&
     (spec.artwork?.layers ?? []).some(
-      (l) => l.panelId !== 'warnLabel' && l.panelId !== 'labelBack' && PERFUME_VIEWBOXES.some((vb) => l.markup.includes(vb)),
+      // "Not on a face" is the rule; the back is wherever the back is. Listing `labelBack` by name
+      // made every kit piece fail, because a tag's back is called `tagBack` and a card's `cardBack`.
+      (l) => !BACK_PANEL_IDS.has(l.panelId) && PERFUME_VIEWBOXES.some((vb) => l.markup.includes(vb)),
     )
   const marksFail = foreignPerfume || sectorLeak || labelFaceLeak
   items.push(
@@ -227,7 +285,7 @@ export function evaluateDesignGates(
     ),
   )
 
-  if (system.sector === 'food' || system.sector === 'beverage') {
+  if (!kitPiece && (system.sector === 'food' || system.sector === 'beverage')) {
     const family = foodFamilyFromBlob(`${spec.brief.subProduct} ${spec.brief.productName} ${spec.copy.product}`)
     const foodArt = `${spec.copy.ingredients}\n${backArt}\n${labelBackArt}`
     const bakeryLeak = family !== 'biscuit' && /Buğday unu|Wheat flour/.test(foodArt)

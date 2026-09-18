@@ -13,7 +13,7 @@ import {
   type DirectionClaim,
   type DirectionDecision,
 } from './direction'
-import { applyVetoToHints, familiesFromUtterance, familyOf, familyTalk, hintsFromFamily, hintsFromVeto } from './family'
+import { applyVetoToHints, familiesFromUtterance, familyCommandIn, familyOf, familyTalk, hintsFromFamily, hintsFromVeto } from './family'
 import { isTemperament } from './referenceDna'
 import type { DirectionHints, StudioDirectionOffer, StudioFamily, StudioSurface, Temperament } from './types'
 
@@ -40,6 +40,8 @@ const KEEP_FAMILY = /(kalsın|koru|bu\s+yön\s+iyi|farklılaştır|varyasyon|dah
 
 const QUIETER = /daha\s+(sakin|sessiz|editorial)|daha\s+az\s+yoğun|luxury-tighten/i
 
+// "X yönünü seç" / "make it X". The way a family is actually asked for in chat — "botanik olsun",
+// "arma ekle" — is `familyCommandIn`, which requires the verb next to the family name.
 const PIN_FAMILY = /yönünü?\s*(seç|olsun|yap|istedim)|yönü\s+seç|family\s*(to|=)|make\s+it/i
 
 export function parseDirectionTalk(text: string, current?: StudioFamily): DirectionTalk | null {
@@ -105,8 +107,9 @@ export function parseDirectionTalk(text: string, current?: StudioFamily): Direct
     }
   }
 
-  if (named.length && (PIN_FAMILY.test(t) || /^daha\s+\S+/.test(t.toLocaleLowerCase('tr')))) {
-    const pinFamily = named[0]
+  const commanded = familyCommandIn(t)
+  if (named.length && (commanded !== null || PIN_FAMILY.test(t) || /^daha\s+\S+/.test(t.toLocaleLowerCase('tr')))) {
+    const pinFamily = commanded ?? named[0]
     return {
       kind: 'pin',
       vetoFamilies: [],

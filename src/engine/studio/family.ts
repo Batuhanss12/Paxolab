@@ -23,10 +23,17 @@ export const STUDIO_FAMILIES: Record<StudioFamily, FamilyPair> = {
   botanical: { box: 'botanical-card', label: 'card-on-art', background: 'botanical' },
   'line-scene': { box: 'line-scene', label: 'line-scene', background: 'line-scene' },
   wave: { box: 'wave-panel', label: 'wave-panel', background: 'wave' },
-  landscape: { box: 'landscape-window', label: 'landscape-badge', background: 'landscape-meadow' },
   ink: { box: 'ink-wash', label: 'ink-panel', background: 'ink-wash' },
-  'dark-luxe': { box: 'dark-landscape', label: 'ink-panel' },
+  'dark-luxe': { box: 'noir-stack', label: 'noir-plate' },
   tech: { box: 'diagonal-tech', label: 'diagonal-split', background: 'diagonal' },
+  // The one family whose box and label are the same archetype: the composition is the subject
+  // standing in the middle, and that reads the same on a carton front as on a jar wrap.
+  specimen: { box: 'specimen-hero', label: 'specimen-hero', background: 'gradient-wash' },
+  // Two more shared-archetype families, distilled from the STİCKERR REF perfume plates: a plate
+  // of type in tiers (Diako) and a roundel on a flat geometric field (Azzurra) read the same on a
+  // carton front as on a bottle label, so neither needs a box sibling.
+  atelier: { box: 'atelier-plate', label: 'atelier-plate', background: 'paper' },
+  crest: { box: 'crest-panel', label: 'crest-panel', background: 'arabesque' },
 }
 
 const ARCHETYPE_FAMILY: Partial<Record<StudioArchetype, StudioFamily>> = {
@@ -35,25 +42,38 @@ const ARCHETYPE_FAMILY: Partial<Record<StudioArchetype, StudioFamily>> = {
   'card-on-art': 'botanical',
   'line-scene': 'line-scene',
   'wave-panel': 'wave',
-  'landscape-window': 'landscape',
-  'landscape-badge': 'landscape',
   'ink-wash': 'ink',
   'ink-panel': 'ink',
-  'dark-landscape': 'dark-luxe',
+  'noir-stack': 'dark-luxe',
+  'noir-plate': 'dark-luxe',
   'diagonal-tech': 'tech',
   'diagonal-split': 'tech',
+  'specimen-hero': 'specimen',
+  'atelier-plate': 'atelier',
+  'crest-panel': 'crest',
 }
 
-/** Spoken family names — chat never dumps the internal key as if it were copy. */
+/**
+ * Spoken family names — chat never dumps the internal key as if it were copy.
+ *
+ * `botanical` and `specimen` used to be "botanik" and "botanik çizim", which is one name and that
+ * same name with a word after it. The owner read the strip and asked where their botanical had
+ * gone while it was sitting two cards away: two systems that share a word do not read as two
+ * choices. They are not variants of each other either — `botanical` is the woo.originals system, a
+ * white title card on a tone-on-tone field with its own claim band and legal back, and `specimen`
+ * is the drawn-subject illustrator. Each is now named after what it actually is.
+ */
 export const FAMILY_TALK: Record<StudioFamily, string> = {
   marble: 'mermer',
-  botanical: 'botanik',
+  botanical: 'botanik kart',
   'line-scene': 'çizgisel sahne',
   wave: 'dalga',
-  landscape: 'peyzaj',
   ink: 'mürekkep',
   'dark-luxe': 'karanlık lüks',
   tech: 'teknik',
+  specimen: 'illüstrasyon',
+  atelier: 'atölye plakası',
+  crest: 'arma',
 }
 
 export function familyTalk(family: StudioFamily | string | undefined | null): string {
@@ -118,14 +138,37 @@ export function hintsFromVeto(families: readonly StudioFamily[] | undefined): Di
 
 const FAMILY_ALIASES: [RegExp, StudioFamily][] = [
   [/\bmarble\b|mermer/i, 'marble'],
+  // "botanik çizim" is the illustrator, "botanik kart" the card system. The two-word forms are
+  // matched before the bare word so the older habit still lands where the customer means.
+  [/botanik\s*[çc]izim|ill[üu]strasyon|\bspecimen\b|[çc]izili\s*[öo]zne/i, 'specimen'],
   [/\bbotanical\b|botanik|\byaprak\b/i, 'botanical'],
   [/line[\s-]?scene|klinik|çizgisel|line[\s-]?art/i, 'line-scene'],
   [/\bwave\b|\bdalga\b/i, 'wave'],
-  [/\blandscape\b|manzara/i, 'landscape'],
   [/\bink\b|mürekkep/i, 'ink'],
   [/dark[\s-]?luxe|koyu\s*lüks/i, 'dark-luxe'],
   [/\btech\b|teknik|diyagonal|diagonal|antrasit/i, 'tech'],
+  [/at[öo]lye|atelier|\bplaka\b|\bplate\b/i, 'atelier'],
+  [/\barma\b|\bcrest\b|arabesk|arabesque|roundel|madalyon/i, 'crest'],
 ]
+
+/**
+ * A family the customer asked for by name with an imperative close — "botanik olsun", "arma ekle",
+ * "atölye plakası gibi olsun".
+ *
+ * The verb has to sit within two words of the family name. A sentence-final verb alone is not
+ * enough: "mermer tezgah için kutu yap" names marble and ends in an imperative, and reading that
+ * as "make it marble" is exactly the mistake a wider pattern makes — measured, an `(ekle|olsun|
+ * yap|çiz)$` alternative matched three of four ordinary first briefs.
+ */
+export function familyCommandIn(text: string): StudioFamily | null {
+  for (const [re, family] of FAMILY_ALIASES) {
+    const m = re.exec(text)
+    if (!m) continue
+    const after = text.slice(m.index + m[0].length)
+    if (/^(?:\s+\S+){0,2}\s*\b(ekle|olsun|yap|çiz|geç|dene)\b/i.test(after)) return family
+  }
+  return null
+}
 
 /** Closed family dictionary — several aliases per family, not a single hardcoded phrase. */
 export function familiesFromUtterance(text: string): StudioFamily[] {

@@ -15,10 +15,12 @@ import { FormaLocalEngine } from '../src/engine/FormaLocalEngine'
 import { resetArtMemory } from '../src/engine/brain/DesignMemory'
 import { facePanelId, renderPanelSvg } from '../src/engine/artwork/renderArtwork'
 import { STUDIO_FONT_HREF } from '../src/engine/studio/text'
+import type { StudioFamily } from '../src/engine/studio/types'
 
 type Job = {
   brand: string; product: string; sector: string; sub: string
   colors: string; style: StyleType; mode: PackagingMode
+  family?: StudioFamily
 }
 
 const JOBS: Job[] = [
@@ -27,6 +29,9 @@ const JOBS: Job[] = [
   { brand: 'Mini', product: 'Bebek Losyonu', sector: 'bebek', sub: 'losyon', colors: 'pembe · krem', style: 'playful', mode: 'label' },
   { brand: 'Clinia', product: 'B5 Serum', sector: 'kozmetik', sub: 'serum', colors: 'beyaz · mavi', style: 'minimal', mode: 'box' },
   { brand: 'Mini', product: 'Bebek Losyonu', sector: 'bebek', sub: 'losyon', colors: 'pembe · krem', style: 'playful', mode: 'box' },
+  { brand: 'Köyden', product: 'Naturel Sızma', sector: 'gıda', sub: 'zeytinyağı', colors: 'koyu yeşil · altın', style: 'eco', mode: 'label', family: 'specimen' },
+  { brand: 'Elite Brew', product: 'Mocha', sector: 'gıda', sub: 'kahve', colors: 'kahve · altın', style: 'luxury', mode: 'box', family: 'specimen' },
+  { brand: 'Ferah', product: 'Limon', sector: 'temizlik', sub: 'deterjan', colors: 'sarı · beyaz', style: 'modern', mode: 'label', family: 'specimen' },
 ]
 
 const NEW_BG = 'gradient-wash'
@@ -39,7 +44,7 @@ function run(job: Job, variationIndex: number) {
       brandName: job.brand, productName: job.product, sector: job.sector, subProduct: job.sub,
       packagingMode: job.mode, styleType: job.style, colors: job.colors,
       volume: '250 ml', barcode: '8690000000017', dimensionsMm: { L: 70, W: 45, H: 150 },
-      studioFamily: 'botanical', studioFamilyLocked: true,
+      studioFamily: job.family ?? 'botanical', studioFamilyLocked: true,
     } as DesignBrief,
     overridePatch: { studio: true, variationIndex },
   })

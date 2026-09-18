@@ -1,13 +1,14 @@
 /**
  * `gradient-wash` — the soft field, and the two rules that keep it honest.
  *
- * The first rule is the one this file exists for. Most studio painters do *not* read
- * `direction.background`: 15 of the 18 `paintBackground` call sites name a family literally
- * (`paintWavePanelFace` paints `'wave'` whatever the direction says). Only `cardOnArt`,
- * `botanicalCardFront` and `diagonalTechFront` honour it. So listing a background on an archetype
- * whose painter ignores it produces a face that *reports* one thing and *shows* another — the
- * direction, the offer strip and the golden table would all say `gradient-wash` over a wave panel.
- * That was written and reverted while building this; the test is what stops it coming back.
+ * The first rule is the one this file exists for. Many studio painters name their background
+ * family literally rather than reading `direction.background` — `paintWavePanelFace` paints
+ * `'wave'` whatever the direction says. On a single-entry DNA row that is not a defect but the
+ * archetype being itself; it only becomes a lie when the row lists a family the painter never
+ * draws, and the face then *reports* one thing and *shows* another in the direction, the offer
+ * strip and the golden table at once. Listing `gradient-wash` on `wave-panel` was written and
+ * reverted while building this, and this test is what stops it coming back. The general invariant
+ * across every archetype lives in `backgroundPromise.test.ts`.
  *
  * The second rule is the freeze. `varyFace` takes `backgrounds[0]` at variation 0, and variation 0
  * is what `STUDIO_FACE_GOLDEN` captures — so a new background appended to a DNA row joins the
@@ -19,11 +20,13 @@ import { emptyBrief } from '../fields'
 import { FormaLocalEngine } from '../FormaLocalEngine'
 import { resetArtMemory } from '../brain/DesignMemory'
 import { buildCombinedSvg } from '../production/exportDoc'
+import { STUDIO_FAMILIES } from './family'
 import { BOX_DNA, LABEL_DNA } from './referenceDna'
+import type { StudioFamily } from './types'
 
 const BG = 'gradient-wash'
 
-function brief(mode: PackagingMode, colors: string): DesignBrief {
+function brief(mode: PackagingMode, colors: string, family: StudioFamily): DesignBrief {
   return {
     ...emptyBrief(),
     brandName: 'Verda',
@@ -36,15 +39,15 @@ function brief(mode: PackagingMode, colors: string): DesignBrief {
     volume: '250 ml',
     barcode: '8690000000017',
     dimensionsMm: { L: 70, W: 45, H: 150 },
-    studioFamily: 'botanical',
+    studioFamily: family,
     studioFamilyLocked: true,
   }
 }
 
-function face(mode: PackagingMode, colors: string, variationIndex: number) {
+function face(mode: PackagingMode, colors: string, variationIndex: number, family: StudioFamily) {
   resetArtMemory()
   const spec = new FormaLocalEngine().generate({
-    brief: brief(mode, colors),
+    brief: brief(mode, colors, family),
     overridePatch: { studio: true, variationIndex },
   })
   const markup = String(spec.artwork.layers.find((l) => l.panelId === spec.artwork.frontPanelId)?.markup ?? '')
@@ -59,14 +62,23 @@ function face(mode: PackagingMode, colors: string, variationIndex: number) {
 
 const COLOURS = ['yeşil · krem', 'şeftali · leylak', 'beyaz · mavi', '']
 const MODES: PackagingMode[] = ['box', 'label']
+// Every family whose DNA lists the background has to be walked, or the coverage assertion below
+// passes on a subset and the promise it guards goes untested for the rest. Read off the DNA rather
+// than listed: the hand list went stale the moment `atelier-plate` joined the rotation.
+const FAMILIES = (Object.keys(STUDIO_FAMILIES) as StudioFamily[]).filter((family) => {
+  const pair = STUDIO_FAMILIES[family]
+  return LABEL_DNA[pair.label].backgrounds.includes(BG) || BOX_DNA[pair.box].backgrounds.includes(BG)
+})
 
 function washFaces() {
   const out: ReturnType<typeof face>[] = []
-  for (const mode of MODES) {
-    for (const colors of COLOURS) {
-      for (let v = 0; v <= 5; v++) {
-        const row = face(mode, colors, v)
-        if (row.direction.background === BG) out.push(row)
+  for (const family of FAMILIES) {
+    for (const mode of MODES) {
+      for (const colors of COLOURS) {
+        for (let v = 0; v <= 5; v++) {
+          const row = face(mode, colors, v, family)
+          if (row.direction.background === BG) out.push(row)
+        }
       }
     }
   }
@@ -80,9 +92,13 @@ describe('gradient-wash', () => {
      * put the marker in its markup; if a painter hardcodes its own family the marker is absent and
      * this fails, which is exactly what happened with `wave-panel`.
      */
-    const listed = [...Object.values(LABEL_DNA), ...Object.values(BOX_DNA)].filter((dna) =>
-      dna.backgrounds.includes(BG),
-    )
+    // Deduped: `specimen-hero` has a row in both LABEL_DNA and BOX_DNA under one id, and comparing
+    // a raw list against the set of painted ids counts it twice.
+    const listed = [
+      ...new Set(
+        [...Object.values(LABEL_DNA), ...Object.values(BOX_DNA)].filter((dna) => dna.backgrounds.includes(BG)).map((d) => d.id),
+      ),
+    ]
     expect(listed.length, 'no archetype lists gradient-wash — the test below would be vacuous').toBeGreaterThan(0)
 
     const faces = washFaces()
@@ -97,12 +113,28 @@ describe('gradient-wash', () => {
       painted.add(row.direction.archetype)
     }
     // Everything the DNA promises has to be reachable and real, not just the first one found.
-    expect([...painted].sort()).toEqual(listed.map((d) => d.id).sort())
+    expect([...painted].sort()).toEqual([...listed].sort())
   })
 
-  it('never lands at variation 0, so the golden faces cannot move', () => {
-    // `varyFace` takes backgrounds[0] at variation 0 and the golden table is captured there.
-    for (const row of washFaces()) expect(row.variationIndex, `${row.direction.archetype}`).toBeGreaterThan(0)
+  it('joins an existing rotation without displacing it', () => {
+    /*
+     * The freeze rule binds only where the background was *added* to an archetype that already had
+     * frozen faces: appended, never first, so variation 0 still takes what it always took. An
+     * archetype introduced together with the background has no frozen past to protect and may lead
+     * with it — `specimen-hero` does, which is why this is derived from the DNA rather than applied
+     * to every face. Stated the broad way, the rule failed on the very archetype it should not
+     * govern.
+     */
+    const appended = new Set(
+      [...Object.values(LABEL_DNA), ...Object.values(BOX_DNA)]
+        .filter((d) => d.backgrounds.includes(BG) && d.backgrounds[0] !== BG)
+        .map((d) => d.id),
+    )
+    expect(appended.size, 'nothing appended — this rule would be vacuous').toBeGreaterThan(0)
+    for (const row of washFaces()) {
+      if (!appended.has(row.direction.archetype)) continue
+      expect(row.variationIndex, `${row.direction.archetype} took ${BG} at variation 0`).toBeGreaterThan(0)
+    }
   })
 
   it('is built from gradient stops, never a filter', () => {

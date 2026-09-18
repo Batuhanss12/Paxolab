@@ -7,9 +7,9 @@ import { pressBleedMm, pressSafeMm } from './pressBoxes'
 
 /** Build a JSON manifest with project metadata for export bundles. */
 export function buildManifest(spec: DesignSpec): string {
-  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
   const manifest = {
-    schema: 'forma-export/v1',
+    schema: 'grapxor-export/v1',
     generatedAt: new Date().toISOString(),
     project: {
       id: spec.id,

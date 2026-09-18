@@ -10,6 +10,7 @@ import type {
 } from './types'
 import { emptyConversationState, type ConversationState } from './engine/conversationState'
 import { emptyBrief } from './engine/fields'
+import type { StudioCriticOffer } from './engine/studio/types'
 
 export type SurfaceView = 'box' | 'label'
 
@@ -34,6 +35,15 @@ export type AppState = {
   inputsOpen: boolean
   tab: TabId
   showTemplates: boolean
+  /**
+   * Whether the four-design choice is on screen.
+   *
+   * It opens when a generation hands back an offer the customer has not answered, and closes the
+   * moment they answer — by picking a direction or by keeping the one shown. It does not reopen on
+   * every repaint: choosing a direction is itself a generation, and a chooser that came back after
+   * each pick would be a loop rather than a decision.
+   */
+  directionChoiceOpen: boolean
   /** Asked / answered ledger — the chat never re-asks what the user already settled. */
   conversation: ConversationState
 }
@@ -61,6 +71,12 @@ export type AppAction =
   | { type: 'surfaceView'; surface: SurfaceView }
   | { type: 'bottleShape'; shape: BottleShape }
   | { type: 'design.live'; design: DesignSpec; commit?: boolean; historyFrom?: DesignSpec }
+  /**
+   * Critic offers that arrived after the design did — the vision pass is asynchronous. Applied only
+   * while the same generation is still on screen (`generatedAt` guards it), and never to history.
+   */
+  | { type: 'design.critic'; generatedAt: number; critic: StudioCriticOffer[] }
+  | { type: 'directionChoice'; open: boolean }
 
 function slotDesign(design: DesignSpec, state: AppState): Pick<AppState, 'boxDesign' | 'labelDesign' | 'surfaceView'> {
   const isLabel = design.kind === 'label'
@@ -115,6 +131,7 @@ export function createInitialAppState(): AppState {
     inputsOpen: true,
     tab: 'vektor',
     showTemplates: false,
+    directionChoiceOpen: false,
     conversation: emptyConversationState(),
   }
 }
@@ -124,11 +141,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'reset':
       return createInitialAppState()
     case 'hydrate': {
-      const merged = { ...createInitialAppState(), ...state, ...action.state, pending: [], allAttachments: [] }
+      /*
+       * `allAttachments` used to be blanked here and in `restoredAppState`, on both restore paths.
+       * The design on screen kept the logo baked into it, so nothing looked wrong — but the *next*
+       * generation looks the logo up in the attachment list, finds an empty one, and quietly paints
+       * a design without it. The customer's logo disappeared on the first refresh and there was no
+       * way to tell why. Only `pending` is cleared: that is the composer's tray, not a record.
+       */
+      const merged = { ...createInitialAppState(), ...state, ...action.state, pending: [] }
       if (!merged.design) return merged
       const isLabel = merged.design.kind === 'label'
       return {
         ...merged,
+        // Both slots are persisted now, so a restored dual project keeps the surface that is *not*
+        // on screen. The fallbacks below only fill a slot the store did not have.
         boxDesign: isLabel ? merged.boxDesign : merged.boxDesign ?? merged.design,
         labelDesign: isLabel ? merged.labelDesign ?? merged.design : merged.labelDesign,
         surfaceView: isLabel ? 'label' : merged.labelDesign && merged.surfaceView === 'label' ? 'label' : 'box',
@@ -183,9 +209,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         designFuture: [],
         showTemplates: false,
         generating: false,
+        /*
+         * Open the chooser when this generation carries an offer the customer has not answered.
+         * `sameKind` is the test that matters: the first carton of a session gets the choice, a
+         * repaint of that same carton does not — otherwise picking a direction would hand back
+         * the chooser that sent you there.
+         */
+        directionChoiceOpen: !sameKind && (action.design.studio?.offer?.candidates.length ?? 0) > 1,
         tab: action.printReady ? 'uretim' : state.tab === 'konusma' ? 'vektor' : state.tab,
       }
     }
+    case 'directionChoice':
+      return { ...state, directionChoiceOpen: action.open }
     case 'history.undo': {
       const previous = state.designHistory.at(-1)
       if (!previous || !state.design) return state
@@ -233,6 +268,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         bottleShape: action.shape,
         brief: { ...state.brief, bottleShape: action.shape },
       }
+    case 'design.critic': {
+      const design = state.design
+      if (!design?.studio || design.generatedAt !== action.generatedAt || !action.critic.length) return state
+      const seen = new Set(design.studio.critic.map((row) => `${row.kind}:${row.utterance}`))
+      const fresh = action.critic.filter((row) => !seen.has(`${row.kind}:${row.utterance}`))
+      if (!fresh.length) return state
+      const next = { ...design, studio: { ...design.studio, critic: [...design.studio.critic, ...fresh] } }
+      return { ...state, design: next, ...slotDesign(next, state) }
+    }
     case 'design.live': {
       const history =
         action.commit && action.historyFrom

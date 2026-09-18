@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { DesignSpec } from '../types'
 import { studioProcessSummary } from '../engine/studio/faceCaption'
-import { downloadZip } from '../engine/production/exportDoc'
-import { chargeDownload, fetchDownloadQuote, type DownloadQuote } from '../api/credits'
+import { fetchDeliveryZip, fetchDownloadQuote, type DownloadQuote } from '../api/credits'
+import { artworkFromDocument } from '../engine/document'
+import { renderFrontSvg } from '../engine/artwork/renderArtwork'
+import { rasteriseSvg } from '../engine/llm'
 import { loadAuth } from '../api/client'
 import { RatingBar } from './RatingBar'
 
@@ -18,9 +20,12 @@ function designKeyOf(design: DesignSpec): string {
 
 type ProductionInfoProps = {
   design: DesignSpec
+  /** Turn the print-ready proof on or off. Absent while a generation is in flight. */
+  onProof?: (on: boolean) => void
+  busy?: boolean
 }
 
-export function ProductionInfo({ design }: ProductionInfoProps) {
+export function ProductionInfo({ design, onProof, busy }: ProductionInfoProps) {
   const [exportNote, setExportNote] = useState('')
   const [zipping, setZipping] = useState(false)
   const [quote, setQuote] = useState<DownloadQuote | null>(null)
@@ -37,9 +42,20 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
   const passed = design.preflight.items.filter((i) => i.status === 'pass').length
   const blocked = design.preflight.blocking
   const summary = studioProcessSummary(design)
+  const proofOn = !!design.overrides.printReady
 
+  /**
+   * The file comes from the server.
+   *
+   * It used to be built here and handed over unconditionally — the credit call happened first, but
+   * only because this code chose to make it, so the print files were free to anyone who skipped it.
+   * Now the browser asks and the server answers: it recomputes preflight on the design it is sent,
+   * builds the bundle, debits the credit and only then returns bytes. Failure at any of those
+   * three steps means no file *and* no charge.
+   */
   async function onZip() {
-    if (signedIn && quote && quote.cost > 0) {
+    if (!signedIn) return
+    if (quote && quote.cost > 0) {
       const ok = window.confirm(
         `Bu dosyayı indirmek ${quote.cost} kredi. Bakiyeniz ${quote.balance}.
 
@@ -49,19 +65,37 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
       if (!ok) return
     }
     setZipping(true)
-    setExportNote('Yazılar vektöre çevriliyor…')
+    setExportNote('Baskı dosyaları hazırlanıyor…')
     try {
-      // Charged before the file is built: a wallet that cannot cover it must stop here, not after
-      // the customer has already been handed the artwork.
-      if (signedIn) {
-        const charged = await chargeDownload(designKeyOf(design))
-        refreshQuote()
-        if (charged.charged > 0) setExportNote(`${charged.charged} kredi düşüldü — dosya hazırlanıyor…`)
-      }
-      const ok = await downloadZip(design)
-      setExportNote(ok ? 'Teslim ZIP indirildi — yazılar outline.' : 'ZIP yok — kapı kırmızı.')
+      /*
+       * A picture of the design, rasterised here because this is where the canvas is. Everything
+       * else in the bundle is for a printer; without this the customer cannot show anyone what
+       * they made without opening a vector tool. Failure is silent on purpose — a missing preview
+       * must never cost someone the print files they paid for.
+       */
+      const preview = await rasteriseSvg(renderFrontSvg(design.dieline, artworkFromDocument(design.document), design.palette), 1400).catch(
+        () => null,
+      )
+      const { blob, filename } = await fetchDeliveryZip(design, designKeyOf(design), preview)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      refreshQuote()
+      setExportNote('Teslim ZIP indirildi — yazılar outline.')
     } catch (err) {
-      setExportNote(err instanceof Error && /kredi/i.test(err.message) ? 'Krediniz yetersiz — indirme yapılmadı.' : 'ZIP üretilemedi.')
+      const message = err instanceof Error ? err.message : ''
+      setExportNote(
+        /kredi/i.test(message)
+          ? 'Krediniz yetersiz — indirme yapılmadı.'
+          : /giriş/i.test(message)
+            ? 'İndirmek için giriş yapman gerekiyor.'
+            : message || 'ZIP üretilemedi.',
+      )
     } finally {
       setZipping(false)
     }
@@ -88,10 +122,33 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
         {summary ? `${summary}. ` : ''}
         {blocked
           ? 'Kapı kırmızı. Çarpışma veya zorunlu eksik varken yeşil işaret yok.'
-          : design.overrides.printReady
-            ? 'Ön kontrol geçti. 3 mm güvenli + 3 mm bleed kılavuz (CUT trim’de). Dieline PDF/X-4 sRGB; trap yok; FOGRA değil.'
-            : 'Motor yüzeyi üretti. “baskıya hazırla” → 3 mm prova overlay; fail varsa yeşil olmaz.'}
+          : proofOn
+            ? 'Ön kontrol geçti. 3 mm güvenli alan ve 3 mm taşma payı kılavuzları çizili. Dieline PDF/X-4 sRGB; trap yok; FOGRA değil.'
+            : 'Tasarım hazır. Baskıya hazırlarsan pakete güvenli alan ve taşma payı kılavuzları da girer.'}
       </p>
+
+      {/*
+       * The proof state, and the control that changes it.
+       *
+       * Both used to be missing: `printReady` turned on only by typing "baskıya hazırla" into the
+       * chat, and the two bundles — one with proof guides, one without — arrived under the same
+       * button with the same label. Now the state is on screen and one click moves it.
+       */}
+      <div className={`prod__proof ${proofOn ? 'is-on' : ''}`}>
+        <div>
+          <strong>{proofOn ? 'Baskı provası açık' : 'Baskı provası kapalı'}</strong>
+          <small>
+            {proofOn
+              ? 'Teslim paketindeki prova sayfası güvenli alanı ve taşma payını gösteriyor.'
+              : 'Matbaanın beklediği kılavuzlar pakette yok. Açmanı öneririz.'}
+          </small>
+        </div>
+        {onProof && (
+          <button type="button" className="ghost-btn" disabled={busy} onClick={() => onProof(!proofOn)}>
+            {proofOn ? 'Provayı kaldır' : 'Baskıya hazırla'}
+          </button>
+        )}
+      </div>
 
       <ul className="prod__list">
         {design.preflight.items.map((item) => (
@@ -112,10 +169,25 @@ export function ProductionInfo({ design }: ProductionInfoProps) {
           type="button"
           className="ghost-btn"
           onClick={() => void onZip()}
-          disabled={zipping || !design.preflight.exportOk}
+          disabled={zipping || !design.preflight.exportOk || !signedIn}
+          title={
+            !signedIn
+              ? 'Baskı dosyaları hesabına bağlı — giriş yaptıktan sonra indirebilirsin.'
+              : design.preflight.exportOk
+                ? ''
+                : 'Yukarıdaki kırmızı kontrol geçilmeden dosya üretilmiyor.'
+          }
         >
           {zipping ? 'Hazırlanıyor…' : `Teslim ZIP${priceLabel}`}
         </button>
+        {signedIn && !proofOn && design.preflight.exportOk && (
+          <span className="prod__export-note">Prova kapalı — paket kılavuzsuz iner.</span>
+        )}
+        {!signedIn && (
+          <span className="prod__export-note">
+            Tasarımı istediğin kadar deneyebilirsin. Baskı dosyalarını indirmek için sağ üstten giriş yap.
+          </span>
+        )}
         {exportNote && <span className="prod__export-note">{exportNote}</span>}
       </div>
 

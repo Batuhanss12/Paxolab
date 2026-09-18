@@ -176,7 +176,7 @@ describe('studio direction — TASARIM REF families', () => {
 
   it('leaves coffee, perfume, and electronics DNA untouched', () => {
     expect(hintsFromBrief({ ...emptyBrief(), sector: 'gıda', subProduct: 'kahve' }, 'food', 'box').archetype).toBe('marble-frame')
-    expect(hintsFromBrief({ ...emptyBrief(), sector: 'parfüm', subProduct: 'eau de parfum' }, 'perfume', 'box').archetype).toBe('dark-landscape')
+    expect(hintsFromBrief({ ...emptyBrief(), sector: 'parfüm', subProduct: 'eau de parfum' }, 'perfume', 'box').archetype).toBe('noir-stack')
     expect(hintsFromBrief({ ...emptyBrief(), sector: 'parfüm', subProduct: 'eau de parfum' }, 'perfume', 'label').archetype).toBe('ink-panel')
     expect(hintsFromBrief({ ...emptyBrief(), sector: 'elektronik', subProduct: 'kulaklık' }, 'electronics', 'box').archetype).toBe('diagonal-tech')
   })
@@ -386,7 +386,7 @@ describe('studio direction — TASARIM REF families', () => {
     expect(direction.background).toBe('marble')
   })
 
-  it('perfume + klinik brief uses line-scene instead of the dark-landscape cliché', () => {
+  it('perfume + klinik brief uses line-scene instead of the noir-stack cliché', () => {
     const brief = {
       ...emptyBrief(),
       brandName: 'Luma',

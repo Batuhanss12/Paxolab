@@ -6,6 +6,7 @@
 import type { Attachment, AwaitingKey, DesignBrief, DesignOverrides, FieldProvenance, PackagingMode } from '../types'
 import type { DirectorCue } from './brain/DesignPlan'
 import { confidenceNumber } from './briefProvenance'
+import { depthFieldsOf } from './briefDepth'
 import { extractFields } from './extractFields'
 import { nextMissing } from './conversationAsk'
 import { mergeBrief } from './fields'
@@ -139,6 +140,11 @@ export function understandUtterance(
   if (avoidMotifs.length) {
     patch.avoidMotifs = avoidMotifs
     inferred.push('avoidMotifs')
+  }
+  // Brief depth, said in passing: audience, channel, price tier, feeling, what not to resemble.
+  // Never asked for, never blocking; recorded when present so the direction can use it.
+  for (const [key, value] of Object.entries(depthFieldsOf(text))) {
+    if (value && !(key in patch)) (patch as Record<string, unknown>)[key] = value
   }
   if (patch.styleType && !/lüks|luxury|premium|minimal|sade|eco|organik|playful|eğlenc|\bmodern\b|klasik|classic/i.test(text)) {
     inferred.push('styleType')

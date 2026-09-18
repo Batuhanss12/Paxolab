@@ -1,4 +1,5 @@
 import type { CopyLocale, DesignBrief, PackagingMode, StyleType } from '../types'
+import { isPriceTier } from './briefDepth'
 import { withProvenance } from './briefProvenance'
 import type { DirectorCue } from './brain/DesignPlan'
 import { getLlmProvider } from './llm/provider'
@@ -7,7 +8,10 @@ import { getLlmProvider } from './llm/provider'
 export const LLM_EXTRACT_CONFIDENCE = 0.75
 
 const SYSTEM_PROMPT =
-  'Extract a FORMA DesignBrief JSON only. Keys: brandName, productName, sector, subProduct, packagingMode (box|label — box if they asked for both box and label), styleType (mood hint: luxury|modern|minimal|eco|playful|classic — not a template; if they avoid classic/cheap and ask editorial/premium use luxury or modern, never classic), directorCue (luxury-tighten for editorial/restrained/quiet; else omit), colors (hex or names including beige/bej, green/yeşil, earth/toprak; primary palette seed), volume, barcode, manufacturerName, manufacturerAddress, copyLocale (tr|en). Leave barcode empty if the user did not give digits. Leave dimensions out of JSON unless they gave L×W×H or W×H. Leave copyLocale empty unless the user asked for Turkish or English copy. Do not set productName to generic sector words (Parfüm, Krem, Serum, Kahve). Leave productName empty if the user only named the category or only gave a brand. Never copy brandName into productName. For labels, do not invent manufacturer or box L×W×H. No image generation. No SVG, path, coordinates, templateId, or structureId.'
+  'Extract a FORMA DesignBrief JSON only. Keys: brandName, productName, sector, subProduct, packagingMode (box|label — box if they asked for both box and label), styleType (mood hint: luxury|modern|minimal|eco|playful|classic — not a template; if they avoid classic/cheap and ask editorial/premium use luxury or modern, never classic), directorCue (luxury-tighten for editorial/restrained/quiet; else omit), colors (hex or names including beige/bej, green/yeşil, earth/toprak; primary palette seed), volume, barcode, manufacturerName, manufacturerAddress, copyLocale (tr|en). ' +
+  'Brief depth, only when the user said it: audience (who buys it, short phrase), channel (raf|e-ticaret|butik|eczane|salon|hediye|otel / spa|ihracat), priceTier (mass|mid|premium|boutique), feeling (short phrase: sakin, sıcak, güçlü, taze, zarif…), avoidLike (what it must not look like, as they said it). ' +
+  'Perfume copy tiers, only when given: concentration (edp|edt|extrait|eau de cologne or as written), edition, attribution (a "by …" line), origin (city · year). ' +
+  'Leave barcode empty if the user did not give digits. Leave dimensions out of JSON unless they gave L×W×H or W×H. Leave copyLocale empty unless the user asked for Turkish or English copy. Do not set productName to generic sector words (Parfüm, Krem, Serum, Kahve). Leave productName empty if the user only named the category or only gave a brand. Never copy brandName into productName. For labels, do not invent manufacturer or box L×W×H. Never invent depth or tier values that were not said. No image generation. No SVG, path, coordinates, templateId, or structureId.'
 
 const BRIEF_KEYS = [
   'brandName',
@@ -23,6 +27,15 @@ const BRIEF_KEYS = [
   'manufacturerName',
   'manufacturerAddress',
   'copyLocale',
+  'audience',
+  'channel',
+  'priceTier',
+  'feeling',
+  'avoidLike',
+  'concentration',
+  'edition',
+  'attribution',
+  'origin',
 ] as const
 
 const STYLES = new Set<StyleType>(['luxury', 'modern', 'minimal', 'eco', 'playful', 'classic'])
@@ -93,6 +106,28 @@ export function sanitizeBriefExtract(raw: unknown): Partial<DesignBrief> | null 
 
   const locale = cleanText(parsed.copyLocale)
   if (locale === 'tr' || locale === 'en') out.copyLocale = locale as CopyLocale
+
+  // Brief depth and perfume tiers: free text through the same geometry gate, capped short so a
+  // paragraph the model volunteers cannot become a label line; the price tier is a closed enum.
+  const short = (value: unknown, max: number): string => cleanText(value).slice(0, max).trim()
+  const audience = short(parsed.audience, 60)
+  if (audience) out.audience = audience
+  const channel = short(parsed.channel, 40)
+  if (channel) out.channel = channel
+  const tier = cleanText(parsed.priceTier)
+  if (isPriceTier(tier)) out.priceTier = tier
+  const feeling = short(parsed.feeling, 40)
+  if (feeling) out.feeling = feeling
+  const avoidLike = short(parsed.avoidLike, 80)
+  if (avoidLike) out.avoidLike = avoidLike
+  const concentration = short(parsed.concentration, 30)
+  if (concentration) out.concentration = concentration
+  const edition = short(parsed.edition, 40)
+  if (edition) out.edition = edition
+  const attribution = short(parsed.attribution, 50)
+  if (attribution) out.attribution = attribution
+  const origin = short(parsed.origin, 40)
+  if (origin) out.origin = origin
 
   const brandKey = (out.brandName ?? '').toLocaleLowerCase('tr')
   if (brandKey && out.productName?.toLocaleLowerCase('tr') === brandKey) delete out.productName

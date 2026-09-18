@@ -4,9 +4,18 @@
  * Returns null when no endpoint is configured or the request fails,
  * so callers can fall back to the local deterministic engine.
  */
+/**
+ * One part of a multimodal message. Text-only callers keep passing a string; the vision tasks
+ * pass parts, in the OpenAI-compatible shape every current endpoint accepts. Image URLs may be
+ * `data:` URLs — that is how a rendered face travels without ever being uploaded anywhere.
+ */
+export type LlmContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } }
+
 export interface LlmMessage {
   role: 'system' | 'user' | 'assistant'
-  content: string
+  content: string | LlmContentPart[]
 }
 
 export interface LlmOptions {

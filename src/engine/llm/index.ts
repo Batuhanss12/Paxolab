@@ -21,3 +21,18 @@ export { parseIntentWithLlm } from './parseIntentLlm'
 export { interpretFeedback, interpretFeedbackWithLlm } from './feedbackLlm'
 export { critiqueWithLlm } from './critiqueLlm'
 export { sanitizeStudioDirection, studioDirectionWithLlm } from './studioDirectorLlm'
+export {
+  compareFacesWithVision,
+  critiqueFaceWithVision,
+  describeReferenceWithVision,
+  sanitizeVisionCompare,
+  sanitizeVisionCritique,
+  sanitizeVisionReference,
+  studioVisionOffers,
+  visionCritiqueToOffers,
+  type Rasterise,
+  type VisionCompare,
+  type VisionCritique,
+  type VisionReference,
+} from './visionLlm'
+export { rasteriseSvg } from './rasterise'

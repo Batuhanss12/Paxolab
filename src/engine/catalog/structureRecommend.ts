@@ -116,9 +116,30 @@ function productFit(brief: DesignBrief, template: FormaTemplate): number {
 }
 
 /** One catalog card per structure family. Prefer the sector/product match when the brief has one. */
+/**
+ * Brand-kit pieces are accessories, not packaging choices.
+ *
+ * A swing tag and a thank-you card are printed flat and travel as `label`, so on shape alone they
+ * compete with one: measured, `insert-card` came second for a perfume label at 0.72 and pushed
+ * `flat-label` to third, because a 90×55 card and a 90×70 wrap are nearly the same rectangle.
+ *
+ * Tuning the score is the wrong lever — narrowing their sub-products was tried and made it worse,
+ * dropping the tag to 0.66 even when the customer had asked for one by name. The real answer is
+ * that these are a different kind of thing: nobody choosing a label wants a card offered *instead*
+ * of one. They stay out of the pool unless the brief names them.
+ */
+const KIT_GROUP = 'brand-kit'
+
+function asksForKit(brief: DesignBrief): boolean {
+  const blob = `${brief.subProduct ?? ''} ${brief.productName ?? ''} ${brief.story ?? ''}`.toLocaleLowerCase('tr')
+  return /askı etiket|aski etiket|swing tag|hang tag|teşekkür kart|tesekkur kart|bakım kart|insert kart|yaka etiket/.test(blob)
+}
+
 function familyRepresentatives(mode: PackagingMode, brief: DesignBrief): FormaTemplate[] {
   const byStruct = new Map<StructureId, FormaTemplate>()
+  const wantsKit = asksForKit(brief)
   for (const tmpl of activeTemplates(true)) {
+    if (tmpl.templateGroup === KIT_GROUP && !wantsKit) continue
     const prev = byStruct.get(tmpl.structureId)
     if (!prev) {
       byStruct.set(tmpl.structureId, tmpl)
@@ -264,10 +285,23 @@ export function parseOfferChoice(text: string, count: number): number | null {
     const n = ORDINAL[named[1] ?? '']
     return n && n <= count ? n : null
   }
-  const num = t.match(/\b([123])\s*[.)]?\s*(yapı|öneri|kart)/)
+  const num = t.match(/(?:^|[^0-9])([1-9])\s*[.)]?\s*(yapı|öneri|kart|numara|seçenek)/)
   if (num) {
     const n = Number(num[1])
     return n >= 1 && n <= count ? n : null
+  }
+  /*
+   * A bare number, when a numbered list is on screen.
+   *
+   * The chat prints "1. poligon kutu … 2. snap-lock … 3. düz tuck-end" and then required the noun
+   * as well — "2. yapı". Reading a numbered list and typing `2` is the first thing anyone does, and
+   * it matched nothing. Only a message that is *nothing but* a number counts, so "50 ml" and a
+   * barcode are untouched.
+   */
+  const lone = t.match(/^([1-9])\s*[.)]?$/)
+  if (lone) {
+    const n = Number(lone[1])
+    return n <= count ? n : null
   }
   return null
 }

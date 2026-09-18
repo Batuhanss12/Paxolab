@@ -64,7 +64,9 @@ export function classifyGrammar(structureId: string): { grammar: GrammarId; ecma
   if (structureId === 'tray-box' || structureId === 'simple-tray') return { grammar: 'tray' }
   if (structureId === 'pillow-box') return { grammar: 'pillow' }
   if (structureId === 'rigid-gift-box') return { grammar: 'rigid-gift' }
-  if (structureId === 'flat-label' || structureId === 'wrap-label') return { grammar: 'label' }
+  if (structureId === 'flat-label' || structureId === 'wrap-label' || structureId === 'round-label' || structureId === 'oval-label') return { grammar: 'label' }
+  // A tag and a card are flat printed pieces: the label grammar is exactly right for both.
+  if (structureId === 'hang-tag' || structureId === 'insert-card') return { grammar: 'label' }
   return { grammar: 'unknown' }
 }
 

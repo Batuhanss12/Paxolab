@@ -11,12 +11,18 @@ export type PackagingMode = 'box' | 'label'
 /** Label 3D vessel only — never used for carton dieline/3D. */
 export type BottleShape = 'cylinder' | 'square'
 export type StyleType = 'luxury' | 'modern' | 'minimal' | 'eco' | 'playful' | 'classic'
+/** How the product is priced — a brief-depth field; closed so it can drive a decision. */
+export type PriceTier = 'mass' | 'mid' | 'premium' | 'boutique'
 /** Customer-facing copy language. Not ArtworkModel.language (that is a palette id). */
 export type CopyLocale = 'tr' | 'en'
 export const STRUCTURE_IDS = [
   'tuck-end-box',
   'simple-tray',
   'flat-label',
+  'round-label',
+  'oval-label',
+  'hang-tag',
+  'insert-card',
   'wrap-label',
   'mailer-box',
   'sleeve',
@@ -91,6 +97,31 @@ export type DesignBrief = {
   story?: string
   /** Scent pyramid: "bergamot / rose / amber" or `none` to skip the notes table. */
   scentNotes?: string
+  /**
+   * Perfume copy tiers, from the STİCKERR REF plates. All optional; catalog briefs omit them.
+   * `concentration` replaces the category line ("EAU DE TOILETTE", "EXTRAIT DE PARFUM");
+   * `edition` ("No. 07", "LIMITED EDITION"), `attribution` ("by Diako Atelier") and `origin`
+   * ("İSTANBUL · 1998") are drawn by the archetypes that carry a tier for them.
+   */
+  concentration?: string
+  edition?: string
+  attribution?: string
+  origin?: string
+  /**
+   * Brief depth — what a designer asks before drawing and the five-field chat never did.
+   * All optional; none blocks a generation. `priceTier` and `feeling` reach the studio direction
+   * through `studioPlanBridge` (ornament); `avoidLike` reaches the LLM art director as text.
+   */
+  /** Who buys it: "kadın 30+", "genç erkek", "profesyonel kuaför", "bebek / ebeveyn". */
+  audience?: string
+  /** Where it sells: "raf", "e-ticaret", "butik", "eczane", "salon", "hediye". */
+  channel?: string
+  /** How it is priced — closed vocabulary. */
+  priceTier?: PriceTier
+  /** What it must not resemble, as the customer said it: "X gibi olmasın", "ucuz durmasın". */
+  avoidLike?: string
+  /** The feeling the pack should give: "sakin", "sıcak", "güçlü", "taze". */
+  feeling?: string
   /** Primary copy locale. Missing → resolve as `tr`. Do not store on ArtworkModel.language. */
   copyLocale?: CopyLocale
   /**
@@ -136,6 +167,18 @@ export type DesignBrief = {
    * Survives vary inside the locked family; kit STYLE_OPTIONS do not read this.
    */
   studioTemperament?: import('./engine/studio/types').Temperament
+  /**
+   * True only when the customer chose the tone from the tone control.
+   *
+   * The same distinction `studioFamilyLocked` draws, for the same reason. Picking a direction now
+   * carries the tone that was on screen forward, because the owner's report was that choosing a
+   * different design from the strip threw away the dark tone they had set and came back light. But
+   * a tone that merely *travelled* is not a decision: without this flag, carrying it would freeze
+   * the tone for the rest of the session and the mood knob could never move the colour again.
+   * A carried tone is released by the next mood change; a chosen one holds until the customer
+   * changes it themselves.
+   */
+  studioTemperamentLocked?: boolean
   /** Per-field source + confidence. Catalog omits this; mergeBrief keeps the strongest source. */
   provenance?: Partial<Record<string, FieldProvenance>>
 }
@@ -294,6 +337,11 @@ export type DesignSpec = {
     cta: string
     /** Directions / kullanım — back of labels. Empty → copyBank usageLine. */
     usage?: string
+    /** Perfume copy tiers — see `DesignBrief.concentration` and friends. Empty → not drawn. */
+    concentration?: string
+    edition?: string
+    attribution?: string
+    origin?: string
   }
   overrides: DesignOverrides
   generatedAt: number

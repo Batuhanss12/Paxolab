@@ -8,10 +8,23 @@
  * Default provider: OpenAI-compatible chat endpoint (VITE_FORMA_LLM_URL). When no
  * endpoint is configured the null provider answers `null` and callers fall back to
  * the deterministic heuristics. Tests swap providers with `setLlmProvider`.
+ *
+ * Since F-7 a request may carry images. The three `vision-*` tasks send a rendered face (or a
+ * customer's reference) alongside the text; the provider turns them into multimodal content
+ * parts. Text-only tasks are unchanged — `images` is simply absent.
  */
-import { llmComplete, parseLlmJson } from './client'
+import { llmComplete, parseLlmJson, type LlmContentPart } from './client'
 
-export type LlmTask = 'brief-extract' | 'feedback-interpret' | 'critique' | 'copy' | 'intent' | 'studio-direct'
+export type LlmTask =
+  | 'brief-extract'
+  | 'feedback-interpret'
+  | 'critique'
+  | 'copy'
+  | 'intent'
+  | 'studio-direct'
+  | 'vision-critique'
+  | 'vision-reference'
+  | 'vision-compare'
 
 /** Recorded on every decision log so historic designs stay explainable. */
 export type LlmModelConfig = {
@@ -26,6 +39,8 @@ export type StructuredRequest = {
   system: string
   user: string
   timeoutMs?: number
+  /** Image URLs (`data:` or https) shown with the user text. Only the vision tasks set this. */
+  images?: string[]
 }
 
 export interface LLMProvider {
@@ -36,13 +51,25 @@ export interface LLMProvider {
   generateStructured<T>(request: StructuredRequest): Promise<T | null>
 }
 
-export const PROMPT_VERSION = '2026-09-16'
+// F-4 widened the studio-direct contract; F-7 added the vision tasks.
+export const PROMPT_VERSION = '2026-09-18'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 
 function configuredModel(): string {
   const env = import.meta.env as Record<string, string | undefined>
   return env.VITE_FORMA_LLM_MODEL?.trim() || DEFAULT_MODEL
+}
+
+/** The user turn as the endpoint expects it: a string, or text + image parts when images travel. */
+export function userContent(request: StructuredRequest): string | LlmContentPart[] {
+  const images = (request.images ?? []).filter((url) => typeof url === 'string' && url.length > 0)
+  if (!images.length) return request.user
+  return [
+    { type: 'text', text: request.user },
+    // `low` detail: a label face is read for hierarchy and balance, not for a stroke width.
+    ...images.map((url) => ({ type: 'image_url' as const, image_url: { url, detail: 'low' as const } })),
+  ]
 }
 
 export class NullLlmProvider implements LLMProvider {
@@ -77,7 +104,7 @@ export class OpenAiCompatibleProvider implements LLMProvider {
     const content = await llmComplete(
       [
         { role: 'system', content: request.system },
-        { role: 'user', content: request.user },
+        { role: 'user', content: userContent(request) },
       ],
       { json: true, timeoutMs: request.timeoutMs ?? 8000, model: this.model },
     )

@@ -70,11 +70,11 @@ export function buildExportBundle(
 ): { dieline: string; knife: string; artwork: string; combined: string; dxf: string } | null {
   const combined = buildCombinedSvg(spec)
   if (!combined) return null
-  const slug = spec.copy.brand || 'forma'
+  const slug = spec.copy.brand || 'grapxor'
   return {
     dieline: renderStructureDoc(spec.dieline, slug),
     knife: renderKnifeDoc(spec.dieline, slug),
-    artwork: renderArtworkDoc(spec.dieline, artworkFromDocument(spec.document), slug),
+    artwork: renderArtworkDoc(spec.dieline, artworkFromDocument(spec.document), slug, { withCut: spec.kind === 'label' }),
     combined,
     dxf: buildDielineDxf(spec.dieline),
   }
@@ -84,8 +84,29 @@ export function buildZipReadme(spec: DesignSpec): string {
   const d = spec.dieline.dimensions
   const bleed = pressBleedMm(spec.dieline)
   const safe = pressSafeMm(spec.dieline)
+  if (spec.kind === 'label') {
+    return [
+      'Grapxor teslim paketi',
+      '',
+      'TASARIM',
+      '  *-tasarim.svg   baskı yüzü, vektör. Yazılar outline — hiçbir font kurulu olmak zorunda değil.',
+      '                  İçinde iki katman var: ARTWORK (baskı) ve CUT (kesim hattı).',
+      '',
+      `Etiket ${d.L} × ${d.H} mm. CUT trim'de. ${bleed} mm taşma payı ve ${safe} mm güvenli alan kılavuzdur; bıçağa işlenmez.`,
+      'Trap yok. FOGRA değil. Motor yeşili ≠ sacda oturur.',
+      '',
+    ].join('\n')
+  }
   return [
-    'FORXA teslim ZIP',
+    /*
+     * One name on the one file the customer forwards to a printer.
+     *
+     * This bundle used to introduce itself as "FORXA teslim ZIP", arrive as `<brand>-forma.zip`,
+     * carry `forma-export/v1` in its manifest and `Grapxor` in its SVG comments. Four names, three
+     * of which the customer has never seen, inside the artefact they pay for and hand to a
+     * supplier. Whatever the repository is called, the product is Grapxor.
+     */
+    'Grapxor teslim paketi',
     '',
     'KESİM İÇİN KULLAN',
     '  *-knife.svg   CUT / CREASE / PERF katmanları, mm',
@@ -95,7 +116,7 @@ export function buildZipReadme(spec: DesignSpec): string {
     '',
     'KESİM İÇİN KULLANMA',
     '  *-combined.svg  stüdyo prova — 3 mm güvenli + bleed kılavuz dikdörtgen',
-    '  *-artwork.svg   baskı yüzü, bıçak değil',
+    '  *-tasarim.svg   baskı yüzü, bıçak değil. Yazılar outline.',
     '',
     `Kapalı kutu ${d.L} × ${d.W || '—'} × ${d.H} mm. CUT trim’de. ${bleed} mm bleed ve ${safe} mm güvenli kılavuzdur; bıçağa işlenmez.`,
     'Trap yok. FOGRA değil. Motor yeşili ≠ sacda oturur.',
@@ -105,19 +126,35 @@ export function buildZipReadme(spec: DesignSpec): string {
 
 export type UserExportFile = { name: string; data: string | Uint8Array }
 
+/**
+ * What goes in the bundle, which is not the same question for a label and a carton.
+ *
+ * A carton is folded from a flat sheet, so its delivery is a knife file, a dieline and a DXF, and
+ * the artwork is one of six panels on that sheet. A label is not folded: it is one printed face,
+ * and the owner's point was that shipping it with a four-file dieline set is noise — the design in
+ * vector form is the deliverable.
+ *
+ * Nothing is actually lost. `renderArtworkDoc` writes the knife contour into the label's own file
+ * as a `CUT` layer, which is what a label press expects anyway, and a die-cut disc or oval still
+ * reaches the printer with its contour.
+ */
 export function buildUserExportFiles(spec: DesignSpec): UserExportFile[] | null {
   const bundle = buildExportBundle(spec)
   if (!bundle) return null
-  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
+  const shared: UserExportFile[] = [
+    { name: `${slug}-tasarim.svg`, data: bundle.artwork },
+    { name: 'shop.json', data: buildManifest(spec) },
+    { name: 'OKU.txt', data: buildZipReadme(spec) },
+  ]
+  if (spec.kind === 'label') return shared
   return [
     { name: `${slug}-knife.svg`, data: bundle.knife },
     { name: `${slug}-knife.dxf`, data: bundle.dxf },
     { name: `${slug}-dieline.svg`, data: bundle.dieline },
     { name: `${slug}-dieline.pdf`, data: encodePdfBytes(buildDielinePdf(spec.dieline, slug)) },
-    { name: `${slug}-artwork.svg`, data: bundle.artwork },
     { name: `${slug}-combined.svg`, data: bundle.combined },
-    { name: 'shop.json', data: buildManifest(spec) },
-    { name: 'OKU.txt', data: buildZipReadme(spec) },
+    ...shared,
   ]
 }
 
@@ -128,13 +165,19 @@ export function buildUserExportFiles(spec: DesignSpec): UserExportFile[] | null 
  * declarations silently fall back and shift every fitted line. The dieline/knife files carry no
  * studio type, so they pass through untouched.
  */
+/** The files that carry the printed face, and therefore must have their glyphs outlined. */
+const PRINTED_FACE = /-(tasarim|artwork|combined)\.svg$/
+
 export async function buildOutlinedExportFiles(spec: DesignSpec): Promise<UserExportFile[] | null> {
   const files = buildUserExportFiles(spec)
   if (!files) return null
   const { outlineSvgText } = await import('../studio/outlineText')
   return Promise.all(
     files.map(async (file) => {
-      if (!/-(artwork|combined)\.svg$/.test(file.name) || typeof file.data !== 'string') return file
+      // Matched by *what the file is*, not by a name. Renaming the label's artwork to `-tasarim.svg`
+      // slipped past an `(artwork|combined)` pattern and shipped a label whose type still depended
+      // on installed fonts — the exact failure outlining exists to prevent.
+      if (!PRINTED_FACE.test(file.name) || typeof file.data !== 'string') return file
       const { markup } = await outlineSvgText(file.data)
       return { ...file, data: markup }
     }),
@@ -153,14 +196,14 @@ function triggerDownload(blob: Blob, name: string) {
 export function downloadSvg(spec: DesignSpec): boolean {
   const svg = buildCombinedSvg(spec)
   if (!svg) return false
-  triggerDownload(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `${spec.copy.brand || 'forma'}-combined.svg`)
+  triggerDownload(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `${spec.copy.brand || 'grapxor'}-combined.svg`)
   noteDownload(spec.id)
   return true
 }
 
 export function downloadDxf(spec: DesignSpec): boolean {
   if (!spec.preflight.exportOk) return false
-  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
   triggerDownload(new Blob([buildDielineDxf(spec.dieline)], { type: 'application/dxf;charset=utf-8' }), `${slug}-dieline.dxf`)
   noteDownload(spec.id)
   return true
@@ -169,8 +212,8 @@ export function downloadDxf(spec: DesignSpec): boolean {
 export async function downloadZip(spec: DesignSpec): Promise<boolean> {
   const files = await buildOutlinedExportFiles(spec)
   if (!files) return false
-  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
-  triggerDownload(zipStore(files), `${slug}-forma.zip`)
+  const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
+  triggerDownload(zipStore(files), `${slug}-grapxor.zip`)
   noteExport(spec.id)
   return true
 }

@@ -8,6 +8,7 @@ import { fitSize, textWidth } from './text'
 import { STUDIO_FACE_GOLDEN, generateStudioFace, hashStudioFace } from './studioGolden'
 import { STUDIO_GALLERY_JOBS } from './studioGalleryJobs'
 import { TEMPERAMENT_OPTIONS } from './temperament'
+import { DIRECTION_OFFER_SIZE } from './direction'
 
 function coffee(extra: Partial<DesignBrief> = {}): DesignBrief {
   return {
@@ -97,11 +98,11 @@ describe('DNA leftovers 1–5', () => {
     expect(new Set(families).size).toBeGreaterThan(1)
   })
 
-  it('offer lists 2–3 unique families; selected is the painted face', () => {
+  it('offer lists up to four unique families; selected is the painted face', () => {
     const spec = generate(coffee())
     const offer = spec.studio?.offer
     expect(offer?.candidates.length).toBeGreaterThanOrEqual(2)
-    expect(offer?.candidates.length).toBeLessThanOrEqual(3)
+    expect(offer?.candidates.length).toBeLessThanOrEqual(DIRECTION_OFFER_SIZE)
     expect(new Set(offer?.candidates.map((row) => row.family)).size).toBe(offer?.candidates.length)
     expect(offer?.candidates.find((row) => row.selected)?.archetype).toBe(spec.studio?.direction.archetype)
   })

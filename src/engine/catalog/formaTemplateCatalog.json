@@ -3,230 +3,517 @@
     "id": "fm-cos-tuck-perfume",
     "title": "Parfüm tuck-end",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik", "parfüm"],
-    "subProducts": ["parfüm", "eau de parfum", "kolonya"],
+    "sectors": [
+      "kozmetik",
+      "parfüm"
+    ],
+    "subProducts": [
+      "parfüm",
+      "eau de parfum",
+      "kolonya"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 70, "W": 35, "H": 140 },
+    "defaultsMm": {
+      "L": 70,
+      "W": 35,
+      "H": 140
+    },
     "status": "active"
   },
   {
     "id": "fm-cos-tuck-cream",
     "title": "Krem kutusu",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik"],
-    "subProducts": ["krem", "cream", "night cream"],
+    "sectors": [
+      "kozmetik"
+    ],
+    "subProducts": [
+      "krem",
+      "cream",
+      "night cream"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 80, "W": 40, "H": 80 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 40,
+      "H": 80
+    },
     "status": "active"
   },
   {
     "id": "fm-cos-tuck-serum",
     "title": "Serum kutusu",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik"],
-    "subProducts": ["serum", "ampul"],
+    "sectors": [
+      "kozmetik"
+    ],
+    "subProducts": [
+      "serum",
+      "ampul"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 45, "W": 45, "H": 120 },
+    "defaultsMm": {
+      "L": 45,
+      "W": 45,
+      "H": 120
+    },
     "status": "active"
   },
   {
     "id": "fm-cos-label-bottle",
     "title": "Şişe wrap etiket",
     "templateGroup": "cosmetics-label",
-    "sectors": ["kozmetik", "parfüm"],
-    "subProducts": ["parfüm", "serum", "krem"],
+    "sectors": [
+      "kozmetik",
+      "parfüm"
+    ],
+    "subProducts": [
+      "parfüm",
+      "serum",
+      "krem"
+    ],
     "structureId": "wrap-label",
     "packagingMode": "label",
-    "defaultsMm": { "L": 90, "W": 0, "H": 70 },
+    "defaultsMm": {
+      "L": 90,
+      "W": 0,
+      "H": 70
+    },
     "status": "active"
   },
   {
     "id": "fm-food-tuck-oil",
     "title": "Yağ / sos kutusu",
     "templateGroup": "food-tuck",
-    "sectors": ["gıda", "içecek"],
-    "subProducts": ["yağ", "zeytinyağı", "sos"],
+    "sectors": [
+      "gıda",
+      "içecek"
+    ],
+    "subProducts": [
+      "yağ",
+      "zeytinyağı",
+      "sos"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 80, "W": 50, "H": 180 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 50,
+      "H": 180
+    },
     "status": "active"
   },
   {
     "id": "fm-food-tray-snack",
     "title": "Atıştırmalık tepsisi",
     "templateGroup": "food-tray",
-    "sectors": ["gıda"],
-    "subProducts": ["atıştırmalık", "çikolata", "kurabiye"],
+    "sectors": [
+      "gıda"
+    ],
+    "subProducts": [
+      "atıştırmalık",
+      "çikolata",
+      "kurabiye"
+    ],
     "structureId": "simple-tray",
     "packagingMode": "box",
-    "defaultsMm": { "L": 160, "W": 100, "H": 40 },
+    "defaultsMm": {
+      "L": 160,
+      "W": 100,
+      "H": 40
+    },
     "status": "active"
   },
   {
     "id": "fm-food-label-jar",
     "title": "Kavanoz etiketi",
     "templateGroup": "food-label",
-    "sectors": ["gıda"],
-    "subProducts": ["reçel", "bal", "sos", "çay"],
+    "sectors": [
+      "gıda"
+    ],
+    "subProducts": [
+      "reçel",
+      "bal",
+      "sos",
+      "çay"
+    ],
     "structureId": "flat-label",
     "packagingMode": "label",
-    "defaultsMm": { "L": 70, "W": 0, "H": 90 },
+    "defaultsMm": {
+      "L": 70,
+      "W": 0,
+      "H": 90
+    },
     "status": "active"
   },
   {
     "id": "fm-elec-tuck-earbuds",
     "title": "Kulaklık kutusu",
     "templateGroup": "electronics-tuck",
-    "sectors": ["elektronik", "teknoloji"],
-    "subProducts": ["kulaklık", "earbuds", "aksesuar"],
+    "sectors": [
+      "elektronik",
+      "teknoloji"
+    ],
+    "subProducts": [
+      "kulaklık",
+      "earbuds",
+      "aksesuar"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 90, "W": 45, "H": 90 },
+    "defaultsMm": {
+      "L": 90,
+      "W": 45,
+      "H": 90
+    },
     "status": "active"
   },
   {
     "id": "fm-elec-tuck-cable",
     "title": "Aksesuar kutusu",
     "templateGroup": "electronics-tuck",
-    "sectors": ["elektronik", "teknoloji"],
-    "subProducts": ["kablo", "şarj", "aksesuar"],
+    "sectors": [
+      "elektronik",
+      "teknoloji"
+    ],
+    "subProducts": [
+      "kablo",
+      "şarj",
+      "aksesuar"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 120, "W": 40, "H": 80 },
+    "defaultsMm": {
+      "L": 120,
+      "W": 40,
+      "H": 80
+    },
     "status": "active"
   },
   {
     "id": "fm-elec-label-device",
     "title": "Cihaz düz etiket",
     "templateGroup": "electronics-label",
-    "sectors": ["elektronik", "teknoloji"],
-    "subProducts": ["cihaz", "modül"],
+    "sectors": [
+      "elektronik",
+      "teknoloji"
+    ],
+    "subProducts": [
+      "cihaz",
+      "modül"
+    ],
     "structureId": "flat-label",
     "packagingMode": "label",
-    "defaultsMm": { "L": 60, "W": 0, "H": 40 },
+    "defaultsMm": {
+      "L": 60,
+      "W": 0,
+      "H": 40
+    },
     "status": "active"
   },
   {
     "id": "fm-box-tuck-universal",
     "title": "Evrensel tuck-end",
     "templateGroup": "universal-tuck",
-    "sectors": ["kozmetik", "gıda", "elektronik", "bebek", "sağlık", "temizlik"],
-    "subProducts": ["genel"],
+    "sectors": [
+      "kozmetik",
+      "gıda",
+      "elektronik",
+      "bebek",
+      "sağlık",
+      "temizlik"
+    ],
+    "subProducts": [
+      "genel"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 80, "W": 40, "H": 120 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 40,
+      "H": 120
+    },
     "status": "active"
   },
   {
     "id": "fm-label-universal",
     "title": "Evrensel şişe etiketi",
     "templateGroup": "universal-label",
-    "sectors": ["bebek", "sağlık", "temizlik", "ev", "içecek", "kozmetik", "gıda"],
-    "subProducts": ["genel"],
+    "sectors": [
+      "bebek",
+      "sağlık",
+      "temizlik",
+      "ev",
+      "içecek",
+      "kozmetik",
+      "gıda"
+    ],
+    "subProducts": [
+      "genel"
+    ],
     "structureId": "flat-label",
     "packagingMode": "label",
-    "defaultsMm": { "L": 80, "W": 0, "H": 110 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 0,
+      "H": 110
+    },
+    "status": "active"
+  },
+  {
+    "id": "fm-lid-round",
+    "title": "Kapak / balm tin etiketi",
+    "templateGroup": "round-label",
+    "sectors": [
+      "kozmetik",
+      "gıda",
+      "sağlık",
+      "bebek"
+    ],
+    "subProducts": [
+      "krem",
+      "balm",
+      "merhem",
+      "mum",
+      "sabun",
+      "reçel"
+    ],
+    "structureId": "round-label",
+    "packagingMode": "label",
+    "defaultsMm": {
+      "L": 60,
+      "W": 60,
+      "H": 0
+    },
+    "status": "active"
+  },
+  {
+    "id": "fm-label-oval",
+    "title": "Oval şişe / kavanoz etiketi",
+    "templateGroup": "oval-label",
+    "sectors": [
+      "kozmetik",
+      "gıda",
+      "sağlık"
+    ],
+    "subProducts": [
+      "parfüm",
+      "kolonya",
+      "krem",
+      "serum",
+      "sabun",
+      "zeytinyağı",
+      "şarap"
+    ],
+    "structureId": "oval-label",
+    "packagingMode": "label",
+    "defaultsMm": {
+      "L": 70,
+      "W": 0,
+      "H": 45
+    },
     "status": "active"
   },
   {
     "id": "fm-box-sleeve",
     "title": "Sleeve kılıf",
     "templateGroup": "sleeve",
-    "sectors": ["kozmetik", "elektronik"],
-    "subProducts": ["kılıf", "sleeve", "banderol"],
+    "sectors": [
+      "kozmetik",
+      "elektronik"
+    ],
+    "subProducts": [
+      "kılıf",
+      "sleeve",
+      "banderol"
+    ],
     "structureId": "sleeve",
     "packagingMode": "box",
-    "defaultsMm": { "L": 90, "W": 30, "H": 150 },
+    "defaultsMm": {
+      "L": 90,
+      "W": 30,
+      "H": 150
+    },
     "status": "active"
   },
   {
     "id": "fm-box-mailer-ship",
     "title": "Mailer kargo kutusu",
     "templateGroup": "mailer",
-    "sectors": ["e-ticaret", "elektronik"],
-    "subProducts": ["kargo", "mailer", "gönderi"],
+    "sectors": [
+      "e-ticaret",
+      "elektronik"
+    ],
+    "subProducts": [
+      "kargo",
+      "mailer",
+      "gönderi"
+    ],
     "structureId": "mailer-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 180, "W": 120, "H": 80 },
+    "defaultsMm": {
+      "L": 180,
+      "W": 120,
+      "H": 80
+    },
     "status": "active"
   },
   {
     "id": "fm-gift-hex-box",
     "title": "Altıgen hediye kutusu",
     "templateGroup": "polygon",
-    "sectors": ["hediye", "kozmetik"],
-    "subProducts": ["hediye", "altıgen", "mum"],
+    "sectors": [
+      "hediye",
+      "kozmetik"
+    ],
+    "subProducts": [
+      "hediye",
+      "altıgen",
+      "mum"
+    ],
     "structureId": "polygon-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 60, "W": 60, "H": 120 },
+    "defaultsMm": {
+      "L": 60,
+      "W": 60,
+      "H": 120
+    },
     "status": "active",
     "library": "advanced",
-    "engineParams": { "sides": 6, "closureType": 0 }
+    "engineParams": {
+      "sides": 6,
+      "closureType": 0
+    }
   },
   {
     "id": "fm-gift-tri-box",
     "title": "Üçgen prizma kutusu",
     "templateGroup": "polygon",
-    "sectors": ["gıda", "hediye"],
-    "subProducts": ["çikolata", "üçgen", "prizma"],
+    "sectors": [
+      "gıda",
+      "hediye"
+    ],
+    "subProducts": [
+      "çikolata",
+      "üçgen",
+      "prizma"
+    ],
     "structureId": "polygon-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 70, "W": 70, "H": 140 },
+    "defaultsMm": {
+      "L": 70,
+      "W": 70,
+      "H": 140
+    },
     "status": "active",
     "library": "advanced",
-    "engineParams": { "sides": 3, "closureType": 0 }
+    "engineParams": {
+      "sides": 3,
+      "closureType": 0
+    }
   },
   {
     "id": "fm-gift-octagon-d",
     "title": "Sekizgen mum kutusu",
     "templateGroup": "polygon",
-    "sectors": ["hediye", "ev"],
-    "subProducts": ["mum", "sekizgen"],
+    "sectors": [
+      "hediye",
+      "ev"
+    ],
+    "subProducts": [
+      "mum",
+      "sekizgen"
+    ],
     "structureId": "polygon-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 50, "W": 50, "H": 100 },
+    "defaultsMm": {
+      "L": 50,
+      "W": 50,
+      "H": 100
+    },
     "status": "active",
     "library": "advanced",
-    "engineParams": { "sides": 8, "closureType": 1 }
+    "engineParams": {
+      "sides": 8,
+      "closureType": 1
+    }
   },
   {
     "id": "fm-bev-carrier-6",
     "title": "Altılı şişe taşıyıcı",
     "templateGroup": "carrier",
-    "sectors": ["içecek"],
-    "subProducts": ["şişe", "taşıyıcı", "grup"],
+    "sectors": [
+      "içecek"
+    ],
+    "subProducts": [
+      "şişe",
+      "taşıyıcı",
+      "grup"
+    ],
     "structureId": "product-carrier-tray",
     "packagingMode": "box",
-    "defaultsMm": { "L": 180, "W": 120, "H": 45 },
+    "defaultsMm": {
+      "L": 180,
+      "W": 120,
+      "H": 45
+    },
     "status": "active",
     "library": "advanced",
-    "engineParams": { "rows": 2, "cols": 3 }
+    "engineParams": {
+      "rows": 2,
+      "cols": 3
+    }
   },
   {
     "id": "fm-bev-carrier-2",
     "title": "İkili şişe tepsisi",
     "templateGroup": "carrier",
-    "sectors": ["içecek", "gıda"],
-    "subProducts": ["şişe", "kavanoz", "taşıyıcı"],
+    "sectors": [
+      "içecek",
+      "gıda"
+    ],
+    "subProducts": [
+      "şişe",
+      "kavanoz",
+      "taşıyıcı"
+    ],
     "structureId": "product-carrier-tray",
     "packagingMode": "box",
-    "defaultsMm": { "L": 160, "W": 80, "H": 50 },
+    "defaultsMm": {
+      "L": 160,
+      "W": 80,
+      "H": 50
+    },
     "status": "active",
     "library": "advanced",
-    "engineParams": { "rows": 1, "cols": 2 }
+    "engineParams": {
+      "rows": 1,
+      "cols": 2
+    }
   },
   {
     "id": "fm-cos-tuck-euroslot",
     "title": "Parfüm tuck + Euroslot",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik", "parfüm"],
-    "subProducts": ["askı", "euroslot", "blister"],
+    "sectors": [
+      "kozmetik",
+      "parfüm"
+    ],
+    "subProducts": [
+      "askı",
+      "euroslot",
+      "blister"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 70, "W": 35, "H": 140 },
+    "defaultsMm": {
+      "L": 70,
+      "W": 35,
+      "H": 140
+    },
     "status": "active",
     "library": "advanced",
     "auxDevice": "62"
@@ -235,11 +522,21 @@
     "id": "fm-food-tuck-pour",
     "title": "Sos kutusu + dökme ağzı",
     "templateGroup": "food-tuck",
-    "sectors": ["gıda"],
-    "subProducts": ["sos", "dökme", "akışkan"],
+    "sectors": [
+      "gıda"
+    ],
+    "subProducts": [
+      "sos",
+      "dökme",
+      "akışkan"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 80, "W": 50, "H": 160 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 50,
+      "H": 160
+    },
     "status": "active",
     "library": "advanced",
     "auxDevice": "44"
@@ -248,11 +545,21 @@
     "id": "fm-box-mailer-handle",
     "title": "Mailer + taşıma kulpu",
     "templateGroup": "mailer",
-    "sectors": ["e-ticaret"],
-    "subProducts": ["kulp", "taşıma", "handle"],
+    "sectors": [
+      "e-ticaret"
+    ],
+    "subProducts": [
+      "kulp",
+      "taşıma",
+      "handle"
+    ],
     "structureId": "mailer-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 200, "W": 140, "H": 90 },
+    "defaultsMm": {
+      "L": 200,
+      "W": 140,
+      "H": 90
+    },
     "status": "active",
     "library": "advanced",
     "auxDevice": "82"
@@ -261,11 +568,22 @@
     "id": "fm-box-pillow",
     "title": "Yastık kutu",
     "templateGroup": "specialty",
-    "sectors": ["hediye", "kozmetik"],
-    "subProducts": ["yastık", "pillow", "takı"],
+    "sectors": [
+      "hediye",
+      "kozmetik"
+    ],
+    "subProducts": [
+      "yastık",
+      "pillow",
+      "takı"
+    ],
     "structureId": "pillow-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 140, "W": 70, "H": 40 },
+    "defaultsMm": {
+      "L": 140,
+      "W": 70,
+      "H": 40
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -273,11 +591,22 @@
     "id": "fm-box-snap-lock",
     "title": "Oto kilit kutu",
     "templateGroup": "specialty",
-    "sectors": ["gıda", "elektronik"],
-    "subProducts": ["kilit", "snap", "oto"],
+    "sectors": [
+      "gıda",
+      "elektronik"
+    ],
+    "subProducts": [
+      "kilit",
+      "snap",
+      "oto"
+    ],
     "structureId": "snap-lock-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 100, "W": 60, "H": 120 },
+    "defaultsMm": {
+      "L": 100,
+      "W": 60,
+      "H": 120
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -285,11 +614,22 @@
     "id": "fm-box-rigid-gift",
     "title": "Sert hediye kutusu",
     "templateGroup": "specialty",
-    "sectors": ["hediye", "kozmetik"],
-    "subProducts": ["sert", "hediye", "kapak"],
+    "sectors": [
+      "hediye",
+      "kozmetik"
+    ],
+    "subProducts": [
+      "sert",
+      "hediye",
+      "kapak"
+    ],
     "structureId": "rigid-gift-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 160, "W": 120, "H": 50 },
+    "defaultsMm": {
+      "L": 160,
+      "W": 120,
+      "H": 50
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -297,11 +637,22 @@
     "id": "fm-box-reverse-tuck",
     "title": "Ters tuck-end",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik", "ilaç"],
-    "subProducts": ["ters", "reverse", "eczane"],
+    "sectors": [
+      "kozmetik",
+      "ilaç"
+    ],
+    "subProducts": [
+      "ters",
+      "reverse",
+      "eczane"
+    ],
     "structureId": "reverse-tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 70, "W": 35, "H": 120 },
+    "defaultsMm": {
+      "L": 70,
+      "W": 35,
+      "H": 120
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -309,11 +660,21 @@
     "id": "fm-box-tray-glued",
     "title": "Yapıştırmalı tepsi",
     "templateGroup": "food-tray",
-    "sectors": ["gıda"],
-    "subProducts": ["tepsi", "açık", "meyve"],
+    "sectors": [
+      "gıda"
+    ],
+    "subProducts": [
+      "tepsi",
+      "açık",
+      "meyve"
+    ],
     "structureId": "tray-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 180, "W": 120, "H": 40 },
+    "defaultsMm": {
+      "L": 180,
+      "W": 120,
+      "H": 40
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -321,11 +682,21 @@
     "id": "fm-cos-tuck-zipper",
     "title": "Tuck + yırtma şeridi",
     "templateGroup": "cosmetics-tuck",
-    "sectors": ["kozmetik"],
-    "subProducts": ["fermuar", "yırtma", "tamper"],
+    "sectors": [
+      "kozmetik"
+    ],
+    "subProducts": [
+      "fermuar",
+      "yırtma",
+      "tamper"
+    ],
     "structureId": "tuck-end-box",
     "packagingMode": "box",
-    "defaultsMm": { "L": 80, "W": 40, "H": 80 },
+    "defaultsMm": {
+      "L": 80,
+      "W": 40,
+      "H": 80
+    },
     "status": "active",
     "library": "advanced",
     "auxDevice": "12"
@@ -334,11 +705,24 @@
     "id": "fm-box-ecma-a60",
     "title": "ECMA A60 tuck-top auto-bottom",
     "templateGroup": "ecma-a60",
-    "sectors": ["kozmetik", "ilaç", "gıda"],
-    "subProducts": ["a60", "auto-bottom", "dip kilit", "tuck top"],
+    "sectors": [
+      "kozmetik",
+      "ilaç",
+      "gıda"
+    ],
+    "subProducts": [
+      "a60",
+      "auto-bottom",
+      "dip kilit",
+      "tuck top"
+    ],
     "structureId": "tuck-top-auto-bottom",
     "packagingMode": "box",
-    "defaultsMm": { "L": 100, "W": 50, "H": 150 },
+    "defaultsMm": {
+      "L": 100,
+      "W": 50,
+      "H": 150
+    },
     "status": "active",
     "library": "advanced"
   },
@@ -346,12 +730,78 @@
     "id": "fm-box-rsc-ship",
     "title": "RSC kargo kutusu",
     "templateGroup": "rsc",
-    "sectors": ["e-ticaret", "kargo"],
-    "subProducts": ["rsc", "oluklu", "kargo", "slotted"],
+    "sectors": [
+      "e-ticaret",
+      "kargo"
+    ],
+    "subProducts": [
+      "rsc",
+      "oluklu",
+      "kargo",
+      "slotted"
+    ],
     "structureId": "rsc-carton",
     "packagingMode": "box",
-    "defaultsMm": { "L": 200, "W": 150, "H": 150 },
+    "defaultsMm": {
+      "L": 200,
+      "W": 150,
+      "H": 150
+    },
     "status": "active",
     "library": "advanced"
+  },
+  {
+    "id": "fm-kit-hangtag",
+    "title": "Askı etiketi",
+    "templateGroup": "brand-kit",
+    "sectors": [
+      "kozmetik",
+      "gıda",
+      "tekstil",
+      "ev",
+      "bebek",
+      "sağlık"
+    ],
+    "subProducts": [
+      "askı etiketi",
+      "swing tag",
+      "hang tag",
+      "hediye"
+    ],
+    "structureId": "hang-tag",
+    "packagingMode": "label",
+    "defaultsMm": {
+      "L": 38,
+      "W": 0,
+      "H": 76
+    },
+    "status": "active"
+  },
+  {
+    "id": "fm-kit-card",
+    "title": "Teşekkür / bakım kartı",
+    "templateGroup": "brand-kit",
+    "sectors": [
+      "kozmetik",
+      "gıda",
+      "tekstil",
+      "ev",
+      "bebek",
+      "sağlık"
+    ],
+    "subProducts": [
+      "teşekkür kartı",
+      "bakım kartı",
+      "insert kart",
+      "hediye"
+    ],
+    "structureId": "insert-card",
+    "packagingMode": "label",
+    "defaultsMm": {
+      "L": 90,
+      "W": 0,
+      "H": 55
+    },
+    "status": "active"
   }
 ]

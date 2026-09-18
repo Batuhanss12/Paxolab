@@ -75,6 +75,49 @@ export function isLandscape(w: number, h: number): boolean {
   return w >= h * 1.15
 }
 
+/**
+ * A round face, read off the geometry rather than off a flag.
+ *
+ * Every rectangular panel here is four points; a disc is sampled into many. Asking the panel is
+ * better than threading a structure id down to the painter, because it stays true for any future
+ * shape that happens to be round — and a painter that believes a disc is a rectangle prints over
+ * the knife at the top and bottom, where the chord is barely half the bounding box.
+ */
+export function isDisc(panel: Panel): boolean {
+  return panel.polygon.length > 8 && Math.abs(panel.w - panel.h) < 0.01
+}
+
+/** A curved cut — disc or oval. Both punish a rectangular layout the same way and share a painter. */
+export function isRound(panel: Panel): boolean {
+  return panel.polygon.length > 8
+}
+
+/**
+ * How wide the panel actually is at a given panel-local y, read off the cut line.
+ *
+ * A plain rectangle answers its full width, so a caller can use this unconditionally. A rounded
+ * corner or a curved rim answers less, which is the point: a line placed a millimetre from the
+ * bottom edge of a hang tag sits where the corner radius has already taken the width away — the
+ * tag's producer line was set to the full width there and crossed the cut by 1.7 mm.
+ */
+export function spanAt(panel: Panel, y: number): { left: number; right: number; width: number } {
+  const poly = panel.polygon
+  const full = { left: 0, right: panel.w, width: panel.w }
+  if (!poly || poly.length < 3) return full
+  let lo = Infinity
+  let hi = -Infinity
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const ay = poly[i].y - panel.y
+    const by = poly[j].y - panel.y
+    if (ay > y === by > y) continue
+    const t = (y - ay) / (by - ay)
+    const x = poly[i].x - panel.x + t * (poly[j].x - poly[i].x)
+    lo = Math.min(lo, x)
+    hi = Math.max(hi, x)
+  }
+  return Number.isFinite(lo) && hi > lo ? { left: lo, right: hi, width: hi - lo } : full
+}
+
 /** Tiny face (small jar / sachet label): drop secondary anatomy. */
 export function isTiny(w: number, h: number): boolean {
   return Math.min(w, h) < 50

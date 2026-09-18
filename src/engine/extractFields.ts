@@ -6,6 +6,7 @@ import type { Attachment, DesignBrief } from '../types'
 import { inferCopyLocale } from './copyLocale'
 import { parseDimensions, parseStyle } from './fields'
 import {
+  GREETING_RE,
   MODE_RULES,
   NAME_STOP_RE,
   SECTOR_NOUN_RE,
@@ -18,12 +19,12 @@ import {
   isGenericProductName,
   isPaletteName,
   isSectorOrSurfaceName,
-  labeled,
   labeledBlock,
   looksLikeName,
   looksLikeSector,
   sameName,
 } from './extractHelpers'
+import { spokenBrandName, spokenProductName } from './spokenNames'
 import { templateIdFromUtterance } from './catalog/structureOffer'
 import { extractSpokenCopy } from './extractCopy'
 
@@ -61,10 +62,19 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
   }
   if (patch.sector && !looksLikeSector(patch.sector)) delete patch.sector
 
-  const brand = labeled(raw, ['marka', 'brand'])
-  if (looksLikeName(brand)) patch.brandName = brand
-  const product = labeled(raw, ['ürün', 'product'])
-  if (looksLikeName(product)) patch.productName = product
+  /*
+   * What the customer labelled, read before anything is guessed from word order.
+   *
+   * `spokenNames` holds the three readings, most explicit first, and `extract.ts` uses the same
+   * module to decide which corrections survive while another question is pending — one definition
+   * of "the customer named this field on purpose", not two that can drift apart. The measured
+   * failure it fixes: "Noctis markası için parfüm şişesi etiketi, ürün Gece Serisi" set the
+   * product to "şişesi" while the answer sat in the sentence, spelled out.
+   */
+  const brand = spokenBrandName(raw)
+  if (brand) patch.brandName = brand
+  const product = spokenProductName(raw)
+  if (product && !sameName(product, brand)) patch.productName = product
 
   const spokenBrand = raw.match(
     /(?:marka(?:nın)?\s+)?(?:adı|adın|adını)\s+([A-Za-zÇĞİÖŞÜçğıöşü][\wÇĞİÖŞÜçğıöşü'’-]{1,28})\s+olsun/i,
@@ -137,7 +147,14 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
         patch.brandName = run.join(' ')
         brandRun = run.length
       }
-      if (!patch.brandName && words[0] && looksLikeName(words[0]) && !SKIP_UTTERANCE.test(words[0])) {
+      // The positional fallback, and the last place a greeting could have become a brand.
+      if (
+        !patch.brandName &&
+        words[0] &&
+        looksLikeName(words[0]) &&
+        !SKIP_UTTERANCE.test(words[0]) &&
+        !GREETING_RE.test(words[0])
+      ) {
         patch.brandName = words[0]
       }
       if (!patch.productName && !brand && !spokenBrand && words.length > 1 && !brandRun) {
@@ -196,22 +213,36 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
     raw.match(/\b(\d{1,2})M\b/)
   if (pao) patch.paoMonths = `${pao[1]}M`
 
+  /*
+   * A word inside a refusal is not a request.
+   *
+   * These tests only asked whether the word appeared. Measured on an ordinary sentence — "çok
+   * klinik durmasın, sıcak bir şey istiyorum" — the brief came back with `colors: "Klinik"`, the
+   * customer's palette set to the one thing they had just ruled out. The negated span is removed
+   * before anything is read from it; `avoidMotifs` in `conversationUnderstand` is where a refusal
+   * is supposed to land, and it still gets the original text.
+   */
+  const wanted = raw.replace(
+    /(\S+(?:\s+\S+){0,3}?)\s+(?:durmasın|olmasın|istemiyorum|istemem|olmasını istemiyorum|yapma|kullanma|sevmiyorum)/gi,
+    ' ',
+  )
+
   const colors: string[] = []
-  const hex = raw.match(/#([0-9a-fA-F]{3,8})/g)
+  const hex = wanted.match(/#([0-9a-fA-F]{3,8})/g)
   if (hex) colors.push(...hex)
-  if (/siyah|black/i.test(raw)) colors.push('Siyah')
-  if (/altın|gold/i.test(raw)) colors.push('Altın')
-  if (/bej|beige/i.test(raw)) colors.push('Bej')
-  if (/koyu\s*ye[sş]il|dark\s*green/i.test(raw)) colors.push('Koyu yeşil')
-  else if (/ye[sş]il|green/i.test(raw)) colors.push('Yeşil')
-  if (/toprak|earth\s*tone/i.test(raw)) colors.push('Toprak')
-  if (/krem|cream/i.test(raw) && !/yüz\s*krem|face\s*cream|night\s*cream/i.test(raw)) colors.push('Krem')
-  if (/mermer|marble/i.test(raw)) colors.push('Mermer')
-  if (/botanik|\bleaf\b|yaprak/i.test(raw)) colors.push('Botanik')
-  if (/klinik|clinical/i.test(raw)) colors.push('Klinik')
-  if (/\bdalga\b|\bwave\b/i.test(raw)) colors.push('Dalga')
-  if (/manzara|landscape/i.test(raw)) colors.push('Manzara')
-  if (/diyagonal|diagonal|antrasit/i.test(raw)) colors.push('Antrasit')
+  if (/siyah|black/i.test(wanted)) colors.push('Siyah')
+  if (/altın|gold/i.test(wanted)) colors.push('Altın')
+  if (/bej|beige/i.test(wanted)) colors.push('Bej')
+  if (/koyu\s*ye[sş]il|dark\s*green/i.test(wanted)) colors.push('Koyu yeşil')
+  else if (/ye[sş]il|green/i.test(wanted)) colors.push('Yeşil')
+  if (/toprak|earth\s*tone/i.test(wanted)) colors.push('Toprak')
+  if (/krem|cream/i.test(wanted) && !/yüz\s*krem|face\s*cream|night\s*cream/i.test(wanted)) colors.push('Krem')
+  if (/mermer|marble/i.test(wanted)) colors.push('Mermer')
+  if (/botanik|\bleaf\b|yaprak/i.test(wanted)) colors.push('Botanik')
+  if (/klinik|clinical/i.test(wanted)) colors.push('Klinik')
+  if (/\bdalga\b|\bwave\b/i.test(wanted)) colors.push('Dalga')
+  if (/manzara|landscape/i.test(wanted)) colors.push('Manzara')
+  if (/diyagonal|diagonal|antrasit/i.test(wanted)) colors.push('Antrasit')
   if (colors.length) patch.colors = [...new Set(colors)].join(' · ')
 
   const spokenCopy = extractSpokenCopy(raw)
@@ -228,9 +259,20 @@ export function extractFields(text: string, attachments: Attachment[]): Partial<
     }
   }
 
-  if (/\bbarkod\b|\bean[\s-]?13\b/i.test(raw)) {
+  if (/barkod|\bean[\s-]?13\b|\bgtin\b/i.test(raw)) {
     const digits = raw.match(/\b\d{8,14}\b/)
-    if (digits) patch.barcode = digits[0]
+    if (digits) {
+      patch.barcode = digits[0]
+      patch.barcodeDefaulted = false
+    } else if (/barkod\s*(?:yok|örnek|olmasın|gerekmiyor|sonra)|(?:örnek|yok)\s*barkod/i.test(raw)) {
+      /*
+       * "Barkod örnek" answers the barcode question inside an ordinary sentence. It used to be
+       * ignored, so a customer who had already said it was asked again on the next turn — and on
+       * the opener a customer is most likely to type, that question was the only thing standing
+       * between them and their design.
+       */
+      patch.barcodeDefaulted = true
+    }
   } else {
     const lone = raw.match(/^\s*(\d{8,14})\s*$/)
     if (lone) patch.barcode = lone[1]

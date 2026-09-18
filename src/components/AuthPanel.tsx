@@ -57,6 +57,11 @@ export function AuthPanel({
   const [apiDown, setApiDown] = useState(false)
   const [busy, setBusy] = useState(false)
   const [balance, setBalance] = useState<number | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
 
   useEffect(() => {
     stripQueryParam('auth')
@@ -116,6 +121,23 @@ export function AuthPanel({
     refreshBalance()
   }, [user, creditsRefreshKey, refreshBalance])
 
+  async function onSubmitAuth() {
+    setBusy(true)
+    setError(null)
+    try {
+      const state = mode === 'login'
+        ? await authApi.login({ email: email.trim(), password })
+        : await authApi.register({ email: email.trim(), password, name: name.trim() || undefined })
+      setUser(state.user)
+      setFormOpen(false)
+      setPassword('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Giriş başarısız.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function onLogout() {
     setBusy(true)
     setError(null)
@@ -164,14 +186,93 @@ export function AuthPanel({
     )
   }
 
+  /*
+   * Signed out, with a way in.
+   *
+   * This branch used to be a label and nothing else: `api/auth.ts` has had working `register` and
+   * `login` all along, and the panel called neither. The only route into an account was a base64
+   * `?handoff=` parameter from the marketing site, so a customer who bookmarked the studio was a
+   * guest permanently, with no visible remedy — and since the print files are now behind an
+   * account, that dead end was also the end of the funnel.
+   *
+   * The label stays honest too. "Sınırsız yerel" was true when everything was free; what a guest
+   * actually gets is unlimited design, and no print files.
+   */
   return (
     <div className={`auth-panel ${compact ? 'auth-panel--compact' : ''}`}>
-      <span className="auth-panel__guest" title="Giriş yapmadan yerel ve sınırsız">
-        Misafir · sınırsız yerel
+      <span className="auth-panel__guest" title="Tasarım serbest; baskı dosyaları hesaba bağlı">
+        Misafir · tasarım serbest
       </span>
+      <button type="button" className="ghost-btn" onClick={() => setFormOpen((open) => !open)} aria-expanded={formOpen}>
+        Giriş yap
+      </button>
+
+      {formOpen && (
+        <form
+          className="auth-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onSubmitAuth()
+          }}
+        >
+          <p className="auth-form__title">{mode === 'login' ? 'Hesabına gir' : 'Hesap aç'}</p>
+          <label className="auth-form__row">
+            <span>E-posta</span>
+            <input
+              className="auth-form__input"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          <label className="auth-form__row">
+            <span>Parola</span>
+            <input
+              className="auth-form__input"
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </label>
+          {mode === 'register' && (
+            <label className="auth-form__row">
+              <span>Ad</span>
+              <input
+                className="auth-form__input"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+          )}
+          <div className="auth-form__actions">
+            <button type="submit" className="auth-form__submit" disabled={busy}>
+              {busy ? 'Bir saniye…' : mode === 'login' ? 'Gir' : 'Hesap aç'}
+            </button>
+            <button
+              type="button"
+              className="auth-form__switch"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login')
+                setError(null)
+              }}
+            >
+              {mode === 'login' ? 'Hesabın yok mu? Aç' : 'Hesabın var mı? Gir'}
+            </button>
+          </div>
+          {error && <span className="auth-form__error">{error}</span>}
+        </form>
+      )}
+
       {apiDown && (
         <span className="auth-panel__error auth-panel__error--banner">
-          API kapalı — bulut özellikleri durakladı. Yerel kullanım devam eder.
+          API kapalı — giriş ve baskı dosyaları şu an kullanılamıyor. Tasarım yapmaya devam edebilirsin.
         </span>
       )}
     </div>

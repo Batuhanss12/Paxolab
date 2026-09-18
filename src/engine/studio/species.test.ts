@@ -38,7 +38,14 @@ describe('L2 — species resolution', () => {
     expect(speciesFor({ sector: 'gıda', subProduct: 'zeytinyağı' })).toBe('olive')
     expect(speciesFor({ sector: 'gıda', subProduct: 'kahve' })).toBe('coffee')
     expect(speciesFor({ sector: 'gıda', subProduct: 'çay' })).toBe('tea')
-    expect(speciesFor({ sector: 'gıda', subProduct: 'bal' })).toBe('grain')
+    /*
+     * Honey used to resolve to `grain`, and this line pinned it there. It was never right — it
+     * shared the wheat rule because both read as "golden food", and because there was no flower in
+     * the vocabulary to give it. There is now: what a customer pictures on a honey jar is the
+     * blossom the bee worked, not an ear of wheat.
+     */
+    expect(speciesFor({ sector: 'gıda', subProduct: 'bal' })).toBe('blossom')
+    expect(speciesFor({ sector: 'gıda', subProduct: 'buğday' })).toBe('grain')
     expect(speciesFor({ sector: 'gıda', subProduct: 'çikolata' })).toBe('cocoa')
   })
 

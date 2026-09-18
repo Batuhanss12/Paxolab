@@ -10,7 +10,8 @@ const CLOUD_ID_KEY = 'forma.cloudProjectId.v1'
 export type PersistedSession = Pick<
   AppState,
   'phase' | 'messages' | 'brief' | 'awaiting' | 'design' | 'designHistory' | 'designFuture' | 'tab' | 'inputsOpen'
->
+> &
+  Partial<Pick<AppState, 'conversation' | 'boxDesign' | 'labelDesign' | 'surfaceView' | 'bottleShape'>>
 
 function withDocument(design: DesignSpec | null): DesignSpec | null {
   if (!design || design.document) return design
@@ -46,6 +47,19 @@ export function toPersistedSession(state: AppState): PersistedSession {
     designFuture: state.designFuture.slice(0, 5),
     tab: state.tab,
     inputsOpen: state.inputsOpen,
+    /*
+     * The two stores used to disagree: `conversation` lived only in IndexedDB, so restoring from
+     * localStorage lost the record of what had already been asked and the chat re-asked settled
+     * questions. The surface slots were in neither, so a dual project lost one of its two designs.
+     *
+     * Attachments stay out on purpose — they are base64 and would burst the 5 MB quota. They live
+     * in IndexedDB, which has room.
+     */
+    conversation: state.conversation,
+    boxDesign: state.boxDesign,
+    labelDesign: state.labelDesign,
+    surfaceView: state.surfaceView,
+    bottleShape: state.bottleShape,
   }
 }
 
@@ -63,13 +77,31 @@ export function loadSession(): Partial<AppState> | null {
   }
 }
 
+/**
+ * Save, shedding weight rather than the whole session.
+ *
+ * The old handler answered a full quota by deleting the saved session outright — the one moment
+ * storage is under pressure is the one moment it threw the customer's work away. It degrades now:
+ * first the undo history goes, then the older designs, and only a session that cannot be written
+ * even stripped to the brief and the chat gives up. Losing undo is a small loss; losing the
+ * project is not.
+ */
 export function saveSession(state: AppState): void {
   if (typeof localStorage === 'undefined') return
-  const persisted = toPersistedSession(state)
-  try {
-    localStorage.setItem(KEY, JSON.stringify({ version: 1, state: persisted }))
-  } catch {
-    localStorage.removeItem(KEY)
+  const full = toPersistedSession(state)
+  const attempts: PersistedSession[] = [
+    full,
+    { ...full, designHistory: [], designFuture: [] },
+    { ...full, designHistory: [], designFuture: [], boxDesign: null, labelDesign: null },
+    { ...full, designHistory: [], designFuture: [], boxDesign: null, labelDesign: null, design: null },
+  ]
+  for (const attempt of attempts) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ version: 1, state: attempt }))
+      return
+    } catch {
+      /* try the next, lighter shape */
+    }
   }
 }
 

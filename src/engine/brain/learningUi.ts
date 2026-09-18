@@ -35,13 +35,23 @@ export function describeRecommendation(rec: KnowledgeRecommendation): string {
   if (rec.kind === 'avoid-motif') return `${rec.tokens.map(pretty).join(', ')} motifinden kaçın`
   if (rec.kind === 'director-cue') return `${CUE_TR[rec.cue] ?? rec.cue} yönü`
   const verb = rec.prefer ? 'tercih' : 'kaçın'
-  if (rec.kind === 'studio-archetype') return `${pretty(rec.archetype)} arketipi ${verb}`
-  return `${pretty(rec.background)} dokusu ${verb}`
+  switch (rec.kind) {
+    case 'studio-archetype':
+      return `${pretty(rec.archetype)} arketipi ${verb}`
+    case 'studio-background':
+      return `${pretty(rec.background)} dokusu ${verb}`
+    case 'studio-typePairing':
+      return `${rec.typePairing} tip ikilisi ${verb}`
+    case 'studio-frame':
+      return `${pretty(rec.frame)} çerçevesi ${verb}`
+    case 'studio-ornament':
+      return `süs seviyesi ${rec.ornament} ${verb}`
+  }
 }
 
-/** Studio painter consumes only archetype/background hints. Kit motif/cue recs do not paint P1. */
+/** Studio painter consumes the direction hints — archetype, background and, since F-8, the three axes. Kit motif/cue recs do not paint P1. */
 export function paintsStudioFace(rec: KnowledgeRecommendation): boolean {
-  return rec.kind === 'studio-archetype' || rec.kind === 'studio-background'
+  return rec.kind === 'studio-archetype' || rec.kind === 'studio-background' || rec.kind === 'studio-typePairing' || rec.kind === 'studio-frame' || rec.kind === 'studio-ornament'
 }
 
 export function describeCondition(condition: KnowledgeCondition): string {

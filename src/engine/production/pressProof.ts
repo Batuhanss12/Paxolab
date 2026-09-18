@@ -42,7 +42,7 @@ export const PRESS_PROOF_SKUS: PressProofSku[] = [
     role: 'alternate',
     templateId: 'fm-box-ecma-a60',
     dims: { L: 100, W: 50, H: 150 },
-    brand: 'FORXA',
+    brand: 'Grapxor',
     product: 'A60',
     sector: 'kozmetik',
     subProduct: 'a60',
@@ -150,7 +150,7 @@ export function buildPressProofPack(sku: PressProofSku): PressProofPack {
   const bundle = buildExportBundle(spec)
   if (!bundle) throw new Error(`${sku.templateId}: export bundle empty`)
 
-  const slug = (spec.copy.brand || 'forma').replace(/\s+/g, '-').toLowerCase()
+  const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
   const shop = shopNotes(sku, spec)
   const files: PressProofFile[] = [
     { name: `${slug}-knife.svg`, data: bundle.knife },
@@ -173,7 +173,7 @@ export function buildPressProofKit(): { packs: PressProofPack[]; brief: string }
 export function renderShopBrief(packs: PressProofPack[]): string {
   const primary = packs.find((p) => p.sku.role === 'primary') ?? packs[0]!
   const lines: string[] = [
-    'FORXA — KALIPHANE / FİZİKSEL PROVA',
+    'GRAPXOR — KALIPHANE / FİZİKSEL PROVA',
     'Motor yeşili ≠ sacda oturur. Bu paket kesim içindir; kesim burada yapılmaz.',
     '',
     `BİRİNCİL SKU: ${primary.sku.templateId}  ${primary.sku.dims.L}×${primary.sku.dims.W}×${primary.sku.dims.H} mm`,

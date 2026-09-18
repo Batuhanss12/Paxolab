@@ -11,6 +11,7 @@ import { resolveSector } from '../designSystem/sector'
 import { darken, fromHsl, hsl, isDark, lighten, luminance, mix, readableInk, saturate, separateAccent } from './color'
 import {
   claimChip,
+  concentrationLine,
   copyBankFor,
   isGenericTagline,
   refineBenefits,
@@ -18,7 +19,8 @@ import {
   samePackLine,
   volumeLine,
 } from './copyBank'
-import { familyOf } from './family'
+import { STUDIO_FAMILIES, familyOf } from './family'
+import type { StudioIntent } from './studioPlanBridge'
 import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
 import type {
   CopySource,
@@ -52,7 +54,40 @@ export type DirectionInput = {
   archetypeStep?: number
   copy: { brand: string; product: string; tagline: string; volume: string }
   hints?: DirectionHints[]
+  /** The front is a disc or an oval. A `bezel` frame is a property of that cut, not of any archetype. */
+  round?: boolean
+  /**
+   * What the design brain wants on the three preference axes. Read by the ranking as a small fit
+   * term — an archetype whose lists can wear the plan's pairing, frame and ornament edges ahead of
+   * one that cannot — never as a pin.
+   */
+  intent?: StudioIntent
 }
+
+/** How many directions the customer is offered to choose between after a generation. */
+/**
+ * How many designs the customer is offered.
+ *
+ * Measured 2026-09-18. The pool's hard ceiling is the number of visual families, 10 — asking for
+ * 12 returns 10 on a carton and 9 on a label, because `dark-luxe` and `ink` share `ink-panel`
+ * there. Cost is not the constraint: a full generation with ten painted candidate fronts runs
+ * 10–20 ms end to end, 1–2 ms per extra face, ~21–35 KB of SVG each.
+ *
+ * Eight, not ten, because the tail stops being an option worth showing. On the honey carton the
+ * ranked scores run 1.95, 0.41, 0.38, 0.24, 0.12, 0.11, 0.11, 0.09 — and then 0.05 and **−0.03**,
+ * that last one a circuit-board field on a jar of honey. Offering it does not widen the choice,
+ * it spends the customer's attention on a design the engine itself scored as wrong.
+ */
+export const DIRECTION_OFFER_SIZE = 8
+
+/**
+ * A negative score means the archetype's own DNA rejects this sector. No amount of wanting more
+ * choice makes such a row worth a card, so it is cut even when the offer is short.
+ */
+const OFFER_SCORE_FLOOR = 0
+
+/** Fixed presentation order for the offer, so a card never changes place under the customer. */
+const FAMILY_ORDER = Object.keys(STUDIO_FAMILIES) as StudioFamily[]
 
 /** Arrangements available inside one archetype. Keep in sync with the layout `switch`es. */
 export const LAYOUT_VARIANTS = 3
@@ -323,6 +358,8 @@ export type ArchetypeScoreParts = {
   hintPin: number
   veto: number
   backgroundMismatch: number
+  /** 0–1: how many of the brain's axis intents this archetype's preference lists can wear. 1 when the brain said nothing. */
+  intentFit: number
 }
 
 function scoreArchetype(
@@ -347,18 +384,33 @@ function scoreArchetype(
   // for black / white / grey — it would invent a hue. Loud faces lose on quiet briefs.
   const paletteClash = achromatic && dna.temperaments.every((t) => t === 'vivid-mono') ? -0.5 : 0
   const backgroundMismatch = bgMiss + bgAvoid + paletteClash
-  const score = sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18 + productFamily + hintPin + veto + backgroundMismatch
+  /*
+   * The brain's axis intents, as a fit rather than a pin. Each intent the archetype's lists can
+   * wear counts; an archetype that can wear none of them loses 0.05 — enough to break a tie between
+   * two faces the sector likes equally, not enough to outvote the sector or the mood. Measured
+   * against the frozen table at 0.05: one carton moved — the minimal health box went from ink-wash
+   * to diagonal-tech, which is the family its own label had already been given, so the pair now
+   * agree — and the other seventeen archetypes held. The term exists to order the *pool*.
+   */
+  const asks: [unknown, readonly unknown[]][] = [
+    [input.intent?.typePairing, dna.typePairings],
+    [input.intent?.frame, dna.frames],
+    [input.intent?.ornament, dna.ornaments],
+  ].filter(([ask]) => ask !== undefined) as [unknown, readonly unknown[]][]
+  const intentFit = asks.length ? asks.filter(([ask, list]) => list.includes(ask)).length / asks.length : 1
+  const score =
+    sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18 + intentFit * 0.05 + productFamily + hintPin + veto + backgroundMismatch
   return {
     score,
-    parts: { sectorFit, styleFit, aspectFit, tempFit, productFamily, hintPin, veto, backgroundMismatch },
+    parts: { sectorFit, styleFit, aspectFit, tempFit, productFamily, hintPin, veto, backgroundMismatch, intentFit },
   }
 }
 
 /** TASARIM REF product families → the archetype distilled from that reference. */
 function productFamilyFit(id: string, input: DirectionInput): number {
   const blob = `${input.brief.sector} ${input.brief.subProduct} ${input.brief.productName}`.toLocaleLowerCase('tr')
-  if (/kahve|coffee|espresso|frappe|brew/.test(blob)) return id === 'marble-frame' ? 0.22 : id === 'dark-landscape' ? 0.05 : -0.08
-  if (/\bbal\b|honey|reçel|dağ/.test(blob)) return id === 'landscape-window' || id === 'landscape-badge' ? 0.22 : -0.08
+  if (/kahve|coffee|espresso|frappe|brew/.test(blob)) return id === 'marble-frame' ? 0.22 : id === 'noir-stack' ? 0.05 : -0.08
+  if (/\bbal\b|honey|reçel|dağ/.test(blob)) return id === 'specimen-hero' ? 0.22 : -0.08
   if (/serum|ampul/.test(blob) || input.sector === 'serum') {
     return id === 'line-scene' ? 0.22 : id === 'botanical-card' || id === 'card-on-art' ? -0.2 : 0
   }
@@ -371,7 +423,7 @@ function productFamilyFit(id: string, input: DirectionInput): number {
   if (/şampuan|shampoo|krem|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
     return id === 'botanical-card' || id === 'card-on-art' ? 0.22 : id === 'diagonal-tech' || id === 'diagonal-split' ? 0.08 : 0
   }
-  if (/parfüm|perfume|eau de/.test(blob)) return id === 'dark-landscape' || id === 'ink-wash' || id === 'ink-panel' ? 0.22 : 0
+  if (/parfüm|perfume|eau de/.test(blob)) return id === 'noir-stack' || id === 'ink-wash' || id === 'ink-panel' ? 0.22 : 0
   if (/elektronik|kulaklık|earbuds|tech/.test(blob)) return id === 'diagonal-tech' || id === 'diagonal-split' ? 0.22 : -0.08
   return 0
 }
@@ -407,12 +459,12 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
   if (/\bdalga\b|\bwave\b/.test(blob)) {
     return { archetype: 'wave-panel', background: 'wave', temperament: 'clean-clinical', pinSource: 'visual', rationale: ['Brief: dalga.'] }
   }
-  if (/manzara|landscape|mürekkep|\bink\b/.test(blob)) {
+  if (/mürekkep|\bink\b/.test(blob)) {
     return {
-      archetype: label ? 'ink-panel' : 'dark-landscape',
+      archetype: label ? 'ink-panel' : 'noir-stack',
       temperament: 'dark-luxe',
       pinSource: 'visual',
-      rationale: ['Brief: manzara / mürekkep.'],
+      rationale: ['Brief: mürekkep.'],
     }
   }
   if (/diyagonal|diagonal|antrasit/.test(blob)) {
@@ -422,6 +474,13 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
       pinSource: 'visual',
       rationale: ['Brief: diyagonal / antrasit.'],
     }
+  }
+  // The two STİCKERR REF plates. Both archetypes are shared across surfaces, so no label/box fork.
+  if (/\barma\b|\bcrest\b|arabesk|arabesque|roundel|madalyon/.test(blob)) {
+    return { archetype: 'crest-panel', background: 'arabesque', pinSource: 'visual', rationale: ['Brief: arma / arabesk — Azzurra roundel sistemi.'] }
+  }
+  if (/at[öo]lye|atelier|\bplaka\b|\bplate\b/.test(blob)) {
+    return { archetype: 'atelier-plate', frame: 'band-hairline', pinSource: 'visual', rationale: ['Brief: atölye / plaka — Diako üç katlı tip plakası.'] }
   }
   return {}
 }
@@ -438,9 +497,10 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
     hints.background = 'marble'
     hints.rationale = ['Kahve — Elite Brew mermer + köşe parantez sistemi (sektör prior, brief sözcüğü yok).']
   } else if (/\bbal\b|honey|reçel/.test(blob)) {
-    hints.archetype = label ? 'landscape-badge' : 'landscape-window'
-    hints.background = 'landscape-meadow'
-    hints.rationale = ['Gıda / bal — kemerli manzara penceresi.']
+    // The drawn subject, not scenery: a honey pack's picture is the flower the bee worked.
+    hints.archetype = 'specimen-hero'
+    hints.background = 'gradient-wash'
+    hints.rationale = ['Gıda / bal — çizilmiş botanik özne.']
   } else if (/serum|ampul/.test(blob) || sector === 'serum') {
     hints.archetype = 'line-scene'
     hints.background = 'line-scene'
@@ -460,7 +520,7 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
     hints.temperament = 'vivid-mono'
     hints.rationale = ['Kozmetik bakım — woo.originals botanik kart sistemi.']
   } else if (/parfüm|perfume|eau de/.test(blob)) {
-    hints.archetype = label ? 'ink-panel' : 'dark-landscape'
+    hints.archetype = label ? 'ink-panel' : 'noir-stack'
     hints.temperament = /krem|cream|light/.test(blob) ? 'light-luxe' : 'dark-luxe'
     hints.rationale = ['Parfüm — Guess / Rebull koyu lüks manzara + mürekkep.']
   } else if (/elektronik|kulaklık|earbuds|tech/.test(blob)) {
@@ -469,7 +529,7 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
     hints.rationale = ['Elektronik — Capelli diyagonal metalik sistem.']
   }
   if (sector === 'perfume' && !hints.archetype) {
-    hints.archetype = label ? 'ink-panel' : 'dark-landscape'
+    hints.archetype = label ? 'ink-panel' : 'noir-stack'
   }
   if (!hints.archetype) delete hints.pinSource
   return hints
@@ -708,7 +768,15 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
       : undefined
   const eligible = scored.filter((c) => !avoided.has(c.dna.id as StudioArchetype))
   const ranked = eligible.length ? eligible : scored
-  const pool = uniqueFamilyRows(ranked, 3)
+  /*
+   * Four, not three.
+   *
+   * The owner's ask: pressing "start" should put a spread in front of the customer — four
+   * suitable designs from different systems — and let them choose, rather than handing them one
+   * face and two runners-up. Four is what fits a strip without the choice becoming a catalogue,
+   * and `uniqueFamilyRows` already guarantees they come from four different families.
+   */
+  const pool = uniqueFamilyRows(ranked, DIRECTION_OFFER_SIZE)
   /*
    * The mood may walk, but only among faces the sector recognises.
    *
@@ -722,7 +790,7 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
    *
    * The useful distinction is not "low score", it is "the sector does not know this face". Each
    * archetype's DNA lists the sectors it serves — `line-scene` scores 1 on baby, `landscape-window`
-   * 0.4, `wave-panel` 0.3, while marble, ink-wash and dark-landscape do not appear at all. Walking
+   * 0.4, `wave-panel` 0.3, while marble, ink-wash and noir-stack do not appear at all. Walking
    * among the ones that appear keeps five faces reachable for a baby brief and none of them absurd.
    */
   /*
@@ -842,7 +910,9 @@ function materializeDirection(
   const palette = studioPalette(input.palette, temperament)
   const bank = copyBankFor(brief, sector, locale)
   const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${variationIndex}`)
-  const category = hints.categoryLine || refineCategory(brief, sector, locale) || bank.category
+  const lineSeed = hashSeed(`${brief.brandName}|${sector}|${surface}|${variationIndex}`)
+  // A concentration the brief named outranks the bank's EAU DE PARFUM — but never a spoken line.
+  const category = hints.categoryLine || concentrationLine(brief.concentration) || refineCategory(brief, sector, locale) || bank.category
   const spokenTag = (hints.taglineLine || input.copy.tagline || '').trim()
   const selected = resolveStudioCopy({ brief, spokenTag, bankTagline: bank.tagline })
   const chips = hints.chips?.length
@@ -854,9 +924,24 @@ function materializeDirection(
         copySource: selected.copySource,
         tagline: selected.tagline,
       })
+  /*
+   * Each axis is its own decision. A hint wins when the archetype allows it; otherwise the
+   * variation walks the archetype's preference list, and variation 0 takes the first entry so the
+   * frozen faces stay where they are. Before this, all three were fixed properties of the archetype
+   * — a marble face wore one pairing and one frame for its whole life.
+   */
+  const pickAxis = <T,>(list: readonly T[], hint: T | undefined): T => {
+    if (hint !== undefined && list.includes(hint)) return hint
+    return list[variationIndex > 0 ? variationIndex % Math.max(1, list.length) : 0] ?? list[0]
+  }
+  const typePairing = pickAxis(dna.typePairings, hints.typePairing)
+  // A bezel belongs to a curved cut, so no archetype lists it; the hint is honoured on a round front
+  // and dropped on a rectangle, where `paintFrame` would draw nothing and the face would lose its edge.
+  const frame = hints.frame === 'bezel' && input.round ? 'bezel' : pickAxis(dna.frames, hints.frame === 'bezel' ? undefined : hints.frame)
+  const ornament = pickAxis(dna.ornaments, hints.ornament)
   const productPrefix =
     hints.productPrefix ??
-    (dna.typePairing === 'script-accent/sans-heavy' || dna.typePairing === 'spaced-serif/spaced-sans'
+    (typePairing === 'script-accent/sans-heavy' || typePairing === 'spaced-serif/spaced-sans'
       ? bank.prefixes[variationIndex % bank.prefixes.length]
       : '')
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
@@ -866,15 +951,19 @@ function materializeDirection(
     // Shifted off the texture rng so the arrangement and the background grain do not move together.
     variant: (seed >>> 5) % LAYOUT_VARIANTS,
     background,
-    typePairing: hints.typePairing ?? dna.typePairing,
+    typePairing,
     temperament,
-    frame: hints.frame ?? dna.frame,
+    frame,
     lockup: hints.lockup ?? dna.lockup,
+    ornament,
     palette,
     benefits: refineBenefits(brief, bank.benefits, locale).slice(0, 4),
     chips,
     manifesto: hints.manifesto?.length ? hints.manifesto.slice(0, 4) : bank.manifesto,
     categoryLine: category,
+    editionLine: (brief.edition ?? '').trim(),
+    attributionLine: (brief.attribution ?? '').trim(),
+    originLine: (brief.origin ?? '').trim(),
     taglineLine: selected.tagline,
     copySource: selected.copySource,
     story: (brief.story?.trim() || bank.story).trim(),
@@ -883,6 +972,7 @@ function materializeDirection(
     rationale,
     source: hints.source ?? (hints.archetype ? 'llm' : 'heuristic'),
     seed,
+    lineSeed,
     sector,
     locale,
   }
@@ -913,11 +1003,41 @@ export function directionOffer(
   painted?: DesignDirection,
 ): DirectionOffer {
   const winnerId = ranked.pick.dna.id as StudioArchetype
-  let rows = ranked.pool
+  /*
+   * The offer is ranked as if nothing were picked.
+   *
+   * The pin that selects a family also boosts it in the ranking, and the boost can push whatever
+   * sat on the cut line out of the set — measured on a honey carton, choosing `marble` or `crest`
+   * swapped `ink` for `dark-luxe`, so two cards the customer had been looking at were replaced by
+   * one they had not. Which design is *selected* is the customer's business; which designs are
+   * *offered* belongs to the brief, and it should read the same on every visit.
+   */
+  const unpinned = input.hints?.some((hint) => hint.pinSource === 'family')
+    ? rankDirectionPool({ ...input, hints: input.hints.filter((hint) => hint.pinSource !== 'family') })
+    : ranked
+  let rows = unpinned.pool
   if (!rows.some((row) => row.dna.id === winnerId)) {
-    rows = [ranked.pick, ...rows.filter((row) => row.dna.id !== winnerId)].slice(0, 3)
+    rows = [ranked.pick, ...rows.filter((row) => row.dna.id !== winnerId)].slice(0, DIRECTION_OFFER_SIZE)
   }
-  const candidates: DirectionCandidate[] = rows.map((row, i) => {
+  // Keep the painted face whatever it scored — it is the design on screen — and cut the rest at
+  // the floor. `slice` guards the case where everything below the winner is negative.
+  const keep = rows.filter((row) => row.dna.id === winnerId || row.score > OFFER_SCORE_FLOOR)
+  /*
+   * Canonical order, not score order.
+   *
+   * The ranking puts the best fit first, and picking a design re-ranks with that family pinned —
+   * so the card the customer just chose jumped to position 1 and everything else slid along. The
+   * owner's report was that the row reshuffles as you click it, and a picker whose contents move
+   * under the cursor is not a picker. Ordering by the family table instead means card 3 is the
+   * same design before and after a click, and "3. yön" keeps meaning what it meant in the chat.
+   *
+   * The recommendation is not lost: it is carried by which candidate arrives `selected`, which is
+   * what the preview shows and what the strip badges.
+   */
+  const ordered = (keep.length >= 2 ? keep : rows.slice(0, 2))
+    .slice()
+    .sort((a, b) => FAMILY_ORDER.indexOf(familyFor(a.dna.id as StudioArchetype)) - FAMILY_ORDER.indexOf(familyFor(b.dna.id as StudioArchetype)))
+  const candidates: DirectionCandidate[] = ordered.map((row, i) => {
     const selected = row.dna.id === winnerId
     const direction = selected
       ? (painted && painted.archetype === winnerId

@@ -5,6 +5,7 @@ import { emptyBrief } from '../fields'
 import { FormaLocalEngine } from '../FormaLocalEngine'
 import { parseOfferChoice } from '../catalog/structureRecommend'
 import { parseDirectionChoice } from './directionOffer'
+import { DIRECTION_OFFER_SIZE } from './direction'
 import { STUDIO_FACE_GOLDEN, generateStudioFace, hashStudioFace } from './studioGolden'
 import { STUDIO_GALLERY_JOBS } from './studioGalleryJobs'
 
@@ -47,11 +48,11 @@ describe('D3 direction offer — ranked DesignDirection, user picks', () => {
     expect(parseOfferChoice('2. yön', 3)).toBeNull()
   })
 
-  it('lists 2–3 real directions from the same brief; selected is the painted winner', () => {
+  it('lists up to four real directions from the same brief; selected is the painted winner', () => {
     const spec = generate(coffee())
     const offer = spec.studio?.offer
     expect(offer?.candidates.length).toBeGreaterThanOrEqual(2)
-    expect(offer?.candidates.length).toBeLessThanOrEqual(3)
+    expect(offer?.candidates.length).toBeLessThanOrEqual(DIRECTION_OFFER_SIZE)
     const selected = offer?.candidates.filter((row) => row.selected)
     expect(selected).toHaveLength(1)
     expect(selected?.[0]?.archetype).toBe(spec.studio?.direction.archetype)

@@ -1,5 +1,6 @@
 import type { ArtworkModel, DielineModel, Palette } from '../../types'
 import { findHeroPanel, findLabelBackPanel, findLegalPanel } from '../dieline/panelKind'
+import { dielineTechMarkup } from '../dieline/renderDielineSvg'
 import { withStudioExportFonts } from '../studio/text'
 import { escapeSvg, panelClipDefinition } from './svgGeometry'
 
@@ -56,14 +57,39 @@ export function facePanelId(dieline: DielineModel, artwork: ArtworkModel, face: 
 }
 
 /**
- * The neutral board a preview sits on, and the hairline that marks where the design ends.
+ * The cut line, and nothing else.
  *
- * Neither is part of the artwork and neither appears in an exported production file — they exist
- * only so the customer can see their design as an object on a page rather than as colour running
- * to the edge of the frame.
+ * Not part of the artwork, and never in an exported production file — it exists only so the
+ * customer can see where their design ends.
+ *
+ * There used to be a board here too — a neutral card drawn behind the design so a pale label kept
+ * a visible edge on the dark canvas. It cost more than it bought: it read as a layer the customer
+ * had not asked for (plainly so on a disc or an oval, where a rectangle sat behind a round label),
+ * and its 6 mm on every side shrank the artwork inside its slot. A design tool shows the artboard
+ * at its own size. So the board is gone and the extent is marked the way an editor marks it: one
+ * hairline on the cut, light enough to read against the studio's dark canvas and faint enough not
+ * to be mistaken for part of the design.
  */
-const PREVIEW_MOUNT = '#eceae6'
-const PREVIEW_EDGE = 'rgba(20,24,28,0.22)'
+const PREVIEW_EDGE = 'rgba(255,255,255,0.28)'
+
+/**
+ * Breathing room around the design in a preview, in millimetres.
+ *
+ * It was 6 — sized for the board that used to be drawn there. With the board gone it is only the
+ * room the hairline needs, so the artwork gets the slot: on a 70 × 45 oval the old padding spent
+ * 17 % of the width on empty space, which is why the label looked small in a large canvas.
+ */
+export const PREVIEW_PAD = 1.2
+
+/** The panel's cut line as a path: four corners for a rectangle, the sampled rim for a disc or oval. */
+function panelOutline(panel: { x: number; y: number; w: number; h: number; polygon?: { x: number; y: number }[] }): string {
+  const n = (value: number) => Math.round(value * 100) / 100
+  const pts = panel.polygon
+  if (!pts || pts.length < 3) {
+    return `M${n(panel.x)} ${n(panel.y)} H${n(panel.x + panel.w)} V${n(panel.y + panel.h)} H${n(panel.x)} Z`
+  }
+  return `M${pts.map((p) => `${n(p.x)} ${n(p.y)}`).join(' L')} Z`
+}
 
 export function renderPanelSvg(
   dieline: DielineModel,
@@ -78,20 +104,23 @@ export function renderPanelSvg(
   const raw = artwork.layers.find((candidate) => candidate.panelId === panel.id)?.markup ?? ''
   if (!raw) return ''
   const layer = opts?.exportFonts ? withStudioExportFonts(raw) : raw
-  // The padding is the board the artwork is *shown on*, not part of the artwork. It used to be
-  // filled with `palette.paper`, so changing the mood repainted a band outside the design and made
-  // it look as though the engine had coloured something the customer never asked it to — and with
-  // the surround and the design on neighbouring tones, the edge of their own label disappeared.
-  // The mount is a constant neutral and the panel keeps a hairline, so the design's extent is
-  // always visible whatever palette it carries.
-  const mount =
-    pad > 0
-      ? `<rect x="${panel.x - pad}" y="${panel.y - pad}" width="${panel.w + pad * 2}" height="${panel.h + pad * 2}" fill="${PREVIEW_MOUNT}" />`
-      : ''
-  const edge = pad > 0 ? `<rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="none" stroke="${PREVIEW_EDGE}" stroke-width="0.25" />` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${panel.x - pad} ${panel.y - pad} ${panel.w + pad * 2} ${panel.h + pad * 2}" preserveAspectRatio="none">
-    ${mount}
-    <rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" fill="${palette.paper}" />
+  /*
+   * The stock and the hairline follow the *cut*, not the bounding box.
+   *
+   * Both used to be rectangles. On a rectangular label that is the same thing; on a disc or an
+   * oval it put a white rectangle and a rectangular outline behind a round label — two shapes the
+   * customer never asked for, sitting outside their design. Drawing the panel's own polygon covers
+   * every panel with one path: four points for a rectangle, the sampled rim for a curved cut.
+   */
+  const outline = panelOutline(panel)
+  const edge = pad > 0 ? `<path d="${outline}" fill="none" stroke="${PREVIEW_EDGE}" stroke-width="0.25" />` : ''
+  /*
+   * `preserveAspectRatio="none"` let the box scale x and y independently, so a 60 mm disc shown in
+   * a taller slot came out an egg and an oval came out a different oval. A preview that distorts
+   * the geometry is not a preview. `meet` keeps the shape and letterboxes instead.
+   */
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${panel.x - pad} ${panel.y - pad} ${panel.w + pad * 2} ${panel.h + pad * 2}" preserveAspectRatio="xMidYMid meet">
+    <path d="${outline}" fill="${palette.paper}" />
     <defs>${clipDefs(dieline)}</defs>
     ${layer}
     ${edge}
@@ -101,7 +130,7 @@ export function renderPanelSvg(
 export function renderFrontSvg(dieline: DielineModel, artwork: ArtworkModel, palette: Palette): string {
   const panelId = artwork.frontPanelId || facePanelId(dieline, artwork, 'front')
   if (!panelId) return ''
-  return renderPanelSvg(dieline, artwork, panelId, palette, { pad: 6, exportFonts: true })
+  return renderPanelSvg(dieline, artwork, panelId, palette, { pad: PREVIEW_PAD, exportFonts: true })
 }
 
 export function renderArtNetSvg(dieline: DielineModel, artwork: ArtworkModel): string {
@@ -112,14 +141,32 @@ export function renderArtNetSvg(dieline: DielineModel, artwork: ArtworkModel): s
   </g>`
 }
 
-export function renderArtworkDoc(dieline: DielineModel, artwork: ArtworkModel, title: string): string {
+/**
+ * The design as one vector file.
+ *
+ * `withCut` appends the knife contour as its own named layer. A label is delivered as this file and
+ * nothing else — the owner's point was that a separate dieline set is noise on a label, the design
+ * in vector form is the deliverable — but the cut still has to reach the printer, and a die-cut
+ * disc or oval is unusable without it. Putting it inside the artwork as `CUT` gives the printer one
+ * file with a contour layer, which is what a label press expects anyway.
+ */
+export function renderArtworkDoc(
+  dieline: DielineModel,
+  artwork: ArtworkModel,
+  title: string,
+  opts?: { withCut?: boolean },
+): string {
   const pad = 8
   const width = dieline.width + pad * 2
   const height = dieline.height + pad * 2
+  const cut = opts?.withCut
+    ? `
+  <g data-layer="CUT" transform="translate(${pad} ${pad})">${dielineTechMarkup(dieline, 0, 'doc').cut}</g>`
+    : ''
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}mm" height="${height}mm">
-  <title>${escapeSvg(title)} — Grapxor artwork</title>
+  <title>${escapeSvg(title)} — Grapxor</title>
   <defs>${clipDefs(dieline)}</defs>
-  <g transform="translate(${pad} ${pad})">${withStudioExportFonts(artworkMarkup(artwork))}</g>
+  <g data-layer="ARTWORK" transform="translate(${pad} ${pad})">${withStudioExportFonts(artworkMarkup(artwork))}</g>${cut}
 </svg>`
 }

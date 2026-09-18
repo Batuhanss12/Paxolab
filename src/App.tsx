@@ -9,7 +9,7 @@ import { emptyBrief, mergeBrief, uid } from './engine/fields'
 import { styleLabel } from './engine/styles'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
-import { generateCopyWithLlm, interpretFeedback, studioDirectionWithLlm } from './engine/llm'
+import { generateCopyWithLlm, interpretFeedback, rasteriseSvg, studioDirectionWithLlm, studioVisionOffers } from './engine/llm'
 import { analyzeReferenceImageRich, analysisToBriefPatch } from './engine/referenceAnalysis'
 import { ApiError, loadAuth, type AuthUser } from './api/client'
 import {
@@ -49,23 +49,64 @@ function liveOnSurface(design: DesignSpec | null, brief: DesignBrief): design is
 }
 
 function restoredAppState() {
+  // `allAttachments` is not blanked: see the note on the `hydrate` case. The local store does not
+  // carry attachments (they are large and would burst the quota), so this starts empty and the
+  // IndexedDB hydrate fills it a moment later — before any generation can ask for the logo.
   return {
     ...createInitialAppState(),
     ...(loadSession() ?? {}),
     pending: [],
-    allAttachments: [],
   }
 }
 
-function readFiles(list: FileList | null): Promise<Attachment[]> {
-  if (!list) return Promise.resolve([])
-  const files = [...list].filter((f) => f.type.startsWith('image/'))
+/**
+ * What the reader will accept, and what it must say about the rest.
+ *
+ * A logo arrives as `.ai`, `.eps`, `.pdf` or `.svg` more often than as a PNG — that is what a
+ * designer sends. The old reader filtered to `image/*`, dropped everything else on the floor and
+ * returned silently, so the customer watched their logo disappear with no message at all. Vector
+ * formats cannot be drawn on the canvas today, but "we cannot read this one, send a PNG" is a
+ * different thing from saying nothing.
+ */
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024
+
+type ReadResult = {
+  files: Attachment[]
+  /** Names that could not be taken, each with the reason, ready to show. */
+  skipped: { name: string; reason: string }[]
+}
+
+function readFiles(list: FileList | null): Promise<ReadResult> {
+  if (!list) return Promise.resolve({ files: [], skipped: [] })
+  const skipped: { name: string; reason: string }[] = []
+  const usable: File[] = []
+  for (const file of [...list]) {
+    if (!file.type.startsWith('image/')) {
+      const vector = /\.(ai|eps|pdf|svg)$/i.test(file.name)
+      skipped.push({
+        name: file.name,
+        reason: vector ? 'vektör dosyasını okuyamıyorum, PNG ya da JPG gönder' : 'bu dosya türünü okuyamıyorum',
+      })
+      continue
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      skipped.push({ name: file.name, reason: `çok büyük (${Math.round(file.size / 1024 / 1024)} MB, sınır 4 MB)` })
+      continue
+    }
+    usable.push(file)
+  }
+
   return Promise.all(
-    files.map(
+    usable.map(
       (file) =>
-        new Promise<Attachment>((resolve, reject) => {
+        new Promise<Attachment | null>((resolve) => {
           const reader = new FileReader()
-          reader.onerror = () => reject(new Error('read'))
+          // Resolving `null` rather than rejecting: one unreadable file must not take the others
+          // with it, and the caller reports it alongside the ones it refused up front.
+          reader.onerror = () => {
+            skipped.push({ name: file.name, reason: 'dosya okunamadı' })
+            resolve(null)
+          }
           reader.onload = () => {
             resolve({
               id: uid(),
@@ -77,7 +118,7 @@ function readFiles(list: FileList | null): Promise<Attachment[]> {
           reader.readAsDataURL(file)
         }),
     ),
-  )
+  ).then((rows) => ({ files: rows.filter((row): row is Attachment => !!row), skipped }))
 }
 
 /** Panel deep-link: /?handoff=…&project=<id> targets one cloud project. */
@@ -261,7 +302,24 @@ export default function App() {
   }, [])
 
   const attach = useCallback(async (files: FileList | null) => {
-    const next = await readFiles(files)
+    let next: Attachment[] = []
+    let skipped: { name: string; reason: string }[] = []
+    try {
+      const read = await readFiles(files)
+      next = read.files
+      skipped = read.skipped
+    } catch {
+      flashNote('Dosya okunamadı. Başka bir görsel dener misin?')
+      return
+    }
+    if (skipped.length) {
+      const first = skipped[0]
+      flashNote(
+        skipped.length === 1
+          ? `${first.name} eklenmedi: ${first.reason}.`
+          : `${skipped.length} dosya eklenmedi. ${first.name}: ${first.reason}.`,
+      )
+    }
     if (next.length === 0) return
     const hasLogo = attachRef.current.some((attachment) => attachment.kind === 'logo')
     const tagged = next.map((attachment, index) =>
@@ -270,7 +328,7 @@ export default function App() {
     attachRef.current = [...attachRef.current, ...tagged]
     dispatch({ type: 'attachments.add', attachments: tagged })
     if (!briefRef.current.colors || !briefRef.current.styleType) {
-      const analysis = await analyzeReferenceImageRich(tagged[0].dataUrl)
+      const analysis = await analyzeReferenceImageRich(tagged[0].dataUrl).catch(() => null)
       if (analysis) {
         const patch = analysisToBriefPatch(analysis, briefRef.current)
         if (Object.keys(patch).length) {
@@ -280,7 +338,7 @@ export default function App() {
         }
       }
     }
-  }, [])
+  }, [flashNote])
 
   const removePending = useCallback((id: string) => {
     dispatch({ type: 'pending.remove', id })
@@ -387,6 +445,7 @@ export default function App() {
             surface,
             colors: briefForEngine.colors,
             avoid: briefForEngine.avoidMotifs,
+            story: briefForEngine.story,
           }).catch(() => null),
         ])
         const vetoed = briefForEngine.avoidStudioFamilies ?? []
@@ -433,6 +492,15 @@ export default function App() {
           design: next,
           printReady: !!result?.overridePatch?.printReady,
         })
+        // F-7: the vision critic looks at the painted face after the fact. Asynchronous and
+        // fail-silent; its offers land on this generation only (the reducer checks `generatedAt`).
+        if (next.studio) {
+          void studioVisionOffers(next, rasteriseSvg)
+            .then((critic) => {
+              if (critic.length) dispatch({ type: 'design.critic', generatedAt: next.generatedAt, critic })
+            })
+            .catch(() => undefined)
+        }
 
         if (reservationId) {
           try {
@@ -637,6 +705,9 @@ export default function App() {
       ...held,
       styleType: style,
       ...(held.studioFamilyLocked ? {} : { studioFamily: undefined }),
+      // A tone the customer chose survives the mood; one that merely travelled from the last
+      // design does not, or the mood knob would stop being able to move the colour at all.
+      ...(held.studioTemperamentLocked ? {} : { studioTemperament: undefined }),
     }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
@@ -661,7 +732,7 @@ export default function App() {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
     const held = briefRef.current
-    const next = { ...held, studioTemperament: temperament, directionVariation: 0 }
+    const next = { ...held, studioTemperament: temperament, studioTemperamentLocked: true, directionVariation: 0 }
     briefRef.current = next
     dispatch({ type: 'brief', brief: next })
     const stay = tabAfterStudioEdit(current.kind, stateRef.current.tab)
@@ -673,17 +744,59 @@ export default function App() {
     )
   }, [runGenerate])
 
+  const onDirectionChoiceClose = useCallback(() => {
+    dispatch({ type: 'directionChoice', open: false })
+  }, [])
+
+  /**
+   * Print-ready proof: a control, not a password.
+   *
+   * `printReady` could only be turned on by typing "baskıya hazırla" into the chat. The Üretim tab
+   * told the customer to do that and offered no control; the guided tour promised an approval
+   * button that did not exist. A customer who never typed the phrase downloaded a bundle whose
+   * proof sheet carried **no safe-area and no bleed guides**, under a button still labelled
+   * "Teslim ZIP" — the difference invisible at the one moment it mattered.
+   */
+  const onProof = useCallback((on: boolean) => {
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    runGenerate(
+      briefRef.current,
+      { overridePatch: { printReady: on } },
+      {
+        announce: on
+          ? 'Baskıya hazırlıyorum — 3 mm güvenli alan ve taşma payı kılavuzları ekleniyor.'
+          : 'Prova kılavuzlarını kaldırıyorum.',
+      },
+    )
+  }, [runGenerate])
+
+  const onDirectionChoiceOpen = useCallback(() => {
+    dispatch({ type: 'directionChoice', open: true })
+  }, [])
+
   const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
     const hit = current.studio?.offer?.candidates.find((row) => row.index === index)
     if (!hit || hit.selected) return
     const held = briefRef.current
+    /*
+     * The tone on screen travels with the pick.
+     *
+     * This used to clear `studioTemperament`, so choosing a different design from the strip let the
+     * next generation re-guess the tone — the owner set dark luxe, picked another direction, and
+     * got light luxe back. A direction pick is a decision about the *skeleton*; it says nothing
+     * about colour, and silently undoing the customer's colour is the kind of thing that makes a
+     * tool feel like it is arguing with you. The flag stays as it was: a tone the customer chose
+     * keeps its lock, a tone that was only guessed travels unlocked and the next mood change
+     * releases it.
+     */
     const next = {
       ...held,
       studioFamily: family,
       studioFamilyLocked: true,
-      studioTemperament: undefined,
+      studioTemperament: held.studioTemperament ?? current.studio?.direction.temperament,
       directionVariation: 0,
     }
     briefRef.current = next
@@ -783,6 +896,7 @@ export default function App() {
           prompt={prompt}
           onPrompt={(value) => dispatch({ type: 'prompt', prompt: value })}
           attachments={pending}
+          note={syncNote}
           onAttach={attach}
           onRemoveAttach={removePending}
           onSend={send}
@@ -824,6 +938,7 @@ export default function App() {
           tab={tab}
           onTab={(nextTab) => dispatch({ type: 'tab', tab: nextTab })}
           onReset={reset}
+          onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           onAuthChange={onAuthChange}
           syncNote={syncNote}
           creditsRefreshKey={creditsRefreshKey}
@@ -835,6 +950,10 @@ export default function App() {
           bottleShape={bottleShape}
           onBottleShape={onBottleShape}
           onStartLabel={onStartLabel}
+          directionChoiceOpen={state.directionChoiceOpen}
+          onDirectionChoiceClose={onDirectionChoiceClose}
+          onDirectionChoiceOpen={onDirectionChoiceOpen}
+          onProof={onProof}
         />
       )}
     </div>

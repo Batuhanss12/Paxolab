@@ -21,12 +21,21 @@ type LandingProps = {
   onAuthChange?: (user: AuthUser | null) => void
   creditsRefreshKey?: number
   onLoadProject?: (projectId: string) => void | Promise<void>
+  /**
+   * Whatever the app most recently had to say — a refused upload, a failed sync.
+   *
+   * It used to render only in the workspace topbar, and the first thing a customer uploads they
+   * upload from here. So a logo the reader could not take vanished with no message anywhere on
+   * screen: the notice existed and had nowhere to appear.
+   */
+  note?: string | null
 }
 
 export function Landing({
   prompt,
   onPrompt,
   attachments,
+  note,
   onAttach,
   onRemoveAttach,
   onSend,
@@ -74,6 +83,7 @@ export function Landing({
             onKeyDown={onKey}
             rows={4}
           />
+          {note && <p className="composer__note">{note}</p>}
           {attachments.length > 0 && (
             <div className="thumbs">
               {attachments.map((a) => (

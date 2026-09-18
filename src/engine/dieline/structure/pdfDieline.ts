@@ -66,9 +66,9 @@ function xmpPacket(title: string, idHex: string): string {
     xmlns:pdfxid="http://www.npes.org/pdfx/ns/id/"
     xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/">
    <dc:title><rdf:Alt><rdf:li xml:lang="x-default">${xmlEsc(title)}</rdf:li></rdf:Alt></dc:title>
-   <dc:creator><rdf:Seq><rdf:li>FORXA</rdf:li></rdf:Seq></dc:creator>
-   <xmp:CreatorTool>FORXA dieline</xmp:CreatorTool>
-   <pdf:Producer>FORXA</pdf:Producer>
+   <dc:creator><rdf:Seq><rdf:li>Grapxor</rdf:li></rdf:Seq></dc:creator>
+   <xmp:CreatorTool>Grapxor dieline</xmp:CreatorTool>
+   <pdf:Producer>Grapxor</pdf:Producer>
    <pdf:Trapped>False</pdf:Trapped>
    <pdfxid:GTS_PDFXVersion>PDF/X-4</pdfxid:GTS_PDFXVersion>
    <xmpMM:DocumentID>uuid:${idHex}</xmpMM:DocumentID>
@@ -79,7 +79,7 @@ function xmpPacket(title: string, idHex: string): string {
 <?xpacket end="w"?>`
 }
 
-export function buildDielinePdf(model: DielineModel, title = 'FORXA dieline'): string {
+export function buildDielinePdf(model: DielineModel, title = 'Grapxor dieline'): string {
   const bleedMm = pressBleedMm(model)
   const mediaPad = PRESS_MEDIA_PAD_MM
   const origin = mediaPad + bleedMm
@@ -138,7 +138,7 @@ Q
   )
   objects.push(`<< /N 3 /Filter /ASCIIHexDecode /Length ${iccHex.length} >>\nstream\n${iccHex}endstream`)
   objects.push(
-    `<< /Title (${esc(title)}) /Creator (FORXA) /Producer (FORXA dieline) /Trapped /False /GTS_PDFXVersion (PDF/X-4) /GTS_PDFXConformance (PDF/X-4:2010) >>`,
+    `<< /Title (${esc(title)}) /Creator (Grapxor) /Producer (Grapxor dieline) /Trapped /False /GTS_PDFXVersion (PDF/X-4) /GTS_PDFXConformance (PDF/X-4:2010) >>`,
   )
 
   let pdf = '%PDF-1.6\n%\xE2\xE3\xCF\xD3\n'

@@ -43,6 +43,51 @@ describe('S8 studio-direct contract', () => {
     expect(mixed).toEqual({ source: 'llm', rationale: [], background: 'wave' })
   })
 
+  it('F-4: keeps the three preference axes through the same gate, and drops what it does not know', () => {
+    /*
+     * The contract used to stop at archetype / background / temperament, so on the axes the
+     * direction had just learned to decide the LLM had no voice. Each new key is gated exactly
+     * like the old ones: a legal value passes, an invented one is dropped rather than coerced,
+     * and a reply that speaks *only* to the new axes still counts as a direction.
+     */
+    const full = sanitizeStudioDirection({
+      archetype: 'atelier-plate',
+      background: 'paper',
+      temperament: 'light-luxe',
+      typePairing: 'spaced-serif/spaced-sans',
+      frame: 'band-hairline',
+      ornament: 'quiet',
+      rationale: 'Diako plakası.',
+    })
+    expect(full).toMatchObject({ archetype: 'atelier-plate', typePairing: 'spaced-serif/spaced-sans', frame: 'band-hairline', ornament: 'quiet' })
+
+    const axesOnly = sanitizeStudioDirection({ frame: 'none', ornament: 'rich' })
+    expect(axesOnly).toEqual({ source: 'llm', rationale: [], frame: 'none', ornament: 'rich' })
+
+    const invented = sanitizeStudioDirection({ typePairing: 'serif/serif', frame: 'gold-emboss', ornament: 'baroque' })
+    expect(invented).toBeNull()
+
+    const mixed = sanitizeStudioDirection({ archetype: 'crest-panel', frame: 'emboss', ornament: 'measured' })
+    expect(mixed).toEqual({ source: 'llm', rationale: [], archetype: 'crest-panel', ornament: 'measured' })
+  })
+
+  it('F-4: the live prompt names every vocabulary and carries the customer’s brief', async () => {
+    let seen: StructuredRequest | null = null
+    setLlmProvider(
+      fakeProvider((request) => {
+        seen = request
+        return { archetype: 'crest-panel', frame: 'thin-double', ornament: 'rich', typePairing: 'serif-display/sans-meta' }
+      }),
+    )
+    const hints = await studioDirectionWithLlm({ brand: 'Azzurra', product: 'Mediterraneo', sector: 'parfüm', surface: 'label', story: 'Riviera, arma, mavi-altın' })
+    expect(hints).toMatchObject({ archetype: 'crest-panel', frame: 'thin-double', ornament: 'rich', typePairing: 'serif-display/sans-meta' })
+    expect(seen!.task).toBe('studio-direct')
+    for (const word of ['typePairing', 'frame', 'ornament', 'band-hairline', 'fleuron-crown', 'atelier-plate', 'crest-panel', 'arabesque']) {
+      expect(seen!.system, `prompt does not name ${word}`).toContain(word)
+    }
+    expect(seen!.user).toContain('Riviera, arma, mavi-altın')
+  })
+
   it('studioDirectionWithLlm fail-opens when the provider is off and sanitizes live JSON', async () => {
     expect(await studioDirectionWithLlm({ brand: 'Elite', product: 'Brew', sector: 'gıda', surface: 'box' })).toBeNull()
     setLlmProvider(

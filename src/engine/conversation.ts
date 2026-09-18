@@ -56,15 +56,48 @@ function studioGeneratePatch(brief: DesignBrief): Partial<DesignOverrides> {
   return patch
 }
 
+/**
+ * Fields the awaited answer owns. While a question is pending, understanding may add to the brief
+ * but never argue with the answer that was just given, nor re-guess a name — `extract.ts` already
+ * decides which name corrections count.
+ */
+const ANSWER_OWNED: Record<string, readonly string[]> = {
+  brandName: ['brandName'],
+  productName: ['productName'],
+  sector: ['sector', 'subProduct'],
+  packagingMode: ['packagingMode', 'deliverables'],
+  volume: ['volume'],
+  dimensionsMm: ['dimensionsMm'],
+  barcode: ['barcode'],
+  templateId: ['templateId'],
+  copyLocale: ['copyLocale'],
+}
+
 function withUnderstanding(
   brief: DesignBrief,
   text: string,
   attachments: Attachment[],
   awaiting: AwaitingKey | null,
 ): DesignBrief {
-  if (awaiting && awaiting !== 'colors' && awaiting !== 'styleType') return brief
+  /*
+   * Understanding used to be switched off entirely whenever a question was pending, which is most
+   * of the conversation. Everything the customer volunteered while answering was therefore thrown
+   * away: audience, channel, price tier, feeling, what not to resemble — the whole brief-depth
+   * layer that exists to make the design better. Measured: answering the product question with
+   * "Gece Serisi olsun. Hedef kitlemiz 30 yaş üstü kadınlar, eczane rafında duracak, çok klinik
+   * durmasın" kept the name and lost the other three facts.
+   *
+   * It runs now, with the awaited field and the names held back so it cannot overrule the answer.
+   */
   const understanding = understandUtterance(text, brief, attachments)
-  return mergeBrief(brief, understanding.patch)
+  const patch = { ...understanding.patch }
+  if (awaiting) {
+    for (const key of ANSWER_OWNED[awaiting] ?? []) delete (patch as Record<string, unknown>)[key]
+    // Names are settled by `applyExtraction`, which knows whether the customer labelled them.
+    delete (patch as Record<string, unknown>).brandName
+    delete (patch as Record<string, unknown>).productName
+  }
+  return mergeBrief(brief, patch)
 }
 
 function spokenHead(ack?: string, brief?: DesignBrief): string {
@@ -105,8 +138,23 @@ function generateResult(
     line = head ? `${head.replace(/\.$/, '')} — yüzeyi yeniliyorum.` : 'Yüzeyi yeniliyorum.'
   } else {
     const action = isLabel ? 'Ön ve arka etiketi çiziyorum.' : 'Kutuyu çiziyorum.'
-    const runner = directionOffer.candidates.find((row) => !row.selected)
-    const alt = runner ? ` Beğenmezsen “${runner.index}. yön” yaz.` : ''
+    /*
+     * The strip now carries four painted directions, not one face and a spare, so the line invites
+     * a choice instead of an objection — the owner's ask was that pressing start puts a spread in
+     * front of the customer.
+     */
+    const rows = directionOffer.candidates
+    const others = rows.filter((row) => !row.selected)
+    /*
+     * Every row is named, the one on screen included. Listing only the runners-up read as a
+     * miscount — "4 yön var" followed by three names — and it also hid which of the four the
+     * customer was looking at.
+     */
+    const alt = rows.length
+      ? ` Sağda ${rows.length} tasarım açtım — ${rows
+          .map((row) => `${row.index}. ${familyTalk(row.family)}${row.selected ? ' (ekranda)' : ''}`)
+          .join(', ')}. Kartlardan birine tıkla ya da “${(others[0] ?? rows[0])!.index}. yön” yaz.`
+      : ''
     const familyClause = familyBit ? ` ${familyBit} çizgide.` : ''
     line = `${head ? `${head.replace(/\.$/, '.') } ` : ''}${action}${familyClause}${dual} ${structure}${alt}`
       .replace(/\s+/g, ' ')
@@ -372,34 +420,48 @@ export function runConversation(input: {
       state,
     }
   }
+  /*
+   * A direction named before there is anything to re-draw is part of the brief, not a command.
+   *
+   * This branch used to return here whenever the utterance named a family, which threw the rest of
+   * the sentence away: "Verda krem etiketi, botanik olsun" answered "botanik kilitleyerek yeniden
+   * çiziyorum" and kept *no* brand, no sector, no size — there was no design to redraw, and the
+   * customer had to type their brief a second time. Measured on four ordinary first messages,
+   * three were swallowed this way.
+   *
+   * So when no design exists the family is kept and the turn falls through: the same sentence
+   * still gets read for brand, sector, colours and dimensions below.
+   */
+  let baseBrief = input.brief
+  let directionNote = ''
+  let directionOverride: EngineResult['overridePatch'] = {}
   if (talk && (talk.kind === 'veto' || talk.kind === 'vary' || talk.kind === 'pin')) {
     const applied = applyDirectionTalk(input.brief, talk, text)
     if (!input.hasDesign) {
+      baseBrief = applied.brief
+      directionOverride = applied.overridePatch
+      // `talk.note` is written for a re-draw ("… kilitleyerek yeniden çiziyorum"). There is no
+      // design yet, so it would promise something that is not happening.
+      directionNote = talk.pinFamily
+        ? `${familyTalk(talk.pinFamily)} çizgisinde ilerleyeceğim.`
+        : talk.vetoFamilies.length
+          ? `${familyTalk(talk.vetoFamilies[0])} dışında bir yön seçeceğim.`
+          : ''
+    } else {
+      const directionOffer = inspectStudioDirectionOffer(applied.brief)
       return {
         brief: applied.brief,
-        awaiting: input.awaiting,
+        awaiting: null,
         replies: [applied.note],
-        shouldGenerate: false,
-        showTemplates: input.awaiting === 'templateId',
-        overridePatch: applied.overridePatch,
+        shouldGenerate: true,
+        showTemplates: false,
+        overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
         copyPatch: {},
         note: talk.kind,
+        feedback: parseFeedback(text),
         state,
+        directionOffer,
       }
-    }
-    const directionOffer = inspectStudioDirectionOffer(applied.brief)
-    return {
-      brief: applied.brief,
-      awaiting: null,
-      replies: [applied.note],
-      shouldGenerate: true,
-      showTemplates: false,
-      overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
-      copyPatch: {},
-      note: talk.kind,
-      feedback: parseFeedback(text),
-      state,
-      directionOffer,
     }
   }
 
@@ -423,7 +485,7 @@ export function runConversation(input: {
     return {
       brief: applied.brief,
       awaiting: null,
-      replies: [`Sıkışan yerleşimi açıyorum. ${applied.note}`],
+      replies: [action.kind === 'vision' ? `Görsel kritik: ${action.reason} — “${action.utterance}”. ${applied.note}` : `Sıkışan yerleşimi açıyorum. ${applied.note}`],
       shouldGenerate: true,
       showTemplates: false,
       overridePatch: { ...studioGeneratePatch(applied.brief), ...applied.overridePatch },
@@ -454,7 +516,8 @@ export function runConversation(input: {
     }
   }
 
-  const extracted = applyExtraction(input.brief, text, input.attachments, input.awaiting)
+  // `baseBrief` carries a family the same sentence named, when there was no design to re-draw.
+  const extracted = applyExtraction(baseBrief, text, input.attachments, input.awaiting)
   const understood = withUnderstanding(extracted, text, input.attachments, input.awaiting)
   state = settleAwaiting(state, input.awaiting, text, input.brief, understood)
   const resolvedMissing = resolveMissing(understood, state)
@@ -464,6 +527,9 @@ export function runConversation(input: {
   const missing = resolvedMissing.missing
   const ack = briefSummary(brief)
   const replies: string[] = []
+
+  // The direction was heard even though the turn went on to collect the brief — say so once.
+  if (directionNote) replies.push(directionNote)
 
   if (input.attachments.length) {
     replies.push(
@@ -516,7 +582,7 @@ export function runConversation(input: {
       replies,
       shouldGenerate: false,
       showTemplates: false,
-      overridePatch: cueOverridePatch(brief),
+      overridePatch: { ...directionOverride, ...cueOverridePatch(brief) },
       copyPatch: {},
       note: 'ask',
       state: noteAsked(state, askKey),
@@ -524,7 +590,29 @@ export function runConversation(input: {
   }
 
   if (ready && brief.templateId && input.awaiting === 'templateId') {
-    return generateResult(brief, undefined, text, state)
+    /*
+     * At the picker, only a start word starts a design.
+     *
+     * This branch used to fire on *any* unparsed text once a structure was pinned. So typing "kaç
+     * mm olacak?" while looking at the structure cards began a generation and spent a credit — a
+     * question answered by a charge. A question is not a command; the picker says what to press.
+     */
+    if (START_DESIGN.test(text.trim()) || SKIP_UTTERANCE.test(text.trim())) {
+      return generateResult(brief, undefined, text, state)
+    }
+    return {
+      brief,
+      awaiting: 'templateId',
+      replies: [
+        'Yapı seçili. Ölçüyü sağdaki karttan değiştirebilirsin; hazır olunca “Tasarımı başlat”a bas ya da “başlat” yaz.',
+      ],
+      shouldGenerate: false,
+      showTemplates: true,
+      overridePatch: {},
+      copyPatch: {},
+      note: 'hint',
+      state,
+    }
   }
 
   if (ready) {

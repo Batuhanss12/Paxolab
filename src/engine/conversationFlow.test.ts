@@ -4,7 +4,7 @@ import { runConversation } from './conversation'
 import { emptyConversationState, type ConversationState } from './conversationState'
 import { fuzzySectorNoun, normaliseSectorTypos } from './extractRules'
 import { emptyBrief } from './fields'
-import { pickTemplate } from './catalog/catalog'
+import { activeTemplates, pickTemplate } from './catalog/catalog'
 
 type Turn = { text: string; result: EngineResult }
 
@@ -209,7 +209,11 @@ describe('chat flow from the screenshot', () => {
     expect(last.awaiting).toBe('templateId')
     expect(last.replies.join(' ')).toMatch(/sarımlı|format|etiket/i)
     expect(last.replies.join(' ')).not.toMatch(/tuck|mailer/i)
-    expect(last.structureOffer?.candidates.every((row) => row.structureId === 'wrap-label' || row.structureId === 'flat-label')).toBe(true)
+    // What this guards is that a label brief is offered *label* formats, which the carton
+    // assertion above still pins. The set is read off the live catalog: a hand list here went
+    // stale twice (the disc, then the oval) for enumerating formats by name.
+    const labelFormats = new Set(activeTemplates(true).filter((t) => t.packagingMode === 'label').map((t) => t.structureId))
+    expect(last.structureOffer?.candidates.every((row) => labelFormats.has(row.structureId))).toBe(true)
   })
 
   it('after a box, etiketi de üret opens the label format picker without replacing the carton path', () => {

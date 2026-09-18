@@ -15,7 +15,7 @@ export type PersistedSession = Pick<
   AppState,
   'phase' | 'messages' | 'brief' | 'awaiting' | 'design' | 'designHistory' | 'designFuture' | 'tab' | 'inputsOpen'
 > &
-  Partial<Pick<AppState, 'conversation'>>
+  Partial<Pick<AppState, 'conversation' | 'allAttachments' | 'boxDesign' | 'labelDesign' | 'surfaceView' | 'bottleShape'>>
 
 export interface ProjectMeta {
   id: string
@@ -58,6 +58,20 @@ export function toPersistedSession(state: AppState): PersistedSession {
     tab: state.tab,
     inputsOpen: state.inputsOpen,
     conversation: state.conversation,
+    /*
+     * The customer's uploads, and the surface that is not on screen.
+     *
+     * Neither used to be saved. The logo vanished on the first refresh — the design kept the one
+     * already painted into it, so nothing looked broken until the *next* generation came back
+     * without it. And a customer who had made both a carton and a label lost whichever one was not
+     * showing. IndexedDB is the right home for this: attachments are base64 and would burst the
+     * localStorage quota, which is why the local store carries everything except them.
+     */
+    allAttachments: state.allAttachments.slice(-12),
+    boxDesign: state.boxDesign,
+    labelDesign: state.labelDesign,
+    surfaceView: state.surfaceView,
+    bottleShape: state.bottleShape,
   }
 }
 

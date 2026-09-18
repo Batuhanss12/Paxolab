@@ -4,6 +4,14 @@
  * Found in the 2026-09-17 launch walkthrough: export declared `src: local('Cormorant Garamond'),
  * local('Georgia')` and embedded no font data, so a printer without those faces renders the
  * fallback and every fitted line shifts.
+ *
+ * The first fix outlined the glyphs into a shared pool and instanced them with `<use href="#g12">`,
+ * which is smaller and is what "shares repeated glyphs instead of copying them" below used to
+ * assert. It also made the design open incomplete in Illustrator: that importer is SVG 1.1, where
+ * the attribute is `xlink:href` and the namespace has to be declared, so a bare `href` resolved to
+ * nothing and every letter went missing while the shapes and colours arrived. Sharing was the
+ * wrong thing to have frozen — the file is now written with no references at all, which is what
+ * `deliveryFiles.test.ts` guards.
  */
 import { describe, expect, it } from 'vitest'
 import type { DesignBrief } from '../../types'
@@ -45,7 +53,7 @@ describe('L1 — export text is outlined', () => {
   })
 
   it('leaves no live text in the artwork', async () => {
-    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('artwork.svg'))!.data)
+    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('-tasarim.svg'))!.data)
     expect(art).toMatch(/<text/)
     const { markup, report } = await outlineSvgText(art)
     expect(report.total).toBeGreaterThan(20)
@@ -54,26 +62,24 @@ describe('L1 — export text is outlined', () => {
   })
 
   it('every glyph in the copy is covered by the table', async () => {
-    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('artwork.svg'))!.data)
+    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('-tasarim.svg'))!.data)
     const { report } = await outlineSvgText(art)
     expect(report.missing).toEqual([])
   })
 
-  it('shares repeated glyphs instead of copying them', async () => {
-    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('artwork.svg'))!.data)
+  it('writes every glyph out, with nothing left to resolve', async () => {
+    const art = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('-tasarim.svg'))!.data)
     const { markup, report } = await outlineSvgText(art)
-    expect(markup).toContain('data-art="outlined-glyphs"')
-    const defs = (markup.match(/<path id="/g) ?? []).length
-    const uses = (markup.match(/<use href="#/g) ?? []).length
-    expect(defs).toBe(report.glyphs)
-    // A letter appearing many times must not multiply the file.
-    expect(uses).toBeGreaterThan(defs * 2)
+    expect(report.glyphs, 'hiç glyph çizilmedi').toBeGreaterThan(50)
+    expect(markup, 'referans kaldı — Illustrator çözemez').not.toMatch(/<use[\s>]/)
+    expect(markup, 'paylaşılan glyph havuzu geri geldi').not.toContain('outlined-glyphs')
+    expect((markup.match(/<path[\s>]/g) ?? []).length).toBeGreaterThan(report.glyphs)
   })
 
   it('the delivery ZIP ships outlined artwork and an untouched knife', async () => {
     const files = (await buildOutlinedExportFiles(spec()))!
-    const artwork = String(files.find((f) => f.name.endsWith('artwork.svg'))!.data)
-    const combined = String(files.find((f) => f.name.endsWith('combined.svg'))!.data)
+    const artwork = String(files.find((f) => f.name.endsWith('-tasarim.svg'))!.data)
+    const combined = String(files.find((f) => f.name.endsWith('-combined.svg'))!.data)
     const knife = String(files.find((f) => f.name.endsWith('knife.svg'))!.data)
 
     expect(artwork).not.toMatch(/<text/)
@@ -85,10 +91,15 @@ describe('L1 — export text is outlined', () => {
     expect(knife).toBe(String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('knife.svg'))!.data))
   })
 
-  it('keeps the file a reasonable size', async () => {
-    const plain = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('artwork.svg'))!.data)
+  it('costs bytes, but not unreasonably', async () => {
+    const plain = String(buildUserExportFiles(spec())!.find((f) => f.name.endsWith('-tasarim.svg'))!.data)
     const { markup } = await outlineSvgText(plain)
-    // Outlines cost bytes, but glyph sharing must keep it within ~4x.
-    expect(markup.length).toBeLessThan(plain.length * 4)
+    /*
+     * Writing each glyph out instead of referencing a shared one is the whole point, and it costs
+     * roughly 4–5× rather than the 4× the pooled version managed. A print file is opened once by a
+     * printer; a ceiling exists so a real regression (every glyph duplicated per *panel*, say) is
+     * still caught.
+     */
+    expect(markup.length).toBeLessThan(plain.length * 8)
   })
 })

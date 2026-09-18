@@ -100,7 +100,27 @@ export function renderDielineSvg(
       const isGlue = model.glueIds.includes(p.id)
       if (combined) {
         if (!isGlue) return ''
-        return `<rect x="${p.x + pad}" y="${p.y + pad}" width="${p.w}" height="${p.h}" fill="${GLUE}" />`
+        /*
+         * The glue allowance, named.
+         *
+         * It carries no artwork — adhesive does not bond over ink, and the `glue-art` preflight
+         * check fails any glue face that does. Unlabelled, that reads as the design having a blank
+         * strip stuck to its edge: the owner opened a wrap label's set view and asked why the front
+         * had extra space on its right. Hatching plus a caption makes it production chrome rather
+         * than empty design surface. The hatch is preview-only; nothing here reaches the press file.
+         */
+        const hatch = `glue-hatch-${p.id}`
+        const caption = Math.min(p.w * 0.34, p.h * 0.1, 3)
+        const label =
+          p.w >= 6 && p.h >= 14
+            ? `<text x="${p.x + pad + p.w / 2}" y="${p.y + pad + p.h / 2}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="${caption.toFixed(2)}" font-family="Inter, sans-serif" transform="rotate(-90 ${p.x + pad + p.w / 2} ${p.y + pad + p.h / 2})">YAPIŞTIRMA PAYI</text>`
+            : ''
+        return `<g data-glue="allowance">
+          <defs><pattern id="${hatch}" width="2.2" height="2.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2.2" stroke="rgba(255,255,255,0.16)" stroke-width="0.5" /></pattern></defs>
+          <rect x="${p.x + pad}" y="${p.y + pad}" width="${p.w}" height="${p.h}" fill="${GLUE}" />
+          <rect x="${p.x + pad}" y="${p.y + pad}" width="${p.w}" height="${p.h}" fill="url(#${hatch})" />
+          ${label}
+        </g>`
       }
       return `<g>
         <rect x="${p.x + pad}" y="${p.y + pad}" width="${p.w}" height="${p.h}" fill="${isGlue ? GLUE : PANEL}" stroke="rgba(255,255,255,0.1)" stroke-width="0.2" />

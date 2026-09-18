@@ -6,7 +6,7 @@
 import type { DesignBrief, DielineModel, DimensionsMm, StructureId } from '../../types'
 import { getTemplate } from '../catalog/catalog'
 import { estimateCartonMm } from '../catalog/volumeCarton'
-import { flatLabel, simpleTray, tuckEnd, wrapLabel } from './dielineStructures'
+import { flatLabel, simpleTray, tuckEnd, wrapLabel, roundLabel, ovalLabel, hangTag, insertCard } from './dielineStructures'
 import { generateForxaModel, isForxaStructure } from './forxaGenerate'
 import { findHeroPanel, withPanelKinds } from './panelKind'
 import { attachStructuralSolution } from './structure/solve'
@@ -45,6 +45,14 @@ export function buildDieline(structureId: StructureId, brief: DesignBrief): Diel
         ? withPanelKinds(flatLabel(d))
         : structureId === 'wrap-label'
           ? withPanelKinds(wrapLabel(d))
+          : structureId === 'round-label'
+            ? withPanelKinds(roundLabel(d))
+            : structureId === 'oval-label'
+            ? withPanelKinds(ovalLabel(d))
+            : structureId === 'hang-tag'
+              ? withPanelKinds(hangTag(d))
+              : structureId === 'insert-card'
+                ? withPanelKinds(insertCard(d))
           : withPanelKinds(tuckEnd(d))
   return attachStructuralSolution(native, brief)
 }
@@ -52,6 +60,8 @@ export function buildDieline(structureId: StructureId, brief: DesignBrief): Diel
 export function frontPanelId(structureId: StructureId, model?: DielineModel): string {
   if (model) return findHeroPanel(model.panels)?.id ?? model.panels[0]?.id ?? 'front'
   if (structureId === 'simple-tray') return 'trayFront'
-  if (structureId === 'flat-label' || structureId === 'wrap-label') return 'label'
+  if (structureId === 'flat-label' || structureId === 'wrap-label' || structureId === 'round-label' || structureId === 'oval-label') return 'label'
+  if (structureId === 'hang-tag') return 'tag'
+  if (structureId === 'insert-card') return 'card'
   return 'front'
 }

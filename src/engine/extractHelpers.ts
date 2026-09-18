@@ -19,6 +19,7 @@ function labeledBlock(text: string, keys: string[]): string {
   return text.match(re)?.[1]?.trim().replace(/[,;]+$/, '') ?? ''
 }
 
+
 /** L×W×H tokens such as 70x35x140 must never become a lockup name. */
 export function isMeasureToken(value: string): boolean {
   return /^\d+([.,]\d+)?(?:\s*[x×]\s*\d+([.,]\d+)?){1,2}(?:\s*mm)?$/i.test(value.trim())
