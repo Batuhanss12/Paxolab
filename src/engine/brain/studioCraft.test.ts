@@ -227,11 +227,17 @@ describe('the separate readings', () => {
 
 
   it('an element that swallows the face is flagged as the focal problem it is', () => {
+    /*
+     * The injected id used to be `giant#99`, which no painter emits. `focalRatio` now asks what a
+     * box *is* before it asks how big — furniture cannot be the focal however large the ledger
+     * claims it is — so the probe uses a real composition carrier. Same assertion, same intent,
+     * an id the engine actually places.
+     */
     const s = specOf('01-parfum-kutu')
     const after = rescore(s, {
       studio: (st) => {
         const front = st.panels.find((p) => p.panelId === s.artwork.frontPanelId)!
-        front.placed.push({ id: 'giant#99', kind: 'container', x: 0, y: 0, w: 66, h: 130 })
+        front.placed.push({ id: 'inner-card#99', kind: 'container', x: 0, y: 0, w: 66, h: 130 })
         return st
       },
     })

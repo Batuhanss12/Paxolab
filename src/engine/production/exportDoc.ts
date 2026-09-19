@@ -5,6 +5,7 @@ import { noteDownload, noteExport } from '../brain/OutcomeTracker'
 import { dielineTechMarkup, renderKnifeDoc, renderStructureDoc } from '../dieline/renderDielineSvg'
 import { artworkFromDocument } from '../document'
 import { STUDIO_EXPORT_FONT_COMMENT, withStudioExportFonts } from '../studio/text'
+import { exportAllowed } from './exportDecision'
 import { pressBleedMm, pressProofSvgComment, pressSafeMm } from './pressBoxes'
 import { buildDielineDxf } from './dxf'
 import { buildManifest } from './exportManifest'
@@ -16,7 +17,8 @@ function escapeXml(value: string): string {
 }
 
 export function buildCombinedSvg(spec: DesignSpec): string | null {
-  if (!spec.preflight.exportOk) return null
+  // Technical AND design, merged in `exportDecision.ts` — see there for why they stay apart.
+  if (!exportAllowed(spec)) return null
   if (spec.preflight.collisions || !spec.dieline.consistent) return null
   if (isInventedRegisteredGtin(spec.copy.barcode, spec.brief.barcodeDefaulted)) return null
   const artwork = artworkFromDocument(spec.document)
@@ -202,7 +204,7 @@ export function downloadSvg(spec: DesignSpec): boolean {
 }
 
 export function downloadDxf(spec: DesignSpec): boolean {
-  if (!spec.preflight.exportOk) return false
+  if (!exportAllowed(spec)) return false
   const slug = (spec.copy.brand || 'grapxor').replace(/\s+/g, '-').toLowerCase()
   triggerDownload(new Blob([buildDielineDxf(spec.dieline)], { type: 'application/dxf;charset=utf-8' }), `${slug}-dieline.dxf`)
   noteDownload(spec.id)

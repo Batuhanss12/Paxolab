@@ -2,6 +2,7 @@
  * composeStudioArtwork — the production brain's studio path.
  * Direction in, full-anatomy faces out. Deterministic; never touches the LLM.
  */
+import { rotatedRectFrame } from '../dieline/forxaAdapter'
 import type { ArtworkModel, DesignBrief, DesignSpec, DielineModel, Panel } from '../../types'
 import type { DesignSystem } from '../designSystem/types'
 import { findHeroPanel, nativeKindFor } from '../dieline/panelKind'
@@ -34,7 +35,15 @@ function isStudioFlap(panel: Panel, kind: ReturnType<typeof nativeKindFor>): boo
 
 function wrap(panel: Panel, direction: DesignDirection, inner: string, role: string, fonts = false): string {
   const head = fonts ? studioFontStyle(direction.typePairing) : ''
-  return `${head}<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="translate(${f(panel.x)} ${f(panel.y)})">${inner}</g></g>`
+  /*
+   * The painter works in the panel's own frame. When the cut is a rectangle rotated on the sheet —
+   * a polygon prism's wall — the frame is rotated with it, so the painted face lands on the wall
+   * instead of on the wall's bounding box. Derived from the polygon the panel already carries; no
+   * field is added for it.
+   */
+  const spin = rotatedRectFrame(panel.polygon ?? [])
+  const place = spin ? `translate(${f(panel.x)} ${f(panel.y)}) rotate(${f(spin.deg)})` : `translate(${f(panel.x)} ${f(panel.y)})`
+  return `${head}<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="${place}">${inner}</g></g>`
 }
 
 export function composeStudioArtwork(input: StudioComposeInput): { artwork: ArtworkModel; report: StudioReport } {
@@ -48,6 +57,13 @@ export function composeStudioArtwork(input: StudioComposeInput): { artwork: Artw
     const uid = `st-${panel.id}-${(direction.seed % 9973).toString(36)}`
     const kind = nativeKindFor(panel)
     const ctx = makeCtx(panel, direction, copy, brief, uid, paoMonths, system.wrapSeam && (panel.id === 'label' || kind === 'hero-front'), hasBack, identity)
+    /*
+     * No volume in the brief means there is no net quantity to state — measured, all 24 faces that
+     * reach this are electronics, where a pair of earbuds has none. The painters guard their own
+     * `netQuantity` calls, so the primitive is never reached to say so; recorded here instead, once,
+     * on the face where the footer registers are judged.
+     */
+    if (!direction.volumeLine && panel.id === frontPanelId) ctx.ledger.skip('net-quantity', 'no-content')
     let inner = ''
     let role: StudioPanelReport['archetype'] = 'plain'
     if (direction.surface === 'label') {

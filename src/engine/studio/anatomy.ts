@@ -189,6 +189,17 @@ export function cornerBrackets(x: number, y: number, w: number, h: number, color
   return `<g data-art="frame" data-frame="corner-brackets" fill="none" stroke="${color}" stroke-width="${f(sw)}" stroke-linecap="square"><path d="M${f(x)} ${f(y + arm)} V${f(y)} H${f(x + arm)}" /><path d="M${f(x + w)} ${f(y + h - arm)} V${f(y + h)} H${f(x + w - arm)}" /></g>`
 }
 
+/**
+ * The rounded card read as an edge rather than as a lockup.
+ *
+ * A title card wraps the product stack; this wraps the region the caller owns. Only a caller that
+ * owns the whole geometry may ask for it — see `paintFrame`.
+ */
+export function roundedCardFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const rx = Math.min(4, Math.min(w, h) * 0.06)
+  return `<g data-art="frame" data-frame="rounded-card" fill="none" stroke="${color}" stroke-opacity="${f(opacity)}"><rect x="${f(inset)}" y="${f(inset)}" width="${f(w - inset * 2)}" height="${f(h - inset * 2)}" rx="${f(rx)}" stroke-width="0.32" /></g>`
+}
+
 /** Solid band with a hairline inside it — the Diako / Odette plate edge. */
 export function bandHairlineFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
   const band = Math.max(0.5, inset * 0.32)
@@ -296,12 +307,16 @@ export function bezelFrame(w: number, h: number, inset: number, color: string, o
  * Routing through the direction turns it into a decision. `corner-brackets` and `rounded-card`
  * are deliberately not drawn here — brackets sit around a lockup and a card *is* a composition, so
  * both stay with the painter that owns the geometry.
+ *
+ * That holds while such a painter exists. A composition owns the whole face and never reaches its
+ * archetype's painter, so on 22 measured faces the direction promised one of those two frames and
+ * nothing drew it. Those callers pass `ownsGeometry` and get the edge reading of the frame here.
  */
 export function paintFrame(
   d: DesignDirection,
   w: number,
   h: number,
-  opts: { inset: number; color: string; opacity?: number; round?: boolean },
+  opts: { inset: number; color: string; opacity?: number; round?: boolean; ownsGeometry?: boolean },
 ): string {
   const op = opts.opacity ?? 0.9
   switch (d.frame) {
@@ -318,7 +333,11 @@ export function paintFrame(
     case 'cartouche':
       return cartoucheFrame(w, h, opts.inset, opts.color, op)
     case 'corner-brackets':
+      return opts.ownsGeometry
+        ? cornerBrackets(opts.inset, opts.inset, w - opts.inset * 2, h - opts.inset * 2, opts.color, Math.min(w, h) * 0.16)
+        : ''
     case 'rounded-card':
+      return opts.ownsGeometry ? roundedCardFrame(w, h, opts.inset, opts.color, op) : ''
     case 'none':
     default:
       return ''
@@ -675,7 +694,14 @@ export function titleCard(
   const card = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}" fill="${d.palette.card}" />`
   ledger.add('container', 'title-card', x, y, w, h)
   const real = productStack(ledger, d, x + w / 2, y + pad, inner, product, stackOpts)
-  return { markup: `<g data-art="title-card">${card}${real.markup}</g>`, bottom: y + h }
+  /*
+   * When the direction asked for `rounded-card`, this card *is* that frame — `paintFrame` leaves it
+   * to the painter that owns the geometry. Saying so here is what makes the promise checkable: the
+   * decoration scorer used to look for `data-frame=` and report "çerçeve seçildi, çizilmedi" on 29
+   * faces that were carrying the card all along.
+   */
+  const declares = d.frame === 'rounded-card' ? ' data-frame="rounded-card"' : ''
+  return { markup: `<g data-art="title-card"${declares}>${card}${real.markup}</g>`, bottom: y + h }
 }
 
 export function claimBand(ledger: Ledger, d: DesignDirection, x: number, y: number, w: number, text: string, fill?: string, ink?: string, optsEdit?: string): { markup: string; bottom: number } {
@@ -790,7 +816,11 @@ export function benefitColumn(ledger: Ledger, _d: DesignDirection, x: number, y:
 
 /* ---------------------------------------------------------------- text blocks */
 
-export type Section = { title: string; body: string; edit?: string }
+/**
+ * `id` names the register for the ledger when the column cannot set it. Optional because a section
+ * without one is unnamed decoration; every regulated register passes it.
+ */
+export type Section = { title: string; body: string; edit?: string; id?: string }
 
 /** Readable legal type that still clips inside `room` instead of colliding with the footer. */
 export function legalTypeSize(panelW: number, room: number, kind: 'box' | 'label' | 'aside' = 'box'): number {
@@ -828,19 +858,38 @@ export function legalColumn(
    * that cannot fit its title *and* one line is not started at all.
    */
   const advance = size * 1.36
-  for (const s of sections) {
-    if (!s.body.trim()) continue
-    if (cy + lineH * 2 > maxBottom) break
+  /*
+   * A dropped register says why it was dropped.
+   *
+   * All three exits below used to be silent, and two of them `break` — so one tight column dropped
+   * every *remaining* register, not just the one that would not fit. Downstream there was no way to
+   * tell "the customer has not written this yet" from "the column ran out of room" from "the
+   * renderer failed", which is the distinction the required-information gate is built on.
+   */
+  const name = (s: Section) => s.id ?? s.edit ?? 'legal-section'
+  for (const [i, s] of sections.entries()) {
+    if (!s.body.trim()) {
+      ledger.skip(name(s), 'no-content')
+      continue
+    }
+    if (cy + lineH * 2 > maxBottom) {
+      for (const rest of sections.slice(i)) if (rest.body.trim()) ledger.skip(name(rest), 'no-space')
+      break
+    }
     const tSize = size * 1.05
     const titleH = s.title ? tSize + size * 0.55 : 0
     const room = Math.floor((maxBottom - cy - titleH) / advance)
-    if (room < 1) break
+    if (room < 1) {
+      for (const rest of sections.slice(i)) if (rest.body.trim()) ledger.skip(name(rest), 'no-space')
+      break
+    }
     let section = ''
     if (s.title) {
       const track = tSize * 0.24
       const base = cy + tSize
       section += textEl({ x: tx, y: base, text: s.title.toLocaleUpperCase('tr'), size: tSize, face: 'sans-heavy', fill: opts.titleColor ?? color, anchor, tracking: track })
-      ledger.text('legal-title', tx, base, textWidth(s.title.toLocaleUpperCase('tr'), tSize, 'sans-heavy', track), tSize, anchor)
+      // Named after the register, so the ledger says which one was set as well as which was not.
+      ledger.text(`legal-title:${name(s)}`, tx, base, textWidth(s.title.toLocaleUpperCase('tr'), tSize, 'sans-heavy', track), tSize, anchor)
       cy = base + size * 0.55
     }
     const lines = wrapByWidth(s.body, w, size, 'sans', Math.min(opts.maxLines ?? 12, room))
@@ -935,7 +984,15 @@ export function verticalBrand(
 /* ----------------------------------------------------------------- utility */
 
 export function netQuantity(ledger: Ledger, cx: number, baseline: number, text: string, size: number, color: string, anchor: 'middle' | 'start' | 'end' = 'middle'): string {
-  if (!text) return ''
+  if (!text) {
+    /*
+     * Nothing to state, and that is usually right: measured across the populations, all 24 faces
+     * that reach here are electronics, where the brief carries no volume because a pair of earbuds
+     * has no net quantity. Saying so is what separates it from a renderer that stopped emitting.
+     */
+    ledger.skip('net-quantity', 'no-content')
+    return ''
+  }
   ledger.text('net-quantity', cx, baseline, textWidth(text, size, 'sans', size * 0.06), size, anchor)
   return `<g data-art="net-quantity" data-edit="volume">${textEl({ x: cx, y: baseline, text, size, face: 'sans', fill: color, anchor, tracking: size * 0.06 })}</g>`
 }
@@ -1078,7 +1135,11 @@ export function nutritionTable(ledger: Ledger, x: number, y: number, w: number, 
    */
   let size = requested
   while (size > STUDIO_TYPE_FLOOR_MM && y + nutritionTableHeight(allRows.length, size) > maxBottom) size = Math.max(STUDIO_TYPE_FLOOR_MM, size - 0.05)
-  if (y + nutritionTableHeight(allRows.length, size) > maxBottom) return { markup: '', bottom: y }
+  if (y + nutritionTableHeight(allRows.length, size) > maxBottom) {
+    // Absent and *said so*: an unrecorded absence is a renderer fault, this one is a shape fact.
+    ledger.skip('nutrition-table', 'no-space')
+    return { markup: '', bottom: y }
+  }
   const rows = allRows
   const lineH = size * 1.6
   let out = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(lineH * (rows.length + 1) + size * 0.8)}" fill="none" stroke="${color}" stroke-width="0.2" />`

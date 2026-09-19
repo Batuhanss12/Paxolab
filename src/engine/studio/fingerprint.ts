@@ -37,12 +37,24 @@ export const FINGERPRINT_AXES = [
 export type FingerprintAxis = (typeof FINGERPRINT_AXES)[number]
 
 /**
- * The axes that decide *arrangement* rather than *surface*: where the weight sits, how much air,
- * how the colour is treated, which of the archetype's arrangements. Archetype and background are
- * excluded on purpose — they always differ across an offer by construction, so counting them would
- * report a diversity the customer does not experience.
+ * The axes that decide *arrangement* rather than *surface*, and that can actually move within one
+ * offer.
+ *
+ * Archetype and background stay excluded, and measurement backs the reason: across six briefs they
+ * take 8.0 and 7.0 distinct values per eight-candidate offer, so they differ by construction and
+ * counting them would report a diversity the customer does not experience.
+ *
+ * `temperament` and `variant` used to be counted and were removed for the opposite reason: they
+ * take **1.0** distinct value per offer. `temperament` is derived from sector × style, both fixed
+ * for a brief, and every row in an offer is variation 0 — so neither can ever contribute distance.
+ * Half the denominator was dead, which put a hard ceiling of 50 on the score and made the repair
+ * threshold of 50 fire on everything that was not exactly at the ceiling. `typePairing` (6.5) and
+ * `frame` (5.3) take their place: they move, the customer sees them, and unlike archetype they do
+ * not move on every row. On the same six briefs the score goes from 39–50 to 86–96, which is what
+ * the painted faces already said — 160 of 168 candidate pairs differ on two or more visual
+ * readings. See `scripts/measure-candidate-pairs.ts`.
  */
-export const COMPOSITION_AXES = ['lockup', 'ornament', 'temperament', 'variant'] as const
+export const COMPOSITION_AXES = ['lockup', 'ornament', 'typePairing', 'frame'] as const
 
 export type Fingerprint = Record<FingerprintAxis, string>
 

@@ -289,9 +289,34 @@ export function pairingFaces(pairing: TypePairing): { brand: Face; product: Face
 }
 
 /** Placement ledger — collision + bounds bookkeeping for one panel. */
+/**
+ * Why a block the design called for is not on the page.
+ *
+ * `no-content` is reachable here in a way it never was for the nutrition table: `nutritionRows`
+ * always returns a blank row set, but a legal section is skipped outright when its body is empty,
+ * so "the customer has not written the ingredients yet" and "the column ran out of room" were the
+ * same silent absence.
+ */
+export type SkipReason = 'no-space' | 'not-this-surface' | 'no-content'
+
 export class Ledger {
   readonly panel: Panel
   readonly placed: PlacedBox[] = []
+  /**
+   * Blocks the painter was asked for and did not place, with the reason.
+   *
+   * A required block that is absent used to be indistinguishable from one the renderer failed to
+   * draw: `nutritionTable` returns empty markup whether the declaration would not fit or the
+   * painter never reached it, and nothing recorded which. The detector could only search the back
+   * for a heading, so "too small to carry a table" and "the nutrition renderer stopped working"
+   * arrived at the gate as the same fact.
+   *
+   * The reasons are what the engine can prove: the block would not fit the shape, this surface does
+   * not carry that register at all (a swing tag's back holds a brand line, a city and a QR, and no
+   * legal column of any kind), or there was no copy to set. Anything absent *without* a record here
+   * is a renderer that did not do its job.
+   */
+  readonly skipped: { id: string; reason: SkipReason }[] = []
   private counter = 0
 
   constructor(panel: Panel) {
@@ -303,6 +328,12 @@ export class Ledger {
     const key = `${id}#${++this.counter}`
     this.placed.push({ id: key, x, y, w, h, kind, sizeMm })
     return key
+  }
+
+  /** Record that a block the design called for was not placed, and why. */
+  skip(id: string, reason: SkipReason): void {
+    if (this.skipped.some((s) => s.id === id && s.reason === reason)) return
+    this.skipped.push({ id, reason })
   }
 
   /** Record a text baseline box: width measured, height ≈ size. */
@@ -399,6 +430,7 @@ export class Ledger {
       panelId: this.panel.id,
       archetype,
       placed: this.placed,
+      skipped: this.skipped,
       collisions,
       outOfBounds,
       minTextMm: sizes.length ? Math.min(...sizes) : 0,

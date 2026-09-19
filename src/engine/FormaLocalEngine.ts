@@ -349,8 +349,15 @@ export class FormaLocalEngine implements EnginePort {
        * for (`craftRouteImproves`). A family the customer pinned is never moved: the ranking
        * honours the pin before the step is applied.
        */
-      const craftOf = (p: typeof pack) =>
-        scoreVisualCraft({ artwork: p.artwork, preflight: p.preflight, copy, kind, studio: p.studio, brief, dieline }, p.plan)
+      /*
+       * The reading carries who pinned the archetype, so the route can leave a direction the
+       * customer asked for alone. Without it, switching the repair signals on turned
+       * "elektronik kutu ama mermer ve altın" away from marble — see `studioRepair.ts`.
+       */
+      const craftOf = (p: typeof pack) => ({
+        ...scoreVisualCraft({ artwork: p.artwork, preflight: p.preflight, copy, kind, studio: p.studio, brief, dieline }, p.plan),
+        archetypePin: p.studio?.direction.archetypePin,
+      })
       let craft = craftOf(pack)
       for (let step = 1; step <= 3 && needsCraftRoute(craft) && ledgerHits(pack.studio) === 0; step++) {
         const alt = paint(designPlan, undefined, step)

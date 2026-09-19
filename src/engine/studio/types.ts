@@ -249,6 +249,21 @@ export type DesignDirection = {
   surface: StudioSurface
   archetype: StudioArchetype
   /**
+   * Who chose this archetype, when the painted one is the one that was pinned.
+   *
+   * `DirectionHints.pinSource` already carries this at decision time and `rankDirectionPool` leans
+   * on it heavily, but it never reached the decision itself — so anything downstream could see
+   * *what* was chosen and never *why*. The repair route needs exactly that distinction: the
+   * engine's rule is that a word in the brief outranks the sector's opinion of it, and a route that
+   * cannot tell "the customer said marble" from "the sector's default" will quietly overrule the
+   * customer. Measured in Phase 2F: switching repair routing on without this turned
+   * "elektronik kutu ama mermer ve altın" away from marble and stopped a sanitised LLM direction
+   * being consumed.
+   *
+   * `undefined` means the walk landed here on its own — nobody pinned it.
+   */
+  archetypePin?: 'visual' | 'sector' | 'user' | 'family' | 'llm' | 'knowledge'
+  /**
    * Arrangement inside the archetype (0–2). The archetype fixes the skeleton; this decides where
    * the weight sits — top, middle or foot. Derived from the brief's own seed, so two brands that
    * land on the same archetype do not get the same face. `variationIndex` is part of that seed,
@@ -370,6 +385,8 @@ export type StudioPanelReport = {
   panelId: string
   archetype: StudioArchetype | 'back' | 'side' | 'top' | 'flap' | 'glue' | 'plain'
   placed: PlacedBox[]
+  /** What the painter was asked for and did not place. See `Ledger.skipped`. */
+  skipped: { id: string; reason: 'no-space' | 'not-this-surface' | 'no-content' }[]
   collisions: string[]
   outOfBounds: string[]
   minTextMm: number

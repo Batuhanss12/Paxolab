@@ -422,6 +422,13 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   // table are informative, not mandatory, and on a short back they used to consume the room the
   // regulatory stack needed (and, unbounded, to overlap themselves: `notes-head × notes-head`).
   const blockLimit = footTop - legalReserve
+  /*
+   * A food back keeps its ingredients beside the nutrition table, so the legal column below leaves
+   * them out. When the table cannot be drawn they had nowhere to go and simply vanished — measured
+   * on five catalogue shapes, a regulated register missing from a file the customer sends to print.
+   * The column takes them back whenever the table did not.
+   */
+  let ingredientsBesideTable = false
   if (d.sector === 'perfume') {
     const pyramid = scentPyramid(ctx.brief)
     if (pyramid && blockLimit - y > 22) {
@@ -430,13 +437,21 @@ export function paintBoxBack(ctx: LayoutCtx): string {
       parts.push(notes.markup)
       y = notes.bottom + 1.5
     }
-  } else if ((d.sector === 'food' || d.sector === 'beverage') && blockLimit - y > 26) {
+  } else if ((d.sector === 'food' || d.sector === 'beverage') && blockLimit - y <= 26) {
+    // The food register never opens: not a renderer fault, a back with no room left for it.
+    for (const reg of ['nutrition-table', 'storage'] as const) ledger.skip(reg, 'no-space')
+  } else if (d.sector === 'food' || d.sector === 'beverage') {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
     parts.push(row.markup)
     y = row.bottom + 2.5
     const tableSize = typeSize(Math.min(1.58, w * 0.02))
     // leave room for at least the usage / warnings block under the table
     const tableLimit = Math.min(blockLimit, footTop - Math.max(14, (footTop - y) * 0.42))
+    if (y + nutritionTableHeight(3, tableSize) >= tableLimit) {
+      ledger.skip('nutrition-table', 'no-space')
+      // Storage rides with the table and has no second home; ingredients fall back to the column.
+      ledger.skip('storage', 'no-space')
+    }
     if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
       const tableW = Math.min(w - m * 2, Math.max(28, (w - m * 2) * 0.58))
       const table = nutritionTable(ledger, m, y, tableW, hdr.nutrition, nutritionRows(d.locale, blob), ink, tableSize, tableLimit)
@@ -446,11 +461,14 @@ export function paintBoxBack(ctx: LayoutCtx): string {
         const rx = m + tableW + 2.5
         const right = legalColumn(ledger, rx, y, w - m - rx, table.bottom, [
           { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
-          { title: hdr.storage, body: usageLine('food', d.locale) },
+          { title: hdr.storage, body: usageLine('food', d.locale), id: 'storage' },
         ], ink, { size: legalTypeSize(w, table.bottom - y, 'aside'), titleColor: ink })
         parts.push(right.markup)
+        ingredientsBesideTable = true
         y = Math.max(table.bottom, right.bottom) + 1.5
       } else {
+        // No room beside the table: storage has no second home, ingredients fall back below.
+        ledger.skip('storage', 'no-space')
         y = table.bottom + 1.5
       }
     }
@@ -471,7 +489,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   }
   // legal sections (the gate reads KULLANIM / INGREDIENTS / DIRECTIONS here)
   const sections: Section[] = [
-    ...(d.sector === 'food' || d.sector === 'beverage' ? [] : [{ title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' }]),
+    ...(ingredientsBesideTable ? [] : [{ title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' }]),
     { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]

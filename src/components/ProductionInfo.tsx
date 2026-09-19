@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { DesignSpec } from '../types'
 import { studioProcessSummary } from '../engine/studio/faceCaption'
 import { fetchDeliveryZip, fetchDownloadQuote, type DownloadQuote } from '../api/credits'
+import { exportAllowed } from '../engine/production/exportDecision'
 import { artworkFromDocument } from '../engine/document'
 import { renderFrontSvg } from '../engine/artwork/renderArtwork'
 import { rasteriseSvg } from '../engine/llm'
@@ -26,6 +27,9 @@ type ProductionInfoProps = {
 }
 
 export function ProductionInfo({ design, onProof, busy }: ProductionInfoProps) {
+  // The same verdict the exporter uses. Reading `preflight.exportOk` here would enable the button
+  // for a design the design gate refuses, and the download would fail with nothing to show for it.
+  const canExport = exportAllowed(design)
   const [exportNote, setExportNote] = useState('')
   const [zipping, setZipping] = useState(false)
   const [quote, setQuote] = useState<DownloadQuote | null>(null)
@@ -169,18 +173,18 @@ export function ProductionInfo({ design, onProof, busy }: ProductionInfoProps) {
           type="button"
           className="ghost-btn"
           onClick={() => void onZip()}
-          disabled={zipping || !design.preflight.exportOk || !signedIn}
+          disabled={zipping || !canExport || !signedIn}
           title={
             !signedIn
               ? 'Baskı dosyaları hesabına bağlı — giriş yaptıktan sonra indirebilirsin.'
-              : design.preflight.exportOk
+              : canExport
                 ? ''
                 : 'Yukarıdaki kırmızı kontrol geçilmeden dosya üretilmiyor.'
           }
         >
           {zipping ? 'Hazırlanıyor…' : `Teslim ZIP${priceLabel}`}
         </button>
-        {signedIn && !proofOn && design.preflight.exportOk && (
+        {signedIn && !proofOn && canExport && (
           <span className="prod__export-note">Prova kapalı — paket kılavuzsuz iner.</span>
         )}
         {!signedIn && (

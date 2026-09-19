@@ -93,7 +93,7 @@ export function paintBackground(family: BackgroundFamily, w: number, h: number, 
       return toileField(w, h, pal, seed, opts)
     case 'paper':
     default:
-      return paper(w, h, pal, seed)
+      return paper(w, h, pal, seed, opts)
   }
 }
 
@@ -666,10 +666,23 @@ export function circuit(w: number, h: number, pal: StudioPalette, seed: number, 
 
 /* ------------------------------------------------------------------- paper */
 
-export function paper(w: number, h: number, pal: StudioPalette, seed: number): string {
+/**
+ * Plain stock with its own grain — and the one background that did not take the direction's
+ * ornament level.
+ *
+ * Measured by painting all fifteen backgrounds at each level: thirteen change what they draw,
+ * `paper` did not, because the dispatch called it without `opts` at all and its speckle count was
+ * a fixed `w × h × 0.06`. The speckle is decorative texture, which is exactly what `gain` exists to
+ * scale, so it now reads the level like every other textured field. `line-scene` is deliberately
+ * left alone: its sprig and rule are the archetype's subject (`data-art="hero"`), structure rather
+ * than ornament, and scaling them would be inventing a decorative behaviour it does not have.
+ */
+export function paper(w: number, h: number, pal: StudioPalette, seed: number, opts?: BackgroundOpts): string {
   const rng = mulberry32(seed)
+  // `gain` against a base of 1 returns the level's own multiplier: quiet 0.55, measured 1, rich 1.25.
+  const density = opts ? gain(opts, 1) : 1
   let speckle = ''
-  for (let i = 0; i < Math.round(w * h * 0.06); i++) {
+  for (let i = 0; i < Math.round(w * h * 0.06 * density); i++) {
     speckle += `<circle cx="${f(rng() * w)}" cy="${f(rng() * h)}" r="${f(0.05 + rng() * 0.1)}" fill="${pal.ink}" fill-opacity="0.06" />`
   }
   return `<g data-bg="paper">${ground(w, h, pal.ground)}<g data-texture="speckle">${speckle}</g></g>`

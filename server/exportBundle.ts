@@ -19,6 +19,7 @@
  *   2. **Nothing is charged for bytes that do not exist.** The bundle is built first; the credit
  *      is taken only once there is a file to hand over.
  */
+import { scoreVisualCraft } from '../src/engine/brain/scoreVisualCraft.ts'
 import { runPreflight } from '../src/engine/production/preflight.ts'
 import { buildOutlinedExportFiles } from '../src/engine/production/exportDoc.ts'
 import { zipStore } from '../src/engine/production/zipStore.ts'
@@ -88,13 +89,40 @@ function previewBytes(dataUrl: unknown): Uint8Array | null {
  */
 export async function buildDeliveryZip(spec: DesignSpec, preview?: unknown): Promise<ExportBundle> {
   const verdict = runPreflight(spec)
-  const checked: DesignSpec = { ...spec, preflight: verdict }
+  let checked: DesignSpec = { ...spec, preflight: verdict }
   if (!verdict.exportOk) {
     throw new ExportBlocked(
       verdict.items
         .filter((item) => item.status === 'fail')
         .map((item) => ({ id: item.id, label: item.label, detail: item.detail })),
     )
+  }
+  /*
+   * Rule 1 again, for the other half of the gate. Export is now `technical && design`, and
+   * `craftScore.exportAllowed` arrives inside the same caller-written JSON as `preflight` did —
+   * so it is re-derived here from the submitted artwork and plan, and the recomputed card
+   * replaces whatever was sent. A spec with no plan carries no design verdict to re-derive; the
+   * technical gate above decides alone, exactly as it did before the design gate existed.
+   */
+  if (checked.designPlan) {
+    const card = scoreVisualCraft(
+      {
+        artwork: checked.artwork,
+        preflight: verdict,
+        copy: checked.copy,
+        kind: checked.kind,
+        studio: checked.studio,
+        brief: { colors: checked.brief?.colors },
+        dieline: checked.dieline,
+      },
+      checked.designPlan,
+    )
+    checked = { ...checked, craftScore: card }
+    if (!card.exportAllowed) {
+      throw new ExportBlocked(
+        card.blockers.map((blocker) => ({ id: blocker.id, label: 'Tasarım kontrolü', detail: blocker.reason })),
+      )
+    }
   }
   const files = await buildOutlinedExportFiles(checked)
   if (!files?.length) throw new ExportBlocked([{ id: 'export', label: 'Dışa aktarma', detail: 'Paket üretilemedi.' }])

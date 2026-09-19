@@ -45,10 +45,51 @@ export const STUDIO_CRAFT_FLOOR = 50
  */
 export const STUDIO_LEAD_FLOOR = 45
 
-type CraftReading = { visualCraft: number; hero?: number }
+/**
+ * `archetypePin` is what let the repair signals be switched on at all.
+ *
+ * Phase 2F measured the gain — 16 of 216 faces re-routed, craft 74.8 → 75.0, focal 58.9 → 60.9,
+ * faces still carrying a signal down from 45 to 29 — and took it back out, because the swap also
+ * overruled directions the customer had asked for: "elektronik kutu ama mermer ve altın" stopped
+ * landing on marble and a sanitised LLM direction stopped being consumed. The engine's rule is that
+ * a word in the brief outranks the sector's opinion of it, and nothing here could tell the two
+ * apart until `DesignDirection` started carrying who pinned the archetype.
+ *
+ * Measured before moving it: of the 45 signal-carrying faces in the sweep, **none** was pinned by
+ * a word, a user or a family — so the guard costs nothing and protects exactly the cases that broke.
+ */
+type CraftReading = {
+  visualCraft: number
+  hero?: number
+  blockers?: { id: string }[]
+  repairSignals?: { axis: string; score: number }[]
+  archetypePin?: 'visual' | 'sector' | 'user' | 'family' | 'llm' | 'knowledge'
+}
 
-/** Should the engine try the next archetype for this face? Pure; both floors, either is enough. */
+/**
+ * A direction somebody chose on purpose is not the route's to move.
+ *
+ * A word in the brief, a picked card, a family lock and a model's own answer are all deliberate.
+ * `sector` is the prior the walk starts from and `knowledge` is the engine's own learned prior —
+ * both are defaults, and defaults are exactly what a weak reading should be allowed to re-roll.
+ */
+function chosenOnPurpose(card: CraftReading): boolean {
+  const pin = card.archetypePin
+  return pin === 'visual' || pin === 'user' || pin === 'family' || pin === 'llm'
+}
+
+/**
+ * Should the engine try the next archetype for this face? Pure; any one trigger is enough.
+ *
+ * A blocker is the sharpest of the three: it is not a low score but a promise the design made and
+ * broke, so the face is worth re-rolling even when every number reads well. Measured at zero across
+ * 216 sweep faces, 324 job×family faces and 18 goldens, so today this trigger fires on nothing —
+ * it is here for the regression, not for the backlog.
+ */
 export function needsCraftRoute(card: CraftReading): boolean {
+  if (card.blockers?.length) return true
+  // A weak reading is worth a re-roll — unless the archetype is the one the customer asked for.
+  if (card.repairSignals?.length && !chosenOnPurpose(card)) return true
   return card.visualCraft < STUDIO_CRAFT_FLOOR || (card.hero ?? 100) < STUDIO_LEAD_FLOOR
 }
 
@@ -59,7 +100,23 @@ export function needsCraftRoute(card: CraftReading): boolean {
  * does not fall under the total floor to get it.
  */
 export function craftRouteImproves(current: CraftReading, alt: CraftReading): boolean {
+  const had = current.blockers?.length ?? 0
+  if (had > 0) {
+    // Routed for a broken promise: the alternative has to actually keep it, and may not buy that
+    // by collapsing the total. Fewer blockers is not enough — a swap is not a repair.
+    return (alt.blockers?.length ?? 0) === 0 && alt.visualCraft >= STUDIO_CRAFT_FLOOR
+  }
   if (current.visualCraft < STUDIO_CRAFT_FLOOR) return alt.visualCraft > current.visualCraft
+  const weak = current.repairSignals?.[0]
+  if (weak && !chosenOnPurpose(current) && (current.hero ?? 100) >= STUDIO_LEAD_FLOOR) {
+    /*
+     * Routed for a weak reading: the alternative has to answer *that* reading and may not pay for
+     * it with craft. Holding only the floor let a face trade three points of total for one point of
+     * focal, so the total has to hold as well.
+     */
+    const now = alt.repairSignals?.find((r) => r.axis === weak.axis)?.score ?? 100
+    return now > weak.score && alt.visualCraft >= current.visualCraft
+  }
   return (alt.hero ?? 100) >= STUDIO_LEAD_FLOOR && alt.visualCraft >= STUDIO_CRAFT_FLOOR
 }
 

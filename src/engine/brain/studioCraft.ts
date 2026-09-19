@@ -28,6 +28,7 @@
  * every dimension below is measured against the golden set in `measure-craft-distribution.ts`
  * and the floor test in `craftGate.test.ts` proves no frozen face is re-routed.
  */
+import { raise, type BlockerSink } from './designBlockers'
 import type { DesignBrief, DesignSpec, DielineModel } from '../../types'
 import { COMPOSITION_AXES, fingerprintDistance, type Fingerprint } from '../studio/fingerprint'
 import { dnaFor, type ArchetypeDna } from '../studio/referenceDna'
@@ -112,12 +113,33 @@ function area(b: PlacedBox): number {
   return Math.max(0, b.w) * Math.max(0, b.h)
 }
 
-/** Largest element or container box as a share of the panel — the thing the eye lands on. */
+/**
+ * The ledger ids that can *be* the picture.
+ *
+ * `kind` says how a box behaves in the layout — ground, container, text, element. It does not say
+ * what the box *is*, and the id already does: measured over 558 faces, the eligible boxes split
+ * cleanly into things that carry a composition (`specimen` reaches 57% of the panel, `window` 59%,
+ * `inner-card` 60%, `plate` 46%, `title-card` 57%, `roundel` 13%) and furniture that never does
+ * (`brand-mark` tops out at 8.4%, `chip` at 3.0%, every `picto-*` at 0.3%).
+ *
+ * Taking the largest box regardless of which group it came from is why `focal` was stuck: on 163
+ * faces the biggest eligible box was the brand mark at 2.9% of the panel, under the 0.06 threshold,
+ * so the reading came back 45 — "there is a focal element and it is tiny" — about a face whose
+ * design is its field. Those faces now fall through to the field branch, which is what they are.
+ *
+ * A positive set rather than an exclusion list: a new pictogram must not silently become a focal
+ * candidate, and a new composition carrier reading as field-led is the milder of the two mistakes.
+ * No `role` field is added — that would be a second model of a fact the id already carries.
+ */
+const FOCAL_CARRIERS = new Set(['specimen', 'title-card', 'window', 'plate', 'inner-card', 'roundel'])
+
+/** Largest composition-carrying box as a share of the panel — the thing the eye lands on. */
 function focalRatio(ctx: StudioCraftCtx): number {
   const panelArea = Math.max(1, ctx.panel.w * ctx.panel.h)
   let max = 0
   for (const b of ctx.boxes) {
     if (b.kind !== 'element' && b.kind !== 'container') continue
+    if (!FOCAL_CARRIERS.has(baseId(b))) continue
     max = Math.max(max, area(b) / panelArea)
   }
   return max
@@ -252,7 +274,7 @@ export function studioComposition(ctx: StudioCraftCtx, notes: string[]): number 
  * is the reference language the owner approved (Capelli, woo.originals), so on those lockups the
  * size rule does not apply; the mark does the leading.
  */
-export function studioHierarchy(ctx: StudioCraftCtx, notes: string[]): number {
+export function studioHierarchy(ctx: StudioCraftCtx, notes: string[], blockers?: BlockerSink): number {
   let score = 55
   const brand = ctx.texts.find((b) => baseId(b) === 'brand')
   const product = ctx.texts.find((b) => baseId(b) === 'product')
@@ -271,6 +293,11 @@ export function studioHierarchy(ctx: StudioCraftCtx, notes: string[]): number {
     else if (ratio < 1) {
       score -= 15
       notes.push('Ürün adı markadan büyük — hiyerarşi kuralı ihlali')
+      raise(
+        blockers,
+        'HIERARCHY_VIOLATION',
+        `Yön marka-öncelikli bir kilit (${ctx.report.direction.lockup}) seçti, ürün adı markadan büyük çizildi (${product.sizeMm.toFixed(1)} mm > ${brand.sizeMm.toFixed(1)} mm).`,
+      )
     }
   }
   const tiers = new Set(ctx.texts.map((b) => Math.round((b.sizeMm ?? 0) * 2) / 2)).size
@@ -308,7 +335,7 @@ export function studioTypography(ctx: StudioCraftCtx, notes: string[]): number {
   return score
 }
 
-export function studioDecoration(ctx: StudioCraftCtx, notes: string[]): number {
+export function studioDecoration(ctx: StudioCraftCtx, notes: string[], blockers?: BlockerSink): number {
   let score = 50
   if (/data-bg="/.test(ctx.face)) score += 10
   const frame = ctx.report.direction.frame
@@ -317,6 +344,7 @@ export function studioDecoration(ctx: StudioCraftCtx, notes: string[]): number {
   else {
     score -= 6
     notes.push(`Çerçeve ${frame} seçildi, çizilmedi`)
+    raise(blockers, 'DESIGN_CONTRACT_FRAME', `Yön ${frame} çerçevesini seçti, hiçbir ressam çizmedi.`)
   }
   const layers = (ctx.face.match(/(?:fill|stroke)-opacity="0\.(0[4-9]|1[0-2])"/g) ?? []).length
   if (layers >= 3) score += 6
@@ -368,14 +396,96 @@ export function studioFocal(ctx: StudioCraftCtx): number {
   const r = focalRatio(ctx)
   if (SUBJECT_LED.has(ctx.archetype) && !/data-art="hero"|data-hero="/.test(leadMarkup(ctx))) return 25
   if (r >= 0.06 && r <= 0.55) return 85
-  if (r > 0.6) return 40
+  // Contiguous on purpose: 0.55–0.60 used to fall past both tests into the "too small" branch and
+  // score 45, so four faces were told their focal was tiny when it was very nearly too large.
+  if (r > 0.55) return 40
   if (r > 0) return 45
   return hasOwnField(ctx) ? 60 : 35
 }
 
-/** The archetype's own opinion of the sector it landed on, from its DNA. */
+/**
+ * Which of the required-information states this face is in, read from the ledger.
+ *
+ * The four are not equivalent and used to be one. `nutritionTable` returns empty markup when the
+ * declaration will not fit, the carton back skips the whole food register when it has under 26 mm
+ * left, and the flat label back takes neither branch of its width chain — three different facts
+ * arriving as the same absence, which is why Phase 1.5 had to take the blocker back out of the gate
+ * rather than block eight legitimate catalogue designs.
+ *
+ * Both sides are now structured: the table records `ledger.add('container', 'nutrition-table')`
+ * when it draws and `ledger.skip('nutrition-table', 'no-space')` when it declines, so nothing here
+ * searches markup. An absence *without* a skip record is the only case left, and it is a renderer
+ * that did not do its job.
+ *
+ * `REQUIRED_BUT_DATA_MISSING` is deliberately not a state: `nutritionRows` always returns a full
+ * row set with blank values, because F-42 settled that the engine never fabricates figures and the
+ * producer fills them in. There is no path on which the data is absent, so naming the state would
+ * be inventing one.
+ *
+ * Required is the painters' own condition — food or beverage — not the narrower one the score uses.
+ */
+export type RequiredInfoState = 'NOT_REQUIRED' | 'REQUIRED_AND_RENDERED' | 'REQUIRED_BUT_NO_SPACE' | 'REQUIRED_BUT_NOT_RENDERED'
+
+export function nutritionState(ctx: StudioCraftCtx): RequiredInfoState {
+  const sector = ctx.plan.sector
+  if (sector !== 'food' && sector !== 'beverage') return 'NOT_REQUIRED'
+  const panels = ctx.report.panels
+  if (panels.some((p) => p.placed.some((b) => baseId(b) === 'nutrition-table'))) return 'REQUIRED_AND_RENDERED'
+  const skips = panels.flatMap((p) => p.skipped ?? []).filter((s) => s.id === 'nutrition-table')
+  /*
+   * A swing tag or a card back is not a product information panel — it carries no legal register of
+   * any kind — so the declaration is not required *there*; it belongs on the pack. Reading that
+   * absence as a failure is the "the painter route has no such branch" false positive, and it cost
+   * two catalogue designs before the surface was allowed to say what it is.
+   */
+  if (skips.some((s) => s.reason === 'not-this-surface')) return 'NOT_REQUIRED'
+  return skips.length ? 'REQUIRED_BUT_NO_SPACE' : 'REQUIRED_BUT_NOT_RENDERED'
+}
+
+/**
+ * Does this direction belong on this shelf?
+ *
+ * The kit scorer answered by searching the markup for `data-hero="crest"`, `data-pattern="hexagon"`,
+ * `data-lockup-chrome=` and the perfume flash point `2004.78` — tokens `visualCraftScores.ts` itself
+ * describes as "not something a studio face ever emits". Measured across 599 studio faces, 5% carry
+ * any of them, so the axis was reporting its opening constant 62 on almost everything: five distinct
+ * values over the whole engine, and `productFit` only two.
+ *
+ * The studio does not need to guess from its own output. Two canonical affinities are already
+ * declared by the archetype and already honoured by the layer that chose it:
+ *
+ *   `dna.sectors[sector]`  the chooser admits nothing below `SECTOR_AFFINITY_FLOOR` (direction.ts)
+ *   `dna.styles[style]`    `rankDirectionPool` ranks on it as `styleFit` (direction.ts:431)
+ *
+ * Weighted 60/40 because the axis is named for the sector: a face on its home sector in a style that
+ * archetype was built for reads 100; one admitted at the floor on both reads 30; a family pinned
+ * onto a sector its DNA does not list reads near zero, which is what pinning means.
+ *
+ * This is the same sector affinity `studioCategoryFit` reports, and deliberately so — that reading
+ * is excluded from `weightedCraftScore`, so the fact enters the total exactly once, here, and this
+ * axis adds the style affinity that nothing scored before.
+ */
+export function studioSectorFit(ctx: StudioCraftCtx): number {
+  const sector = ctx.dna.sectors[ctx.plan.sector] ?? 0
+  const style = ctx.dna.styles[ctx.plan.style] ?? 0.3
+  return Math.round(sector * 60 + style * 40)
+}
+
+/**
+ * The archetype's own opinion of the sector it landed on, from its DNA.
+ *
+ * A declaration, not a measurement of the artwork — and it is read against the band the chooser
+ * uses. `rankDirectionPool` admits an archetype when its affinity is at least
+ * `SECTOR_AFFINITY_FLOOR`, so 30 is the bottom of what the engine deliberately allows rather than a
+ * failing mark; measured on the three unpinned populations the minimum is exactly 30.
+ *
+ * The fallback used to be 0.2, which disagreed with the chooser's own `?? 0` and reported an
+ * unlisted sector as 20 rather than as off-category. Measured: all 151 unlisted faces were in the
+ * pinned job×family sweep, where the caller is deliberately forcing a family onto a sector its DNA
+ * does not claim — so the honest reading there is 0, not a consolation score.
+ */
 export function studioCategoryFit(ctx: StudioCraftCtx): number {
-  return Math.round((ctx.dna.sectors[ctx.plan.sector] ?? 0.2) * 100)
+  return Math.round((ctx.dna.sectors[ctx.plan.sector] ?? 0) * 100)
 }
 
 /**

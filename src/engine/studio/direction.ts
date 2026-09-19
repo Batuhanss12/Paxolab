@@ -965,7 +965,7 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
    * knowledge rejects for baby care; at 0.4 range drops to 2.8 archetypes per brief for no further
    * gain. 0.3 keeps 3.0 and lets the sector's own reference stay reachable.
    */
-  const sectorFloor = 0.3
+  const sectorFloor = SECTOR_AFFINITY_FLOOR
   // A word in the brief outranks the sector's opinion of it. "elektronik kutu ama mermer" means
   // marble, even though marble lists no electronics affinity — the customer is telling us something
   // the table does not know. The floor exists to stop the *mood* wandering, not to overrule them.
@@ -1189,9 +1189,23 @@ function materializeDirection(
     { axis: 'ornament', chosen: ornament, because: hints.ornament === ornament ? 'fiyat katmanı / his ya da seçilen kart' : 'çizginin varsayılanı' },
     { axis: 'temperament', chosen: temperament, because: userHoldsTemperament(hints) ? 'seçtiğin ton' : 'ruh hali' },
   ]
+  /*
+   * Only when the painted archetype *is* the pinned one — the mood walk can step off a hint, and a
+   * face that moved was not chosen by whoever set it. `hints.source === 'user'` counts as a user
+   * pin the same way `rankDirectionPool` treats it.
+   */
+  const archetypePin: DesignDirection['archetypePin'] =
+    hints.archetype && hints.archetype === (dna.id as StudioArchetype)
+      ? hints.pinSource && hints.pinSource !== 'sector'
+        ? hints.pinSource
+        : hints.source && hints.source !== 'heuristic'
+          ? hints.source
+          : (hints.pinSource ?? 'sector')
+      : undefined
   return {
     surface,
     archetype: dna.id as StudioArchetype,
+    archetypePin,
     // Shifted off the texture rng so the arrangement and the background grain do not move together.
     variant: (seed >>> 5) % LAYOUT_VARIANTS,
     background,
@@ -1234,6 +1248,18 @@ function materializeDirection(
 function familyFor(archetype: StudioArchetype): StudioFamily {
   return familyOf(archetype) ?? 'marble'
 }
+
+/**
+ * The lowest sector affinity the walk will admit.
+ *
+ * Swept to this value: at 0.25 a baby brief reaches `botanical-card`, which the reference knowledge
+ * rejects for baby care; at 0.4 range drops to 2.8 archetypes per brief for no further gain.
+ *
+ * Exported because `studioCategoryFit` reports the same number back and had no way to say where the
+ * admissible band starts — it read an affinity of 0.3 as "30 out of 100, poor" when 0.3 is exactly
+ * what this line deliberately allows.
+ */
+export const SECTOR_AFFINITY_FLOOR = 0.3
 
 export function slimDirectionOffer(offer: DirectionOffer): StudioDirectionOffer {
   return {

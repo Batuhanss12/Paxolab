@@ -2,6 +2,7 @@
  * Visual craft score components — individual dimension scores extracted from scoreVisualCraft.
  * Each function computes one dimension (hero, composition, hierarchy, etc.) from face/back markup + plan.
  */
+import { raise, type BlockerSink } from './designBlockers'
 import type { DesignSpec } from '../../types'
 import { faceHasProduct } from '../copyLocale'
 import type { DesignPlan } from './DesignPlan'
@@ -18,6 +19,8 @@ import {
   studioDecoration,
   studioHero,
   studioHierarchy,
+  studioSectorFit,
+  nutritionState,
   studioOriginality,
   studioTypography,
   type StudioCraftCtx,
@@ -132,8 +135,8 @@ export function scoreComposition(ctx: ScoreCtx, notes: string[] = []): number {
   return composition
 }
 
-export function scoreHierarchy(ctx: ScoreCtx, notes: string[]): number {
-  if (ctx.studio) return studioHierarchy(ctx.studio, notes)
+export function scoreHierarchy(ctx: ScoreCtx, notes: string[], blockers?: BlockerSink): number {
+  if (ctx.studio) return studioHierarchy(ctx.studio, notes, blockers)
   const { face, plan, copy } = ctx
   const { geoHierarchy } = ctx
   let hierarchy = 55
@@ -169,8 +172,8 @@ export function scoreTypography(ctx: ScoreCtx, notes: string[] = []): number {
   return typography
 }
 
-export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
-  if (ctx.studio) return studioDecoration(ctx.studio, notes)
+export function scoreDecoration(ctx: ScoreCtx, notes: string[], blockers?: BlockerSink): number {
+  if (ctx.studio) return studioDecoration(ctx.studio, notes, blockers)
   const { face, plan, hasHero, leak, geoDensity } = ctx
   let decoration = 50
   if (/data-pattern=/.test(face) && plan.style !== 'minimal') decoration += 10
@@ -207,6 +210,8 @@ export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
 }
 
 export function scoreSectorFit(ctx: ScoreCtx): number {
+  // The studio reads its own declared affinities; the kit markers below are not in its vocabulary.
+  if (ctx.studio) return studioSectorFit(ctx.studio)
   const { face, back, plan, leak } = ctx
   let sectorFit = 62
   if (plan.sector === 'perfume' && /2004\.78|EAU DE|data-hero="crest"|data-hero="seal"|data-lockup-chrome="centered-crest"/.test(face)) sectorFit += 16
@@ -232,12 +237,36 @@ export function scoreProductFit(ctx: ScoreCtx): number {
   return productFit
 }
 
-export function scoreInformationDesign(ctx: ScoreCtx, notes: string[]): number {
+export function scoreInformationDesign(ctx: ScoreCtx, notes: string[], blockers?: BlockerSink): number {
   const { face, back, plan } = ctx
   let informationDesign = 50
   if (plan.sector === 'food') {
-    if (/BESİN DEĞERLERİ|NUTRITION FACTS/.test(back)) informationDesign += 22
+    /*
+     * The uppercase spelling belonged to the kit renderer that F-37 retired; the studio writes
+     * `Besin Değerleri (100 g için)`. Asking for `BESİN DEĞERLERİ` meant every food back in the
+     * engine reported its table missing — 100 faces, four of them frozen goldens. Matching the two
+     * real spellings rather than case-folding, because Turkish `İ` does not fold to ASCII `i`.
+     * `designSystem/gates.ts` already reads the table this way.
+     */
+    if (/Besin Değerleri|BESİN DEĞERLERİ|Nutrition Facts|NUTRITION FACTS/.test(back)) informationDesign += 22
+    // The score's own note. What it cannot tell is *why* the table is absent; that is below.
     else notes.push('Gıda nutrition yok')
+  }
+  /*
+   * The blocker is separate from the score and reads the ledger, not the back markup. Phase 1.5
+   * removed it because "the table does not fit this shape" and "the renderer stopped emitting"
+   * were the same fact; `nutritionState` separates them, so only the second closes the gate.
+   * `REQUIRED_BUT_NO_SPACE` keeps its own customer-facing warning through `ds-nutrition-fit`.
+   */
+  if (ctx.studio && nutritionState(ctx.studio) === 'REQUIRED_BUT_NOT_RENDERED') {
+    notes.push('Besin beyanı çizilmedi ve sebebi kaydedilmedi')
+    raise(
+      blockers,
+      'REQUIRED_INFO_MISSING',
+      'Gıda/içecek arka yüzünde besin beyanı yok ve ressam bir sebep kaydetmedi — beyan üretilemedi.',
+    )
+  }
+  if (plan.sector === 'food') {
     if (/data-art="claim-strip"|NET/.test(face)) informationDesign += 14
     if (/DOĞAL|NATURAL|YAYLA|DAĞ ÇİÇEĞİ|SAF DAMLA|BAHÇE|MEYVE|KORU|SIZMA|SOFRA|YEREL|SADIK|HIGHLAND|GARDEN|GROVE/.test(face)) {
       informationDesign += 6

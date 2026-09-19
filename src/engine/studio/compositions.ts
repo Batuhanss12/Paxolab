@@ -133,7 +133,7 @@ export function paintBandSplitFace(ctx: LayoutCtx): string {
   parts.push(
     field.open,
     paintBackground(d.background, w, fieldH, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, ornament: d.ornament, intensity: subjectLed ? 0.6 : undefined }),
-    paintFrame(d, w, fieldH, { inset: m * 0.55, color: accent, opacity: 0.7 }),
+    paintFrame(d, w, fieldH, { inset: m * 0.55, color: accent, opacity: 0.7, ownsGeometry: true }),
     field.close,
   )
   parts.push(`<rect x="0" y="${f(bandY)}" width="${f(w)}" height="${f(bandH)}" fill="${band}" data-art="band" />`)
@@ -208,7 +208,7 @@ export function paintRotatedBrandFace(ctx: LayoutCtx): string {
   parts.push(
     field.open,
     paintBackground(d.background, fieldW, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, ornament: d.ornament, intensity: subjectLed ? 0.6 : undefined }),
-    paintFrame(d, fieldW, h, { inset: m * 0.5, color: accent, opacity: 0.7 }),
+    paintFrame(d, fieldW, h, { inset: m * 0.5, color: accent, opacity: 0.7, ownsGeometry: true }),
     field.close,
   )
   // The strip: the same ground, a shade apart, and a hairline where it meets the field.
@@ -287,7 +287,7 @@ export function paintTopLeftBlockFace(ctx: LayoutCtx): string {
     `<g data-composition="top-left-block">`,
     ground(w, h, d.palette.ground),
     paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, ornament: d.ornament, intensity: subjectLed ? 0.6 : undefined }),
-    paintFrame(d, w, h, { inset: m * 0.5, color: accent, opacity: 0.7 }),
+    paintFrame(d, w, h, { inset: m * 0.5, color: accent, opacity: 0.7, ownsGeometry: true }),
   ]
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
 
@@ -378,7 +378,7 @@ export function paintArtPanelFront(ctx: LayoutCtx): string {
   const ink = readableInk(bg, d.palette.cardInk)
   const accent = readableInk(bg, d.palette.accent, 2.2)
   const parts: string[] = [`<g data-composition="art-panel" data-role-front="quiet">`, ground(w, h, bg)]
-  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.5 }))
+  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.5, ownsGeometry: true }))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   const inner = w - m * 2.6
   const lock = stackedLockup(ledger, d, w / 2, h * 0.14, inner, copy.brand, cityLine(ctx.brief), {
@@ -415,7 +415,7 @@ export function paintFlankedFront(ctx: LayoutCtx): string {
   const ink = readableInk(bg, d.palette.ink)
   const accent = readableInk(bg, d.palette.accent, 2.2)
   const parts: string[] = [`<g data-composition="flanked" data-role-front="solid">`, ground(w, h, bg)]
-  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.6 }))
+  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.6, ownsGeometry: true }))
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   const inner = w - m * 2.6
   const lock = stackedLockup(ledger, d, w / 2, h * 0.16, inner, copy.brand, cityLine(ctx.brief), {

@@ -8,7 +8,9 @@
  * disc. The ledger reports clean and the print is wrong — which is why every sweep so far has said
  * "dirty 0" while the owner could see a barcode hanging off the edge of a round label.
  *
- * This measures the thing the ledger does not: every placed box against the real polygon.
+ * This measures the thing the ledger does not: every placed box against the real polygon —
+ * including the rotated rectangles a polygon prism's walls are, which F-42 left out because the
+ * comparison had no way to undo the rotation.
  *
  * Permanent instrument. Run: `npx vite-node scripts/measure-cut-overflow.ts`
  */
@@ -16,6 +18,7 @@ import { FormaLocalEngine } from '../src/engine/FormaLocalEngine'
 import { resetArtMemory } from '../src/engine/brain/DesignMemory'
 import { emptyBrief } from '../src/engine/fields'
 import { FORMA_TEMPLATES, modeFromTemplate } from '../src/engine/catalog/catalog'
+import { rotatedRectFrame } from '../src/engine/dieline/forxaAdapter'
 import type { DesignBrief } from '../src/types'
 
 type Pt = { x: number; y: number }
@@ -98,11 +101,21 @@ const SECTORS: [string, string, string][] = [
 ]
 
 let faces = 0
+/* F-42's open question, now answered by the instrument rather than by argument. */
+let rotatedFaces = 0
+let rotatedWorst = 0
 let dirty = 0
 const hits: string[] = []
 
+/*
+ * Cartons are swept too, and that is the change that answered F-42.
+ *
+ * This used to be labels only, so a polygon prism's walls — the one place a panel's cut is a
+ * *rotated* rectangle — were never reached, and the open question stayed open for five phases.
+ */
 for (const template of FORMA_TEMPLATES) {
-  if (modeFromTemplate(template) !== 'label') continue
+  const mode = modeFromTemplate(template)
+  if (mode !== 'label' && mode !== 'box') continue
   for (const [sector, subProduct, volume] of SECTORS) {
     const brief: DesignBrief = {
       ...emptyBrief(),
@@ -110,7 +123,7 @@ for (const template of FORMA_TEMPLATES) {
       productName: 'Altın',
       sector,
       subProduct,
-      packagingMode: 'label',
+      packagingMode: mode,
       templateId: template.id,
       styleType: 'luxury',
       volume,
@@ -128,8 +141,30 @@ for (const template of FORMA_TEMPLATES) {
        * directly reported a 104 mm overhang on a 60 mm label — the distance between the two origins,
        * not anything a printer would see.
        */
-      const poly = sheetPoly.map((q) => ({ x: q.x - panel.x, y: q.y - panel.y }))
+      /*
+       * And a rotated panel needs the rotation undone as well as the origin moved. A polygon
+       * prism's wall is a true rectangle sitting at the wall's heading; the painter works in that
+       * wall's own frame, so the cut has to be brought into the same frame before the two can be
+       * compared. Subtracting the origin alone — which is all this did — made every wall look like
+       * a catastrophe and was the reason F-42 left rectangular polygons out of the check entirely.
+       */
+      const frame = rotatedRectFrame(sheetPoly)
+      const th = ((frame?.deg ?? 0) * Math.PI) / 180
+      const cos = Math.cos(-th)
+      const sin = Math.sin(-th)
+      const poly = sheetPoly.map((q) => {
+        const dx = q.x - panel.x
+        const dy = q.y - panel.y
+        return { x: dx * cos - dy * sin, y: dx * sin + dy * cos }
+      })
       faces += 1
+      if (frame) {
+        rotatedFaces += 1
+        for (const b of report.placed) {
+          if (b.kind === 'ground') continue
+          rotatedWorst = Math.max(rotatedWorst, overhang(poly, b))
+        }
+      }
       const SAFE_MM = 3
       const over = report.placed
         .filter((b) => b.kind !== 'ground' && b.kind !== 'container')
@@ -148,3 +183,6 @@ for (const template of FORMA_TEMPLATES) {
 console.log(`poligon kesimli yüz: ${faces} · 3 mm güvenli alanı ihlal eden: ${dirty}`)
 for (const h of hits.slice(0, 30)) console.log(`  ${h}`)
 if (dirty === 0) console.log('  — temiz —')
+console.log(
+  `döndürülmüş dikdörtgen panel: ${rotatedFaces} · kesim dışına taşan: ${rotatedWorst > 0.01 ? `EN KÖTÜ ${rotatedWorst.toFixed(2)} mm` : 'yok'}`,
+)

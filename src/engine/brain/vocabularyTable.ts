@@ -26,6 +26,34 @@ export function resolveSubProduct(sector: SectorId, blob: string): SubProductId 
 
 // ── Vocabulary row ──────────────────────────────────────────────────
 
+/**
+ * What this table is still telling the truth about.
+ *
+ * It was written for the kit painter and half of it was never read. Measured by grep across the
+ * repository (Phase 2C, re-checked 2G-C), the fields divide three ways, and the difference matters
+ * because two phases were spent rediscovering it:
+ *
+ *   **Consumed.** `id`, `sectorId`, `subProductId`, `heroFamilies`, `patternFamilies`,
+ *   `backgroundTreatments`, `primitives`, `forbiddenHeroes`, `forbiddenPatterns` — read by
+ *   `ArtDirection`, `RepairPlanner`, `CritiqueEngine` and `DesignDirector`, in kit vocabulary a
+ *   studio face never emits.
+ *
+ *   **Unconsumed, and worth consuming.** `legalKitId` and `backRole` say which required-information
+ *   set a product needs — `nutrition` for five food rows, `inci` for cosmetics, `spec` for devices,
+ *   `composition` for perfume. The studio answers that same question with `d.sector === 'food' ||
+ *   d.sector === 'beverage'` written inline in every back painter. This is the canonical source for
+ *   it; it has simply never been wired. `claimStrip` and `forbiddenMotifs` are the same shape.
+ *
+ *   **Unconsumed, and duplicate.** `ornamentLevel`, `typographyVoice`, `frontRole` and
+ *   `paletteFamilies` name concepts `DesignDirection` already owns (`ornament`, `typePairing`,
+ *   `lockup`, `palette`) and owns differently: measured, the studio's `quiet|measured|rich` was
+ *   never reconciled with this 0–3 scale (69% of faces read as "over ceiling", and seven rows set a
+ *   ceiling of 0 that no studio ornament can satisfy), and every `typographyVoice` uses nearly
+ *   every `typePairing`. Wiring these would put one design decision under two owners.
+ *
+ * Nothing here is deleted: the second group is intent worth keeping, and the third records what the
+ * kit believed, which is how the two systems can still be compared.
+ */
 export type VocabularyRow = {
   id: string
   sectorId: SectorId

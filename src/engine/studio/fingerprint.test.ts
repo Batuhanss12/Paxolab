@@ -56,15 +56,27 @@ describe('fingerprint distance', () => {
     for (const axis of COMPOSITION_AXES) expect(FINGERPRINT_AXES).toContain(axis)
   })
 
+  it('and exclude what never differs across one', () => {
+    /*
+     * The other half of the same rule. Measured on six eight-candidate offers, `temperament` and
+     * `variant` take exactly 1.0 distinct value each — temperament is derived from sector × style
+     * and every offered row is variation 0 — so counting them could only ever divide the score by
+     * a larger denominator. That put a hard ceiling of 50 on `distinctiveness`.
+     */
+    expect(COMPOSITION_AXES).not.toContain('temperament')
+    expect(COMPOSITION_AXES).not.toContain('variant')
+  })
+
   it('distinct means at least two composition axes apart', () => {
     expect(isDistinct(fp(), fp({ ornament: 'rich' }))).toBe(false)
-    expect(isDistinct(fp(), fp({ ornament: 'rich', variant: '1' }))).toBe(true)
+    // Two axes the offer can actually move — `variant` is constant across one, so it cannot carry this.
+    expect(isDistinct(fp(), fp({ ornament: 'rich', frame: 'none' }))).toBe(true)
     // Archetype alone never makes a pair distinct — that was the guarantee that hid the problem.
     expect(isDistinct(fp(), fp({ archetype: 'ink-panel', background: 'ink-wash' }))).toBe(false)
   })
 
   it('summarises a set: pairs, minimum, identical and not-distinct counts', () => {
-    const set = [fp(), fp({ ornament: 'rich' }), fp({ ornament: 'rich', variant: '1' })]
+    const set = [fp(), fp({ ornament: 'rich' }), fp({ ornament: 'rich', frame: 'none' })]
     const s = pairwiseSummary(set)
     expect(s.pairs).toBe(3)
     expect(s.min).toBe(1)

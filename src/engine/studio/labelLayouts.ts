@@ -249,7 +249,13 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const ink = d.palette.ink
   const accent = d.palette.accent
   if (opts.rounded !== false) {
-    parts.push(`<rect x="0.4" y="0.4" width="${f(w - 0.8)}" height="${f(h - 0.8)}" rx="${f(Math.min(4, w * 0.06))}" fill="none" stroke="${mix(ink, d.palette.ground, 0.75)}" stroke-width="0.2" />`)
+    /*
+     * The label variant always carries this rounded edge; when the direction asked for
+     * `rounded-card` it is also the frame it promised, so it says so. Drawn either way — the
+     * declaration records what the ink already is, it does not decide whether to lay it down.
+     */
+    const declares = d.frame === 'rounded-card' ? ' data-frame="rounded-card"' : ''
+    parts.push(`<rect x="0.4" y="0.4" width="${f(w - 0.8)}" height="${f(h - 0.8)}" rx="${f(Math.min(4, w * 0.06))}" fill="none" stroke="${mix(ink, d.palette.ground, 0.75)}" stroke-width="0.2"${declares} />`)
   }
   // brand mark + brand
   const r = Math.min(w * 0.1, 6)
@@ -258,7 +264,14 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   // The painter's own heavy sans on its native pairing; the type system's faces on any other.
   const tf = titleFaces(d.typePairing, 'sans-light/sans-heavy', { light: 'sans-light', heavy: 'sans-heavy', tracking: 0.1 })
   const brandTrack = tf.tracking === 0.1 ? 0.12 : tf.tracking
-  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4 * ctx.titleScale, 2.2 * ctx.titleScale, tf.heavy, brandTrack)
+  /*
+   * This archetype's DNA declares `lockup: 'stacked-center'` — a display line, brand first. The
+   * brand was boxed at 4.4 mm while the two-tone title below it reached 7.5 mm, so every one of the
+   * 25 measured hierarchy violations in the engine was this painter breaking its own contract. The
+   * brand gets the title's band; the title is then held to the size the brand actually achieved.
+   */
+  const displayBand = Math.min(7.5, w * 0.11) * ctx.titleScale
+  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, displayBand, 2.2 * ctx.titleScale, tf.heavy, brandTrack)
   const brandY = m + r * 2 + brandSize * 1.4
   parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: tf.heavy, fill: ink, anchor: 'middle', tracking: brandSize * brandTrack, extra: 'data-edit="brand"' }))
   ledger.text('brand', w / 2, brandY, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, tf.heavy, brandSize * brandTrack), brandSize, 'middle')
@@ -266,7 +279,7 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const a = words.length > 1 ? words.slice(0, Math.ceil(words.length / 2)).join(' ') : words[0]
   const b = words.length > 1 ? words.slice(Math.ceil(words.length / 2)).join(' ') : ''
-  const titleMax = Math.min(7.5, w * 0.11) * ctx.titleScale
+  const titleMax = Math.min(displayBand, brandSize)
   const full = b ? `${a} ${b}` : a
   const size = fitSize(full, w - m * 2, titleMax, 2.6 * ctx.titleScale, tf.heavy, tf.tracking)
   const track = size * tf.tracking
@@ -284,7 +297,15 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   ledger.text('product', w / 2, titleY, wa + wb, size, 'middle')
   const subSize = Math.max(1.6, size * 0.36)
   const sceneCat = categoryCaption(ctx)
-  if (sceneCat) parts.push(spacedLine(ledger, w / 2, titleY + subSize * 2.1, sceneCat, subSize, ink, w - m * 2))
+  /*
+   * The net quantity owns the foot. Giving the brand its display band pushes everything under it
+   * down, and on a 90 × 90 electronics carton the caption arrived on top of the quantity — the
+   * caption is the line that can be spared, so it yields, exactly as it does on `marble-frame`.
+   */
+  const netSize = d.volumeLine ? Math.max(2, Math.min(2.8, w * 0.034)) : 0
+  const footTop = d.volumeLine ? h - m * 0.9 - netSize * 1.2 : h
+  const capBaseline = titleY + subSize * 2.1
+  if (sceneCat && capBaseline < footTop) parts.push(spacedLine(ledger, w / 2, capBaseline, sceneCat, subSize, ink, w - m * 2))
   // scene
   /*
    * Literal, and deliberately so. This face paints its scenery *after* the type, because a line
@@ -295,10 +316,7 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
    */
   parts.push(paintBackground('line-scene', w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, span: sceneSpan }))
   // volume
-  if (d.volumeLine) {
-    const vs = Math.max(2, Math.min(2.8, w * 0.034))
-    parts.push(netQuantity(ledger, w / 2, h - m * 0.9, d.volumeLine, vs, ink))
-  }
+  if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, h - m * 0.9, d.volumeLine, netSize, ink))
   void accent
   if (ctx.wrapSeam) parts.push(seamMark(w, h, ink))
   return parts.join('')
@@ -502,6 +520,19 @@ export function paintKitBack(ctx: LayoutCtx): string {
   const ink = readableInk(d.palette.ground, d.palette.ink)
   const parts: string[] = [ground(w, h, d.palette.ground), backField(ctx, d.palette.ground), thinDoubleFrame(w, h, m * 0.7, ink, 0.35)]
 
+  /*
+   * A swing tag and a card back carry a brand line, a city, a QR and nothing else — no ingredients,
+   * no usage, no warnings, no nutrition, no barcode block, no pictogram row, no net quantity. That
+   * is what this surface is, not an omission: the declarations belong on the pack the tag hangs
+   * from, and the QR is what a tag carries instead of a barcode. Measured — the net quantity is the
+   * telling one, because the brief *does* supply it (250 ml ℮ · 8.45 fl.oz) and the surface still
+   * does not state it. Without these records the required-information detector reads every one of
+   * them as a renderer that failed.
+   */
+  for (const register of ['nutrition-table', 'barcode', 'pictograms', 'net-quantity', 'ingredients', 'usage', 'warnings', 'storage'] as const) {
+    ledger.skip(register, 'not-this-surface')
+  }
+
   const markR = Math.min(w * 0.13, h * 0.1, 5)
   parts.push(paintMark(markKindFor(d), w / 2, m + markR, markR, ink, copy.brand, identOf(ctx)))
   ledger.add('element', 'kit-mark', w / 2 - markR * 1.4, m, markR * 2.8, markR * 2)
@@ -629,12 +660,20 @@ export function paintRoundFace(ctx: LayoutCtx): string {
    * ornament) unless a bezel was asked for by name.
    */
   const drawnFrame = d.frame !== 'none' && d.frame !== 'corner-brackets' && d.frame !== 'rounded-card'
+  /*
+   * The ring *is* the frame here, so it says which one it is standing in for. A rectangular edge
+   * cannot be drawn on a disc — corner brackets would land outside the cut entirely — and this
+   * painter has always answered that by wearing the curved equivalent. Staying silent about it made
+   * the decoration reading report "çerçeve seçildi, çizilmedi" on every round lid and oval label
+   * whose direction chose a frame, and once export depended on that reading it blocked them.
+   */
+  const declares = d.frame === 'none' ? '' : ` data-frame="${d.frame}"`
   const ring =
     d.frame === 'bezel' || (oval && drawnFrame)
       ? bezelFrame(w, h, rim * 0.4, d.palette.accent, 0.9)
       : oval
-        ? `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx - rim * 0.55)}" ry="${f(ry - rim * 0.55)}" fill="none" stroke="${ink}" stroke-width="${f(Math.max(0.18, r * 0.012))}" stroke-opacity="0.5" />`
-        : `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r - rim * 0.55)}" fill="none" stroke="${ink}" stroke-width="${f(Math.max(0.18, r * 0.012))}" stroke-opacity="0.5" />`
+        ? `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx - rim * 0.55)}" ry="${f(ry - rim * 0.55)}" fill="none" stroke="${ink}" stroke-width="${f(Math.max(0.18, r * 0.012))}" stroke-opacity="0.5"${declares} />`
+        : `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r - rim * 0.55)}" fill="none" stroke="${ink}" stroke-width="${f(Math.max(0.18, r * 0.012))}" stroke-opacity="0.5"${declares} />`
   const parts: string[] = [
     `<defs><clipPath id="${clip}">${cut}</clipPath></defs>`,
     `<g clip-path="url(#${clip})">${paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, intensity: 0.6, ornament: d.ornament })}</g>`,
@@ -743,6 +782,28 @@ export function paintRoundFace(ctx: LayoutCtx): string {
  * centre where a round label has always carried them. Every width is taken from the chord at the
  * y it is drawn at, so nothing can reach the rim.
  */
+/**
+ * The registers a round back carries when it is not leading with a nutrition table.
+ *
+ * Shared by both paths on purpose: a food label whose band cannot hold the table still has to
+ * carry its ingredients, and before this it carried nothing at all.
+ */
+function roundLegalColumn(ctx: LayoutCtx, cx: number, top: number, w: number, bottom: number, ink: string, vivid: boolean): string {
+  const { d, copy, ledger } = ctx
+  const hdr = backHeaders(d.locale)
+  const sections: Section[] = [
+    { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
+    { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
+    { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
+    { title: hdr.producer, body: producerLine(ctx), edit: 'manufacturer' },
+  ]
+  return legalColumn(ledger, cx - w / 2, top, w, bottom, sections, ink, {
+    size: legalTypeSize(w, bottom - top, 'label'),
+    anchor: 'middle',
+    titleColor: d.palette.accent === ink ? ink : vivid ? ink : d.palette.accent,
+  }).markup
+}
+
 export function paintRoundBack(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const rx = w / 2
@@ -860,9 +921,15 @@ export function paintRoundBack(ctx: LayoutCtx): string {
       let tableSize = Math.min(1.55, r * 0.06)
       while (tableSize > 1.5 && nutritionTableHeight(2, tableSize) > band) tableSize -= 0.05
       const tableW = Math.min(legalW, r * 1.7)
-      parts.push(
-        nutritionTable(ledger, cx - tableW / 2, legalTop, tableW, hdr.nutrition, rows, ink, typeSize(tableSize), legalBottom).markup,
-      )
+      const table = nutritionTable(ledger, cx - tableW / 2, legalTop, tableW, hdr.nutrition, rows, ink, typeSize(tableSize), legalBottom)
+      parts.push(table.markup)
+      /*
+       * The table leads a food back, but it is not the whole of one. When the band cannot hold it
+       * the branch used to end here and the label went out with no ingredients, no usage and no
+       * warnings at all — the same disappearance the carton back had, one painter over, and this
+       * one left no record either. The registers a non-food back carries are drawn instead.
+       */
+      if (!table.markup) parts.push(roundLegalColumn(ctx, cx, legalTop, legalW, legalBottom, ink, vivid))
     } else {
       /*
        * The same registers a flat back carries, in the same order. The first pass shipped only
@@ -870,20 +937,7 @@ export function paintRoundBack(ctx: LayoutCtx): string {
        * read it, rightly, as an unfinished back. `legalColumn` is bounded by `legalBottom`, so it
        * takes what the chord can hold and drops the rest rather than overflowing the rim.
        */
-      const sections: Section[] = [
-        { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
-        { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
-        { title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' },
-        { title: hdr.producer, body: producerLine(ctx), edit: 'manufacturer' },
-      ]
-      const legalSize = legalTypeSize(legalW, legalBottom - legalTop, 'label')
-      parts.push(
-        legalColumn(ledger, cx - legalW / 2, legalTop, legalW, legalBottom, sections, ink, {
-          size: legalSize,
-          anchor: 'middle',
-          titleColor: d.palette.accent === ink ? ink : vivid ? ink : d.palette.accent,
-        }).markup,
-      )
+      parts.push(roundLegalColumn(ctx, cx, legalTop, legalW, legalBottom, ink, vivid))
     }
   }
   return parts.join('')
@@ -1364,6 +1418,9 @@ export function paintLabelBack(ctx: LayoutCtx): string {
       const table = nutritionTable(ledger, m, legalTop, w - m * 2, hdr.nutrition, rows, ink, tableSize, footTop - 14)
       parts.push(table.markup)
       legalTop = table.bottom + 1.5
+    } else {
+      // Too narrow for the side-by-side layout and too short for the stacked one.
+      ledger.skip('nutrition-table', 'no-space')
     }
   }
   const legalSize = legalTypeSize(w, footTop - 1.5 - legalTop, 'label')
