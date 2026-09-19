@@ -14,7 +14,7 @@ import {
   type DirectionDecision,
 } from './direction'
 import { applyVetoToHints, familiesFromUtterance, familyCommandIn, familyOf, familyTalk, hintsFromFamily, hintsFromVeto } from './family'
-import { isTemperament } from './referenceDna'
+import { isTemperament, pickFromFingerprint } from './referenceDna'
 import type { DirectionHints, StudioDirectionOffer, StudioFamily, StudioSurface, Temperament } from './types'
 
 export type DirectionTalkKind = 'why' | 'veto' | 'vary' | 'pin'
@@ -135,11 +135,15 @@ export function assembleStudioHints(
     brief.studioTemperament && isTemperament(brief.studioTemperament)
       ? ({ temperament: brief.studioTemperament, source: 'user' as const, rationale: ['StyleBar temperament.'] } satisfies DirectionHints)
       : null
+  // The card the customer clicked, on the axes it could differ. Each is honoured only where the archetype lists it.
+  const picked = pickFromFingerprint(brief.studioPick)
+  const pick = picked ? ({ ...picked, rationale: ['Seçilen kartın yerleşimi, tip ikilisi ve süsü.'] } satisfies DirectionHints) : null
   return [
     hintsFromBrief(brief, sector, surface),
     ...(veto ? [veto] : []),
     ...extras,
     ...(family ? [family] : []),
+    ...(pick ? [pick] : []),
     ...(temperament ? [temperament] : []),
   ]
 }
@@ -185,7 +189,12 @@ export function explainStudioDirection(brief: DesignBrief, extras: DirectionHint
   const grounded = real.length
     ? real.map((c) => c.text.replace(/\.$/, '')).join('; ')
     : d.rationale[0] ?? d.archetype
-  const text = `Bunu ${familyTalk(family)} tuttum: ${grounded}. Ürün adı önde.`
+  /*
+   * "Bunu X tuttum: …. Ürün adı önde." — the trailing sentence was constant, so every explanation
+   * ended the same way regardless of what was asked, and "tuttum" reads like a note to self. The
+   * reasons carry the answer; the frame just introduces them.
+   */
+  const text = `${familyTalk(family)} çizgisindeyiz çünkü ${grounded}.`
   return { text, claims: real, decision }
 }
 

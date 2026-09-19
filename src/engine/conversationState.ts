@@ -44,9 +44,29 @@ export function noteTurn(state: ConversationState): ConversationState {
   return { ...state, turns: state.turns + 1 }
 }
 
+/**
+ * Record a settled decision, once.
+ *
+ * `decisions` and this function were written and then never called — the conversation kept a
+ * ledger of what was *asked* but not of what was *decided*, so a customer six turns into a design
+ * had no way to see what they had already chosen, and the engine had no summary to give them.
+ *
+ * Repeats are dropped rather than appended: picking direction 3, then 5, then 3 again should leave
+ * one entry saying the direction is 3, not a history of clicks. The list is keyed by the part
+ * before the colon ("Yapı", "Yön", "Ruh hali"), so a later choice replaces an earlier one.
+ */
 export function noteDecision(state: ConversationState, summary: string): ConversationState {
-  if (!summary.trim()) return state
-  return { ...state, decisions: [...state.decisions, summary.trim()].slice(-20) }
+  const clean = summary.trim()
+  if (!clean) return state
+  const topic = clean.split(':')[0]?.trim() ?? clean
+  const kept = state.decisions.filter((row) => (row.split(':')[0]?.trim() ?? row) !== topic)
+  if (kept.length === state.decisions.length && state.decisions.includes(clean)) return state
+  return { ...state, decisions: [...kept, clean].slice(-20) }
+}
+
+/** What has been settled so far, for the summary the customer can ask for. */
+export function decisionSummary(state: ConversationState): string {
+  return state.decisions.join(' · ')
 }
 
 /** Ask only while under the cap and the user has not already declined the field. */

@@ -60,6 +60,7 @@ export function LabelFormatPicker({ brief, onSelect, onPick, onDims }: LabelForm
             <button
               key={t.id}
               type="button"
+              aria-pressed={brief.templateId === t.id}
               className={`tcard ${brief.templateId === t.id ? 'is-active' : ''}`}
               onClick={() => onSelect(t.id, { ...cardDims, W: 0 })}
             >

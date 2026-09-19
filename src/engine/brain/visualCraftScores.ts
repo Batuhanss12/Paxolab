@@ -12,6 +12,17 @@ import {
   hierarchyBonus,
   type GeometryMetrics,
 } from './geometryMetrics'
+import {
+  studioComposition,
+  studioCraftCtx,
+  studioDecoration,
+  studioHero,
+  studioHierarchy,
+  studioOriginality,
+  studioTypography,
+  type StudioCraftCtx,
+  type StudioCraftSpec,
+} from './studioCraft'
 
 export const LIBRARY = /data-hero="(monstera|palm|organic-wave|zebra|botanical|emblem)"/
 export const KIT_HERO = /data-hero="(crest|seal|oval|harvest|tech)"/
@@ -41,9 +52,16 @@ export type ScoreCtx = {
   geoComposition: number
   geoHierarchy: number
   geoDensity: number
+  /**
+   * Present when the face was painted by the studio. Every dimension below hands off to the
+   * studio reading then — the kit signals in this file (`data-pattern`, `data-hero="crest"`,
+   * `lockout-`, the kit font names) are not something a studio face ever emits, and scoring their
+   * absence was how eleven of eighteen frozen faces came to be "missing a hero". See `studioCraft.ts`.
+   */
+  studio?: StudioCraftCtx
 }
 
-export function makeScoreCtx(spec: Pick<DesignSpec, 'artwork' | 'copy'>, plan: DesignPlan): ScoreCtx {
+export function makeScoreCtx(spec: StudioCraftSpec, plan: DesignPlan): ScoreCtx {
   const face = faceOf(spec)
   const back = backOf(spec)
   const required = plan.style !== 'minimal' && plan.sector !== 'cleaning' && plan.sector !== 'generic'
@@ -63,10 +81,12 @@ export function makeScoreCtx(spec: Pick<DesignSpec, 'artwork' | 'copy'>, plan: D
     geoComposition: compositionBonus(geo),
     geoHierarchy: hierarchyBonus(geo),
     geoDensity: densityPenalty(geo),
+    studio: studioCraftCtx(spec, plan),
   }
 }
 
 export function scoreHero(ctx: ScoreCtx, notes: string[]): number {
+  if (ctx.studio) return studioHero(ctx.studio, notes)
   const { plan, required, hasHero, leak } = ctx
   const face = ctx.face
   let hero = 48
@@ -90,7 +110,8 @@ export function scoreHero(ctx: ScoreCtx, notes: string[]): number {
   return hero
 }
 
-export function scoreComposition(ctx: ScoreCtx): number {
+export function scoreComposition(ctx: ScoreCtx, notes: string[] = []): number {
+  if (ctx.studio) return studioComposition(ctx.studio, notes)
   const { face, plan, hasHero, geoComposition } = ctx
   let composition = 52
   if (/lockout-/.test(face)) composition += 10
@@ -112,6 +133,7 @@ export function scoreComposition(ctx: ScoreCtx): number {
 }
 
 export function scoreHierarchy(ctx: ScoreCtx, notes: string[]): number {
+  if (ctx.studio) return studioHierarchy(ctx.studio, notes)
   const { face, plan, copy } = ctx
   const { geoHierarchy } = ctx
   let hierarchy = 55
@@ -123,7 +145,8 @@ export function scoreHierarchy(ctx: ScoreCtx, notes: string[]): number {
   return hierarchy
 }
 
-export function scoreTypography(ctx: ScoreCtx): number {
+export function scoreTypography(ctx: ScoreCtx, notes: string[] = []): number {
+  if (ctx.studio) return studioTypography(ctx.studio, notes)
   const { face, back, plan } = ctx
   let typography = 54
   const displayFonts = /Palatino|Segoe UI|Trebuchet|Cambria|Garamond|Constantia|Corbel/.test(face)
@@ -147,6 +170,7 @@ export function scoreTypography(ctx: ScoreCtx): number {
 }
 
 export function scoreDecoration(ctx: ScoreCtx, notes: string[]): number {
+  if (ctx.studio) return studioDecoration(ctx.studio, notes)
   const { face, plan, hasHero, leak, geoDensity } = ctx
   let decoration = 50
   if (/data-pattern=/.test(face) && plan.style !== 'minimal') decoration += 10
@@ -230,6 +254,7 @@ export function scoreInformationDesign(ctx: ScoreCtx, notes: string[]): number {
 }
 
 export function scoreOriginality(ctx: ScoreCtx): number {
+  if (ctx.studio) return studioOriginality(ctx.studio)
   const { face, plan } = ctx
   let originality = 48
   if (LIBRARY.test(face)) originality += 18

@@ -29,7 +29,7 @@ import { FormaLocalEngine } from '../FormaLocalEngine'
 import { resetArtMemory } from '../brain/DesignMemory'
 import { STUDIO_FAMILIES } from './family'
 import { BOX_DNA, LABEL_DNA } from './referenceDna'
-import type { StudioFamily } from './types'
+import { SIDE_LED_LOCKUPS, type StudioFamily } from './types'
 
 function familyOfArchetype(id: string): StudioFamily {
   const hit = Object.entries(STUDIO_FAMILIES).find(([, pair]) => pair.box === id || pair.label === id)
@@ -59,7 +59,12 @@ function sweep(id: string, surface: 'box' | 'label') {
     const spec = new FormaLocalEngine().generate({ brief, overridePatch: { studio: true, variationIndex } })
     if (spec.studio!.direction.archetype !== id) continue
     reported.add(spec.studio!.direction.background)
-    const markup = String(spec.artwork.layers.find((l) => l.panelId === spec.artwork.frontPanelId)?.markup ?? '')
+    // A carton role (Phase 2B) keeps its front quiet and paints the field on a side — the promise is kept there.
+    const sideLed = SIDE_LED_LOCKUPS.includes(spec.studio!.direction.lockup)
+    const markup = spec.artwork.layers
+      .filter((l) => l.panelId === spec.artwork.frontPanelId || (sideLed && /data-role-side=/.test(l.markup)))
+      .map((l) => l.markup)
+      .join('')
     for (const hit of markup.matchAll(/data-bg="([\w-]+)"/g)) drawn.add(hit[1])
   }
   return { drawn, reported }

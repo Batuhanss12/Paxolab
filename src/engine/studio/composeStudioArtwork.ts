@@ -33,7 +33,7 @@ function isStudioFlap(panel: Panel, kind: ReturnType<typeof nativeKindFor>): boo
 }
 
 function wrap(panel: Panel, direction: DesignDirection, inner: string, role: string, fonts = false): string {
-  const head = fonts ? studioFontStyle() : ''
+  const head = fonts ? studioFontStyle(direction.typePairing) : ''
   return `${head}<g clip-path="${panelClip(panel)}" data-art="studio" data-archetype="${direction.archetype}" data-role="${role}"><g transform="translate(${f(panel.x)} ${f(panel.y)})">${inner}</g></g>`
 }
 

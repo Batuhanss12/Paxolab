@@ -48,6 +48,18 @@ describe('studio golden — 18 faces, kit freeze stays apart', () => {
     }
   })
 
+  it('every frozen face can be delivered', () => {
+    /*
+     * Found in F-30 (2026-09-19): the squat earbuds carton, frozen since F-13, failed the carton
+     * gate — its sides are wider than tall, so the spine is set along the width and the gate looked
+     * only for a rotated one. A face the owner approved must also be a file the owner can ship.
+     */
+    for (const job of STUDIO_GALLERY_JOBS) {
+      const face = generateStudioFace(job)
+      expect(face.exportOk, `${job.slug} dışa aktarılamıyor`).toBe(true)
+    }
+  })
+
   it('same generate twice yields the same face hash', () => {
     const a = generateStudioFace(STUDIO_GALLERY_JOBS[8])
     const b = generateStudioFace(STUDIO_GALLERY_JOBS[8])

@@ -22,7 +22,7 @@ import { resetArtMemory } from '../brain/DesignMemory'
 import { buildCombinedSvg } from '../production/exportDoc'
 import { STUDIO_FAMILIES } from './family'
 import { BOX_DNA, LABEL_DNA } from './referenceDna'
-import type { StudioFamily } from './types'
+import { SIDE_LED_LOCKUPS, type StudioFamily } from './types'
 
 const BG = 'gradient-wash'
 
@@ -50,7 +50,12 @@ function face(mode: PackagingMode, colors: string, variationIndex: number, famil
     brief: brief(mode, colors, family),
     overridePatch: { studio: true, variationIndex },
   })
-  const markup = String(spec.artwork.layers.find((l) => l.panelId === spec.artwork.frontPanelId)?.markup ?? '')
+  // A carton role (Phase 2B) keeps its front quiet and paints the field on a side — the promise is kept there.
+  const sideLed = SIDE_LED_LOCKUPS.includes(spec.studio!.direction.lockup)
+  const markup = spec.artwork.layers
+    .filter((l) => l.panelId === spec.artwork.frontPanelId || (sideLed && /data-role-side=/.test(l.markup)))
+    .map((l) => l.markup)
+    .join('')
   return {
     markup,
     direction: spec.studio!.direction,

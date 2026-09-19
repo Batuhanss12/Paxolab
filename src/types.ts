@@ -153,6 +153,26 @@ export type DesignBrief = {
    */
   studioFamilyLocked?: boolean
   /**
+   * The card the customer chose from the strip, on the axes a card can differ. Catalog omits.
+   *
+   * Since Phase 2 the strip shows each family in a different arrangement where its DNA allows, and
+   * since Phase 3 in a different ornament level too — a card is the design *as shown*. Pinning only
+   * the family would regenerate the archetype in its defaults and hand the customer something other
+   * than what they clicked. Travels like `studioFamily`: set by a pick, replaced by the next pick.
+   */
+  /**
+   * Which repertoire the offer is drawn from. Absent (or `studio`) is the ten systems the engine
+   * has always shown; `reference` is the eight of F-32, reached by asking for other designs.
+   */
+  studioRepertoire?: import('./engine/studio/types').StudioRepertoire
+  studioPick?: {
+    lockup?: import('./engine/studio/types').LockupStyle
+    typePairing?: import('./engine/studio/types').TypePairing
+    frame?: import('./engine/studio/types').FrameStyle
+    background?: import('./engine/studio/types').BackgroundFamily
+    ornament?: import('./engine/studio/types').OrnamentLevel
+  }
+  /**
    * Families the user vetoed this conversation. Catalog omits.
    * Scoring excludes their archetypes; generate must not re-pin them.
    */

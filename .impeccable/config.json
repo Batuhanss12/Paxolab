@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "montserrat",
+        "createdAt": "2026-09-19T10:54:03.868Z",
+        "reason": "Baski tip sistemi, web arayuz fontu degil: fontOutlines.json montserrat-300/500/700'u outline olarak gomuyor, text.ts:90 studio 'sans' yuzunu ona bagliyor, outlineText.ts ozel yigin eslemesi tasiyor. Degistirmek 18 donmus golden hash'i oynatir ve gomulu outline setini bozar."
+      }
+    ]
+  }
+}

@@ -30,6 +30,39 @@ export type LedgerEvidence = Pick<StudioReport, 'collisions' | 'outOfBounds'>
  */
 export const STUDIO_CRAFT_FLOOR = 50
 
+/**
+ * The lead element is the gate's sharpest signal, and it was invisible until the evaluator read
+ * the studio's own vocabulary.
+ *
+ * Measured after that repair, over the eighteen frozen faces: a sound face totals 71–77, the same
+ * face with its subject / field / frame stripped 62–68, with everything wrong at once 54–64. The
+ * weighted total cannot separate a broken face from a curated one — nearly a third of its weight
+ * is text-regex sector and information signals that breakage never touches. But "the thing this
+ * archetype is *for* was not painted" is unambiguous: a subject-led archetype on a panel too small
+ * for its subject scores 30 on `hero`, a sound face 80–90. So the gate steps on that alone as well
+ * as on the total. A family the customer pinned is never moved by either — the ranking honours the
+ * pin before the step is applied.
+ */
+export const STUDIO_LEAD_FLOOR = 45
+
+type CraftReading = { visualCraft: number; hero?: number }
+
+/** Should the engine try the next archetype for this face? Pure; both floors, either is enough. */
+export function needsCraftRoute(card: CraftReading): boolean {
+  return card.visualCraft < STUDIO_CRAFT_FLOOR || (card.hero ?? 100) < STUDIO_LEAD_FLOOR
+}
+
+/**
+ * Is the alternative better on the axis that routed the face? The gate stays monotonic — an
+ * alternative is kept only when it answers the reason it was tried for: a face under the total
+ * floor needs a strictly higher total; a face without its lead needs one that *has* its lead and
+ * does not fall under the total floor to get it.
+ */
+export function craftRouteImproves(current: CraftReading, alt: CraftReading): boolean {
+  if (current.visualCraft < STUDIO_CRAFT_FLOOR) return alt.visualCraft > current.visualCraft
+  return (alt.hero ?? 100) >= STUDIO_LEAD_FLOOR && alt.visualCraft >= STUDIO_CRAFT_FLOOR
+}
+
 export function ledgerHits(report: LedgerEvidence | undefined): number {
   if (!report) return 0
   return report.collisions.length + report.outOfBounds.length

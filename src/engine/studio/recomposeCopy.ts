@@ -6,7 +6,6 @@ import type { DesignSpec } from '../../types'
 import { formaSampleEan, normalizeEan13 } from '../barcode'
 import { applyPlanToSystem } from '../brain/applyPlan'
 import { resolveDesignSystem } from '../designSystem/resolve'
-import { composeArtwork } from '../artwork/composeArtwork'
 import { artworkFromDocument, documentFromArtwork, validateDesignDocument } from '../document'
 import { runPreflight } from '../production/preflight'
 import { composeStudioArtwork } from './composeStudioArtwork'
@@ -148,18 +147,14 @@ export function recomposeCopy(
     })
     artwork = composed.artwork
     studio = spec.studio ? { ...composed.report, offer: spec.studio.offer } : composed.report
-  } else {
-    artwork = composeArtwork(
-      brief,
-      spec.dieline,
-      copy,
-      spec.palette,
-      spec.overrides,
-      opts.logoHref,
-      planned,
-      spec.designPlan,
-    )
   }
+  /*
+   * No direction means the document predates the studio report, which no design the product has
+   * ever produced does — every generated spec carries one and the whole spec is what gets
+   * persisted. The kit compositor used to repaint that case; with one painter left there is
+   * nothing to repaint it with, so the art is left exactly as it was and only the copy fields
+   * move. Silently redrawing it with a different system would be the worse answer.
+   */
 
   const draft = {
     brief,

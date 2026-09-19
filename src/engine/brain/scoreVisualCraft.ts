@@ -1,11 +1,12 @@
 /**
  * Visual craft scoring — facade orchestrating individual dimension scores.
- * Score components extracted to visualCraftScores.ts.
+ * Score components extracted to visualCraftScores.ts; the studio readings live in studioCraft.ts.
  * This file preserves the public VisualCraftScorecard + scoreVisualCraft API.
  */
 import type { DesignSpec } from '../../types'
 import type { DesignPlan } from './DesignPlan'
 import { weightedCraftScore } from './scoreConfig'
+import { studioCategoryFit, studioDistinctiveness, studioFocal, type StudioCraftSpec } from './studioCraft'
 import {
   clampScore,
   makeScoreCtx,
@@ -32,21 +33,33 @@ export type VisualCraftScorecard = {
   informationDesign: number
   originality: number
   production: number
+  /*
+   * Design quality is not one number. `visualCraft` stays the weighted craft total the F-8 gate
+   * reads; the three below are separate readings the audit asked for, kept out of the total so
+   * that a face is not scored twice for the same fact. All three are studio-only for now.
+   */
+  /** Where the eye lands: a real focal element, or the field carrying the face. */
+  focal?: number
+  /** The archetype's own sector fit, from its DNA — "does this skeleton belong on this shelf". */
+  categoryFit?: number
+  /** Mean composition distance to the other candidates that were offered. Phase 3 moves this. */
+  distinctiveness?: number
+  /** Personality fit — arrives with Phase 3's BrandPersonality; absent until then. */
+  brandFit?: number
   notes: string[]
 }
 
-/** Design-quality score. Separate from "code ran". Evidence is face / back markup + preflight. */
-export function scoreVisualCraft(
-  spec: Pick<DesignSpec, 'artwork' | 'preflight' | 'copy' | 'kind'>,
-  plan: DesignPlan,
-): VisualCraftScorecard {
+export type CraftSpec = Pick<DesignSpec, 'artwork' | 'preflight' | 'copy' | 'kind'> & StudioCraftSpec
+
+/** Design-quality score. Separate from "code ran". Evidence is face / back markup + preflight, and the studio ledger when there is one. */
+export function scoreVisualCraft(spec: CraftSpec, plan: DesignPlan): VisualCraftScorecard {
   const ctx = makeScoreCtx(spec, plan)
   const notes: string[] = []
 
   const hero = scoreHero(ctx, notes)
-  const composition = scoreComposition(ctx)
+  const composition = scoreComposition(ctx, notes)
   const hierarchy = scoreHierarchy(ctx, notes)
-  const typography = scoreTypography(ctx)
+  const typography = scoreTypography(ctx, notes)
   const decoration = scoreDecoration(ctx, notes)
   const sectorFit = scoreSectorFit(ctx)
   const productFit = scoreProductFit(ctx)
@@ -68,7 +81,7 @@ export function scoreVisualCraft(
     originality,
   })
 
-  return {
+  const card: VisualCraftScorecard = {
     visualCraft: clampScore(visualCraft),
     composition: clampScore(composition),
     hierarchy: clampScore(hierarchy),
@@ -82,4 +95,11 @@ export function scoreVisualCraft(
     production: clampScore(production),
     notes,
   }
+  if (ctx.studio) {
+    card.focal = clampScore(studioFocal(ctx.studio))
+    card.categoryFit = clampScore(studioCategoryFit(ctx.studio))
+    const distinct = studioDistinctiveness(ctx.studio.report)
+    if (distinct != null) card.distinctiveness = clampScore(distinct)
+  }
+  return card
 }

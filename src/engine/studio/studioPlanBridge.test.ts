@@ -91,7 +91,7 @@ describe('studio plan bridge — mapping on real plans', () => {
       const hint = hintsFromPlan(planFor(style))
       if (!hint) continue
       const keys = Object.keys(hint).sort()
-      for (const k of keys) expect(['typePairing', 'frame', 'ornament', 'rationale'], `${style}: bridge spoke to ${k}`).toContain(k)
+      for (const k of keys) expect(['typePairing', 'frame', 'ornament', 'rationale', 'axisSource'], `${style}: bridge spoke to ${k}`).toContain(k)
       expect(hint.rationale?.[0]).toMatch(/^Tasarım beyni/)
     }
   })

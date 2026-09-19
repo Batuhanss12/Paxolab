@@ -274,14 +274,57 @@ export type BloomKind = 'none' | 'daisy' | 'spike' | 'umbel' | 'cup' | 'cluster'
 export type LeafShape = 'lanceolate' | 'ovate' | 'obovate' | 'serrate' | 'needle' | 'succulent'
 
 /**
+ * The plants that sit *beside* a given one on an engraved plate.
+ *
+ * A collage of one plant drawn three times is a botany lesson; a collage is several subjects that
+ * belong together and do not look alike. The pairs below are chosen for two things at once: they
+ * make sense on the same shelf as the lead (what the product is actually made of, or what grows
+ * with it), and their silhouettes contrast — a broad leaf beside a spike beside a fruit, never
+ * three broad leaves. The lead plant is never in its own list.
+ */
+const COMPANIONS: Record<Species, [Species, Species]> = {
+  olive: ['grain', 'lavender'],
+  coffee: ['cocoa', 'blossom'],
+  tea: ['mint', 'chamomile'],
+  grain: ['blossom', 'olive'],
+  citrus: ['mint', 'blossom'],
+  cocoa: ['coffee', 'citrus'],
+  flora: ['lavender', 'berry'],
+  conifer: ['berry', 'mint'],
+  aloe: ['mint', 'citrus'],
+  lavender: ['chamomile', 'rose'],
+  chamomile: ['lavender', 'mint'],
+  rose: ['lavender', 'berry'],
+  mint: ['citrus', 'chamomile'],
+  grape: ['olive', 'blossom'],
+  berry: ['blossom', 'conifer'],
+  blossom: ['grain', 'berry'],
+}
+
+/** The plants a plate may lay beside `species`, in order of preference. */
+export function companionSpecies(species: Species): Species[] {
+  return COMPANIONS[species] ?? ['flora', 'blossom']
+}
+
+/**
  * How the drawing is rendered.
  *
  * `solid` is flat masses with a light direction — contemporary, reads at thumbnail size.
  * `engraved` is outline and hatching with no fill, which is the older botanical-plate language and
  * the one premium skincare and spirits packs lean on. They are two different products from one
  * geometry, so carrying both roughly doubles the repertoire for the cost of a render branch.
+ *
+ * Phase 5 adds two more from the same geometry: `cut-paper` is flat tones with a paper shadow
+ * under every piece and no veins — the layered-card language of the retro and the playful packs
+ * (R26) — and `silhouette` is one flat ink, the whole subject as a single cut shape (R23, R25,
+ * R31). Neither draws a vein or a gradient; a silhouette that had either would be a drawing again.
  */
-export type HeroStyle = 'solid' | 'engraved'
+export type HeroStyle = 'solid' | 'engraved' | 'cut-paper' | 'silhouette'
+
+/** The two Phase 5 modes: one or two flat tones, no modelling. */
+export function isFlatStyle(style: HeroStyle): boolean {
+  return style === 'cut-paper' || style === 'silhouette'
+}
 
 /**
  * The arrangement. A species that always draws the same silhouette stops being an illustration and
@@ -457,7 +500,13 @@ function leaf(
   const body =
     style === 'engraved'
       ? `<path d="${d}" fill="none" stroke="${line}" stroke-width="${f(Math.max(len * 0.026, 0.16))}" stroke-linejoin="round" />`
-      : `<path d="${d}" fill="${ramp}" />`
+      : style === 'silhouette'
+        ? `<path d="${d}" fill="${ink.leaf}" />`
+        : style === 'cut-paper'
+          ? `<path d="${d}" fill="${tone}" />`
+          : `<path d="${d}" fill="${ramp}" />`
+  // Cut paper casts a shadow: the same piece a hair down and right, in the deep tone, under the body.
+  const shadow = style === 'cut-paper' ? `<path d="${d}" transform="translate(${f(len * 0.03)} ${f(len * 0.045)})" fill="${ink.leafDeep}" fill-opacity="0.42" />` : ''
   /*
    * The fold. A leaf that lies perfectly flat is the giveaway of a drawn one — real foliage turns,
    * and the turned half falls into shadow. Drawing that as a darker sliver along one side of the
@@ -468,10 +517,10 @@ function leaf(
       ? `<path d="M${f(len * 0.06)} 0 Q${f(len * 0.45)} ${f(-wid * curl * 1.5)} ${f(len * 0.95)} 0 Q${f(len * 0.45)} ${f(-wid * curl * 0.2)} ${f(len * 0.06)} 0Z" fill="${plane === 'front' ? ink.leaf : ink.leafDeep}" fill-opacity="0.5" />`
       : ''
   const veins =
-    shape === 'needle'
+    shape === 'needle' || isFlatStyle(style)
       ? ''
       : leafVeins(len, wid, style === 'engraved' ? line : ink.stem, Math.max(len * (style === 'engraved' ? 0.018 : 0.011), 0.1), style === 'engraved')
-  return `<g transform="translate(${f(at.x)} ${f(at.y)}) rotate(${f(deg)})">${body}${fold}${veins}</g>`
+  return `<g transform="translate(${f(at.x)} ${f(at.y)}) rotate(${f(deg)})">${shadow}${body}${fold}${veins}</g>`
 }
 
 /* -------------------------------------------------------------------- fruit */
@@ -497,6 +546,13 @@ function orb(cx: number, cy: number, rx: number, ry: number, ink: HeroInk, style
       hatch
     )
   }
+  if (style === 'silhouette') return `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" fill="${ink.fruit}" />`
+  if (style === 'cut-paper') {
+    return (
+      `<ellipse cx="${f(cx + rx * 0.08)}" cy="${f(cy + ry * 0.1)}" rx="${f(rx)}" ry="${f(ry)}" fill="${ink.fruitDeep}" fill-opacity="0.42" />` +
+      `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" fill="${ink.fruit}" />`
+    )
+  }
   return (
     `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rx)}" ry="${f(ry)}" fill="${ink.fruitDeep}" />` +
     `<ellipse cx="${f(cx - rx * 0.2)}" cy="${f(cy - ry * 0.14)}" rx="${f(rx * 0.92)}" ry="${f(ry * 0.92)}" fill="${ink.fruit}" />`
@@ -515,9 +571,11 @@ function pod(cx: number, cy: number, len: number, wid: number, deg: number, ink:
   const body =
     style === 'engraved'
       ? `<ellipse cx="0" cy="0" rx="${f(len * 0.5)}" ry="${f(wid)}" fill="none" stroke="${ink.fruit}" stroke-width="${f(wid * 0.17)}" />`
-      : `<ellipse cx="0" cy="0" rx="${f(len * 0.5)}" ry="${f(wid)}" fill="${ink.fruitDeep}" />` +
-        `<ellipse cx="${f(-len * 0.04)}" cy="${f(-wid * 0.12)}" rx="${f(len * 0.47)}" ry="${f(wid * 0.9)}" fill="${ink.fruit}" />`
-  return `<g transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})">${body}${ridges.join('')}</g>`
+      : isFlatStyle(style)
+        ? `<ellipse cx="0" cy="0" rx="${f(len * 0.5)}" ry="${f(wid)}" fill="${ink.fruit}" />`
+        : `<ellipse cx="0" cy="0" rx="${f(len * 0.5)}" ry="${f(wid)}" fill="${ink.fruitDeep}" />` +
+          `<ellipse cx="${f(-len * 0.04)}" cy="${f(-wid * 0.12)}" rx="${f(len * 0.47)}" ry="${f(wid * 0.9)}" fill="${ink.fruit}" />`
+  return `<g transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})">${body}${style === 'silhouette' ? '' : ridges.join('')}</g>`
 }
 
 /* ------------------------------------------------------------------ blooms */
@@ -615,8 +673,10 @@ function corolla(cx: number, cy: number, r: number, ink: HeroInk, style: HeroSty
       parts.push(
         style === 'engraved'
           ? `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="${petal}" fill="none" stroke="${ring.tone}" stroke-width="${f(r * 0.055)}" stroke-linejoin="round" />`
-          : `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="${petal}" fill="${uid ? `url(#${uid}-pt)` : ring.tone}" />` +
-            `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="M${f(len * 0.1)} 0 L${f(len * 0.88)} 0" fill="none" stroke="${ink.fruitDeep}" stroke-width="${f(r * 0.022)}" stroke-opacity="0.45" />`,
+          : isFlatStyle(style)
+            ? `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="${petal}" fill="${style === 'silhouette' ? ink.fruit : ring.tone}" />`
+            : `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="${petal}" fill="${uid ? `url(#${uid}-pt)` : ring.tone}" />` +
+              `<path transform="translate(${f(cx)} ${f(cy)}) rotate(${f(deg)})" d="M${f(len * 0.1)} 0 L${f(len * 0.88)} 0" fill="none" stroke="${ink.fruitDeep}" stroke-width="${f(r * 0.022)}" stroke-opacity="0.45" />`,
       )
     }
   }
@@ -1173,6 +1233,19 @@ export function heroAspect(species: Species, seed = 1): number {
     default:
       return 0.56
   }
+}
+
+/**
+ * A small engraved sprig of the product's plant in one ink — the unit a toile repeats.
+ *
+ * Leaner than the hero's sprig (four leaves, one fruit, no bloom) and drawn with every ink the
+ * same, so the field reads as a printed textile and not as a scatter of small illustrations.
+ */
+export function toileSprig(species: Species, cx: number, cy: number, size: number, line: string, seed = 1, uid = 'toile'): string {
+  const plant = PLANTS[species] ?? PLANTS.flora
+  const lean: Plant = { ...plant, count: Math.min(plant.count, 4), bloom: 'none', blooms: 0, fruit: Math.min(plant.fruit, 1) }
+  const ink: HeroInk = { leafLight: line, leaf: line, leafMid: line, leafDeep: line, fruit: line, fruitDeep: line, stem: line }
+  return `<g data-motif="toile-sprig">${alongStem({ x: cx, y: cy + size * 0.48 }, { x: cx, y: cy }, { x: cx, y: cy - size * 0.48 }, size, lean, ink, 'engraved', seed, { uid })}</g>`
 }
 
 /** The subject, drawn large enough to be the reason the face exists. */

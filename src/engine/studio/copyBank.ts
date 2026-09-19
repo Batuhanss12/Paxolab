@@ -472,7 +472,9 @@ export function backHeaders(locale: CopyLocale): {
       warnings: 'WARNINGS',
       ingredients: 'INGREDIENTS',
       storage: 'STORAGE',
-      nutrition: 'Nutrition Facts (per 100 g)',
+      // The sample marker is part of the header, so the table says what it is on the artwork
+      // itself — the same way the barcode line says "sample (not GS1)". See `nutritionRows`.
+      nutrition: 'Nutrition (per 100 g) · SAMPLE',
       producer: 'PRODUCER',
       address: 'ADDRESS',
       notes: { top: 'TOP NOTES', heart: 'HEART NOTES', base: 'BASE NOTES', title: 'FRAGRANCE NOTES' },
@@ -484,7 +486,7 @@ export function backHeaders(locale: CopyLocale): {
     warnings: 'UYARI',
     ingredients: 'İÇİNDEKİLER',
     storage: 'SAKLAMA KOŞULLARI',
-    nutrition: 'Besin Değerleri (100 g için)',
+    nutrition: 'Besin Değerleri (100 g için) · ÖRNEK',
     producer: 'ÜRETİCİ',
     address: 'ADRES',
     notes: { top: 'TEPE NOTALAR', heart: 'KALP NOTALAR', base: 'DİP NOTALAR', title: 'KOKU PİRAMİDİ' },
@@ -540,45 +542,54 @@ export function usageLine(sector: SectorId, locale: CopyLocale): string {
   }
 }
 
+/**
+ * The rows a nutrition declaration carries — labels only, never values.
+ *
+ * This used to return filled tables for honey, olive oil and coffee: "1360 kJ / 320 kcal",
+ * "100 g fat", "2 kJ / 1 kcal". Nobody measured those products. They were plausible numbers typed
+ * into a table that a customer then sent to a printer, and a nutrition declaration is a legal
+ * statement about food — the one place in this engine where a convincing invention is worse than
+ * an obvious blank. The coffee row was also simply wrong for the product it was printed on: 2 kJ
+ * is brewed coffee, while the pack holds beans or grounds at roughly a thousand times that.
+ *
+ * So the values are blanks a producer fills in, and the header says the table is a sample.
+ *
+ * What stays is the *structure*, which is not invented: which rows a declaration must carry
+ * depends on the food, and an oil declares saturates where a honey declares sugars. Getting that
+ * right is design; getting the numbers from nowhere was not.
+ *
+ * When the brief can carry real values this returns them and `NUTRITION_SAMPLE_SUFFIX` comes off.
+ */
 export function nutritionRows(locale: CopyLocale, blob: string): [string, string][] {
   const tr = locale !== 'en'
-  if (/\bbal\b|honey/.test(blob)) {
+  const row = (label: string, unit = 'g'): [string, string] => [label, `— ${unit}`]
+  const energy = row(tr ? 'Enerji' : 'Energy', 'kJ / — kcal')
+  const salt = row(tr ? 'Tuz' : 'Salt')
+  if (/\bbal\b|\bbalı\b|honey/.test(blob)) {
     return [
-      [tr ? 'Enerji' : 'Energy', '1360 kJ / 320 kcal'],
-      [tr ? 'Yağ' : 'Fat', '0 g'],
-      [tr ? 'Karbonhidrat' : 'Carbohydrate', '80 g'],
-      [tr ? 'Şeker' : 'Sugars', '80 g'],
-      [tr ? 'Protein' : 'Protein', '0,3 g'],
-      [tr ? 'Tuz' : 'Salt', '0 g'],
+      energy,
+      row(tr ? 'Yağ' : 'Fat'),
+      row(tr ? 'Karbonhidrat' : 'Carbohydrate'),
+      row(tr ? 'Şeker' : 'Sugars'),
+      row(tr ? 'Protein' : 'Protein'),
+      salt,
     ]
   }
-  if (/zeytin|olive/.test(blob)) {
+  if (/zeytin|olive|yağı|oil/.test(blob)) {
     return [
-      [tr ? 'Enerji' : 'Energy', '3700 kJ / 900 kcal'],
-      [tr ? 'Yağ' : 'Fat', '100 g'],
-      [tr ? 'Doymuş yağ' : 'Saturates', '14 g'],
-      [tr ? 'Karbonhidrat' : 'Carbohydrate', '0 g'],
-      [tr ? 'Protein' : 'Protein', '0 g'],
-      [tr ? 'Tuz' : 'Salt', '0 g'],
+      energy,
+      row(tr ? 'Yağ' : 'Fat'),
+      row(tr ? 'Doymuş yağ' : 'Saturates'),
+      row(tr ? 'Karbonhidrat' : 'Carbohydrate'),
+      row(tr ? 'Protein' : 'Protein'),
+      salt,
     ]
   }
-  if (/kahve|coffee/.test(blob)) {
-    return [
-      [tr ? 'Enerji' : 'Energy', '2 kJ / 1 kcal'],
-      [tr ? 'Yağ' : 'Fat', '0 g'],
-      [tr ? 'Karbonhidrat' : 'Carbohydrate', '0 g'],
-      [tr ? 'Protein' : 'Protein', '0,1 g'],
-      [tr ? 'Tuz' : 'Salt', '0 g'],
-    ]
-  }
-  return [
-    [tr ? 'Enerji' : 'Energy', '— kJ / — kcal'],
-    [tr ? 'Yağ' : 'Fat', '— g'],
-    [tr ? 'Karbonhidrat' : 'Carbohydrate', '— g'],
-    [tr ? 'Protein' : 'Protein', '— g'],
-    [tr ? 'Tuz' : 'Salt', '— g'],
-  ]
+  return [energy, row(tr ? 'Yağ' : 'Fat'), row(tr ? 'Karbonhidrat' : 'Carbohydrate'), row(tr ? 'Protein' : 'Protein'), salt]
 }
+
+/** Any drawn nutrition table is a sample until a brief can supply measured values. */
+export const NUTRITION_SAMPLE_SUFFIX = { tr: ' · ÖRNEK', en: ' · SAMPLE' } as const
 
 /** Scent pyramid from brief.scentNotes ("bergamot / rose / amber") or a sample. */
 export function scentPyramid(brief: Pick<DesignBrief, 'scentNotes'>): { top: string[]; heart: string[]; base: string[] } | null {

@@ -7,6 +7,8 @@
  */
 import type { StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
+import type { PersonalityProfile } from './personality'
+import { SIDE_LED_LOCKUPS } from './types'
 import type {
   BackgroundFamily,
   BoxArchetype,
@@ -15,14 +17,32 @@ import type {
   LockupStyle,
   OrnamentLevel,
   StudioArchetype,
+  StudioRepertoire,
   StudioSurface,
   Temperament,
   TypePairing,
 } from './types'
 
+/**
+ * Version of the reference-derived repertoire, stamped on every decision log.
+ *
+ * The log already carries brain, visual-language, asset-language and composition versions, and
+ * `knowledgeVersion` can be rolled back. The DNA table had no version of its own, so a face
+ * generated before a reference was added and one generated after were indistinguishable in the
+ * log — which is exactly what a regression needs to tell apart. Bump when a row is added, a
+ * preference list reordered, or a sector/style weight changed; leave alone for painter fixes.
+ */
+export const REFERENCE_DNA_VERSION = '1.0'
+
 export type ArchetypeDna = {
   id: StudioArchetype
   surface: StudioSurface
+  /**
+   * Which repertoire this row belongs to; absent means `studio`, the ten systems the engine has
+   * always offered. `reference` rows are the second set (F-32) and are offered only when the
+   * customer asks for other designs — the two never share a strip.
+   */
+  repertoire?: StudioRepertoire
   /** Reference it was distilled from (for the process note). */
   reference: string
   backgrounds: BackgroundFamily[]
@@ -57,8 +77,8 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     reference: 'woo.originals — Restorative Shampoo / Care Cream',
     // `gradient-wash` is appended, never placed first: variation 0 is what the golden set captures,
     // so a new background joins the rotation without moving a single frozen face.
-    backgrounds: ['botanical', 'wave', 'gradient-wash'],
-    typePairings: ['script-accent/sans-heavy'],
+    backgrounds: ['botanical', 'wave', 'gradient-wash', 'blob', 'pictogram'],
+    typePairings: ['script-accent/sans-heavy', 'rounded/sans'],
     temperaments: ['vivid-mono'],
     frames: ['rounded-card'],
     ornaments: ['measured', 'quiet', 'rich'],
@@ -78,10 +98,10 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     id: 'noir-plate',
     surface: 'label',
     reference: 'GUESS Sauvage carton, read onto a bottle label',
-    backgrounds: ['arabesque', 'marble', 'gradient-wash'],
-    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans'],
+    backgrounds: ['arabesque', 'marble', 'gradient-wash', 'celestial', 'ogee'],
+    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta', 'condensed-serif/mono'],
     temperaments: ['dark-luxe'],
-    frames: ['none', 'band-hairline'],
+    frames: ['none', 'band-hairline', 'laurel', 'cartouche'],
     ornaments: ['measured', 'rich', 'quiet'],
     lockup: 'stacked-center',
     /*
@@ -101,7 +121,7 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     surface: 'label',
     reference: 'Elite Brew — Mocha Frappe / Cold Brew / Iced Espresso',
     backgrounds: ['marble'],
-    typePairings: ['script-accent/sans-heavy', 'spaced-serif/spaced-sans'],
+    typePairings: ['script-accent/sans-heavy', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe'],
     frames: ['corner-brackets'],
     ornaments: ['measured', 'rich', 'quiet'],
@@ -117,7 +137,7 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     surface: 'label',
     reference: 'Capelli Fellici — Purifying Shampoo / Brazilian Keratin',
     backgrounds: ['diagonal'],
-    typePairings: ['sans-light/sans-heavy'],
+    typePairings: ['sans-light/sans-heavy', 'condensed-grotesk/sans-light', 'heavy-grotesk-block/sans', 'light-geometric/wide'],
     temperaments: ['dark-luxe', 'tech-dark'],
     frames: ['none'],
     ornaments: ['measured', 'quiet'],
@@ -133,7 +153,7 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     surface: 'label',
     reference: 'DNA Pharma — Sea Protection',
     backgrounds: ['line-scene'],
-    typePairings: ['sans-light/sans-heavy', 'spaced-serif/spaced-sans'],
+    typePairings: ['sans-light/sans-heavy', 'spaced-serif/spaced-sans', 'light-geometric/wide', 'condensed-grotesk/sans-light'],
     temperaments: ['clean-clinical', 'vivid-mono'],
     frames: ['rounded-card'],
     ornaments: ['measured', 'quiet'],
@@ -149,7 +169,7 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     surface: 'label',
     reference: 'Rebull Noir — Eau de Parfum',
     backgrounds: ['ink-wash'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe'],
     frames: ['thin-double', 'band-hairline', 'fleuron-crown'],
     ornaments: ['measured', 'quiet', 'rich'],
@@ -167,7 +187,7 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     // Not `gradient-wash`: `paintWavePanelFace` hardcodes its own background, so listing one here
     // would change the reported direction without changing the painted face.
     backgrounds: ['wave'],
-    typePairings: ['sans-light/sans-heavy'],
+    typePairings: ['sans-light/sans-heavy', 'rounded/sans', 'heavy-grotesk-block/sans'],
     temperaments: ['clean-clinical', 'vivid-mono', 'natural-warm'],
     frames: ['none'],
     ornaments: ['measured', 'quiet'],
@@ -185,10 +205,10 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     // where a *drawn subject* is the reason the face exists — every background was a texture.
     // The geometry was learned from public-domain botanical plates; none of them ships.
     reference: 'botanical specimen plates (public domain) — subject-led label',
-    backgrounds: ['gradient-wash', 'paper', 'botanical'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'script-accent/sans-heavy'],
+    backgrounds: ['gradient-wash', 'paper', 'botanical', 'blob', 'celestial', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'script-accent/sans-heavy', 'condensed-serif/mono', 'light-geometric/wide'],
     temperaments: ['light-luxe', 'natural-warm', 'clean-clinical', 'vivid-mono'],
-    frames: ['thin-double', 'band-hairline', 'fleuron-crown', 'none'],
+    frames: ['thin-double', 'band-hairline', 'fleuron-crown', 'none', 'laurel'],
     ornaments: ['measured', 'quiet', 'rich'],
     lockup: 'stacked-center',
     sectors: { food: 0.9, beverage: 0.85, cream: 0.5, baby: 0.4, health: 0.3, serum: 0.22, generic: 0.45 },
@@ -207,10 +227,10 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     id: 'atelier-plate',
     surface: 'label',
     reference: 'Diako — Eau de Parfum (STİCKERR REF)',
-    backgrounds: ['paper', 'gradient-wash'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    backgrounds: ['paper', 'gradient-wash', 'ogee', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'condensed-serif/mono', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe', 'clean-clinical'],
-    frames: ['band-hairline', 'thin-double', 'fleuron-crown'],
+    frames: ['band-hairline', 'thin-double', 'fleuron-crown', 'laurel', 'cartouche'],
     ornaments: ['measured', 'quiet', 'rich'],
     lockup: 'stacked-center',
     /*
@@ -230,10 +250,10 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     id: 'crest-panel',
     surface: 'label',
     reference: 'Azzurra — Eau de Parfum (STİCKERR REF)',
-    backgrounds: ['arabesque', 'paper'],
-    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans'],
+    backgrounds: ['arabesque', 'paper', 'ogee', 'toile'],
+    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe', 'vivid-mono'],
-    frames: ['thin-double', 'band-hairline', 'none'],
+    frames: ['thin-double', 'band-hairline', 'none', 'laurel', 'cartouche'],
     ornaments: ['measured', 'rich', 'quiet'],
     lockup: 'stacked-center',
     // Below the recognition floor outside perfume — see `atelier-plate`.
@@ -242,6 +262,143 @@ export const LABEL_DNA: Record<LabelArchetype, ArchetypeDna> = {
     aspect: 'any',
     anatomy: ['arabesque field', 'roundel', 'crest mark', 'brand lockup', 'product name', 'category line', 'net quantity'],
     summaryTr: 'Düz arabesk zemin üzerinde madalyon ve arma; altında marka ve ürün.',
+  },
+  /* ---------------------------------------------------------- the reference repertoire (F-32) */
+  'arch-crown': {
+    id: 'arch-crown',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R17 Roselle · R20 Don José — arched crown, layered tiers, spec band',
+    backgrounds: ['paper', 'toile', 'marble'],
+    typePairings: ['display-serif-oversized/sans-meta', 'spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    temperaments: ['light-luxe', 'natural-warm', 'dark-luxe'],
+    frames: ['none', 'cartouche', 'laurel'],
+    ornaments: ['measured', 'rich', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { beverage: 1, food: 0.9, perfume: 0.5, cream: 0.3, health: 0.3, generic: 0.5 },
+    styles: { classic: 1, luxury: 0.9, eco: 0.5, minimal: 0.25, modern: 0.25, playful: 0.2 },
+    aspect: 'portrait',
+    anatomy: ['arched crown field', 'wreath medallion', 'layered small-caps tiers', 'oversized display brand', 'drawn subject', 'dark spec band'],
+    summaryTr: 'Kemer tepe, madalyon taç, katmanlı kapital satırlar, dev serif marka; ayakta koyu künye bandı.',
+  },
+  'collage-plate': {
+    id: 'collage-plate',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R16 SYLOVE · R05 Dr. Sebaa — arch window, engraved collage, rotated word, seal',
+    backgrounds: ['paper', 'celestial', 'arabesque'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'condensed-serif/mono'],
+    temperaments: ['light-luxe', 'dark-luxe', 'vivid-mono'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'quiet', 'rich'],
+    lockup: 'stacked-center',
+    sectors: { perfume: 1, serum: 0.8, cream: 0.7, health: 0.4, beverage: 0.35, generic: 0.5 },
+    styles: { classic: 1, luxury: 0.9, modern: 0.4, minimal: 0.4, eco: 0.3, playful: 0.2 },
+    aspect: 'portrait',
+    anatomy: ['fixed wordmark', 'tone-on-tone arch window', 'layered engraved collage', 'wax seal', 'rotated side word', 'italic product line'],
+    summaryTr: 'Üstte sabit marka; ton-üstü-ton kemer pencerede üst üste binen gravür plakalar ve ayağında mühür; yanda döndürülmüş kelime.',
+  },
+  'silhouette-foot': {
+    id: 'silhouette-foot',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: "R31 O'live · R23 MOU: — small brand block, one oversized flat silhouette at the foot",
+    backgrounds: ['paper', 'blob', 'gradient-wash'],
+    typePairings: ['heavy-grotesk-block/sans', 'serif-display/sans-meta', 'light-geometric/wide'],
+    temperaments: ['vivid-mono', 'clean-clinical', 'natural-warm', 'dark-luxe'],
+    frames: ['none'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { food: 1, beverage: 0.8, cleaning: 0.5, cream: 0.4, health: 0.35, generic: 0.6 },
+    styles: { modern: 1, minimal: 0.9, eco: 0.7, playful: 0.5, luxury: 0.4, classic: 0.3 },
+    aspect: 'any',
+    anatomy: ['brand block top-left', 'meta grid', 'oversized flat silhouette', 'accent line'],
+    summaryTr: 'Sol üstte küçük marka bloğu, altta yüzün yarısını dolduran tek renk dev silüet.',
+  },
+  'ribbon-crest': {
+    id: 'ribbon-crest',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R29 · R30 — cut-silhouette double frame, medallion crown, laurel, ribbon band',
+    backgrounds: ['arabesque', 'ogee', 'paper', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'script-accent/sans-heavy', 'display-serif-oversized/sans-meta'],
+    temperaments: ['dark-luxe', 'light-luxe', 'natural-warm'],
+    frames: ['cartouche', 'laurel', 'thin-double', 'band-hairline'],
+    ornaments: ['measured', 'rich', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { food: 1, beverage: 0.85, perfume: 0.5, cream: 0.3, generic: 0.5 },
+    styles: { classic: 1, luxury: 1, eco: 0.4, modern: 0.2, minimal: 0.2, playful: 0.15 },
+    aspect: 'portrait',
+    anatomy: ['cut-silhouette double frame', 'medallion crown', 'star row', 'brand stack', 'ribbon band', 'net quantity'],
+    summaryTr: 'Kesim silüetli çift çerçeve, tepede madalyon, yıldız sırası ve iddiayı taşıyan kurdele bandı.',
+  },
+  'grid-mono': {
+    id: 'grid-mono',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R26 FORÊT — oversized rotated condensed display, cut-paper cluster, monospace grid',
+    backgrounds: ['paper', 'pictogram', 'blob'],
+    typePairings: ['condensed-serif/mono', 'condensed-grotesk/sans-light', 'light-geometric/wide'],
+    temperaments: ['clean-clinical', 'vivid-mono', 'natural-warm'],
+    frames: ['none', 'corner-brackets'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { beverage: 1, health: 0.8, food: 0.7, electronics: 0.5, cleaning: 0.5, serum: 0.4, generic: 0.6 },
+    styles: { modern: 1, minimal: 0.95, eco: 0.7, playful: 0.4, luxury: 0.35, classic: 0.3 },
+    aspect: 'any',
+    anatomy: ['rotated condensed display', 'cut-paper subject cluster', 'monospace body grid', 'icon row', 'signature rule'],
+    summaryTr: 'Solda döndürülmüş dev dar başlık, düz kesme-kağıt özne, sağda monospace gövde ızgarası.',
+  },
+  'pattern-float': {
+    id: 'pattern-float',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R06 Sola · R13 Little Candle — full-bleed pattern, the wordmark floating on a quiet plate',
+    backgrounds: ['toile', 'pictogram', 'ogee', 'botanical', 'arabesque'],
+    typePairings: ['serif-display/sans-meta', 'rounded/sans', 'spaced-serif/spaced-sans'],
+    temperaments: ['light-luxe', 'natural-warm', 'vivid-mono'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'rich'],
+    lockup: 'stacked-center',
+    sectors: { cream: 1, baby: 0.9, perfume: 0.6, cleaning: 0.45, health: 0.4, food: 0.4, generic: 0.6 },
+    styles: { classic: 0.9, eco: 0.7, playful: 0.6, luxury: 0.6, modern: 0.4, minimal: 0.3 },
+    aspect: 'any',
+    anatomy: ['full-bleed pattern', 'monogram', 'quiet plate', 'ligature wordmark', 'spaced product line'],
+    summaryTr: 'Tam taşma desen zemin; ortada sessiz plaka üstünde monogram ve marka yüzüyor.',
+  },
+  'blob-acid': {
+    id: 'blob-acid',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R10 OILY · R15 Mellis Florae — one giant blob crossing the face, heavy grotesk block',
+    backgrounds: ['blob', 'gradient-wash', 'wave'],
+    typePairings: ['heavy-grotesk-block/sans', 'condensed-grotesk/sans-light', 'rounded/sans'],
+    temperaments: ['vivid-mono', 'clean-clinical', 'tech-dark'],
+    frames: ['none'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { cleaning: 1, beverage: 0.85, electronics: 0.7, health: 0.5, cream: 0.4, generic: 0.6 },
+    styles: { playful: 1, modern: 0.95, minimal: 0.5, eco: 0.35, luxury: 0.2, classic: 0.15 },
+    aspect: 'any',
+    anatomy: ['acid duotone ground', 'giant crossing blob', 'heavy grotesk block', 'rotated secondary word', 'meta grid'],
+    summaryTr: 'Asit iki renk; yüzü kesen dev blob, sol üstte ağır grotesk blok, yanda döndürülmüş kelime.',
+  },
+  'inner-card': {
+    id: 'inner-card',
+    surface: 'label',
+    repertoire: 'reference',
+    reference: 'R19 POES · R03 Matka — quiet face, an inset art card holding the subject, icon column',
+    backgrounds: ['paper', 'gradient-wash', 'celestial'],
+    typePairings: ['display-serif-oversized/sans-meta', 'serif-display/sans-meta', 'light-geometric/wide'],
+    temperaments: ['light-luxe', 'clean-clinical', 'dark-luxe'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { cream: 1, perfume: 0.9, serum: 0.85, cleaning: 0.6, baby: 0.5, health: 0.5, generic: 0.6 },
+    styles: { minimal: 1, modern: 0.85, luxury: 0.7, classic: 0.6, eco: 0.5, playful: 0.25 },
+    aspect: 'any',
+    anatomy: ['display wordmark', 'inset art card', 'line subject', 'vertical icon column', 'small meta'],
+    summaryTr: 'Sessiz yüz; ortada içeri gömülü sanat kartında çizgi özne, yanda dikey ikon kolonu.',
   },
 }
 
@@ -257,10 +414,10 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
      * that looked like a hillside, which is the thing being removed. The black-on-black lattice
      * carries the field without drawing anything, and marble was already the second ground here.
      */
-    backgrounds: ['arabesque', 'marble'],
-    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans'],
+    backgrounds: ['arabesque', 'marble', 'celestial', 'ogee'],
+    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta', 'condensed-serif/mono'],
     temperaments: ['dark-luxe'],
-    frames: ['none'],
+    frames: ['none', 'laurel', 'cartouche'],
     ornaments: ['measured', 'rich', 'quiet'],
     lockup: 'stacked-center',
     sectors: { perfume: 1, beverage: 0.7, serum: 0.6, cream: 0.5, electronics: 0.4, generic: 0.5 },
@@ -274,7 +431,7 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     surface: 'box',
     reference: 'Rebull Noir — Eau de Parfum carton',
     backgrounds: ['ink-wash'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe'],
     frames: ['thin-double', 'band-hairline'],
     ornaments: ['measured', 'quiet', 'rich'],
@@ -290,7 +447,7 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     surface: 'box',
     reference: 'Elite Brew marble system on a carton',
     backgrounds: ['marble'],
-    typePairings: ['script-accent/sans-heavy', 'spaced-serif/spaced-sans'],
+    typePairings: ['script-accent/sans-heavy', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe'],
     frames: ['corner-brackets'],
     ornaments: ['measured', 'rich', 'quiet'],
@@ -305,8 +462,8 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'botanical-card',
     surface: 'box',
     reference: 'woo.originals botanical system on a carton',
-    backgrounds: ['botanical', 'wave', 'gradient-wash'],
-    typePairings: ['script-accent/sans-heavy'],
+    backgrounds: ['botanical', 'wave', 'gradient-wash', 'blob', 'pictogram'],
+    typePairings: ['script-accent/sans-heavy', 'rounded/sans'],
     temperaments: ['vivid-mono'],
     frames: ['rounded-card'],
     ornaments: ['measured', 'quiet', 'rich'],
@@ -321,8 +478,8 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'diagonal-tech',
     surface: 'box',
     reference: 'Capelli Fellici diagonal system on a carton',
-    backgrounds: ['diagonal', 'circuit'],
-    typePairings: ['sans-light/sans-heavy'],
+    backgrounds: ['diagonal', 'circuit', 'pictogram'],
+    typePairings: ['sans-light/sans-heavy', 'condensed-grotesk/sans-light', 'heavy-grotesk-block/sans', 'light-geometric/wide'],
     temperaments: ['tech-dark', 'dark-luxe'],
     frames: ['none'],
     ornaments: ['measured', 'quiet'],
@@ -342,7 +499,7 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     // background that fills the whole panel erases the brand, the title and the caption. Measured
     // by rendering it — the carton came back blank with a net quantity on it.
     backgrounds: ['line-scene'],
-    typePairings: ['sans-light/sans-heavy', 'spaced-serif/spaced-sans'],
+    typePairings: ['sans-light/sans-heavy', 'spaced-serif/spaced-sans', 'light-geometric/wide', 'condensed-grotesk/sans-light'],
     temperaments: ['clean-clinical', 'vivid-mono'],
     frames: ['none'],
     ornaments: ['measured', 'quiet'],
@@ -358,7 +515,7 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     surface: 'box',
     reference: 'FERAH / surface-care wave system on a carton',
     backgrounds: ['wave'],
-    typePairings: ['sans-light/sans-heavy'],
+    typePairings: ['sans-light/sans-heavy', 'rounded/sans', 'heavy-grotesk-block/sans'],
     temperaments: ['clean-clinical', 'vivid-mono', 'natural-warm'],
     frames: ['none'],
     ornaments: ['measured', 'quiet'],
@@ -373,10 +530,10 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'specimen-hero',
     surface: 'box',
     reference: 'botanical specimen plates (public domain) — subject-led carton',
-    backgrounds: ['gradient-wash', 'paper', 'botanical'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'script-accent/sans-heavy'],
+    backgrounds: ['gradient-wash', 'paper', 'botanical', 'blob', 'celestial', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'script-accent/sans-heavy', 'condensed-serif/mono', 'light-geometric/wide'],
     temperaments: ['light-luxe', 'natural-warm', 'clean-clinical', 'vivid-mono'],
-    frames: ['thin-double', 'band-hairline', 'fleuron-crown', 'none'],
+    frames: ['thin-double', 'band-hairline', 'fleuron-crown', 'none', 'laurel'],
     ornaments: ['measured', 'quiet', 'rich'],
     lockup: 'stacked-center',
     sectors: { food: 0.9, beverage: 0.85, cream: 0.5, baby: 0.4, health: 0.3, serum: 0.22, generic: 0.45 },
@@ -389,10 +546,10 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'atelier-plate',
     surface: 'box',
     reference: 'Diako — Eau de Parfum (STİCKERR REF), plate on a carton front',
-    backgrounds: ['paper', 'gradient-wash'],
-    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    backgrounds: ['paper', 'gradient-wash', 'ogee', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'condensed-serif/mono', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe', 'clean-clinical'],
-    frames: ['band-hairline', 'thin-double', 'fleuron-crown'],
+    frames: ['band-hairline', 'thin-double', 'fleuron-crown', 'laurel', 'cartouche'],
     ornaments: ['measured', 'quiet', 'rich'],
     lockup: 'stacked-center',
     // Below the recognition floor outside perfume — see the label row.
@@ -406,10 +563,10 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     id: 'crest-panel',
     surface: 'box',
     reference: 'Azzurra — Eau de Parfum (STİCKERR REF), roundel on a carton front',
-    backgrounds: ['arabesque', 'paper'],
-    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans'],
+    backgrounds: ['arabesque', 'paper', 'ogee', 'toile'],
+    typePairings: ['serif-display/sans-meta', 'spaced-serif/spaced-sans', 'display-serif-oversized/sans-meta'],
     temperaments: ['light-luxe', 'dark-luxe', 'vivid-mono'],
-    frames: ['thin-double', 'band-hairline', 'none'],
+    frames: ['thin-double', 'band-hairline', 'none', 'laurel', 'cartouche'],
     ornaments: ['measured', 'rich', 'quiet'],
     lockup: 'stacked-center',
     // Below the recognition floor outside perfume — see the label row.
@@ -419,6 +576,258 @@ export const BOX_DNA: Record<BoxArchetype, ArchetypeDna> = {
     anatomy: ['arabesque field', 'roundel', 'crest mark', 'brand lockup', 'product name', 'category line', 'net quantity', 'legal back'],
     summaryTr: 'Arabesk zeminli karton, ortada madalyon ve arma; altında marka ve ürün.',
   },
+  /* ---------------------------------------------------------- the reference repertoire (F-32) */
+  'arch-crown': {
+    id: 'arch-crown',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R17 Roselle · R20 Don José — arched crown, layered tiers, spec band',
+    backgrounds: ['paper', 'toile', 'marble'],
+    typePairings: ['display-serif-oversized/sans-meta', 'spaced-serif/spaced-sans', 'serif-display/sans-meta'],
+    temperaments: ['light-luxe', 'natural-warm', 'dark-luxe'],
+    frames: ['none', 'cartouche', 'laurel'],
+    ornaments: ['measured', 'rich', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { beverage: 1, food: 0.9, perfume: 0.5, cream: 0.3, health: 0.3, generic: 0.5 },
+    styles: { classic: 1, luxury: 0.9, eco: 0.5, minimal: 0.25, modern: 0.25, playful: 0.2 },
+    aspect: 'portrait',
+    anatomy: ['arched crown field', 'wreath medallion', 'layered small-caps tiers', 'oversized display brand', 'drawn subject', 'dark spec band'],
+    summaryTr: 'Kemer tepe, madalyon taç, katmanlı kapital satırlar, dev serif marka; ayakta koyu künye bandı.',
+  },
+  'collage-plate': {
+    id: 'collage-plate',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R16 SYLOVE · R05 Dr. Sebaa — arch window, engraved collage, rotated word, seal',
+    backgrounds: ['paper', 'celestial', 'arabesque'],
+    typePairings: ['spaced-serif/spaced-sans', 'serif-display/sans-meta', 'condensed-serif/mono'],
+    temperaments: ['light-luxe', 'dark-luxe', 'vivid-mono'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'quiet', 'rich'],
+    lockup: 'stacked-center',
+    sectors: { perfume: 1, serum: 0.8, cream: 0.7, health: 0.4, beverage: 0.35, generic: 0.5 },
+    styles: { classic: 1, luxury: 0.9, modern: 0.4, minimal: 0.4, eco: 0.3, playful: 0.2 },
+    aspect: 'portrait',
+    anatomy: ['fixed wordmark', 'tone-on-tone arch window', 'layered engraved collage', 'wax seal', 'rotated side word', 'italic product line'],
+    summaryTr: 'Üstte sabit marka; ton-üstü-ton kemer pencerede üst üste binen gravür plakalar ve ayağında mühür; yanda döndürülmüş kelime.',
+  },
+  'silhouette-foot': {
+    id: 'silhouette-foot',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: "R31 O'live · R23 MOU: — small brand block, one oversized flat silhouette at the foot",
+    backgrounds: ['paper', 'blob', 'gradient-wash'],
+    typePairings: ['heavy-grotesk-block/sans', 'serif-display/sans-meta', 'light-geometric/wide'],
+    temperaments: ['vivid-mono', 'clean-clinical', 'natural-warm', 'dark-luxe'],
+    frames: ['none'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { food: 1, beverage: 0.8, cleaning: 0.5, cream: 0.4, health: 0.35, generic: 0.6 },
+    styles: { modern: 1, minimal: 0.9, eco: 0.7, playful: 0.5, luxury: 0.4, classic: 0.3 },
+    aspect: 'any',
+    anatomy: ['brand block top-left', 'meta grid', 'oversized flat silhouette', 'accent line'],
+    summaryTr: 'Sol üstte küçük marka bloğu, altta yüzün yarısını dolduran tek renk dev silüet.',
+  },
+  'ribbon-crest': {
+    id: 'ribbon-crest',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R29 · R30 — cut-silhouette double frame, medallion crown, laurel, ribbon band',
+    backgrounds: ['arabesque', 'ogee', 'paper', 'toile'],
+    typePairings: ['spaced-serif/spaced-sans', 'script-accent/sans-heavy', 'display-serif-oversized/sans-meta'],
+    temperaments: ['dark-luxe', 'light-luxe', 'natural-warm'],
+    frames: ['cartouche', 'laurel', 'thin-double', 'band-hairline'],
+    ornaments: ['measured', 'rich', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { food: 1, beverage: 0.85, perfume: 0.5, cream: 0.3, generic: 0.5 },
+    styles: { classic: 1, luxury: 1, eco: 0.4, modern: 0.2, minimal: 0.2, playful: 0.15 },
+    aspect: 'portrait',
+    anatomy: ['cut-silhouette double frame', 'medallion crown', 'star row', 'brand stack', 'ribbon band', 'net quantity'],
+    summaryTr: 'Kesim silüetli çift çerçeve, tepede madalyon, yıldız sırası ve iddiayı taşıyan kurdele bandı.',
+  },
+  'grid-mono': {
+    id: 'grid-mono',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R26 FORÊT — oversized rotated condensed display, cut-paper cluster, monospace grid',
+    backgrounds: ['paper', 'pictogram', 'blob'],
+    typePairings: ['condensed-serif/mono', 'condensed-grotesk/sans-light', 'light-geometric/wide'],
+    temperaments: ['clean-clinical', 'vivid-mono', 'natural-warm'],
+    frames: ['none', 'corner-brackets'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { beverage: 1, health: 0.8, food: 0.7, electronics: 0.5, cleaning: 0.5, serum: 0.4, generic: 0.6 },
+    styles: { modern: 1, minimal: 0.95, eco: 0.7, playful: 0.4, luxury: 0.35, classic: 0.3 },
+    aspect: 'any',
+    anatomy: ['rotated condensed display', 'cut-paper subject cluster', 'monospace body grid', 'icon row', 'signature rule'],
+    summaryTr: 'Solda döndürülmüş dev dar başlık, düz kesme-kağıt özne, sağda monospace gövde ızgarası.',
+  },
+  'pattern-float': {
+    id: 'pattern-float',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R06 Sola · R13 Little Candle — full-bleed pattern, the wordmark floating on a quiet plate',
+    backgrounds: ['toile', 'pictogram', 'ogee', 'botanical', 'arabesque'],
+    typePairings: ['serif-display/sans-meta', 'rounded/sans', 'spaced-serif/spaced-sans'],
+    temperaments: ['light-luxe', 'natural-warm', 'vivid-mono'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'rich'],
+    lockup: 'stacked-center',
+    sectors: { cream: 1, baby: 0.9, perfume: 0.6, cleaning: 0.45, health: 0.4, food: 0.4, generic: 0.6 },
+    styles: { classic: 0.9, eco: 0.7, playful: 0.6, luxury: 0.6, modern: 0.4, minimal: 0.3 },
+    aspect: 'any',
+    anatomy: ['full-bleed pattern', 'monogram', 'quiet plate', 'ligature wordmark', 'spaced product line'],
+    summaryTr: 'Tam taşma desen zemin; ortada sessiz plaka üstünde monogram ve marka yüzüyor.',
+  },
+  'blob-acid': {
+    id: 'blob-acid',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R10 OILY · R15 Mellis Florae — one giant blob crossing the face, heavy grotesk block',
+    backgrounds: ['blob', 'gradient-wash', 'wave'],
+    typePairings: ['heavy-grotesk-block/sans', 'condensed-grotesk/sans-light', 'rounded/sans'],
+    temperaments: ['vivid-mono', 'clean-clinical', 'tech-dark'],
+    frames: ['none'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { cleaning: 1, beverage: 0.85, electronics: 0.7, health: 0.5, cream: 0.4, generic: 0.6 },
+    styles: { playful: 1, modern: 0.95, minimal: 0.5, eco: 0.35, luxury: 0.2, classic: 0.15 },
+    aspect: 'any',
+    anatomy: ['acid duotone ground', 'giant crossing blob', 'heavy grotesk block', 'rotated secondary word', 'meta grid'],
+    summaryTr: 'Asit iki renk; yüzü kesen dev blob, sol üstte ağır grotesk blok, yanda döndürülmüş kelime.',
+  },
+  'inner-card': {
+    id: 'inner-card',
+    surface: 'box',
+    repertoire: 'reference',
+    reference: 'R19 POES · R03 Matka — quiet face, an inset art card holding the subject, icon column',
+    backgrounds: ['paper', 'gradient-wash', 'celestial'],
+    typePairings: ['display-serif-oversized/sans-meta', 'serif-display/sans-meta', 'light-geometric/wide'],
+    temperaments: ['light-luxe', 'clean-clinical', 'dark-luxe'],
+    frames: ['none', 'thin-double'],
+    ornaments: ['measured', 'quiet'],
+    lockup: 'stacked-center',
+    sectors: { cream: 1, perfume: 0.9, serum: 0.85, cleaning: 0.6, baby: 0.5, health: 0.5, generic: 0.6 },
+    styles: { minimal: 1, modern: 0.85, luxury: 0.7, classic: 0.6, eco: 0.5, playful: 0.25 },
+    aspect: 'any',
+    anatomy: ['display wordmark', 'inset art card', 'line subject', 'vertical icon column', 'small meta'],
+    summaryTr: 'Sessiz yüz; ortada içeri gömülü sanat kartında çizgi özne, yanda dikey ikon kolonu.',
+  },
+}
+
+/**
+ * Compositions an archetype may also wear, beyond the skeleton it was distilled with.
+ *
+ * Kept as a table rather than a field on every row so that `lockup` stays what it is — the
+ * archetype's own skeleton, first in the list, which is what variation 0 takes and what the frozen
+ * faces were painted with. The mark-led `crest-panel` is absent on purpose: no composition paints
+ * its roundel, and a face that loses the thing its archetype is *for* is routed away by the craft
+ * gate. The subject-led archetypes joined in Phase 2B, when the compositions learned to draw the
+ * subject; the two carton roles (`art-panel`, `flanked`) are listed only where a side panel can
+ * carry the field or the subject, and `lockupsFor` drops them on a label.
+ */
+export const ALT_LOCKUPS: Partial<Record<StudioArchetype, LockupStyle[]>> = {
+  'card-on-art': ['band-split'],
+  'botanical-card': ['band-split', 'art-panel'],
+  'marble-frame': ['band-split', 'rotated-brand', 'top-left-block', 'art-panel'],
+  'ink-panel': ['rotated-brand'],
+  'ink-wash': ['rotated-brand', 'flanked'],
+  'wave-panel': ['band-split', 'top-left-block', 'art-panel'],
+  'atelier-plate': ['rotated-brand'],
+  'noir-plate': ['rotated-brand', 'band-split', 'top-left-block'],
+  'noir-stack': ['rotated-brand', 'band-split', 'top-left-block', 'flanked'],
+  'diagonal-split': ['rotated-brand', 'top-left-block'],
+  'diagonal-tech': ['rotated-brand', 'top-left-block', 'art-panel'],
+  /*
+   * Phase 2B: the compositions carry a drawn subject now, so the subject-led archetypes join.
+   * `line-scene` brings its subject with its field (the scene *is* the background); `specimen-hero`
+   * has the composition draw the specimen into the field — and onto a side panel for the carton
+   * roles. The roundel-led crest still has no composition that paints its roundel.
+   */
+  'specimen-hero': ['band-split', 'rotated-brand', 'top-left-block', 'art-panel', 'flanked'],
+  'line-scene': ['band-split', 'flanked'],
+}
+
+/** Compositions that need side panels to exist — a label cannot wear them. */
+export const BOX_ONLY_LOCKUPS: readonly LockupStyle[] = SIDE_LED_LOCKUPS
+
+/** The archetype's skeleton first, then the compositions it may wear on this surface — a preference list like the other axes. */
+export function lockupsFor(dna: Pick<ArchetypeDna, 'id' | 'lockup' | 'surface'>): LockupStyle[] {
+  const alt = (ALT_LOCKUPS[dna.id] ?? []).filter((lockup) => dna.surface === 'box' || !BOX_ONLY_LOCKUPS.includes(lockup))
+  return [dna.lockup, ...alt]
+}
+
+/**
+ * What each archetype *is*, on the five personality axes — restraint, warmth, energy, heritage,
+ * technicality, each in [−1, 1]. Read against the brief's own personality by `scoreArchetype`.
+ *
+ * Written from the references each archetype was distilled from, not tuned to a target: the
+ * Capelli diagonal is technical and contemporary, the Rebull ink wash is restrained and still,
+ * the woo card is warm, lively and young, the Azzurra crest is heritage before anything else. A
+ * neutral brief scores zero against every row, so this table cannot move a face whose brief said
+ * nothing about itself.
+ */
+export const ARCHETYPE_PERSONALITY: Record<StudioArchetype, PersonalityProfile> = {
+  'marble-frame': { restraint: 0.3, energy: -0.2, heritage: 0.3, technicality: -0.2 },
+  'noir-stack': { restraint: 0.6, warmth: -0.2, energy: -0.4, heritage: 0.2 },
+  'noir-plate': { restraint: 0.6, warmth: -0.2, energy: -0.4, heritage: 0.2 },
+  'ink-wash': { restraint: 0.7, warmth: 0.1, energy: -0.5, heritage: 0.4, technicality: -0.3 },
+  'ink-panel': { restraint: 0.7, warmth: 0.1, energy: -0.5, heritage: 0.4, technicality: -0.3 },
+  'botanical-card': { restraint: -0.5, warmth: 0.6, energy: 0.6, heritage: -0.4, technicality: -0.6 },
+  'card-on-art': { restraint: -0.5, warmth: 0.6, energy: 0.6, heritage: -0.4, technicality: -0.6 },
+  'diagonal-tech': { restraint: -0.2, warmth: -0.6, energy: 0.5, heritage: -0.7, technicality: 0.9 },
+  'diagonal-split': { restraint: -0.2, warmth: -0.6, energy: 0.5, heritage: -0.7, technicality: 0.9 },
+  'line-scene': { restraint: 0.5, warmth: 0.2, energy: -0.1, heritage: -0.3, technicality: 0.5 },
+  'wave-panel': { restraint: -0.1, warmth: 0.3, energy: 0.5, heritage: -0.5, technicality: 0.1 },
+  'specimen-hero': { restraint: 0.3, warmth: 0.6, energy: -0.1, heritage: 0.5, technicality: -0.6 },
+  'atelier-plate': { restraint: 0.7, energy: -0.5, heritage: 0.7, technicality: -0.1 },
+  'crest-panel': { restraint: 0.2, warmth: 0.1, energy: -0.2, heritage: 0.9, technicality: -0.4 },
+  /* The reference repertoire (F-32) — read off the references each was distilled from. */
+  'arch-crown': { restraint: 0.3, warmth: 0.3, energy: -0.3, heritage: 0.9, technicality: -0.3 },
+  'collage-plate': { restraint: 0.6, warmth: 0.1, energy: -0.4, heritage: 0.8, technicality: -0.2 },
+  'silhouette-foot': { restraint: 0.7, warmth: 0.1, energy: 0.3, heritage: -0.6, technicality: 0.3 },
+  'ribbon-crest': { restraint: 0.1, warmth: 0.4, energy: -0.2, heritage: 1, technicality: -0.5 },
+  'grid-mono': { restraint: 0.6, warmth: -0.1, energy: 0.1, heritage: -0.4, technicality: 0.8 },
+  'pattern-float': { restraint: 0.2, warmth: 0.7, energy: -0.1, heritage: 0.6, technicality: -0.6 },
+  'blob-acid': { restraint: -0.8, warmth: 0.4, energy: 1, heritage: -0.9, technicality: 0.1 },
+  'inner-card': { restraint: 0.9, warmth: -0.1, energy: -0.3, heritage: -0.2, technicality: 0.4 },
+}
+
+export const ALL_LOCKUPS: LockupStyle[] = [
+  'stacked-center',
+  'top-right-pill',
+  'left-column',
+  'monogram-right',
+  'band-split',
+  'rotated-brand',
+  'top-left-block',
+  'art-panel',
+  'flanked',
+]
+
+export function isLockup(value: unknown): value is LockupStyle {
+  return typeof value === 'string' && (ALL_LOCKUPS as string[]).includes(value)
+}
+
+/**
+ * The card a customer clicked, as the pin the next generation honours.
+ *
+ * A strip row carries its fingerprint (eight strings); the four of them that a card can differ
+ * on within its family become the pin. Values are validated against the closed vocabularies so a
+ * stale or hand-edited row cannot smuggle an unknown value into a hint.
+ */
+export function pickFromFingerprint(
+  fp: Partial<Record<string, string>> | undefined,
+): { lockup?: LockupStyle; typePairing?: TypePairing; frame?: FrameStyle; ornament?: OrnamentLevel; background?: BackgroundFamily } | undefined {
+  if (!fp) return undefined
+  const pick: { lockup?: LockupStyle; typePairing?: TypePairing; frame?: FrameStyle; ornament?: OrnamentLevel; background?: BackgroundFamily } = {}
+  if (isLockup(fp.lockup)) pick.lockup = fp.lockup
+  if (isTypePairing(fp.typePairing)) pick.typePairing = fp.typePairing
+  if (isFrame(fp.frame)) pick.frame = fp.frame
+  if (isOrnament(fp.ornament)) pick.ornament = fp.ornament
+  // The field the card wore (Phase 5): the strip cycles it, so a pick has to carry it too.
+  if (isBackground(fp.background)) pick.background = fp.background
+  return Object.keys(pick).length ? pick : undefined
 }
 
 export function dnaFor(archetype: StudioArchetype, surface: StudioSurface): ArchetypeDna {
@@ -428,8 +837,21 @@ export function dnaFor(archetype: StudioArchetype, surface: StudioSurface): Arch
   return BOX_DNA[archetype as BoxArchetype] ?? BOX_DNA['noir-stack']
 }
 
-export function archetypesFor(surface: StudioSurface): ArchetypeDna[] {
-  return surface === 'label' ? Object.values(LABEL_DNA) : Object.values(BOX_DNA)
+/**
+ * The archetypes of one repertoire on one surface.
+ *
+ * `studio` is the default set — the ten systems the eighteen frozen faces were painted with.
+ * `reference` is the eight distilled from the reference folder; the customer reaches them by
+ * asking for other designs, and a strip is drawn from one repertoire or the other, never both.
+ */
+export function archetypesFor(surface: StudioSurface, repertoire: StudioRepertoire = 'studio'): ArchetypeDna[] {
+  const table = surface === 'label' ? LABEL_DNA : BOX_DNA
+  return Object.values(table).filter((dna) => (dna.repertoire ?? 'studio') === repertoire)
+}
+
+/** Which repertoire an archetype belongs to. */
+export function repertoireOf(id: StudioArchetype): StudioRepertoire {
+  return (LABEL_DNA[id as LabelArchetype] ?? BOX_DNA[id as BoxArchetype])?.repertoire ?? 'studio'
 }
 
 export const ALL_ARCHETYPES: StudioArchetype[] = [
@@ -453,15 +875,26 @@ const BACKGROUND_KEYS: Record<BackgroundFamily, true> = {
   wave: true,
   circuit: true,
   arabesque: true,
+  blob: true,
+  ogee: true,
+  celestial: true,
+  pictogram: true,
+  toile: true,
 }
 export const ALL_BACKGROUNDS = Object.keys(BACKGROUND_KEYS) as BackgroundFamily[]
 
-export const ALL_FRAMES: FrameStyle[] = ['none', 'thin-double', 'corner-brackets', 'rounded-card', 'band-hairline', 'fleuron-crown', 'bezel']
+export const ALL_FRAMES: FrameStyle[] = ['none', 'thin-double', 'corner-brackets', 'rounded-card', 'band-hairline', 'fleuron-crown', 'bezel', 'laurel', 'cartouche']
 export const ALL_ORNAMENTS: OrnamentLevel[] = ['quiet', 'measured', 'rich']
 
 export const ALL_TEMPERAMENTS: Temperament[] = ['dark-luxe', 'light-luxe', 'vivid-mono', 'natural-warm', 'clean-clinical', 'tech-dark']
 
 export const ALL_TYPE_PAIRINGS: TypePairing[] = [
+  'condensed-serif/mono',
+  'condensed-grotesk/sans-light',
+  'rounded/sans',
+  'display-serif-oversized/sans-meta',
+  'heavy-grotesk-block/sans',
+  'light-geometric/wide',
   'serif-display/sans-meta',
   'script-accent/sans-heavy',
   'sans-light/sans-heavy',

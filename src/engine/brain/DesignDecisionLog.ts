@@ -17,6 +17,7 @@ import { brandScopeKey } from './DesignKnowledgeStore'
 import type { DesignPlan } from './DesignPlan'
 import type { VisualCraftScorecard } from './scoreVisualCraft'
 import type { StudioDirectionOffer } from '../studio/types'
+import { REFERENCE_DNA_VERSION } from '../studio/referenceDna'
 
 export const DESIGN_BRAIN_VERSION = '1.0'
 export const VISUAL_LANGUAGE_VERSION = '1.0'
@@ -99,6 +100,8 @@ export type DesignDecisionLog = {
   vlVersion: string
   alVersion: string
   compositionVersion: string
+  /** Reference-derived repertoire the studio direction was ranked against. Absent on logs older than Phase 0. */
+  dnaVersion?: string
   path: 'overlay' | 'kit' | 'studio'
   brief: {
     sector: string
@@ -151,6 +154,8 @@ export type StudioDecision = {
   source: 'heuristic' | 'llm' | 'knowledge' | 'user' | 'family'
   collisions: number
   minTextMm: number
+  /** Each axis's decision with its reason — the structured record Phase 3 added. Absent on older logs. */
+  reasons?: { axis: string; chosen: string; because: string; alternative?: string }[]
 }
 
 let logs: DesignDecisionLog[] = []
@@ -437,6 +442,7 @@ export function captureGenerateDecision(input: CaptureGenerateInput): DesignDeci
       vlVersion: VISUAL_LANGUAGE_VERSION,
       alVersion: ASSET_LANGUAGE_VERSION,
       compositionVersion: COMPOSITION_VERSION,
+      dnaVersion: REFERENCE_DNA_VERSION,
       path,
       brief: {
         sector: plan.sector,

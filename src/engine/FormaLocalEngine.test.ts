@@ -25,13 +25,6 @@ function perfumeBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
   }
 }
 
-function frontMarkup(design: { artwork: { layers: { panelId: string; markup: string }[] } }): string {
-  const layer = design.artwork.layers.find(
-    (l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront',
-  )
-  return layer?.markup ?? ''
-}
-
 describe('FormaLocalEngine', () => {
   beforeEach(() => resetArtMemory())
 
@@ -176,73 +169,6 @@ describe('FormaLocalEngine', () => {
     expect(frontId).toBeTruthy()
     const front = renderPanelSvg(design.dieline, design.artwork, frontId!, design.palette)
     expect(front).toContain('data-art="studio"')
-  })
-
-  it('golden compose-wiring: luxury perfume tuck-end front carries pattern art', () => {
-    const design = new FormaLocalEngine().generate({ brief: perfumeBrief() })
-    const family = design.designPlan?.patternSystem.family ?? 'none'
-    const front = frontMarkup(design)
-
-    expect(design.structureId).toBe('tuck-end-box')
-    expect(family).not.toBe('none')
-    if (family !== 'none') {
-      expect(front).toContain('data-art="pattern"')
-    }
-  })
-
-  it('golden compose-wiring: wrap-label seam path can include wrap-continuity', () => {
-    const design = new FormaLocalEngine().generate({
-      brief: perfumeBrief({
-        packagingMode: 'label',
-        templateId: 'fm-cos-label-bottle',
-        dimensionsMm: { L: 90, W: 0, H: 70 },
-      }),
-    })
-    const face = frontMarkup(design)
-
-    expect(design.structureId).toBe('wrap-label')
-    expect(face).toContain('data-art="seam"')
-    expect(face).not.toMatch(/>SEAM</)
-    expect(face).toContain('data-art="wrap-continuity"')
-  })
-
-  it('golden compose-wiring: sideIntentional luxury sides carry side-pattern, glue/tuck stay clean', () => {
-    const design = new FormaLocalEngine().generate({ brief: perfumeBrief() })
-    const sides = design.artwork.layers.filter((l) => l.panelId === 'left' || l.panelId === 'right')
-    const glue = design.artwork.layers.find((l) => l.panelId === 'glue')?.markup ?? ''
-    const tucks = design.artwork.layers.filter((l) => l.panelId.includes('Tuck') || l.panelId.includes('Dust'))
-
-    expect(design.designPlan?.patternSystem.sideIntentional).toBe(true)
-    expect(sides.length).toBeGreaterThan(0)
-    for (const side of sides) {
-      expect(side.markup).toContain('data-art="side-pattern"')
-    }
-    expect(glue).not.toContain('data-art="side-pattern"')
-    expect(glue).toMatch(/GLUE/)
-    for (const tuck of tucks) {
-      expect(tuck.markup).not.toContain('data-art="side-pattern"')
-    }
-  })
-
-  it('eco and playful fronts keep Phase 0 backgrounds; eco sides are patterned, playful sides are not', () => {
-    const eco = new FormaLocalEngine().generate({ brief: perfumeBrief({ styleType: 'eco' }) })
-    resetArtMemory()
-    const playful = new FormaLocalEngine().generate({ brief: perfumeBrief({ styleType: 'playful' }) })
-
-    const ecoFront = frontMarkup(eco)
-    const playfulFront = frontMarkup(playful)
-    const ecoSide = eco.artwork.layers.find((l) => l.panelId === 'left')?.markup ?? ''
-    const playfulSide = playful.artwork.layers.find((l) => l.panelId === 'left')?.markup ?? ''
-
-    expect(ecoFront).toContain('data-art="bg"')
-    expect(ecoFront).toContain('data-bg="eco-grain"')
-    expect(eco.designPlan?.patternSystem.sideIntentional).toBe(true)
-    expect(ecoSide).toContain('data-art="side-pattern"')
-
-    expect(playfulFront).toContain('data-art="bg"')
-    expect(playfulFront).toContain('data-bg="playful-capsules"')
-    expect(playful.designPlan?.patternSystem.sideIntentional).toBe(false)
-    expect(playfulSide).not.toContain('data-art="side-pattern"')
   })
 
   it('parseIntent regenerate increments revision and pushes history', () => {

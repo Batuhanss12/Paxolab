@@ -26,3 +26,6 @@ dist-ssr
 # Local API database
 server/data/*
 !server/data/.gitkeep
+
+# Rendered composition faces and the illustrator-reach check (scripts/render-*.ts)
+.compositions-out/

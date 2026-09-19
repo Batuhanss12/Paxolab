@@ -32,6 +32,15 @@ FACES = {
     "montserrat-500": "sub-Montserrat-500-normal.ttf",
     "montserrat-700": "sub-Montserrat-700-normal.ttf",
     "greatvibes-400": "sub-Great-400-normal.ttf",
+    # Phase 4 (F-30): the four faces the reference set asked for and the repertoire lacked —
+    # a condensed display serif, a condensed grotesk, a rounded display, a mono for spec copy.
+    "instrumentserif-400": "sub-InstrumentSerif-400-normal.ttf",
+    "instrumentserif-400i": "sub-InstrumentSerif-400-italic.ttf",
+    "barlowcondensed-600": "sub-BarlowCondensed-600-normal.ttf",
+    "barlowcondensed-700": "sub-BarlowCondensed-700-normal.ttf",
+    "righteous-400": "sub-Righteous-400-normal.ttf",
+    "ibmplexmono-400": "sub-IBMPlexMono-400-normal.ttf",
+    "ibmplexmono-500": "sub-IBMPlexMono-500-normal.ttf",
 }
 
 # Latin + Turkish + the punctuation the copy bank actually uses.

@@ -84,6 +84,8 @@ type WorkspaceProps = {
   directionChoiceOpen?: boolean
   onDirectionChoiceClose?: () => void
   onDirectionChoiceOpen?: () => void
+  /** Swap the offer for the other repertoire (F-32) without leaving the choice screen. */
+  onSwapRepertoire?: () => void
   /** Print-ready proof toggle for the Üretim tab. */
   onProof?: (on: boolean) => void
 }
@@ -180,6 +182,7 @@ export function Workspace({
   directionChoiceOpen = false,
   onDirectionChoiceClose,
   onDirectionChoiceOpen,
+  onSwapRepertoire,
   onProof,
 }: WorkspaceProps) {
   const dualFromChat = messages.some((m) =>
@@ -261,6 +264,7 @@ export function Workspace({
               <button
                 key={t.id}
                 type="button"
+                aria-current={tab === t.id ? 'page' : undefined}
                 className={`tabs__btn ${tab === t.id ? 'is-active' : ''}`}
                 data-coach={`tab-${t.id}`}
                 onClick={() => onTab(t.id)}
@@ -275,6 +279,7 @@ export function Workspace({
             <span className="surface-switch__intent">Kutu + etiket</span>
             <button
               type="button"
+              aria-pressed={!viewingLabel && !!boxDesign}
               className={!viewingLabel && boxDesign ? 'is-active' : ''}
               disabled={!boxDesign}
               onClick={() => onSurfaceView?.('box')}
@@ -284,6 +289,7 @@ export function Workspace({
             {labelDesign ? (
               <button
                 type="button"
+                aria-pressed={viewingLabel}
                 className={viewingLabel ? 'is-active' : ''}
                 onClick={() => onSurfaceView?.('label')}
               >
@@ -292,6 +298,7 @@ export function Workspace({
             ) : (
               <button
                 type="button"
+                aria-pressed={labelPicker}
                 className={labelPicker ? 'is-active' : ''}
                 disabled={!boxDesign}
                 onClick={() => onStartLabel?.()}
@@ -435,11 +442,13 @@ export function Workspace({
                 brandName={design.copy.brand}
                 productName={design.copy.product}
                 busy={generating}
+                repertoire={brief.studioRepertoire ?? 'studio'}
                 onPick={(family, index) => {
                   onDirectionChoiceClose?.()
                   onDirectionPick?.(family, index)
                 }}
                 onKeep={() => onDirectionChoiceClose?.()}
+                onSwapRepertoire={onSwapRepertoire}
               />
             )}
             {!generating && !showPicker && !showChoice && tab === 'konusma' && design && (

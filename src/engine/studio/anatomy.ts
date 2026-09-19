@@ -12,6 +12,8 @@ import { darken, isDark, lighten, mix, separateAccent } from './color'
 import { type HeroInk } from './species'
 import { categoryBesideProduct } from './copyBank'
 import { Ledger, STUDIO_TYPE_FLOOR_MM, fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth, type Face } from './text'
+import { brandCase, brandScale, brandTracking } from './typeSystem'
+import { motifAspect, paintMotif } from './motifs'
 import {
   clampStudioScale,
   type BenefitIcon,
@@ -219,6 +221,61 @@ export function fleuronCrownFrame(w: number, h: number, inset: number, color: st
   )
 }
 
+/**
+ * Two laurel branches rising from the foot's centre along each side (R29, R30). Each branch is a
+ * quadratic arc with paired pointed leaves along it; the leaves are the frame's own — a frame
+ * member is an ornament, not a portrait of the product's plant. Drawn behind the lockup at the
+ * frame's opacity, like every other member.
+ */
+export function laurelFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const len = Math.max(2, Math.min(w, h) * 0.07)
+  const wid = len * 0.34
+  const sw = Math.max(0.16, len * 0.06)
+  const leafD = `M0 0 Q${f(len * 0.5)} ${f(-wid)} ${f(len)} 0 Q${f(len * 0.5)} ${f(wid)} 0 0Z`
+  const parts: string[] = []
+  for (const side of [-1, 1]) {
+    const p0 = { x: w / 2 + side * w * 0.05, y: h - inset - len * 0.5 }
+    const p1 = { x: w / 2 + side * (w / 2 - inset - len * 0.55), y: h * 0.4 }
+    const c = { x: p1.x + side * w * 0.02, y: p0.y - (p0.y - p1.y) * 0.15 }
+    parts.push(`<path d="M${f(p0.x)} ${f(p0.y)} Q${f(c.x)} ${f(c.y)} ${f(p1.x)} ${f(p1.y)}" fill="none" stroke="${color}" stroke-width="${f(sw)}" />`)
+    const n = 7
+    for (let i = 0; i < n; i++) {
+      const t = 0.1 + (i / (n - 1)) * 0.84
+      const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * c.x + t * t * p1.x
+      const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * c.y + t * t * p1.y
+      const tx = 2 * (1 - t) * (c.x - p0.x) + 2 * t * (p1.x - c.x)
+      const ty = 2 * (1 - t) * (c.y - p0.y) + 2 * t * (p1.y - c.y)
+      const tangent = (Math.atan2(ty, tx) * 180) / Math.PI
+      const scale = 0.7 + t * 0.4
+      for (const open of [-38, 38]) {
+        parts.push(`<path transform="translate(${f(x)} ${f(y)}) rotate(${f(tangent + open)}) scale(${f(scale)})" d="${leafD}" fill="${color}" fill-opacity="${f(open < 0 ? 0.85 : 0.65)}" />`)
+      }
+    }
+  }
+  return `<g data-art="frame" data-frame="laurel" opacity="${f(opacity)}">${parts.join('')}</g>`
+}
+
+/**
+ * A cartouche arc at the crown and a double-line corner in each corner — the two heraldic marks
+ * ported from the studio's motif library (`motifs.ts`), sized like the fleuron crown so the
+ * lockup below keeps its room.
+ */
+export function cartoucheFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
+  const s = Math.max(2.2, Math.min(w, h) * 0.085)
+  const arcW = s * 2.6
+  const arcH = arcW * motifAspect('cartouche-arc')
+  const corner = s * 1.3
+  return (
+    `<g data-art="frame" data-frame="cartouche" opacity="${f(opacity)}">` +
+    paintMotif('cartouche-arc', w / 2 - arcW / 2, inset - arcH * 0.12, arcW, arcH, color) +
+    paintMotif('double-line-corner', inset, inset, corner, corner, color) +
+    paintMotif('double-line-corner', w - inset - corner, inset, corner, corner, color, { flipX: true }) +
+    paintMotif('double-line-corner', inset, h - inset - corner, corner, corner, color, { flipY: true }) +
+    paintMotif('double-line-corner', w - inset - corner, h - inset - corner, corner, corner, color, { flipX: true, flipY: true }) +
+    `</g>`
+  )
+}
+
 /** Metallic rim on a disc or oval; a no-op on a rectangle, where a bezel has nothing to sit on. */
 export function bezelFrame(w: number, h: number, inset: number, color: string, opacity = 0.9): string {
   const rx = w / 2 - inset
@@ -256,6 +313,10 @@ export function paintFrame(
       return fleuronCrownFrame(w, h, opts.inset, opts.color, op)
     case 'bezel':
       return opts.round ? bezelFrame(w, h, opts.inset, opts.color, op) : ''
+    case 'laurel':
+      return laurelFrame(w, h, opts.inset, opts.color, op)
+    case 'cartouche':
+      return cartoucheFrame(w, h, opts.inset, opts.color, op)
     case 'corner-brackets':
     case 'rounded-card':
     case 'none':
@@ -309,10 +370,11 @@ export function stackedLockup(
 ): LockupResult {
   const faces = pairingFaces(d.typePairing)
   const color = opts.color ?? d.palette.ink
-  const brandUpper = d.typePairing === 'script-accent/sans-heavy' ? brand : brand.toLocaleUpperCase('tr')
-  const tracking = d.typePairing === 'spaced-serif/spaced-sans' ? 0.16 : d.typePairing === 'serif-display/sans-meta' ? 0.08 : 0.02
+  const brandUpper = brandCase(d.typePairing, brand)
+  const tracking = brandTracking(d.typePairing)
   const titleScale = clampStudioScale(opts.titleScale)
-  const brandMax = (opts.brandMax ?? Math.min(maxW * 0.16, 11)) * titleScale
+  // An oversized system pushes past the painter's ceiling; `fitSize` still stops at the room.
+  const brandMax = (opts.brandMax ?? Math.min(maxW * 0.16, 11)) * titleScale * brandScale(d.typePairing)
   const size = fitSize(brandUpper, maxW, brandMax, (opts.brandMin ?? 2.4) * titleScale, faces.brand, tracking)
   let y = top
   let brandOut = ''
@@ -476,6 +538,20 @@ export function productStack(
     titleScale?: number
     logoHref?: string
     logoScale?: number
+    /**
+     * How much vertical room the stack may use, measured down from `top`.
+     *
+     * Without it the stack draws the prefix and then the product wherever they land, and every
+     * caller has to guess the total height in advance — including the prefix, which sits *above*
+     * the product and so is the part a caller most easily forgets. Measured across 324 catalogue
+     * pairings: 7 designs were export-blocked and 4 of the 7 named `product-prefix`, all of them
+     * on wide, short faces (120 × 50 label, 90 × 45 carton) where the caller had bounded the
+     * product's size but not the stack's height.
+     *
+     * Given a budget the stack sheds in the order a designer would: the prefix first, then the
+     * type size, then the second line. Only the press floor is absolute.
+     */
+    room?: number
   } = {},
 ): ProductLines {
   const faces = pairingFaces(d.typePairing)
@@ -486,17 +562,47 @@ export function productStack(
   const x = cx
   let y = top
   let out = ''
-  if (opts.prefix) {
-    const pSize = Math.min((opts.max ?? 8) * 0.78, 6.4) * titleScale
+
+  const text = opts.upper === false ? product : product.toLocaleUpperCase('tr')
+  const rawMax = opts.max ?? 8
+  let lines = wrapByWidth(text, maxW, 1, faces.product, 2).length > 1 && textWidth(text, rawMax * titleScale, faces.product) > maxW ? splitTitle(text) : [text]
+  let ceiling = rawMax
+  let prefix = opts.prefix
+
+  if (opts.room !== undefined) {
+    // A budget of zero means "there is no room", not "there is no budget" — the first version of
+    // this guard skipped itself in exactly the case that needed it most, and the prefix went on
+    // being drawn off the bottom of a 90 × 45 front. One line at the press floor is the minimum
+    // any product line can be, so that is the floor of the budget too.
+    const room = Math.max(opts.room, STUDIO_TYPE_FLOOR_MM * titleScale * 1.17)
+    // Conservative: `size` can only come out at or under the ceiling, so bounding on the ceiling
+    // never under-reserves. The multipliers are the advances the drawing loops below actually use.
+    const prefixH = (m: number) => Math.min(m * 0.78, 6.4) * titleScale * 1.2
+    const bodyH = (m: number, n: number) => m * titleScale * 1.17 * n
+    const fits = (m: number, withPrefix: boolean, n: number) => (withPrefix ? prefixH(m) : 0) + bodyH(m, n) <= room
+    if (!fits(ceiling, !!prefix, lines.length)) {
+      if (prefix && fits(ceiling, false, lines.length)) prefix = undefined
+      else {
+        prefix = undefined
+        // Shrink to fit, then give up the second line rather than print under the panel's foot.
+        ceiling = Math.max(STUDIO_TYPE_FLOOR_MM, room / (titleScale * 1.17 * lines.length))
+        if (ceiling <= STUDIO_TYPE_FLOOR_MM && lines.length > 1) {
+          lines = [text]
+          ceiling = Math.max(STUDIO_TYPE_FLOOR_MM, room / (titleScale * 1.17))
+        }
+      }
+    }
+  }
+
+  if (prefix) {
+    const pSize = Math.min(ceiling * 0.78, 6.4) * titleScale
     const face: Face = faces.prefix
     const base = y + pSize * 0.9
-    out += textEl({ x, y: base, text: opts.prefix, size: pSize, face, fill: accent, anchor, italic: face === 'serif-italic' })
-    ledger.text('product-prefix', x, base, textWidth(opts.prefix, pSize, face), pSize, anchor)
+    out += textEl({ x, y: base, text: prefix, size: pSize, face, fill: accent, anchor, italic: face === 'serif-italic' })
+    ledger.text('product-prefix', x, base, textWidth(prefix, pSize, face), pSize, anchor)
     y = base + pSize * 0.3
   }
-  const text = opts.upper === false ? product : product.toLocaleUpperCase('tr')
-  const lines = wrapByWidth(text, maxW, 1, faces.product, 2).length > 1 && textWidth(text, (opts.max ?? 8) * titleScale, faces.product) > maxW ? splitTitle(text) : [text]
-  const max = (opts.max ?? 8) * titleScale
+  const max = ceiling * titleScale
   /*
    * The product's floor may not climb over its own ceiling.
    *
@@ -546,7 +652,8 @@ export function titleCard(
   w: number,
   product: string,
   category: string,
-  opts: { prefix?: string; titleScale?: number; logoHref?: string; logoScale?: number } = {},
+  /** `room` is the card's total height budget from `y`, not the stack's — the padding comes off here. */
+  opts: { prefix?: string; titleScale?: number; logoHref?: string; logoScale?: number; room?: number } = {},
 ): { markup: string; bottom: number } {
   const pad = Math.max(2.2, w * 0.07)
   const inner = w - pad * 2
@@ -559,6 +666,7 @@ export function titleCard(
     titleScale: opts.titleScale,
     logoHref: opts.logoHref,
     logoScale: opts.logoScale,
+    room: opts.room === undefined ? undefined : opts.room - pad * 1.9,
   }
   const probe = new Ledger(ledger.panel)
   const stack = productStack(probe, d, x + w / 2, y + pad, inner, product, stackOpts)
@@ -796,14 +904,32 @@ export function stackedWords(ledger: Ledger, cx: number, top: number, words: str
   return { markup: `<g data-art="manifesto">${out}</g>`, bottom: cy + s }
 }
 
-/** Vertical (rotated) brand along a spine. Always includes rotate(-90) — the box gate reads it. */
-export function verticalBrand(ledger: Ledger, cx: number, cy: number, text: string, size: number, color: string, maxLen: number, face: Face = 'sans'): string {
+/**
+ * Vertical (rotated) text. Always includes rotate(-90) — the carton gate reads it.
+ *
+ * `role` says what the line *is*. A carton's side spine is `spine`, and a label carrying one is a
+ * label wearing carton anatomy, which the label gate refuses. A rotated word used as a design
+ * element on a face — the reference shelf is full of them — is `accent`, and belongs on either
+ * surface. Before the role existed the gate tested the rotation itself and refused every label
+ * with a turned word on it.
+ */
+export function verticalBrand(
+  ledger: Ledger,
+  cx: number,
+  cy: number,
+  text: string,
+  size: number,
+  color: string,
+  maxLen: number,
+  face: Face = 'sans',
+  role: 'spine' | 'accent' = 'spine',
+): string {
   const upper = text.toLocaleUpperCase('tr')
   const s = fitSize(upper, maxLen, size, 1.6, face, size * 0.3)
   const track = s * 0.3
   const len = textWidth(upper, s, face, track)
-  ledger.add('text', 'vertical-brand', cx - s * 0.6, cy - len / 2, s * 1.2, len, s)
-  return `<g data-art="spine" transform="translate(${f(cx)} ${f(cy)}) rotate(-90)">${textEl({ x: 0, y: s * 0.35, text: upper, size: s, face, fill: color, anchor: 'middle', tracking: track })}</g>`
+  ledger.add('text', role === 'spine' ? 'vertical-brand' : 'rotated-line', cx - s * 0.6, cy - len / 2, s * 1.2, len, s)
+  return `<g data-art="${role === 'spine' ? 'spine' : 'rotated-line'}" transform="translate(${f(cx)} ${f(cy)}) rotate(-90)">${textEl({ x: 0, y: s * 0.35, text: upper, size: s, face, fill: color, anchor: 'middle', tracking: track })}</g>`
 }
 
 /* ----------------------------------------------------------------- utility */
@@ -937,11 +1063,24 @@ export function nutritionTableHeight(rows: number, size = 1.35): number {
   return size * 1.6 * (rows + 1) + size * 0.9
 }
 
-export function nutritionTable(ledger: Ledger, x: number, y: number, w: number, title: string, allRows: [string, string][], color: string, size = 1.35, maxBottom = Infinity): { markup: string; bottom: number } {
+export function nutritionTable(ledger: Ledger, x: number, y: number, w: number, title: string, allRows: [string, string][], color: string, requested = 1.35, maxBottom = Infinity): { markup: string; bottom: number } {
+  /*
+   * A declaration is not truncated.
+   *
+   * This used to drop trailing rows until the table fitted. On a 70 × 45 olive-oil oval that left
+   * two rows — Enerji and Yağ — and silently dropped **Doymuş yağ**, the one row an oil is required
+   * to declare. A partial nutrition table is worse than none: it looks like a declaration and is
+   * not one, and the gate that checks for the saturates row was right to refuse the file.
+   *
+   * So the type shrinks toward the press floor to fit the whole set, and if even that will not fit,
+   * nothing is drawn. An absent table is a blank the producer fills; a clipped one is a false
+   * statement about food.
+   */
+  let size = requested
+  while (size > STUDIO_TYPE_FLOOR_MM && y + nutritionTableHeight(allRows.length, size) > maxBottom) size = Math.max(STUDIO_TYPE_FLOOR_MM, size - 0.05)
+  if (y + nutritionTableHeight(allRows.length, size) > maxBottom) return { markup: '', bottom: y }
+  const rows = allRows
   const lineH = size * 1.6
-  // Drop trailing rows until the table fits above maxBottom (never below the title + 2 rows).
-  let rows = allRows
-  while (rows.length > 2 && y + nutritionTableHeight(rows.length, size) > maxBottom) rows = rows.slice(0, -1)
   let out = `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(lineH * (rows.length + 1) + size * 0.8)}" fill="none" stroke="${color}" stroke-width="0.2" />`
   let cy = y + size * 0.5
   out += textEl({ x: x + 1.2, y: cy + size, text: title, size: size * 1.02, face: 'sans-heavy', fill: color })

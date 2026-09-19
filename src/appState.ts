@@ -196,6 +196,26 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, generating: false }
     case 'generation.finish': {
       const sameKind = Boolean(state.design && state.design.kind === action.design.kind)
+      /*
+       * An offer the customer has not answered yet.
+       *
+       * `sameKind` alone was the test, and it read "first face of this surface". That was right
+       * while there was one set of designs to offer. Since F-32 there is a second repertoire, and
+       * pressing "tasarımları değiştir" produces a generation that is the same surface and a
+       * completely different offer — the chooser closed on the eight designs it had just been
+       * asked for.
+       *
+       * The fix for that compared the two candidate *lists*, and it was too broad. Any generation
+       * that re-ranks the strip changes that list, so the chooser came back on things that were not
+       * questions: the owner reported being thrown out of 2D into the chooser while stepping
+       * through tones, and the strip appearing to "refresh" when they clicked a card. Both are the
+       * same over-trigger — a tone change re-ranks, and picking a card pins a family which re-ranks.
+       *
+       * What actually makes an offer unanswered is the customer asking for a *different set*. That
+       * is the repertoire, and nothing else moves it.
+       */
+      const repertoireOf = (design: DesignSpec | null | undefined) => design?.brief.studioRepertoire ?? 'studio'
+      const swappedSet = repertoireOf(action.design) !== repertoireOf(state.design)
       return {
         ...state,
         brief: action.design.brief,
@@ -210,12 +230,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         showTemplates: false,
         generating: false,
         /*
-         * Open the chooser when this generation carries an offer the customer has not answered.
-         * `sameKind` is the test that matters: the first carton of a session gets the choice, a
-         * repaint of that same carton does not — otherwise picking a direction would hand back
-         * the chooser that sent you there.
+         * Open the chooser when this generation carries an offer the customer has not answered:
+         * the first face of a surface, or a set they explicitly asked to be replaced. A repaint of
+         * a design already chosen — a new tone, a pinned card, a copy edit — is not a question, and
+         * handing back the chooser there is a loop rather than a decision.
          */
-        directionChoiceOpen: !sameKind && (action.design.studio?.offer?.candidates.length ?? 0) > 1,
+        directionChoiceOpen: (!sameKind || swappedSet) && (action.design.studio?.offer?.candidates.length ?? 0) > 1,
         tab: action.printReady ? 'uretim' : state.tab === 'konusma' ? 'vektor' : state.tab,
       }
     }

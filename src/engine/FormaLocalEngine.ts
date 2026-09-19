@@ -12,13 +12,12 @@ import {
   scoreDesign,
   scoreVisualCraft,
 } from './brain'
-import { STUDIO_CRAFT_FLOOR, ledgerHits, planStudioRepair, type StudioRepairDelta } from './studio/studioRepair'
+import { craftRouteImproves, ledgerHits, needsCraftRoute, planStudioRepair, type StudioRepairDelta } from './studio/studioRepair'
 import { isRound } from './studio/layoutContext'
 import { hintsFromBriefDepth, hintsFromPlan, intentFromPlan } from './studio/studioPlanBridge'
 import { pickTemplate } from './catalog/catalog'
 import { buildDieline, resolveDimensions } from './dieline/buildDieline'
 import { findHeroPanel } from './dieline/panelKind'
-import { composeArtwork } from './artwork/composeArtwork'
 import { paletteFor, varyPalette } from './artwork/languages'
 import { paletteFromBrief, ensureAccentContrast } from './artwork/briefPalette'
 import { composeBlankFace } from './artwork/composeBlankFace'
@@ -153,7 +152,20 @@ export class FormaLocalEngine implements EnginePort {
       blankCanvas,
       backgroundTreatment: blankFace?.finish.backgroundTreatment,
     })
-    const studioOn = !!overrides.studio
+    /*
+     * The engine has one painter.
+     *
+     * `overrides.studio` used to choose between the studio archetypes and the older kit
+     * compositor. Nothing in the product ever turned it off — `App.tsx` and the chat both set it —
+     * so the kit branch was dead at runtime while still shipping in the bundle. Proven before it
+     * was removed: with `composeArtwork` rigged to throw, the golden table, the 324 job × family
+     * sweep, the 216 × 2 repertoire sweep and a real chat-to-eight-designs run in the browser all
+     * passed without reaching it.
+     *
+     * The flag stays on the type as a no-op so a stored override from an older session still
+     * loads; it no longer selects anything.
+     */
+    const studioOn = true
     // Kit lockup only. Studio type scale is identity unless the user asked to resize.
     if (!studioOn && designPlan.cue === 'luxury-tighten' && (overrides.titleScale || 1) === 1) {
       overrides.titleScale = 1.1
@@ -184,7 +196,7 @@ export class FormaLocalEngine implements EnginePort {
       )
       let artwork: ArtworkModel
       let studio: StudioReport | undefined
-      if (studioOn) {
+      {
         // Design Brain → direction (closed vocabulary) → deterministic studio painters.
         const surface = kind === 'label' ? 'label' : 'box'
         // The studio face answers to the brief's own colours, treated according to the mood. The
@@ -269,8 +281,6 @@ export class FormaLocalEngine implements EnginePort {
           row.face = renderPanelSvg(dieline, { layers: [front], frontPanelId: front.panelId, language: artwork.language }, front.panelId, palette)
         }
         studio = { ...composed.report, offer }
-      } else {
-        artwork = composeArtwork(brief, dieline, copy, palette, overrides, input.logoHref, system, plan)
       }
       const draft = {
         brief,
@@ -331,14 +341,27 @@ export class FormaLocalEngine implements EnginePort {
        * ledger repair does — kept only when the alternative is clean too and scores higher. The
        * floor sits below every golden face (measured 57–76), so the frozen table is untouched.
        */
-      const craftOf = (p: typeof pack) => scoreVisualCraft({ artwork: p.artwork, preflight: p.preflight, copy, kind }, p.plan).visualCraft
+      /*
+       * Phase 1 gave the gate a second, sharper trigger: the lead element. Measured after the
+       * evaluator learned the studio vocabulary, a face with its subject or field missing still
+       * totals 62–68 — above the floor — while its `hero` reading drops to 30–44. The gate now
+       * steps on either, and keeps an alternative only when it answers the reason it was tried
+       * for (`craftRouteImproves`). A family the customer pinned is never moved: the ranking
+       * honours the pin before the step is applied.
+       */
+      const craftOf = (p: typeof pack) =>
+        scoreVisualCraft({ artwork: p.artwork, preflight: p.preflight, copy, kind, studio: p.studio, brief, dieline }, p.plan)
       let craft = craftOf(pack)
-      for (let step = 1; step <= 3 && craft < STUDIO_CRAFT_FLOOR && ledgerHits(pack.studio) === 0; step++) {
+      for (let step = 1; step <= 3 && needsCraftRoute(craft) && ledgerHits(pack.studio) === 0; step++) {
         const alt = paint(designPlan, undefined, step)
         if (!alt.studio || ledgerHits(alt.studio) > 0) continue
         const altCraft = craftOf(alt)
-        if (altCraft > craft) {
-          pack = { ...alt, studio: { ...alt.studio, repaired: `arketip ${step} adım kaydırıldı — zanaat puanı ${craft} → ${altCraft}` } }
+        if (craftRouteImproves(craft, altCraft)) {
+          const why =
+            craft.visualCraft < 50
+              ? `zanaat puanı ${craft.visualCraft} → ${altCraft.visualCraft}`
+              : `lider öğe yoktu (${craft.hero}), zanaat ${craft.visualCraft} → ${altCraft.visualCraft}`
+          pack = { ...alt, studio: { ...alt.studio, repaired: `arketip ${step} adım kaydırıldı — ${why}` } }
           craft = altCraft
         }
       }
@@ -365,7 +388,9 @@ export class FormaLocalEngine implements EnginePort {
     const revision = (input.prev?.revision ?? 0) + 1
     // Craft score reads the shipped markup after every repair decision, so it can report quality
     // (and give the studio face non-geometry critic coverage) without ever feeding `needsRepair`.
-    const craftScore = scoreVisualCraft({ artwork, preflight: pack.preflight, copy, kind }, pack.plan)
+    // The studio report, the brief and the dieline let the scorer read the ledger instead of
+    // regex-parsing the face — see `studioCraft.ts`. Kit specs have no report and score as before.
+    const craftScore = scoreVisualCraft({ artwork, preflight: pack.preflight, copy, kind, studio: pack.studio, brief, dieline }, pack.plan)
     const decision = captureGenerateDecision({
       designId: id,
       revision,
@@ -386,6 +411,7 @@ export class FormaLocalEngine implements EnginePort {
             background: pack.studio.direction.background,
             temperament: pack.studio.direction.temperament,
             typePairing: pack.studio.direction.typePairing,
+            reasons: pack.studio.direction.reasons,
             source: pack.studio.direction.source,
             collisions: pack.studio.collisions.length,
             minTextMm: pack.studio.minTextMm,

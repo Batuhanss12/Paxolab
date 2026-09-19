@@ -166,6 +166,17 @@ export function understandUtterance(
   }
 }
 
+/**
+ * The sentence `directionBriefing` ends with, and the one callers strip when they are about to say
+ * something better in its place.
+ *
+ * It lived as a literal in three files — the builder and two `String.replace` calls in
+ * `conversation.ts`. Renaming it in the builder alone would leave both strippers matching nothing,
+ * and the tail would survive into a line that already announces the same thing, so the customer
+ * would read it twice. One export, one definition.
+ */
+export const BRIEFING_TAIL = ' İlk tasarımı hazırlıyorum.'
+
 /** Spoken design direction. User never sees JSON. */
 export function directionBriefing(brief: DesignBrief): string {
   const brand = brief.brandName.trim() || 'Marka'
@@ -181,7 +192,7 @@ export function directionBriefing(brief: DesignBrief): string {
   }
   const mood = bits.length ? bits.join(', ') : 'net bir yön'
   const who = product ? `${brand} · ${product}` : brand
-  return `${who} için ${mood} oluşturdum. İlk yüzeyi hazırlıyorum.`
+  return `${who} için ${mood} oluşturdum.${BRIEFING_TAIL}`
 }
 
 export function wantsCompanionLabel(text: string): boolean {

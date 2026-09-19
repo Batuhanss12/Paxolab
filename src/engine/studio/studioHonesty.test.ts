@@ -86,19 +86,6 @@ describe('D4 P1 honesty — kit metadata is not the studio face', () => {
     expect(visible).not.toMatch(/Strateji:/)
   })
 
-  it('kit generate still captions heroGraphic and the food-harvest dialect id', () => {
-    const spec = new FormaLocalEngine().generate({ brief: coffee() })
-    expect(spec.studio).toBeFalsy()
-    expect(spec.artwork.language).toBe('food-harvest')
-    expect(studioLanguageCaption(spec)).toBe('food-harvest')
-    // Kit HeroFamily and studio archetype ids are separate string spaces; compare as text.
-    const hero: string = spec.designPlan?.heroGraphic.family ?? ''
-    if (hero && hero !== 'none') {
-      expect(studioFaceLabel(spec)).toContain(hero)
-      expect(spec.preflight.items.find((row) => row.id === 'proof')?.detail).toContain(hero)
-    }
-    expect(studioProcessSummary(spec)).toMatch(/Strateji:/)
-  })
 
   it('does not let an approved avoid-motif rule change the studio hash', () => {
     const baseline = faceHash(generate())

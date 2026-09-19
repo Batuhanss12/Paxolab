@@ -327,6 +327,23 @@ export function studioFeedbackRecommendations(log: DesignDecisionLog, fb: Pick<S
   if ((fb.type === 'composition' || fb.type === 'visual_language') && wantsChange) {
     out.push({ kind: 'studio-archetype', archetype: log.studio.archetype, prefer: false })
   }
+  /*
+   * A stable companion, so repeated feedback can actually add up.
+   *
+   * Everything above names what was on screen when the customer complained, and `aggregateObservations`
+   * groups by the recommendation — so three rounds of the *same* complaint about three different
+   * archetypes made three groups of one. Measured before this line existed: the engine showed
+   * line-scene, line-scene, noir-stack, the evidence split 2/1, and the three-sample brand threshold
+   * was unreachable. The learning gate could observe forever and never produce a candidate.
+   *
+   * "Modernise this" and "fewer motifs" are both the ornament axis, which the direction already
+   * pins (`studioKnowledge`) and which does not depend on the face in front of the customer. So the
+   * screen-specific negative example stays — it is real evidence about one design — and this adds
+   * the part that accumulates.
+   */
+  if (wantsChange && (fb.type === 'visual_language' || fb.type === 'motif')) {
+    out.push({ kind: 'studio-ornament', ornament: 'quiet', prefer: true })
+  }
   return out
 }
 

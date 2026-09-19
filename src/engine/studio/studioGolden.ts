@@ -197,6 +197,15 @@ export type StudioFaceFreeze = {
  * table with the offer in mind — the customer is now shown four directions and picks one, so which
  * of them arrives selected matters less than it did when the first face was the only face.
  *
+ * F-29 (2026-09-19) moved the two specimen hashes and nothing else, with the owner's approval.
+ * The drawn subject had been sized by a nominal size and an aspect table; measured against the
+ * browser, the table said 0.56 for an arch that reaches 0.60–1.04 of its size, so the picture
+ * spilled past the box the ledger held for it — on a band label it put a flower head through the
+ * city line while the ledger reported nothing. `fitSubject` now sizes the subject by what it really
+ * reaches (`svgHull`) and books the drawn box. On these two faces that means the specimen sits
+ * inside the room between the category line and the product stack instead of leaning over both;
+ * both were rendered before and after and read side by side before the hashes were rewritten.
+ *
  * Update via `npx vite-node scripts/dump-studio-golden.ts`; `scripts/diff-studio-golden.ts`
  * prints only the rows that differ.
  */
@@ -213,8 +222,8 @@ export const STUDIO_FACE_GOLDEN: Record<string, StudioFaceFreeze> = {
   '05-kahve-etiket': { archetype: 'marble-frame', background: 'marble', family: 'marble', hash: '4dd1f88197eb435a' },
   '06-elektronik-kutu': { archetype: 'noir-stack', background: 'arabesque', family: 'dark-luxe', hash: '02aaa2ba34312f0e' },
   '06-elektronik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '9a31d73212aaa9ef' },
-  '07-bebek-kutu': { archetype: 'specimen-hero', background: 'gradient-wash', family: 'specimen', hash: '7a11c79f322d15f7' },
-  '07-bebek-etiket': { archetype: 'specimen-hero', background: 'gradient-wash', family: 'specimen', hash: 'd6c2277a4753b427' },
+  '07-bebek-kutu': { archetype: 'specimen-hero', background: 'gradient-wash', family: 'specimen', hash: '5a389fda4734056d' },
+  '07-bebek-etiket': { archetype: 'specimen-hero', background: 'gradient-wash', family: 'specimen', hash: '0aa378b141dbd93b' },
   '08-saglik-kutu': { archetype: 'diagonal-tech', background: 'diagonal', family: 'tech', hash: '6f613d40ed8a6ceb' },
   '08-saglik-etiket': { archetype: 'diagonal-split', background: 'diagonal', family: 'tech', hash: '30fc49745441e3ad' },
   '09-temizlik-kutu': { archetype: 'wave-panel', background: 'wave', family: 'wave', hash: '750d3bdfa0020ce5' },
@@ -250,6 +259,7 @@ export function generateStudioFace(job: StudioGalleryJob) {
     archetype: spec.studio?.direction.archetype,
     background: spec.studio?.direction.background,
     family: spec.brief.studioFamily,
+    exportOk: spec.preflight.exportOk,
     hash: hashStudioFace(layer),
     markup: layer,
   }

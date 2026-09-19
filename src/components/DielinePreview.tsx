@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DesignSpec } from '../types'
-import { artworkMarkup, clipDefs } from '../engine/artwork/composeArtwork'
+import { artworkMarkup, clipDefs } from '../engine/artwork/renderArtwork'
 import { renderDielineSvg } from '../engine/dieline/renderDielineSvg'
 import { artworkFromDocument } from '../engine/document'
 import { pressSafeMm } from '../engine/production/pressBoxes'
@@ -101,6 +101,7 @@ export function DielinePreview({ design, onCopyChange, onCopyCommit }: DielinePr
         {editing ? (
           <button
             type="button"
+            aria-expanded={dockOpen}
             className={`ghost-btn copy-canvas__toggle${dockOpen ? ' is-active' : ''}`}
             onClick={() => setDockOpen((open) => !open)}
           >

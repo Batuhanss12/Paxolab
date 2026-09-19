@@ -38,13 +38,16 @@ import {
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
+import { paintComposition, paintCompositionSide } from './compositions'
+import { isReferenceArchetype, paintReferenceCrownMark, paintReferenceFace, paintReferenceSkin } from './refArchetypes'
+import { titleFaces } from './typeSystem'
 import { FIELD_INTENSITY, FIELD_MUTE, fieldPalette, secondaryField } from './panelField'
 import { isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, nutritionRows, scentPyramid, usageCopy, usageLine } from './copyBank'
 import { paintAtelierPlateFace, paintCrestPanelFace, paintLineSceneFace, paintSpecimenHeroFace, paintWavePanelFace } from './labelLayouts'
 import { cityLine, identOf, marginFor, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
 import { fitSize, pairingFaces, textEl, textWidth, typeSize, wrapByWidth } from './text'
-import type { BoxArchetype, StudioPalette } from './types'
+import type { BoxArchetype, StudioArchetype, StudioPalette } from './types'
 
 /**
  * Sides / top / flaps.
@@ -56,14 +59,27 @@ import type { BoxArchetype, StudioPalette } from './types'
  * never a surface, so the sides ended up cream on a near-black box, lighter than the front on a
  * modern one, and brown on a brief that asked for green.
  */
-function deepGround(p: StudioPalette, archetype: BoxArchetype): string {
+/**
+ * The studio archetype whose secondary treatment this panel follows, or null when there is none.
+ *
+ * `d.archetype as BoxArchetype` used to stand wherever this is called. That cast is exactly how the
+ * eight reference archetypes lost their backs and sides: they are not box archetypes, the cast told
+ * the compiler they were, every branch below missed them, and they fell silently to the default.
+ * Answering null instead forces each branch to say what it does with an archetype it does not know,
+ * and `paintReferenceSkin` to say what that archetype draws instead.
+ */
+function studioArchetypeOf(id: StudioArchetype): BoxArchetype | null {
+  return isReferenceArchetype(id) ? null : (id as BoxArchetype)
+}
+
+function deepGround(p: StudioPalette, archetype: BoxArchetype | null): string {
   if (archetype === 'ink-wash' || archetype === 'botanical-card' || archetype === 'line-scene' || archetype === 'wave-panel') {
     return p.deep
   }
   return p.ground
 }
 
-function deepInk(p: StudioPalette, archetype: BoxArchetype): string {
+function deepInk(p: StudioPalette, archetype: BoxArchetype | null): string {
   const g = deepGround(p, archetype)
   // Readable on whatever the deep surface turned out to be, rather than on an assumption about it.
   return readableInk(g, isDark(g) ? p.card : p.cardInk)
@@ -152,16 +168,35 @@ function marbleFront(ctx: LayoutCtx): string {
   // Same bracket-and-stack skeleton, three rhythms: tight/high, standard, airy/low.
   const by = h * (d.variant === 1 ? 0.06 : d.variant === 2 ? 0.16 : 0.09)
   const stackY = h * (d.variant === 1 ? 0.58 : d.variant === 2 ? 0.76 : 0.7)
-  const brandMax = Math.min(bw * 0.15, 11)
+  // Bounded by the face's height as well as the bracket's width: on a 90 × 45 front the block was
+  // sized on width alone, ate the room the product stack needed, and pushed it off the panel.
+  const brandMax = Math.min(bw * 0.15, 11, h * 0.16)
   const lock = stackedLockup(ledger, d, w / 2, by + 3, bw - 6, copy.brand, d.chips[1] ?? d.taglineLine, withIdent(ctx, { mark: true, markColor: accent, color: d.palette.accent2, brandMax }))
   parts.push(lock.markup)
   const bh = lock.bottom - by + 3
   parts.push(cornerBrackets(bx, by, bw, bh, accent, Math.min(bw * 0.22, 12)))
+  /*
+   * On a squat carton the bracket block, the category caption and the product stack were each
+   * sized on their own and then laid down in order, so on a 90 × 45 front the caption sat 4 mm
+   * above a prefix that needed 6, and the stack itself ran off the bottom edge — measured as
+   * `spaced × product-prefix` plus `product-prefix` and `product` out of bounds.
+   *
+   * The caption yields when the stack is close behind it, and the stack is told what room the foot
+   * leaves it rather than being trusted to land inside the panel.
+   */
+  const stackTop = Math.max(stackY, by + bh + 8)
+  const volSize = Math.max(1.9, Math.min(2.6, w * 0.032))
   const cat = categoryCaption(ctx)
-  if (cat) parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, cat, 1.5, ink, bw))
-  const stack = productStack(ledger, d, w / 2, Math.max(stackY, by + bh + 8), w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: Math.min(secondaryMax(lock.brandSize), w * 0.11) }))
+  if (cat && stackTop - (by + bh + 3.6) > 5) parts.push(spacedLine(ledger, w / 2, by + bh + 3.6, cat, 1.5, ink, bw))
+  const stack = productStack(ledger, d, w / 2, stackTop, w - m * 2, copy.product, withIdent(ctx, {
+    color: ink,
+    accent,
+    prefix: d.productPrefix,
+    max: Math.min(secondaryMax(lock.brandSize), w * 0.11),
+    room: Math.max(0, h - m - volSize * 2.4 - stackTop),
+  }))
   parts.push(stack.markup)
-  if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, Math.max(1.9, Math.min(2.6, w * 0.032)), ink))
+  if (d.volumeLine) parts.push(netQuantity(ledger, w / 2, Math.min(h - m, stack.bottom + 5), d.volumeLine, volSize, ink))
   return parts.join('')
 }
 
@@ -183,13 +218,22 @@ function botanicalCardFront(ctx: LayoutCtx): string {
         ? Math.max(pill.box.y + pill.box.h + h * 0.2, h * 0.56)
         : Math.max(pill.box.y + pill.box.h + h * 0.14, h * 0.4)
   const cardY = Math.min(wanted, footY - h * 0.3)
-  const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix }))
-  parts.push(card.markup)
-  const band = claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine)
-  parts.push(band.markup)
   // Net quantity is pinned to the foot, so the sentence above it must give way, not overprint.
   const sentenceSize = Math.max(1.6, Math.min(2.3, cardW * 0.045))
   const volSize = Math.max(1.9, Math.min(2.6, w * 0.032))
+  // The card is told what room it has, rather than sized on width and then trusted to land inside.
+  const card = titleCard(ledger, d, m, cardY, cardW, copy.product, d.categoryLine, withIdent(ctx, { prefix: d.productPrefix, room: Math.max(0, footY - volSize * 1.3 - cardY) }))
+  parts.push(card.markup)
+  /*
+   * The claim band is a fixed fraction of the card's width, so on a wide, short front it is tall
+   * (9 mm on a 90 × 45) while the room under the card is not. It used to be drawn regardless and
+   * printed past the panel edge — measured as `claim-band` and `claim` out of bounds. It is a
+   * claim, not a mandatory line, so it yields.
+   */
+  const bandRoom = footY - volSize * 1.3 - card.bottom
+  const band =
+    bandRoom >= Math.max(4.2, cardW * 0.11) ? claimBand(ledger, d, m, card.bottom, cardW, d.chips[0] ?? d.categoryLine) : { markup: '', bottom: card.bottom }
+  parts.push(band.markup)
   const sentenceLines = linesThatFit(band.bottom + 2.2, footY - volSize * 1.3, sentenceSize, 2)
   if (sentenceLines > 0) {
     const sentence = paragraph(ledger, m, band.bottom + 2.2, cardW, d.taglineLine || copy.tagline, sentenceSize, 'sans', ink, sentenceLines, 'middle', false, 'tagline')
@@ -205,10 +249,12 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const parts: string[] = [paintBackground(d.background, w, h, d.palette, d.seed, { species: ctx.species, uid: ctx.uid, ornament: d.ornament })]
   const ink = d.palette.ink
   const accent = d.palette.accent
-  // brand small top-left, monogram top-right
-  const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4 * ctx.titleScale, 1.8 * ctx.titleScale, 'sans-heavy', 0.2)
-  parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: 'sans-heavy', fill: ink, tracking: bSize * 0.2, extra: 'data-edit="brand"' }))
-  ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, 'sans-heavy', bSize * 0.2), bSize)
+  // brand small top-left, monogram top-right — the painter's own faces on its native pairing, the type system's on any other
+  const tf = titleFaces(d.typePairing, 'sans-light/sans-heavy', { light: 'sans-light', heavy: 'sans-heavy', tracking: 0.02 })
+  const brandTrack = tf.tracking === 0.02 ? 0.2 : Math.max(0.06, tf.tracking)
+  const bSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.5, 3.4 * ctx.titleScale, 1.8 * ctx.titleScale, tf.heavy, brandTrack)
+  parts.push(textEl({ x: m, y: m + bSize, text: copy.brand.toLocaleUpperCase('tr'), size: bSize, face: tf.heavy, fill: ink, tracking: bSize * brandTrack, extra: 'data-edit="brand"' }))
+  ledger.text('brand', m, m + bSize, textWidth(copy.brand.toLocaleUpperCase('tr'), bSize, tf.heavy, bSize * brandTrack), bSize)
   const mono = monogramLockup(ledger, d, w - m - w * 0.12, m, copy.brand, w * 0.24, accent, identOf(ctx), {
     maxStackH: Math.min(h * 0.22, 22),
   })
@@ -219,18 +265,18 @@ function diagonalTechFront(ctx: LayoutCtx): string {
   const last = words[words.length - 1] ?? ''
   const colW = w - m * 2
   const titleMax = Math.min(9, colW * 0.16) * ctx.titleScale
-  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
+  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, tf.light, tf.tracking), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, tf.heavy, tf.tracking))
   // Same corner-brand + diagonal skeleton, three drops for the product block.
   const dropAt = d.variant === 1 ? 0.32 : d.variant === 2 ? 0.54 : 0.42
   let y = Math.max(mono.bottom + 6, h * dropAt)
   let productBlock = ''
   if (first) {
-    productBlock += textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 })
-    ledger.text('product-light', m, y, textWidth(first, tSize, 'sans-light', tSize * 0.02), tSize)
+    productBlock += textEl({ x: m, y, text: first, size: tSize, face: tf.light, fill: ink, tracking: tSize * tf.tracking })
+    ledger.text('product-light', m, y, textWidth(first, tSize, tf.light, tSize * tf.tracking), tSize)
     y += tSize * 1.05
   }
-  productBlock += textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 })
-  ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
+  productBlock += textEl({ x: m, y, text: last, size: tSize, face: tf.heavy, fill: ink, tracking: tSize * tf.tracking })
+  ledger.text('product', m, y, textWidth(last, tSize, tf.heavy, tSize * tf.tracking), tSize)
   parts.push(`<g data-edit="product">${productBlock}</g>`)
   y += tSize * 0.6
   const cat = categoryCaption(ctx)
@@ -241,6 +287,7 @@ function diagonalTechFront(ctx: LayoutCtx): string {
     y += catSize * 2.6
   }
   let cx = m
+  let chipsBottom = y
   for (const c of d.chips.slice(0, 2)) {
     // Measured before it is booked: `chip` ledgers as it draws, so checking afterwards left a
     // booked-but-unpainted element behind and preflight failed the face for it.
@@ -249,16 +296,32 @@ function diagonalTechFront(ctx: LayoutCtx): string {
     const el = chip(ledger, d, cx, y, c, { color: ink, size })
     parts.push(el.markup)
     cx += el.w + 2
+    chipsBottom = Math.max(chipsBottom, y + el.h)
   }
-  // foot: quality badge left, volume right
-  const badge = qualityBadge(ledger, d, m + 14, h - m - 5.2, d.locale === 'en' ? 'PREMIUM QUALITY' : 'PREMIUM KALİTE', '', accent)
-  parts.push(badge.markup)
+  /*
+   * Foot: quality badge left, volume right. The badge sits at a fixed height from the foot; on a
+   * squat front (the 90 × 45 earbuds carton) the product block drops to where the chips land on
+   * the same line and the badge printed through them — measured as `chip-text × badge-text` in
+   * the ledger. The badge is the one thing here that can go without being missed, so it yields.
+   */
+  const badgeTop = h - m - 5.2
+  if (badgeTop > chipsBottom + 1) {
+    const badge = qualityBadge(ledger, d, m + 14, badgeTop, d.locale === 'en' ? 'PREMIUM QUALITY' : 'PREMIUM KALİTE', '', accent)
+    parts.push(badge.markup)
+  }
   if (d.volumeLine) parts.push(netQuantity(ledger, w - m, h - m * 0.9, d.volumeLine, Math.max(1.8, Math.min(2.4, w * 0.03)), ink, 'end'))
   return parts.join('')
 }
 
 export function paintBoxFront(ctx: LayoutCtx): string {
-  switch (ctx.d.archetype as BoxArchetype) {
+  // The second repertoire paints its own front — see `refArchetypes.ts`.
+  const reference = paintReferenceFace(ctx)
+  if (reference !== null) return reference
+  // A composition borrows the archetype's field and type and supplies the arrangement — see `compositions.ts`.
+  const composed = paintComposition(ctx)
+  if (composed !== null) return composed
+
+  switch (studioArchetypeOf(ctx.d.archetype)) {
     case 'ink-wash':
       return inkWashFront(ctx)
     case 'marble-frame':
@@ -288,7 +351,7 @@ export function paintBoxFront(ctx: LayoutCtx): string {
 export function paintBoxBack(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
-  const arche = d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(d.archetype)
   const light = arche === 'ink-wash' || arche === 'line-scene' || arche === 'atelier-plate'
   const bg = light ? d.palette.card : arche === 'marble-frame' ? d.palette.ground : arche === 'botanical-card' || arche === 'wave-panel' ? d.palette.ground : d.palette.ground
   const ink = light ? d.palette.cardInk : d.palette.ink
@@ -298,13 +361,14 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   // system rather than a repeat of it — present enough that the panel belongs to the box, quiet
   // enough that the ingredient column stays the thing you read.
   parts.push(
-    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.back), d.seed + 7, {
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, d.archetype, bg, FIELD_MUTE.back), d.seed + 7, {
       species: ctx.species,
       uid: `${ctx.uid}-b`,
       intensity: FIELD_INTENSITY.back,
     }),
   )
-  parts.push(paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.8 }))
+  // A reference archetype wears its own outline here; the studio ten wear the shared frame.
+  parts.push(paintReferenceSkin(ctx, 'back') ?? paintFrame(d, w, h, { inset: m * 0.55, color: accent, opacity: 0.8 }))
   const hdr = backHeaders(d.locale)
   // header lockup
   /*
@@ -448,20 +512,24 @@ export function paintBoxBack(ctx: LayoutCtx): string {
 /* -------------------------------------------------------------------- sides */
 
 export function paintBoxSide(ctx: LayoutCtx, index: number): string {
+  // The carton roles decide what a side carries — see `compositions.ts`.
+  const composed = paintCompositionSide(ctx, index)
+  if (composed !== null) return composed
+
   const { w, h, d, ledger, copy } = ctx
-  const arche = d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(d.archetype)
   const bg = deepGround(d.palette, arche)
   const ink = deepInk(d.palette, arche)
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, bg)]
   parts.push(
-    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.side), d.seed + 11 + index, {
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, d.archetype, bg, FIELD_MUTE.side), d.seed + 11 + index, {
       species: ctx.species,
       uid: `${ctx.uid}-s${index}`,
       intensity: FIELD_INTENSITY.side,
     }),
   )
-  parts.push(paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.8), color: d.palette.accent, opacity: 0.75 }))
+  parts.push(paintReferenceSkin(ctx, 'side') ?? paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.8), color: d.palette.accent, opacity: 0.75 }))
   // Three side regimes: full column (≥ 28 mm wide, ≥ 60 mm tall), compact (≥ 20 mm wide), spine (rotated text only).
   const full = w >= 28 && h >= 60
   const compact = !full && w >= 20 && h >= 40
@@ -469,8 +537,20 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   if (full) {
     // GUESS / Rebull side: mark top, stacked manifesto middle, brand bottom, spine text along the edge
     const r = Math.min(w * 0.14, 5)
-    parts.push(paintMark(markKindFor(d), w / 2, m + r * 1.2, r, ink, copy.brand, identOf(ctx)))
-    ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'side-logo' : 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.4)
+    /*
+     * A reference face either crowns its mark or shows none at all. This side used to draw the bare
+     * sector glyph either way, which on a face that never showed one is a second brand mark — it was
+     * happening on 116 of 614 reference panels. So: the face's own crowned mark where there is one,
+     * nothing where there is not, and the studio ten keep the glyph they have always had.
+     */
+    const crowned = arche === null ? paintReferenceCrownMark(ctx, w / 2, m, r, ink) : null
+    if (crowned !== null) {
+      parts.push(crowned)
+      ledger.add('element', 'side-mark', w / 2 - r * 1.2, m, r * 2.4, r * 2.4)
+    } else if (arche !== null) {
+      parts.push(paintMark(markKindFor(d), w / 2, m + r * 1.2, r, ink, copy.brand, identOf(ctx)))
+      ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'side-logo' : 'side-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2.4)
+    }
     const words = stackedWords(ledger, w / 2, h * 0.36, d.manifesto.slice(0, 4), Math.min(2.4, w * 0.085), ink, colW)
     parts.push(words.markup)
     const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), colW, Math.min(3.6, w * 0.12), 1.6, pairingFaces(d.typePairing).brand, 0.16)
@@ -500,6 +580,11 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
     const spineFits = spineLen > 0 && textWidth(spineLine.toLocaleUpperCase('tr'), 1.6, 'sans', 1.6 * 0.3) <= spineLen
     if (spineFits) {
       parts.push(verticalBrand(ledger, w / 2, (spineTop + spineBottom) / 2, spineLine, Math.min(2.4, w * 0.11), mix(ink, bg, 0.2), spineLen))
+    } else if (w > h && spineLen > 4) {
+      // A side wider than tall reads its spine along the width, unrotated — still the spine, and
+      // marked as one for the carton gate (the squat earbuds carton had none and could not export).
+      const s = Math.min(2.4, h * 0.09)
+      parts.push(`<g data-art="spine">${spacedLine(ledger, w / 2, (spineTop + spineBottom) / 2 + s * 0.35, spineLine, s, mix(ink, bg, 0.2), w - m * 2.4)}</g>`)
     }
     return parts.join('')
   }
@@ -508,8 +593,11 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
   if (h >= w) {
     parts.push(verticalBrand(ledger, w / 2, h / 2, spineText, Math.min(3, w * 0.4), ink, h - m * 3, pairingFaces(d.typePairing).brand))
   } else {
+    // A side wider than tall reads its spine the way it stands: along the width, unrotated. It is
+    // still the spine, and marked as one — the carton gate used to look only for the rotation and
+    // refused to export the squat earbuds carton, one of the eighteen frozen faces.
     const s = Math.min(3, h * 0.4)
-    parts.push(spacedLine(ledger, w / 2, h / 2 + s * 0.35, spineText, s, ink, w - m * 3, 'middle', pairingFaces(d.typePairing).brand))
+    parts.push(`<g data-art="spine">${spacedLine(ledger, w / 2, h / 2 + s * 0.35, spineText, s, ink, w - m * 3, 'middle', pairingFaces(d.typePairing).brand)}</g>`)
   }
   return parts.join('')
 }
@@ -518,20 +606,21 @@ export function paintBoxSide(ctx: LayoutCtx, index: number): string {
 
 export function paintBoxTop(ctx: LayoutCtx, which: 'top' | 'bottom'): string {
   const { w, h, d, ledger, copy } = ctx
-  const arche = d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(d.archetype)
   const bg = deepGround(d.palette, arche)
   const ink = deepInk(d.palette, arche)
   const m = marginFor(w, h)
   const parts: string[] = [ground(w, h, bg)]
   // The lid is the panel a customer sees first on a shelf, so it wears the field too.
   parts.push(
-    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.lid), d.seed + 19, {
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, d.archetype, bg, FIELD_MUTE.lid), d.seed + 19, {
       species: ctx.species,
       uid: `${ctx.uid}-${which}`,
       intensity: FIELD_INTENSITY.lid,
     }),
   )
-  parts.push(paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.6), color: d.palette.accent, opacity: 0.7 }))
+  // The lid is on the shelf as much as the front is, so it wears the archetype's outline too.
+  parts.push(paintReferenceSkin(ctx, 'side') ?? paintFrame(d, w, h, { inset: Math.min(m * 0.5, 1.6), color: d.palette.accent, opacity: 0.7 }))
   const tall = h >= 14
   const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w - m * 2, Math.min(tall ? 5 : 3.4, h * 0.34) * ctx.titleScale, 1.6 * ctx.titleScale, pairingFaces(d.typePairing).brand, 0.16)
   const by = h / 2 + (tall ? -0.5 : brandSize * 0.35)
@@ -546,7 +635,7 @@ export function paintBoxTop(ctx: LayoutCtx, which: 'top' | 'bottom'): string {
 
 export function paintBoxFlap(ctx: LayoutCtx): string {
   const { w, h, d, ledger, copy } = ctx
-  const arche = d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(d.archetype)
   const bg = deepGround(d.palette, arche)
   const ink = mix(deepInk(d.palette, arche), bg, 0.2)
   const vol = d.volumeLine
@@ -557,7 +646,7 @@ export function paintBoxFlap(ctx: LayoutCtx): string {
   // carton look assembled from parts.
   const parts: string[] = [
     `<g data-art="flap">${ground(w, h, bg)}`,
-    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, arche, bg, FIELD_MUTE.flap), d.seed + 23, {
+    paintBackground(secondaryField(d), w, h, fieldPalette(d.palette, d.archetype, bg, FIELD_MUTE.flap), d.seed + 23, {
       species: ctx.species,
       uid: `${ctx.uid}-flap`,
       intensity: FIELD_INTENSITY.flap,
@@ -584,12 +673,12 @@ export function paintBoxFlap(ctx: LayoutCtx): string {
 }
 
 export function paintGlue(ctx: LayoutCtx): string {
-  const arche = ctx.d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(ctx.d.archetype)
   return ground(ctx.w, ctx.h, lighten(deepGround(ctx.d.palette, arche), 0.02))
 }
 
 export function paintPlain(ctx: LayoutCtx): string {
-  const arche = ctx.d.archetype as BoxArchetype
+  const arche = studioArchetypeOf(ctx.d.archetype)
   const bg = deepGround(ctx.d.palette, arche)
   const parts = [ground(ctx.w, ctx.h, bg)]
   if (ctx.w > 20 && ctx.h > 10) {

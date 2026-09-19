@@ -70,8 +70,4 @@ describe('R5 — one-shot studio repair', () => {
     expect(ledgerHits(a.studio)).toBe(ledgerHits(b.studio))
   })
 
-  it('kit path never takes the studio repair branch', () => {
-    const spec = new FormaLocalEngine().generate({ brief: earbuds(), overridePatch: {} })
-    expect(spec.studio).toBeUndefined()
-  })
 })

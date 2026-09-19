@@ -29,6 +29,11 @@ async function loadTable(): Promise<OutlineTable> {
 export function resolveFaceKey(family: string, weight: number, italic: boolean): string {
   const fam = family.toLowerCase()
   if (/great vibes|allura|brush script|cursive/.test(fam)) return 'greatvibes-400'
+  // Phase 4 faces — each stack leads with its own family, so the test is on the first name.
+  if (/instrument serif/.test(fam)) return italic ? 'instrumentserif-400i' : 'instrumentserif-400'
+  if (/barlow condensed|oswald|arial narrow/.test(fam)) return weight >= 700 ? 'barlowcondensed-700' : 'barlowcondensed-600'
+  if (/righteous|fredoka|rounded/.test(fam)) return 'righteous-400'
+  if (/plex mono|jetbrains mono|consolas|courier|monospace/.test(fam)) return weight >= 500 ? 'ibmplexmono-500' : 'ibmplexmono-400'
   // Order matters: a Montserrat stack ends in "sans-serif", which contains "serif".
   const sans = /montserrat|inter|segoe|arial|helvetica|sans/.test(fam)
   if (!sans && /cormorant|playfair|garamond|georgia|times|serif/.test(fam)) {

@@ -8,8 +8,21 @@
 import type { PlacedBox, StudioPanelReport, TypePairing } from './types'
 import type { Panel } from '../../types'
 import { escapeSvg } from '../artwork/svgGeometry'
+import { typeSystem } from './typeSystem'
 
-export type Face = 'serif' | 'serif-italic' | 'sans' | 'sans-light' | 'sans-heavy' | 'script' | 'mono'
+export type Face =
+  | 'serif'
+  | 'serif-italic'
+  | 'serif-heavy'
+  | 'sans'
+  | 'sans-light'
+  | 'sans-heavy'
+  | 'script'
+  | 'mono'
+  | 'condensed-serif'
+  | 'condensed-serif-italic'
+  | 'condensed-grotesk'
+  | 'rounded'
 
 /** Loaded in `index.css` and inlined on the studio SVG so live previews match the DNA faces. */
 export const STUDIO_FONT_HREF =
@@ -22,8 +35,24 @@ export const STUDIO_FONT_UNICODE_RANGE =
 export const STUDIO_EXPORT_FONT_COMMENT =
   'Grapxor fonts: unicode-range Latin+TR named faces; binary WOFF not embedded; press fallback Georgia/Arial.'
 
-export function studioFontStyle(): string {
-  return `<style data-art="studio-fonts">@import url('${STUDIO_FONT_HREF}');</style>`
+/**
+ * The families the Phase 4 faces come from, as Google Fonts asks for them. Imported only when the
+ * face's type system uses one, so a face set in the original three families carries the same
+ * style block it always did.
+ */
+const EXTRA_FAMILY: Partial<Record<Face, string>> = {
+  'condensed-serif': 'Instrument+Serif:ital@0;1',
+  'condensed-serif-italic': 'Instrument+Serif:ital@0;1',
+  'condensed-grotesk': 'Barlow+Condensed:wght@600;700',
+  rounded: 'Righteous',
+  mono: 'IBM+Plex+Mono:wght@400;500',
+}
+
+export function studioFontStyle(pairing?: TypePairing): string {
+  const extra = pairing ? [...new Set(Object.values(pairingFaces(pairing)).map((face) => EXTRA_FAMILY[face]).filter((f): f is string => Boolean(f)))] : []
+  const imports = [STUDIO_FONT_HREF]
+  if (extra.length) imports.push(`https://fonts.googleapis.com/css2?${extra.map((f) => `family=${f}`).join('&')}&display=swap`)
+  return `<style data-art="studio-fonts">${imports.map((u) => `@import url('${u}');`).join('')}</style>`
 }
 
 function studioSubsetFaces(): string {
@@ -31,6 +60,10 @@ function studioSubsetFaces(): string {
     ['Cormorant Garamond', "local('Cormorant Garamond'), local('Georgia')"],
     ['Montserrat', "local('Montserrat'), local('Arial')"],
     ['Great Vibes', "local('Great Vibes'), local('Segoe Script')"],
+    ['Instrument Serif', "local('Instrument Serif'), local('Georgia')"],
+    ['Barlow Condensed', "local('Barlow Condensed'), local('Arial Narrow')"],
+    ['Righteous', "local('Righteous'), local('Arial Rounded MT Bold')"],
+    ['IBM Plex Mono', "local('IBM Plex Mono'), local('Consolas')"],
   ]
   return faces
     .map(
@@ -53,22 +86,33 @@ export function withStudioExportFonts(markup: string): string {
 const FACE_STACK: Record<Face, string> = {
   serif: "'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif",
   'serif-italic': "'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif",
+  'serif-heavy': "'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif",
   sans: "'Montserrat', 'Inter', 'Segoe UI', Arial, sans-serif",
   'sans-light': "'Montserrat', 'Inter', 'Segoe UI', Arial, sans-serif",
   'sans-heavy': "'Montserrat', 'Inter', 'Segoe UI', Arial, sans-serif",
   script: "'Great Vibes', 'Allura', 'Brush Script MT', 'Segoe Script', cursive",
-  mono: "'JetBrains Mono', Consolas, 'Courier New', monospace",
+  mono: "'IBM Plex Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace",
+  'condensed-serif': "'Instrument Serif', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+  'condensed-serif-italic': "'Instrument Serif', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+  'condensed-grotesk': "'Barlow Condensed', 'Oswald', 'Arial Narrow', Arial, sans-serif",
+  rounded: "'Righteous', 'Fredoka', 'Arial Rounded MT Bold', Arial, sans-serif",
 }
 
 /** Average advance width as a fraction of font size (em). Tuned for caps-heavy packaging copy. */
 const FACE_EM: Record<Face, { upper: number; lower: number }> = {
   serif: { upper: 0.7, lower: 0.48 },
   'serif-italic': { upper: 0.66, lower: 0.46 },
+  'serif-heavy': { upper: 0.72, lower: 0.5 },
   sans: { upper: 0.72, lower: 0.58 },
   'sans-light': { upper: 0.69, lower: 0.55 },
   'sans-heavy': { upper: 0.8, lower: 0.64 },
   script: { upper: 0.7, lower: 0.46 },
   mono: { upper: 0.62, lower: 0.62 },
+  // Measured from the vendored subsets; the estimator only sees glyphs the tables lack.
+  'condensed-serif': { upper: 0.52, lower: 0.42 },
+  'condensed-serif-italic': { upper: 0.5, lower: 0.4 },
+  'condensed-grotesk': { upper: 0.5, lower: 0.43 },
+  rounded: { upper: 0.68, lower: 0.56 },
 }
 
 /**
@@ -81,14 +125,19 @@ const FACE_EM: Record<Face, { upper: number; lower: number }> = {
  */
 import METRICS from './fontMetrics.json'
 
-const METRIC_FACE: Partial<Record<Face, string>> = {
+const METRIC_FACE: Record<Face, string> = {
   serif: 'cormorant-500',
   'serif-italic': 'cormorant-500i',
+  'serif-heavy': 'cormorant-700',
   sans: 'montserrat-500',
   'sans-light': 'montserrat-300',
   'sans-heavy': 'montserrat-700',
   script: 'greatvibes-400',
-  // `mono` has no vendored face — it falls back to the estimator below.
+  mono: 'ibmplexmono-400',
+  'condensed-serif': 'instrumentserif-400',
+  'condensed-serif-italic': 'instrumentserif-400i',
+  'condensed-grotesk': 'barlowcondensed-600',
+  rounded: 'righteous-400',
 }
 
 function measuredEm(ch: string, face: Face): number | undefined {
@@ -125,7 +174,8 @@ export function faceFamily(face: Face): string {
 }
 
 export function faceWeight(face: Face): number {
-  if (face === 'sans-heavy') return 700
+  if (face === 'sans-heavy' || face === 'serif-heavy') return 700
+  if (face === 'condensed-grotesk') return 600
   if (face === 'sans-light') return 300
   if (face === 'serif') return 500
   if (face === 'sans') return 500
@@ -225,7 +275,7 @@ export type TextSpec = {
 /** One <text> element, `y` is the baseline. */
 export function textEl(spec: TextSpec): string {
   const weight = spec.weight ?? faceWeight(spec.face)
-  const italic = spec.italic || spec.face === 'serif-italic' ? ' font-style="italic"' : ''
+  const italic = spec.italic || spec.face === 'serif-italic' || spec.face === 'condensed-serif-italic' ? ' font-style="italic"' : ''
   const tracking = spec.tracking ? ` letter-spacing="${spec.tracking.toFixed(3)}"` : ''
   const opacity = spec.opacity != null && spec.opacity < 1 ? ` opacity="${spec.opacity}"` : ''
   const transform = spec.transform ? ` transform="${spec.transform}"` : ''
@@ -233,19 +283,9 @@ export function textEl(spec: TextSpec): string {
   return `<text x="${spec.x.toFixed(2)}" y="${spec.y.toFixed(2)}" text-anchor="${anchor}" fill="${spec.fill}" font-family="${faceFamily(spec.face)}" font-weight="${weight}" font-size="${spec.size.toFixed(2)}"${tracking}${italic}${opacity}${transform}${spec.extra ? ` ${spec.extra}` : ''}>${escapeSvg(spec.text)}</text>`
 }
 
-/** Faces implied by a type pairing. */
+/** Faces implied by a type pairing — read off the type-system table, one row per pairing. */
 export function pairingFaces(pairing: TypePairing): { brand: Face; product: Face; prefix: Face; meta: Face; body: Face } {
-  switch (pairing) {
-    case 'script-accent/sans-heavy':
-      return { brand: 'sans-heavy', product: 'sans-heavy', prefix: 'script', meta: 'sans', body: 'sans' }
-    case 'sans-light/sans-heavy':
-      return { brand: 'serif', product: 'sans-heavy', prefix: 'sans-light', meta: 'sans', body: 'sans' }
-    case 'spaced-serif/spaced-sans':
-      return { brand: 'serif', product: 'sans', prefix: 'serif-italic', meta: 'sans', body: 'serif' }
-    case 'serif-display/sans-meta':
-    default:
-      return { brand: 'serif', product: 'sans', prefix: 'serif-italic', meta: 'sans', body: 'sans' }
-  }
+  return typeSystem(pairing).faces
 }
 
 /** Placement ledger — collision + bounds bookkeeping for one panel. */
@@ -271,14 +311,77 @@ export class Ledger {
     return this.add('text', id, left, baseline - size * 0.78, width, size * 0.98, size)
   }
 
+  /**
+   * The die's real shape in panel-local coordinates, or null when the panel is a plain rectangle.
+   *
+   * `panel.polygon` is stored in sheet coordinates while every box here is panel-local, so the two
+   * have to be brought into the same space before they can be compared. Measured while this was
+   * being written: comparing them directly reported a 104 mm overhang on a 60 mm label — the
+   * distance between the two origins, not anything a printer would see.
+   */
+  private cutShape(): { x: number; y: number }[] | null {
+    const poly = this.panel.polygon
+    /*
+     * Curved cuts only — a disc, an oval, a rounded tin lid.
+     *
+     * Those are the dies whose bounding rectangle lies about the shape, and they are approximated
+     * here as many-sided polygons, so the point count identifies them. A rectilinear polygon of
+     * four to six points is a flap, a wall or a trapezoid, and this deliberately leaves those
+     * alone: the triangular gift box lays `wall-1` out as a *rotated* parallelogram on the sheet
+     * while its painter works in an unrotated 156 × 131 box, so comparing the two spaces flags
+     * every element on the panel and means nothing. Whether that carton has a real defect is an
+     * open question that needs its own measurement, not an answer smuggled in through this gate.
+     */
+    if (!Array.isArray(poly) || poly.length < 12) return null
+    return poly.map((p) => ({ x: p.x - this.panel.x, y: p.y - this.panel.y }))
+  }
+
+  /** Ray casting; the polygon is a fine approximation of the curve, so a corner on it counts as in. */
+  private static insideCut(poly: { x: number; y: number }[], px: number, py: number): boolean {
+    let hit = false
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i]!
+      const b = poly[j]!
+      if (a.y > py !== b.y > py && px < ((b.x - a.x) * (py - a.y)) / (b.y - a.y) + a.x) hit = !hit
+    }
+    return hit
+  }
+
   report(archetype: StudioPanelReport['archetype']): StudioPanelReport {
     const collisions: string[] = []
     const outOfBounds: string[] = []
     const solid = this.placed.filter((b) => b.kind !== 'ground')
     const tol = 0.15
+    /*
+     * A round label is not a square one.
+     *
+     * The bounds test below asks whether a box is inside `panel.w × panel.h` — the panel's bounding
+     * *rectangle*. On a rectangular label that is the cut and the test is right. On a disc, an oval
+     * or any shaped die it is not: a barcode at the bottom centre of the bounding box sits inside
+     * the rectangle and outside the disc. Every sweep reported "dirty 0" while the owner could see
+     * a barcode hanging off the edge of a round label, because nothing here had ever read the
+     * polygon the die actually cuts.
+     *
+     * Only content is judged against the cut. A ground or a field is *supposed* to run past it —
+     * that is the bleed the trim eats.
+     */
+    const cut = this.cutShape()
+    const insideCut = (b: PlacedBox): boolean => {
+      if (!cut) return true
+      const pad = 0.3
+      const corners: [number, number][] = [
+        [b.x + pad, b.y + pad],
+        [b.x + b.w - pad, b.y + pad],
+        [b.x + pad, b.y + b.h - pad],
+        [b.x + b.w - pad, b.y + b.h - pad],
+      ]
+      return corners.every(([px, py]) => Ledger.insideCut(cut, px, py))
+    }
     for (let i = 0; i < solid.length; i++) {
       const a = solid[i]
       if (a.x < -tol || a.y < -tol || a.x + a.w > this.panel.w + tol || a.y + a.h > this.panel.h + tol) {
+        outOfBounds.push(a.id)
+      } else if (a.kind !== 'container' && !insideCut(a)) {
         outOfBounds.push(a.id)
       }
       if (a.kind === 'container') continue

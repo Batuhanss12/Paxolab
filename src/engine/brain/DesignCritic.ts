@@ -100,6 +100,13 @@ export type StudioLedgerEvidence = {
  * Advisory only: severity never rises to `error` and nothing here gates repair or export.
  */
 const CRAFT_TOPICS: { key: keyof VisualCraftScorecard; below: number; map: TopicMap }[] = [
+  /*
+   * The lead element and the focal point are the two findings a designer raises first and the
+   * scorer could not raise at all until it read the studio's own vocabulary: "the subject this
+   * archetype exists for was not drawn", "nothing on this face is the thing you look at".
+   */
+  { key: 'hero', below: 45, map: { category: 'concept', target: 'lead_element', severity: 'warn', direction: 'restore_lead' } },
+  { key: 'focal', below: 45, map: { category: 'composition', target: 'focal_point', severity: 'warn', direction: 'strengthen_focal' } },
   { key: 'hierarchy', below: 55, map: { category: 'hierarchy', target: 'brand_lockup', severity: 'warn', direction: 'strengthen' } },
   { key: 'composition', below: 55, map: { category: 'composition', target: 'face', severity: 'warn', direction: 'rebalance' } },
   { key: 'typography', below: 55, map: { category: 'typography', target: 'type_scale', severity: 'warn', direction: 'refine' } },

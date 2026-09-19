@@ -4,14 +4,32 @@
     {
       "name": "forma-api",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "server"],
+      "runtimeArgs": [
+        "run",
+        "server"
+      ],
       "port": 8787
     },
     {
       "name": "forma-studio",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "compositions-out",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8123",
+        "--directory",
+        ".compositions-out"
+      ],
+      "port": 8123
     }
   ]
 }

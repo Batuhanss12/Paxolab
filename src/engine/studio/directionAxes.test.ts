@@ -20,7 +20,7 @@ import { resetArtMemory } from '../brain/DesignMemory'
 import { paletteFor } from '../artwork/languages'
 import { resolveDirection } from './direction'
 import { BOX_DNA, LABEL_DNA, isFrame, isOrnament, isTypePairing } from './referenceDna'
-import type { DirectionHints, LabelArchetype } from './types'
+import type { DirectionHints, LabelArchetype, StudioRepertoire } from './types'
 
 const BRIEF: DesignBrief = {
   ...emptyBrief(),
@@ -36,10 +36,11 @@ const BRIEF: DesignBrief = {
   dimensionsMm: { L: 70, W: 45, H: 120 },
 }
 
-function resolve(hints: DirectionHints, variationIndex = 0) {
+function resolve(hints: DirectionHints, variationIndex = 0, repertoire: StudioRepertoire = 'studio') {
   const palette = paletteFor(BRIEF, 'luxury', true)
   return resolveDirection({
     brief: BRIEF,
+    repertoire,
     sector: 'perfume',
     style: 'luxury',
     surface: 'label',
@@ -75,7 +76,9 @@ describe('direction axes', () => {
 
   it('variation 0 takes the first entry of each list — the golden invariant', () => {
     for (const dna of Object.values(LABEL_DNA)) {
-      const d = resolve({ archetype: dna.id })
+      // Each row is resolved inside its own repertoire — a pool that does not hold the row cannot
+      // honour a pin to it, which is the point of the two sets being separate.
+      const d = resolve({ archetype: dna.id }, 0, dna.repertoire ?? 'studio')
       expect(d.archetype).toBe(dna.id)
       expect(d.typePairing).toBe(dna.typePairings[0])
       expect(d.frame).toBe(dna.frames[0])

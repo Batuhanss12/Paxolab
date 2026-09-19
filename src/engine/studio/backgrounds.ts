@@ -5,7 +5,9 @@
  */
 import type { BackgroundFamily, OrnamentLevel, StudioPalette } from './types'
 import { darken, lighten, mix } from './color'
-import { speciesHero, speciesLeaf, type HeroInk, type Species } from './species'
+import { blobField, celestialField, ogeeField, pictogramField, toileField } from './graphicFields'
+import { speciesLeaf, type HeroInk, type Species } from './species'
+import { fitSubject } from './subject'
 
 export type Rng = () => number
 
@@ -78,6 +80,17 @@ export function paintBackground(family: BackgroundFamily, w: number, h: number, 
       return circuit(w, h, pal, seed, opts)
     case 'arabesque':
       return arabesque(w, h, pal, seed, opts)
+    // Phase 5 — the graphic languages (`graphicFields.ts`).
+    case 'blob':
+      return blobField(w, h, pal, seed, opts)
+    case 'ogee':
+      return ogeeField(w, h, pal, seed, opts)
+    case 'celestial':
+      return celestialField(w, h, pal, seed, opts)
+    case 'pictogram':
+      return pictogramField(w, h, pal, seed, opts)
+    case 'toile':
+      return toileField(w, h, pal, seed, opts)
     case 'paper':
     default:
       return paper(w, h, pal, seed)
@@ -351,7 +364,7 @@ export function diagonal(w: number, h: number, pal: StudioPalette, seed: number,
 
 /* ---------------------------------------------------------------- ink wash */
 
-function blob(rng: Rng, cx: number, cy: number, rx: number, ry: number): string {
+export function blob(rng: Rng, cx: number, cy: number, rx: number, ry: number): string {
   const n = 8
   const pts: { x: number; y: number }[] = []
   for (let i = 0; i < n; i++) {
@@ -530,20 +543,26 @@ export function lineScene(w: number, h: number, pal: StudioPalette, seed: number
     stem: ink,
   }
 
-  const size = Math.min(w * 0.62, sceneH * 0.82)
-  const cx = w / 2
-  const cy = top + sceneH * 0.48
-  parts.push(
-    speciesHero(opts.species ?? 'flora', cx, cy, size, line, seed, {
-      uid: `${opts.uid}-ls`,
-      style: 'engraved',
-      layout: 'sprig',
-    }),
-  )
-
   // The rule the subject stands on. A straight hairline, not a horizon: nothing behind it, nothing
   // below it, so it reads as the archetype's baseline rather than the edge of a scene.
   const ruleY = h * 0.93
+  /*
+   * The sprig is fitted by its measured reach (`fitSubject`) into the scene's own half and set on
+   * the rule. Sized nominally, as it was, a sprig reaches up to 1.3 × its size tall and reached
+   * out of the lower half into the title above it.
+   */
+  const fit = fitSubject({
+    species: opts.species ?? 'flora',
+    ink: line,
+    seed,
+    layout: 'sprig',
+    style: 'engraved',
+    uid: `${opts.uid}-ls`,
+    room: { left: w * 0.19, right: w * 0.81, top: top + sceneH * 0.06, bottom: ruleY - sw * 3 },
+    minWidth: w * 0.16,
+    valign: 'bottom',
+  })
+  if (fit) parts.push(fit.markup)
   parts.push(
     `<line x1="${f(w * 0.18)}" y1="${f(ruleY)}" x2="${f(w * 0.82)}" y2="${f(ruleY)}" stroke="${ink}" stroke-width="${f(sw)}" stroke-opacity="0.5" />`,
   )

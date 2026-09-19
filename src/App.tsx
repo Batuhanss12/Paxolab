@@ -6,7 +6,8 @@ import { Workspace } from './components/Workspace'
 import { openingReply, runConversation, runConversationAsync } from './engine/conversation'
 import { getEngine } from './engine/EnginePort'
 import { emptyBrief, mergeBrief, uid } from './engine/fields'
-import { styleLabel } from './engine/styles'
+import { STYLE_NOTE } from './engine/iterate/parseIntent'
+import { pickFromFingerprint } from './engine/studio/referenceDna'
 import { getTemplate } from './engine/catalog/catalog'
 import { extractBriefWithLlm } from './engine/nlu'
 import { generateCopyWithLlm, interpretFeedback, rasteriseSvg, studioDirectionWithLlm, studioVisionOffers } from './engine/llm'
@@ -716,7 +717,7 @@ export default function App() {
     if (stateRef.current.showTemplates) return
     if (!liveOnSurface(designRef.current, next)) return
     runGenerate(next, undefined, {
-      announce: `${styleLabel(style)} hale çekiyorum — palet ve tipografi sıfırdan.`,
+      announce: STYLE_NOTE[style],
       revert: held,
     })
   }, [runGenerate])
@@ -775,6 +776,41 @@ export default function App() {
     dispatch({ type: 'directionChoice', open: true })
   }, [])
 
+  /**
+   * "None of these" — swap the whole offer for the other repertoire.
+   *
+   * The family pin, the card pin and the variation all go with it: they name a design in the set
+   * being left, and carrying them across would either be dropped in silence or pin a card the
+   * customer never saw. The tone they chose stays, because a tone is a decision about colour and
+   * says nothing about which eight skeletons they are looking at.
+   */
+  const onSwapRepertoire = useCallback(() => {
+    const current = designRef.current
+    if (!liveOnSurface(current, briefRef.current)) return
+    const held = briefRef.current
+    const next: DesignBrief = {
+      ...held,
+      studioRepertoire: (held.studioRepertoire ?? 'studio') === 'reference' ? 'studio' : 'reference',
+      studioFamily: undefined,
+      studioFamilyLocked: false,
+      studioPick: undefined,
+      directionVariation: 0,
+    }
+    briefRef.current = next
+    dispatch({ type: 'brief', brief: next })
+    runGenerate(
+      next,
+      { overridePatch: { variationIndex: 0 } },
+      {
+        announce:
+          next.studioRepertoire === 'reference'
+            ? 'Bambaşka sekiz tasarım dili getiriyorum — aynı brief, yeni iskeletler.'
+            : 'İlk sekiz tasarım diline dönüyorum.',
+        revert: held,
+      },
+    )
+  }, [runGenerate])
+
   const onDirectionPick = useCallback((family: StudioFamily, index: number) => {
     const current = designRef.current
     if (!liveOnSurface(current, briefRef.current)) return
@@ -796,6 +832,8 @@ export default function App() {
       ...held,
       studioFamily: family,
       studioFamilyLocked: true,
+      // The card is the design as shown — its arrangement, pairing and ornament travel with the family.
+      studioPick: pickFromFingerprint(hit.fingerprint),
       studioTemperament: held.studioTemperament ?? current.studio?.direction.temperament,
       directionVariation: 0,
     }
@@ -953,6 +991,7 @@ export default function App() {
           directionChoiceOpen={state.directionChoiceOpen}
           onDirectionChoiceClose={onDirectionChoiceClose}
           onDirectionChoiceOpen={onDirectionChoiceOpen}
+          onSwapRepertoire={onSwapRepertoire}
           onProof={onProof}
         />
       )}

@@ -61,8 +61,30 @@ export function templateForStructure(structureId: StructureId, mode: PackagingMo
   return activeTemplates(true).find((t) => t.structureId === structureId && t.packagingMode === mode)
 }
 
+/**
+ * Bare words the chat invites but that only resolve once the surface is known.
+ *
+ * `describeStructureOffer` ends every label line with “Sarımlı veya **düz** yazarak
+ * değiştirebilirsin”, and the offer header reads “sarımlı şişe veya düz”. `sarımlı` matched on its
+ * own; `düz` did not — `STRUCTURE_PARSE` wanted the two-word `düz etiket`, so the single word the
+ * chat had just asked for fell through to no structure at all and the identical list was printed a
+ * second time with no acknowledgement. Measured on a honey label: the customer types `düz`, and
+ * the only thing that changes on screen is that the same three lines appear again.
+ *
+ * It cannot go in `STRUCTURE_PARSE` as a bare alternative, because `düz` is also the first word of
+ * `düz tuck-end` — the box. The surface decides, so the resolution happens here where the mode is
+ * known.
+ */
+const BARE_BY_MODE: Array<{ re: RegExp; label: StructureId; box: StructureId }> = [
+  { re: /^düz[\s.!]*$/i, label: 'flat-label', box: 'tuck-end-box' },
+]
+
 export function templateIdFromUtterance(text: string, mode: PackagingMode | ''): string {
-  const id = parseStructureUtterance(text)
+  let id = parseStructureUtterance(text)
+  if (!id) {
+    const bare = BARE_BY_MODE.find((row) => row.re.test(text.trim()))
+    if (bare) id = mode === 'label' ? bare.label : mode === 'box' ? bare.box : null
+  }
   if (!id) return ''
   const pack: PackagingMode = id === 'flat-label' || id === 'wrap-label' ? 'label' : 'box'
   const hit = templateForStructure(id, pack) ?? (mode ? templateForStructure(id, mode) : undefined)

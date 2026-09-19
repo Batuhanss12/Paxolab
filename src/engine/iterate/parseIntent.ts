@@ -1,5 +1,6 @@
 import type { DesignBrief, DesignOverrides, DesignSpec, StyleType } from '../../types'
 import type { DirectionHints, StudioFamily } from '../studio/types'
+import { styleLabel } from '../styles'
 import { DESIGN_COMMAND_WORDS, parseDesignCommands } from './parseDesignCommands'
 
 export type IterateIntent = {
@@ -17,6 +18,22 @@ const STYLES: [RegExp, StyleType][] = [
   [/playful\s*(yap|stil)|eğlenc\w*\s*(yap|stil)|daha\s*eğlenc|renkli\s*yap|\bplayful\b/i, 'playful'],
   [/klasik\s*(yap|stil)|classic\s*(yap|stil)|daha\s*klasik|\bclassic\b|\bklasik\b/i, 'classic'],
 ]
+
+/**
+ * What each mood change says, in the customer's words.
+ *
+ * One sentence per style rather than one template for all six: "Lüks yaptım — palet ve tipografi
+ * sıfırdan" tells nobody what changed, and arriving verbatim after every chip press reads like a
+ * receipt. Each line names the thing that actually moves, and uses the chip's own label.
+ */
+export const STYLE_NOTE: Record<StyleType, string> = {
+  luxury: `${styleLabel('luxury')} çizgiye geçiyorum — kontrast yükseliyor, metalik vurgu geliyor.`,
+  modern: `${styleLabel('modern')} çizgiye geçiyorum — keskin harfler, süs azalıyor.`,
+  minimal: `${styleLabel('minimal')} çizgiye geçiyorum — boşluk artıyor, motifler çekiliyor.`,
+  eco: `${styleLabel('eco')} çizgiye geçiyorum — toprak tonları ve botanik ağırlık kazanıyor.`,
+  playful: `${styleLabel('playful')} çizgiye geçiyorum — renk canlanıyor, form yumuşuyor.`,
+  classic: `${styleLabel('classic')} çizgiye geçiyorum — serif harfler ve klasik süs öne çıkıyor.`,
+}
 
 export function parseIntent(text: string, currentStyle: StyleType | '' = ''): IterateIntent {
   const overridePatch: Partial<DesignOverrides> = {}
@@ -47,7 +64,7 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
         overridePatch.premium = true
         if (currentStyle === 'luxury' && /daha\s*(lüks|premium)/i.test(text)) {
           overridePatch.directorCue = 'luxury-tighten'
-          notes.push('Yönetmen: daha fazla hava, daha az motif — altın yağmuru değil.')
+          notes.push('Daha fazla boşluk, daha az motif bırakıyorum — altın yağmuru değil.')
         } else if (currentStyle !== 'luxury') {
           overridePatch.directorCue = 'luxury-arrive'
           overridePatch.paletteShift = 'gold'
@@ -60,7 +77,15 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
       }
       if (style === 'eco' && currentStyle === 'eco') overridePatch.directorCue = 'warm-natural'
       if ((style === 'modern' || style === 'playful') && currentStyle === style) overridePatch.directorCue = 'graphic-push'
-      notes.push(`${style} hale çekiyorum — palet ve tipografi sıfırdan.`)
+      /*
+       * The style name the customer reads must be the one on the chips beside them.
+       *
+       * This line used to interpolate the enum: "luxury hale çekiyorum". `luxury` is an English
+       * identifier that appears nowhere in the interface — the chip says **Lüks** — so the one
+       * sentence confirming what was just asked for arrived in a different language than the
+       * control that asks for it. `styleLabel` is the same map the chips render from.
+       */
+      notes.push(STYLE_NOTE[style])
       break
     }
   }
@@ -96,6 +121,33 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
   } else if (/daha\s*sıcak|warm/i.test(text)) {
     overridePatch.paletteShift = 'warm'
     notes.push('Paleti sıcak tarafa aldım.')
+  }
+
+  /*
+   * "Show me a different set" — the same swap the chooser's button performs.
+   *
+   * The button said "Tasarımları değiştir" and typing those exact words did something else: the
+   * phrase fell through to the generic redraw and answered "Bunlarla yeniden çiziyorum", so the
+   * one feature the owner asked for had no path through the chat and the button's own wording
+   * meant a different thing when typed. The words say which way to go, so this sets the target
+   * rather than toggling — and clears what belongs to the set being left behind, exactly as the
+   * button does: the family pin, the card pin, the variation. The tone stays; a tone is a
+   * decision about colour and says nothing about which eight skeletons are on screen.
+   */
+  if (REPERTOIRE_OTHER.test(text)) {
+    briefPatch.studioRepertoire = 'reference'
+    briefPatch.studioFamily = undefined
+    briefPatch.studioFamilyLocked = false
+    briefPatch.studioPick = undefined
+    briefPatch.directionVariation = 0
+    notes.push('Bambaşka sekiz tasarım dili getiriyorum — aynı brief, yeni iskeletler.')
+  } else if (REPERTOIRE_BACK.test(text)) {
+    briefPatch.studioRepertoire = 'studio'
+    briefPatch.studioFamily = undefined
+    briefPatch.studioFamilyLocked = false
+    briefPatch.studioPick = undefined
+    briefPatch.directionVariation = 0
+    notes.push('İlk sekiz tasarım diline dönüyorum.')
   }
 
   if (/daha\s*mermer|mermer\s*(yap|olsun)|more\s*marble/i.test(text)) {
@@ -183,9 +235,25 @@ export function parseIntent(text: string, currentStyle: StyleType | '' = ''): It
   return { overridePatch, copyPatch, briefPatch, note: notes.join(' ') }
 }
 
+/**
+ * "Give me a different set of eight" / "go back to the first set".
+ *
+ * Exported because two places need the same answer: `parseIntent`, which builds the patch, and the
+ * numbered direction picker, which otherwise gets there first — `parseDirectionChoice` reads
+ * "**ilk** tasarımlara dön" as "pick direction 1" and answered "1. yön: kemer taç" while the swap
+ * quietly happened underneath. The strip was right and the sentence was wrong, which is worse than
+ * either alone.
+ */
+export const REPERTOIRE_OTHER = /(tasarımlar[ıi]|tasarimlari)\s*(değiştir|degistir)|bambaşka\s*(tasarım|sekiz)|başka\s*tasarımlar|farklı\s*tasarımlar|other\s*designs?/i
+export const REPERTOIRE_BACK = /(ilk|önceki|eski)\s*tasarımlara?\s*(dön|don)|ilk\s*sekize\s*dön/i
+
+export function isRepertoireSwap(text: string): boolean {
+  return REPERTOIRE_OTHER.test(text) || REPERTOIRE_BACK.test(text)
+}
+
 export function isIteration(text: string): boolean {
   return (
-    /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga|yoğun|dolu|sıkışık|kalabalık/i.test(
+    /logo|premium|minimal|baskı|yazı|metn|renk|daha\s|küçült|büyüt|hazırla|koyu|sıcak|sade|yeniden|tagline|slogan|barkod|qr|altın|gold|foil|vurgu|stil|eco|modern|klasik|classic|luxury|lüks|playful|eğlenc|çerçeve|geç|cesur|grafik|kontrast|genç|dinamik|olgun|zamansız|güvenilir|ürün\s*ad|mermer|botanik|klinik|sakin|sessiz|dalga|yoğun|dolu|sıkışık|kalabalık|değiştir|degistir|bambaşka|başka\s*tasarım|farklı\s*tasarım|tasarımlara\s*dön/i.test(
       text,
     ) || DESIGN_COMMAND_WORDS.test(text)
   )

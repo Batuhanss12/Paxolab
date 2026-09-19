@@ -19,19 +19,34 @@ import {
   samePackLine,
   volumeLine,
 } from './copyBank'
-import { STUDIO_FAMILIES, familyOf } from './family'
+import { STUDIO_FAMILIES, familyOf, familyTalk, familyRepertoire } from './family'
+import { directionFingerprint } from './fingerprint'
+import { styleLabel } from '../styles'
 import type { StudioIntent } from './studioPlanBridge'
-import { archetypesFor, dnaFor, type ArchetypeDna } from './referenceDna'
+import { ARCHETYPE_PERSONALITY, archetypesFor, dnaFor, lockupsFor, type ArchetypeDna } from './referenceDna'
+import { pairingsFor, typeSystem } from './typeSystem'
+import {
+  LOCKUP_PERSONALITY,
+  TYPE_PERSONALITY,
+  bestByPersonality,
+  brandPersonality,
+  personalityFit,
+  personalityTalk,
+  subjectStyleFor,
+  type BrandPersonality,
+} from './personality'
 import type {
   CopySource,
   DesignDirection,
   DirectionHints,
+  DirectionReason,
   StudioArchetype,
   StudioDirectionOffer,
   StudioFamily,
   StudioPalette,
   StudioSurface,
   Temperament,
+  StudioRepertoire,
 } from './types'
 
 export type DirectionInput = {
@@ -56,6 +71,8 @@ export type DirectionInput = {
   hints?: DirectionHints[]
   /** The front is a disc or an oval. A `bezel` frame is a property of that cut, not of any archetype. */
   round?: boolean
+  /** Which repertoire the pool is drawn from; the brief's, or `studio` by default. */
+  repertoire?: StudioRepertoire
   /**
    * What the design brain wants on the three preference axes. Read by the ranking as a small fit
    * term — an archetype whose lists can wear the plan's pairing, frame and ornament edges ahead of
@@ -360,7 +377,47 @@ export type ArchetypeScoreParts = {
   backgroundMismatch: number
   /** 0–1: how many of the brain's axis intents this archetype's preference lists can wear. 1 when the brain said nothing. */
   intentFit: number
+  /** −1…1: how well the archetype answers the brand's own personality. 0 when the brief said nothing about itself. */
+  personalityFit: number
 }
+
+/**
+ * How much the brand's personality weighs against the sector and the mood.
+ *
+ * Measured before this existed (Phase 0): two opposite personalities on the same sector and mood
+ * shared an archetype in 107 of 108 pairs. The term has to be able to reorder the pool for a
+ * brief that *said* who it is, and be exactly zero for one that did not — the second is by
+ * construction (`personalityFit` is normalised by the brief's own magnitude), so the weight only
+ * has to answer the first. 0.35 puts a stated personality at parity with the mood term (0.35) and
+ * above the sector term (0.22): it can outvote the sector's default opinion, not the mood the
+ * customer chose. Swept on the two-brand table (108 pairs, opposite personalities):
+ *
+ *   W 0.25 / pin 0.45 → same archetype 64 %, ≥2 design axes apart 86 %
+ *   W 0.35 / pin 0.35 → 57 % / 86 %          ← chosen
+ *   W 0.40 / pin 0.30 → 56 % / 88 %
+ *   W 0.45 / pin 0.25 → 46 % / 90 %
+ *
+ * "The same design" (archetype + lockup + pairing + ornament + frame all equal) is 0 of 108 at
+ * every setting. Where the archetype still agrees it is mostly sectors that recognise one or two
+ * families — a repertoire limit, not a scoring one. The eighteen frozen faces are neutral and
+ * unmoved at any value.
+ */
+const PERSONALITY_WEIGHT = 0.35
+
+/**
+ * The sector's guess yields when the customer has said who they are.
+ *
+ * `hintsFromBrief` pins the sector's reference archetype at +0.85 — perfume to the noir carton,
+ * shampoo to the botanical card — which is right when that is all the engine knows. Once the
+ * brief carries a personality, that guess is one opinion among several: at +0.85 it outvoted any
+ * personality the weight above could express, and a restrained boutique house and a loud mass
+ * label both got the noir carton because they were both perfume. A pin the customer set (a picked
+ * card, a locked family) is not touched; only the engine's own sector guess steps back.
+ */
+const SECTOR_PIN_WHEN_PERSONAL = 0.35
+/** Same reasoning for the product-family prior ("coffee → the marble reference"): a reference association, not a customer statement. */
+const PRODUCT_FAMILY_WHEN_PERSONAL = 0.5
+const PERSONALITY_SPEAKS = 0.25
 
 function scoreArchetype(
   dna: ArchetypeDna,
@@ -368,15 +425,19 @@ function scoreArchetype(
   temperament: Temperament,
   hints: DirectionHints,
   achromatic = false,
+  personality: BrandPersonality = brandPersonality({}),
 ): { score: number; parts: ArchetypeScoreParts } {
   const sectorFit = dna.sectors[input.sector] ?? 0.2
   const styleFit = dna.styles[input.style] ?? 0.3
   const ratio = input.faceH / Math.max(1, input.faceW)
   const aspectFit = dna.aspect === 'any' ? 0.7 : dna.aspect === 'portrait' ? (ratio >= 1.1 ? 1 : 0.3) : ratio <= 0.95 ? 1 : 0.3
   const tempFit = dna.temperaments.includes(temperament) ? 1 : 0.3
-  const productFamily = productFamilyFit(dna.id, input)
   const avoided = hints.avoidArchetypes?.includes(dna.id) ?? false
-  const hintPin = hints.archetype === dna.id && !avoided ? (hints.source === 'heuristic' ? 0.85 : 2) : 0
+  const personal = personality.strength >= PERSONALITY_SPEAKS
+  const productFamily = productFamilyFit(dna.id, input) * (personal ? PRODUCT_FAMILY_WHEN_PERSONAL : 1)
+  const heuristicPin = personal ? SECTOR_PIN_WHEN_PERSONAL : 0.85
+  const hintPin = hints.archetype === dna.id && !avoided ? (hints.source === 'heuristic' ? heuristicPin : 2) : 0
+  const personalityFitValue = personalityFit(personality, ARCHETYPE_PERSONALITY[dna.id as StudioArchetype] ?? {})
   const veto = avoided ? -1.5 : 0
   const bgMiss = hints.background && !dna.backgrounds.includes(hints.background) ? -0.15 : 0
   const bgAvoid = hints.avoidBackgrounds?.length && dna.backgrounds.every((b) => hints.avoidBackgrounds?.includes(b)) ? -0.6 : 0
@@ -399,10 +460,19 @@ function scoreArchetype(
   ].filter(([ask]) => ask !== undefined) as [unknown, readonly unknown[]][]
   const intentFit = asks.length ? asks.filter(([ask, list]) => list.includes(ask)).length / asks.length : 1
   const score =
-    sectorFit * 0.22 + styleFit * 0.35 + aspectFit * 0.1 + tempFit * 0.18 + intentFit * 0.05 + productFamily + hintPin + veto + backgroundMismatch
+    sectorFit * 0.22 +
+    styleFit * 0.35 +
+    aspectFit * 0.1 +
+    tempFit * 0.18 +
+    intentFit * 0.05 +
+    personalityFitValue * PERSONALITY_WEIGHT +
+    productFamily +
+    hintPin +
+    veto +
+    backgroundMismatch
   return {
     score,
-    parts: { sectorFit, styleFit, aspectFit, tempFit, productFamily, hintPin, veto, backgroundMismatch, intentFit },
+    parts: { sectorFit, styleFit, aspectFit, tempFit, productFamily, hintPin, veto, backgroundMismatch, intentFit, personalityFit: personalityFitValue },
   }
 }
 
@@ -434,9 +504,23 @@ function productFamilyFit(id: string, input: DirectionInput): number {
  * is not glued to electronics, and marble can land on a perfume or tech brief.
  * Conversation / LLM hints overlay this; catalog jobs omit studio so freeze is untouched.
  */
+/*
+ * `rationale` is quoted verbatim as the reason in the "neden bu yön" answer, so these read as
+ * sentences said to the customer, not as notes to the next developer. They used to open with
+ * "Brief:" and end in vocabulary from inside the engine — *"Brief: mermer — sektör pin'inin önüne
+ * geçer"*, *"Brief: arma / arabesk — Azzurra roundel sistemi"*. `Brief` is not a Turkish word, a
+ * `pin` is an implementation detail, and Azzurra and Diako are the reference plates this repo was
+ * built from: private names for someone else's work, quoted to a customer as if they explained
+ * anything. Each line now names the word the customer typed, which is the true reason.
+ */
 function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
   if (/mermer|marble/.test(blob)) {
-    return { archetype: 'marble-frame', background: 'marble', pinSource: 'visual', rationale: ['Brief: mermer — sektör pin’inin önüne geçer.'] }
+    return {
+      archetype: 'marble-frame',
+      background: 'marble',
+      pinSource: 'visual',
+      rationale: ['mermer dedin — bu isteğin sektör alışkanlığının önüne geçti'],
+    }
   }
   if (/botanik|yaprak|\bleaf\b/.test(blob)) {
     return {
@@ -444,7 +528,7 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
       background: 'botanical',
       temperament: 'vivid-mono',
       pinSource: 'visual',
-      rationale: ['Brief: botanik.'],
+      rationale: ['botanik istedin'],
     }
   }
   if (/line[\s-]?scene|klinik|çizgisel|line[\s-]?art/.test(blob)) {
@@ -453,18 +537,24 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
       background: 'line-scene',
       temperament: 'clean-clinical',
       pinSource: 'visual',
-      rationale: ['Brief: klinik / çizgisel.'],
+      rationale: ['çizgisel ve klinik bir anlatım istedin'],
     }
   }
   if (/\bdalga\b|\bwave\b/.test(blob)) {
-    return { archetype: 'wave-panel', background: 'wave', temperament: 'clean-clinical', pinSource: 'visual', rationale: ['Brief: dalga.'] }
+    return {
+      archetype: 'wave-panel',
+      background: 'wave',
+      temperament: 'clean-clinical',
+      pinSource: 'visual',
+      rationale: ['dalga dedin'],
+    }
   }
   if (/mürekkep|\bink\b/.test(blob)) {
     return {
       archetype: label ? 'ink-panel' : 'noir-stack',
       temperament: 'dark-luxe',
       pinSource: 'visual',
-      rationale: ['Brief: mürekkep.'],
+      rationale: ['mürekkep dedin'],
     }
   }
   if (/diyagonal|diagonal|antrasit/.test(blob)) {
@@ -472,15 +562,25 @@ function visualOverrideFromBrief(blob: string, label: boolean): DirectionHints {
       archetype: label ? 'diagonal-split' : 'diagonal-tech',
       temperament: 'tech-dark',
       pinSource: 'visual',
-      rationale: ['Brief: diyagonal / antrasit.'],
+      rationale: ['diyagonal ve antrasit bir duruş istedin'],
     }
   }
   // The two STİCKERR REF plates. Both archetypes are shared across surfaces, so no label/box fork.
   if (/\barma\b|\bcrest\b|arabesk|arabesque|roundel|madalyon/.test(blob)) {
-    return { archetype: 'crest-panel', background: 'arabesque', pinSource: 'visual', rationale: ['Brief: arma / arabesk — Azzurra roundel sistemi.'] }
+    return {
+      archetype: 'crest-panel',
+      background: 'arabesque',
+      pinSource: 'visual',
+      rationale: ['arma ve arabesk istedin — madalyon kurulumu bunu taşıyor'],
+    }
   }
   if (/at[öo]lye|atelier|\bplaka\b|\bplate\b/.test(blob)) {
-    return { archetype: 'atelier-plate', frame: 'band-hairline', pinSource: 'visual', rationale: ['Brief: atölye / plaka — Diako üç katlı tip plakası.'] }
+    return {
+      archetype: 'atelier-plate',
+      frame: 'band-hairline',
+      pinSource: 'visual',
+      rationale: ['atölye plakası istedin — üç katlı yazı düzeni bunun için'],
+    }
   }
   return {}
 }
@@ -492,41 +592,50 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
   if (visual.archetype) return { source: 'heuristic', ...visual }
 
   const hints: DirectionHints = { source: 'heuristic', pinSource: 'sector', rationale: [] }
+  /*
+   * These reasons are spoken to the customer, and they used to name the reference plates this
+   * engine learned each sector from: *"Parfüm — Guess / Rebull koyu lüks manzara + mürekkep"*,
+   * *"Elektronik — Capelli diyagonal metalik sistem"*, *"Kozmetik bakım — woo.originals botanik
+   * kart sistemi"*. Those are other companies' packs. Telling a customer their perfume label comes
+   * from Guess is worse than jargon — it misdescribes their design as a copy and repeats a private
+   * note from `STİCKERR REF` to someone outside the project. The reference material still decides
+   * the DNA; what is *said* is the shelf convention it encodes.
+   */
   if (/kahve|coffee|espresso|frappe|brew/.test(blob)) {
     hints.archetype = 'marble-frame'
     hints.background = 'marble'
-    hints.rationale = ['Kahve — Elite Brew mermer + köşe parantez sistemi (sektör prior, brief sözcüğü yok).']
+    hints.rationale = ['kahve rafında taşlı zemin ve köşe parantezi yerleşik bir dil']
   } else if (/\bbal\b|honey|reçel/.test(blob)) {
     // The drawn subject, not scenery: a honey pack's picture is the flower the bee worked.
     hints.archetype = 'specimen-hero'
     hints.background = 'gradient-wash'
-    hints.rationale = ['Gıda / bal — çizilmiş botanik özne.']
+    hints.rationale = ['balda çizilmiş bitki, manzaradan daha doğru bir özne']
   } else if (/serum|ampul/.test(blob) || sector === 'serum') {
     hints.archetype = 'line-scene'
     hints.background = 'line-scene'
     hints.temperament = 'clean-clinical'
-    hints.rationale = ['Serum — DNA Pharma klinik line-scene sistemi.']
+    hints.rationale = ['serumda temiz çizgi ve klinik duruş güven veriyor']
   } else if (/bebek|baby/.test(blob) || sector === 'baby') {
     hints.archetype = 'line-scene'
     hints.background = 'line-scene'
-    hints.rationale = ['Bebek — line-scene; botanik karta düşmez.']
+    hints.rationale = ['bebek ürününde yumuşak çizgi, ağır motiften daha uygun']
   } else if (/temizlik|deterjan/.test(blob) || sector === 'cleaning') {
     hints.archetype = 'wave-panel'
     hints.background = 'wave'
     hints.temperament = 'clean-clinical'
-    hints.rationale = ['Temizlik — FERAH dalga paneli.']
+    hints.rationale = ['temizlikte akan dalga formu ferahlık anlatıyor']
   } else if (/şampuan|shampoo|krem|bakım/.test(blob) && !/parfüm|perfume/.test(blob)) {
     hints.archetype = label ? 'card-on-art' : 'botanical-card'
     hints.temperament = 'vivid-mono'
-    hints.rationale = ['Kozmetik bakım — woo.originals botanik kart sistemi.']
+    hints.rationale = ['bakım ürününde botanik kart rafın alıştığı dil']
   } else if (/parfüm|perfume|eau de/.test(blob)) {
     hints.archetype = label ? 'ink-panel' : 'noir-stack'
     hints.temperament = /krem|cream|light/.test(blob) ? 'light-luxe' : 'dark-luxe'
-    hints.rationale = ['Parfüm — Guess / Rebull koyu lüks manzara + mürekkep.']
+    hints.rationale = ['parfümde koyu zemin ve sakin tipografi lüksü taşıyor']
   } else if (/elektronik|kulaklık|earbuds|tech/.test(blob)) {
     hints.archetype = label ? 'diagonal-split' : 'diagonal-tech'
     hints.temperament = 'tech-dark'
-    hints.rationale = ['Elektronik — Capelli diyagonal metalik sistem.']
+    hints.rationale = ['elektronikte diyagonal kesim ve metalik vurgu yerleşik']
   }
   if (sector === 'perfume' && !hints.archetype) {
     hints.archetype = label ? 'ink-panel' : 'noir-stack'
@@ -535,19 +644,31 @@ export function hintsFromBrief(brief: DesignBrief, sector: SectorId, surface: St
   return hints
 }
 
+const SOURCED_AXES = new Set(['archetype', 'background', 'temperament', 'typePairing', 'frame', 'lockup', 'ornament'])
+
 function mergeHints(list: DirectionHints[] | undefined): DirectionHints {
   const out: DirectionHints = {}
+  const axisSource: NonNullable<DirectionHints['axisSource']> = {}
   for (const h of list ?? []) {
     for (const [k, v] of Object.entries(h)) {
+      if (k === 'axisSource') continue
       if (v == null || (Array.isArray(v) && !v.length) || v === '') continue
       if (k === 'avoidArchetypes' || k === 'avoidBackgrounds' || k === 'rationale') {
         const prev = (out as Record<string, unknown>)[k] as unknown[] | undefined
         ;(out as Record<string, unknown>)[k] = [...(prev ?? []), ...(v as unknown[])]
       } else {
         ;(out as Record<string, unknown>)[k] = v
+        if (SOURCED_AXES.has(k)) {
+          // The last hint to set an axis owns it, with the source it carries for that axis.
+          const axis = k as keyof NonNullable<DirectionHints['axisSource']>
+          const from = h.axisSource?.[axis] ?? h.source
+          if (from) axisSource[axis] = from
+          else delete axisSource[axis]
+        }
       }
     }
   }
+  out.axisSource = axisSource
   return out
 }
 
@@ -592,13 +713,13 @@ function directionRationale(dna: ArchetypeDna, temperament: Temperament, backgro
   ]
 }
 
-export type DirectionClaimKey = 'visualOverride' | 'sectorPrior' | 'productFamily' | 'styleFit' | 'userPin' | 'veto'
+export type DirectionClaimKey = 'visualOverride' | 'sectorPrior' | 'productFamily' | 'styleFit' | 'userPin' | 'veto' | 'personality'
 
 export type DirectionClaim = {
   key: DirectionClaimKey
   authority: 'REAL'
   text: string
-  briefField?: 'colors' | 'subProduct' | 'styleType' | 'studioFamily' | 'productName'
+  briefField?: 'colors' | 'subProduct' | 'styleType' | 'studioFamily' | 'productName' | 'feeling' | 'audience' | 'channel' | 'priceTier' | 'avoidLike' | 'story'
 }
 
 export type DirectionScoreRow = {
@@ -637,37 +758,70 @@ type ScoredDna = {
 type RankedPool = {
   hints: DirectionHints
   temperamentGuess: Temperament
+  personality: BrandPersonality
   scored: ScoredDna[]
   scores: DirectionScoreRow[]
   ranked: ScoredDna[]
   pool: ScoredDna[]
   pick: ScoredDna
+  /** Laps completed around the family walk — the step every axis list is read at. */
+  axisStep: number
 }
 
+/**
+ * Why this direction won, in the customer's words.
+ *
+ * These sentences are the whole of the "neden bu yön" answer — the one place the engine explains
+ * itself — and they were written in engine vocabulary: *"ürün ailesi (krem) bu arketipe +0.22
+ * verdi; kilitli görsel aile card-on-art bu yönü sabitledi"*. Three things in that sentence belong
+ * to the code and not to the person reading it: `arketip` is an internal noun, `+0.22` is a score
+ * on a scale nobody was shown, and `card-on-art` is a TypeScript identifier. A customer asking why
+ * wants to hear which of *their own* words decided it.
+ *
+ * So each claim now names the brief field it came from, and nothing else. The `briefField` tag is
+ * unchanged, which is what the ablation test in `studioConversation.test.ts` actually checks: the
+ * claim still has to be real — removing the input must change the winner — only its wording moved.
+ */
 function groundedClaims(
   input: DirectionInput,
   hints: DirectionHints,
   winner: DirectionScoreRow,
   runner: DirectionScoreRow | undefined,
+  personality: BrandPersonality = brandPersonality({}),
 ): DirectionClaim[] {
   const claims: DirectionClaim[] = []
   const beat = (value: number, other: number | undefined) => other == null || value > other + 0.001
+  /*
+   * The brand's own words, quoted back. This is the claim the audit found missing: the "why"
+   * answer could cite a colour, a product word or a picked family, never the audience, the
+   * feeling or the channel — because none of those reached the ranking. Real in the same sense as
+   * the others: remove the field and the winner can change.
+   */
+  if (personality.strength >= PERSONALITY_SPEAKS && winner.parts.personalityFit > 0.1 && beat(winner.parts.personalityFit, runner?.parts.personalityFit)) {
+    claims.push({
+      key: 'personality',
+      authority: 'REAL',
+      briefField: personality.evidence[0]?.field ?? 'feeling',
+      text: `${personalityTalk(personality)} bu çizgiyi öne çıkardı`,
+    })
+  }
+  const spoken = (raw: string | undefined): string => (raw ?? '').replace(/arketip\w*/gi, 'çizgi').trim()
   if (hints.pinSource === 'visual' && hints.archetype === winner.id && winner.parts.hintPin > 0) {
+    const said = input.brief.colors || input.brief.directorCue || ''
     claims.push({
       key: 'visualOverride',
       authority: 'REAL',
       briefField: 'colors',
-      text:
-        hints.rationale?.[0] ??
-        `brief'teki görsel sözcük (${input.brief.colors || input.brief.directorCue || 'görsel ipucu'}) bu arketipi pinledi`,
+      text: spoken(hints.rationale?.[0]) || (said ? `“${said}” dedin, bu çizgi onu taşıyor` : 'istediğin görsel ton bu çizgide'),
     })
   }
   if (hints.pinSource === 'sector' && hints.archetype === winner.id && winner.parts.hintPin > 0) {
+    const sector = input.brief.subProduct || input.brief.sector || 'bu ürün'
     claims.push({
       key: 'sectorPrior',
       authority: 'REAL',
       briefField: 'subProduct',
-      text: hints.rationale?.[0] ?? 'sektör priori bu aileyi önerdi',
+      text: spoken(hints.rationale?.[0]) || `${sector} rafında bu çizgi yerleşik`,
     })
   }
   if (winner.parts.productFamily > 0 && beat(winner.parts.productFamily, runner?.parts.productFamily)) {
@@ -676,7 +830,7 @@ function groundedClaims(
       key: 'productFamily',
       authority: 'REAL',
       briefField: input.brief.subProduct ? 'subProduct' : 'productName',
-      text: `ürün ailesi (${family}) bu arketipe +${winner.parts.productFamily.toFixed(2)} verdi`,
+      text: `${family} için diğer adaylardan daha oturaklı`,
     })
   }
   if (winner.parts.styleFit >= 0.6 && beat(winner.parts.styleFit, runner?.parts.styleFit)) {
@@ -684,22 +838,23 @@ function groundedClaims(
       key: 'styleFit',
       authority: 'REAL',
       briefField: 'styleType',
-      text: `${input.style} ruh hali bu arketipin stil uyumunu yükseltti`,
+      text: `seçtiğin ${styleLabel(input.style).toLocaleLowerCase('tr')} duruşa en yakın çizgi bu`,
     })
   }
   if ((hints.source === 'user' || hints.source === 'family' || hints.pinSource === 'family') && hints.archetype === winner.id) {
+    const pinned = input.brief.studioFamily
     claims.push({
       key: 'userPin',
       authority: 'REAL',
       briefField: 'studioFamily',
-      text: `kilitli görsel aile ${input.brief.studioFamily ?? winner.id} bu yönü sabitledi`,
+      text: pinned ? `${familyTalk(pinned)} çizgisini sen seçtin, ona sadık kaldım` : 'seçtiğin çizgiye sadık kaldım',
     })
   }
   if (hints.avoidArchetypes?.length && winner.parts.veto === 0) {
     claims.push({
       key: 'veto',
       authority: 'REAL',
-      text: `veto listesi (${hints.avoidArchetypes.join(', ')}) bu adayı dışlamadı; alternatifler düştü`,
+      text: 'istemediğin çizgileri elemekten sonra ayakta kalan bu',
     })
   }
   return claims
@@ -750,9 +905,21 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
         : 'clean-clinical'
       : guessed
   const avoided = new Set(hints.avoidArchetypes ?? [])
-  const scored = archetypesFor(input.surface)
+  // Who the brand is, from what the brief said about itself — neutral, and scoring zero, when it said nothing.
+  const personality = brandPersonality(input.brief)
+  /*
+   * Which repertoire this strip is drawn from: what the caller asked for, else the flag the
+   * customer set by pressing "show me other designs", else the repertoire of the family they
+   * pinned. The last of those matters because a pin the pool does not contain is dropped without
+   * a word — a brief that names `arch` wants the set `arch` lives in.
+   *
+   * An art-director hint deliberately does not switch it: a vision critique naming an archetype
+   * from the other set would otherwise swap the whole offer under the customer.
+   */
+  const repertoire = input.repertoire ?? input.brief.studioRepertoire ?? familyRepertoire(input.brief.studioFamily) ?? 'studio'
+  const scored = archetypesFor(input.surface, repertoire)
     .map((dna) => {
-      const row = scoreArchetype(dna, input, temperamentGuess, hints, achromatic)
+      const row = scoreArchetype(dna, input, temperamentGuess, hints, achromatic, personality)
       return { dna, score: row.score, parts: row.parts }
     })
     .sort((a, b) => b.score - a.score || a.dna.id.localeCompare(b.dna.id))
@@ -813,7 +980,15 @@ function rankDirectionPool(input: DirectionInput): RankedPool {
     walk[(input.variationIndex + step + (input.archetypeStep ?? 0)) % Math.max(1, walk.length)] ??
     ranked[0] ??
     scored[0]
-  return { hints, temperamentGuess, scored, scores, ranked, pool, pick }
+  /*
+   * How far down every axis list this variation reads. A pinned family is one lap per press; an
+   * open walk visits each family once per lap, so the lists step when the walk comes back round.
+   * Read at the raw index instead, a walk of three families and a list of three arrangements gave
+   * variation 5 exactly variation 2's face — same family, same arrangement, same pairing.
+   * Measured on a coffee carton: six variations, five faces.
+   */
+  const axisStep = pinned ? input.variationIndex : Math.floor(Math.max(0, input.variationIndex) / Math.max(1, walk.length))
+  return { hints, temperamentGuess, personality, scored, scores, ranked, pool, pick, axisStep }
 }
 
 /**
@@ -857,18 +1032,18 @@ function varyFace(
   dna: ArchetypeDna,
   hints: DirectionHints,
   temperamentGuess: Temperament,
-  variationIndex: number,
+  axisStep: number,
 ): { temperament: Temperament; background: (typeof dna.backgrounds)[number] } {
   const bgPool = dna.backgrounds.filter((b) => !hints.avoidBackgrounds?.includes(b))
   const backgrounds = bgPool.length ? bgPool : dna.backgrounds
-  if (variationIndex <= 0) {
+  if (axisStep <= 0) {
     const temperament: Temperament =
       userHoldsTemperament(hints) && hints.temperament ? hints.temperament : temperamentGuess
     const background =
       hints.background && dna.backgrounds.includes(hints.background) ? hints.background : backgrounds[0] ?? dna.backgrounds[0]
     return { temperament, background }
   }
-  const bgIndex = variationIndex % Math.max(1, backgrounds.length)
+  const bgIndex = axisStep % Math.max(1, backgrounds.length)
   return {
     background: backgrounds[bgIndex] ?? dna.backgrounds[0],
     // The archetype's `temperaments` list is a *preference*, already paid for in `scoreArchetype`
@@ -904,9 +1079,11 @@ function materializeDirection(
   hints: DirectionHints,
   temperamentGuess: Temperament,
   variationIndex: number,
+  personality: BrandPersonality = brandPersonality({}),
+  axisStep = variationIndex,
 ): DesignDirection {
   const { brief, sector, surface, locale } = input
-  const { temperament, background } = varyFace(dna, hints, temperamentGuess, variationIndex)
+  const { temperament, background } = varyFace(dna, hints, temperamentGuess, axisStep)
   const palette = studioPalette(input.palette, temperament)
   const bank = copyBankFor(brief, sector, locale)
   const seed = hashSeed(`${brief.brandName}|${brief.productName}|${sector}|${surface}|${variationIndex}`)
@@ -926,25 +1103,92 @@ function materializeDirection(
       })
   /*
    * Each axis is its own decision. A hint wins when the archetype allows it; otherwise the
-   * variation walks the archetype's preference list, and variation 0 takes the first entry so the
-   * frozen faces stay where they are. Before this, all three were fixed properties of the archetype
-   * — a marble face wore one pairing and one frame for its whole life.
+   * variation walks the archetype's preference list — read at `axisStep`, the lap count of the
+   * family walk — and step 0 takes the first entry so the frozen faces stay where they are. Before
+   * this, all three were fixed properties of the archetype — a marble face wore one pairing and
+   * one frame for its whole life.
    */
   const pickAxis = <T,>(list: readonly T[], hint: T | undefined): T => {
     if (hint !== undefined && list.includes(hint)) return hint
-    return list[variationIndex > 0 ? variationIndex % Math.max(1, list.length) : 0] ?? list[0]
+    return list[axisStep > 0 ? axisStep % Math.max(1, list.length) : 0] ?? list[0]
   }
-  const typePairing = pickAxis(dna.typePairings, hints.typePairing)
+  /*
+   * Where the brief said who the brand is, the first design answers it: the pairing and the
+   * arrangement are chosen from the archetype's lists by personality rather than taken as the
+   * first entry. A hint still wins (a picked card, a learned rule, a customer's word), the
+   * variation still walks the list, and a neutral brief still takes the first entry — which is
+   * the frozen faces' case.
+   */
+  const personal = personality.strength >= PERSONALITY_SPEAKS && variationIndex === 0
+  const chooseAxis = <T extends string>(list: readonly T[], hint: T | undefined, table: Partial<Record<T, import('./personality').PersonalityProfile>>): T =>
+    hint !== undefined && list.includes(hint) ? hint : personal ? bestByPersonality(list, table, personality) : pickAxis(list, undefined)
+  /*
+   * The type system (Phase 4). The archetype's list is narrowed to what suits the wordmark — an
+   * oversized or condensed display wants a short name — with the first entry always kept, since
+   * that is what the frozen faces were painted with. A pin from a picked card, a learned rule or
+   * the customer's words wins as on every axis. The design brain's own suggestion is a prior,
+   * not a pin: where the brief said who the brand is, personality chooses over it, and from the
+   * second lap the walk reads the list — the brain's pick used to hold the axis still through
+   * every variation, which is how six variations kept one typeface.
+   */
+  const pairingPool = pairingsFor(dna.typePairings, brief.brandName)
+  const pairingPin = hints.typePairing !== undefined && pairingPool.includes(hints.typePairing) ? hints.typePairing : undefined
+  const pairingPrior = hints.axisSource?.typePairing === 'heuristic'
+  const typePairing =
+    pairingPin !== undefined && !pairingPrior
+      ? pairingPin
+      : personal
+        ? bestByPersonality(pairingPool, TYPE_PERSONALITY, personality)
+        : axisStep > 0
+          ? pickAxis(pairingPool, undefined)
+          : (pairingPin ?? pairingPool[0]!)
+  const lockup = chooseAxis(lockupsFor(dna), hints.lockup, LOCKUP_PERSONALITY)
+  // Phase 5: the subject's render mode answers the personality; a silent brief keeps the illustrator's seed rule.
+  const subjectStyle = personal ? subjectStyleFor(personality) : undefined
   // A bezel belongs to a curved cut, so no archetype lists it; the hint is honoured on a round front
   // and dropped on a rectangle, where `paintFrame` would draw nothing and the face would lose its edge.
   const frame = hints.frame === 'bezel' && input.round ? 'bezel' : pickAxis(dna.frames, hints.frame === 'bezel' ? undefined : hints.frame)
   const ornament = pickAxis(dna.ornaments, hints.ornament)
-  const productPrefix =
-    hints.productPrefix ??
-    (typePairing === 'script-accent/sans-heavy' || typePairing === 'spaced-serif/spaced-sans'
-      ? bank.prefixes[variationIndex % bank.prefixes.length]
-      : '')
+  const productPrefix = hints.productPrefix ?? (typeSystem(typePairing).prefixed ? bank.prefixes[variationIndex % bank.prefixes.length] : '')
   const rationale = [...directionRationale(dna, temperament, background, palette), ...(hints.rationale ?? [])]
+  /*
+   * The decisions, structured. Each says what was chosen, why in the customer's own terms, and
+   * the nearest thing it was chosen over — the record §30 of the creative-brain plan asks for,
+   * so a log or a learning signal can read a decision without parsing the spoken rationale.
+   */
+  const why = personal ? `kişilik — ${personalityTalk(personality)}` : ''
+  const archetypeWhy =
+    hints.pinSource === 'user' || hints.pinSource === 'family'
+      ? 'seçtiğin aile'
+      : hints.pinSource === 'visual'
+        ? "brief'teki görsel kelime"
+        : why || 'sektör alışkanlığı ve ruh hali'
+  const reasons: DirectionReason[] = [
+    { axis: 'archetype', chosen: dna.id, because: archetypeWhy },
+    {
+      axis: 'typePairing',
+      chosen: typePairing,
+      because:
+        hints.typePairing === typePairing
+          ? pairingPrior
+            ? 'tasarım beyni'
+            : 'ipucu (seçim ya da öğrenilen kural)'
+          : personal
+            ? why
+            : axisStep > 0
+              ? 'varyasyon yürüyüşü'
+              : 'çizginin varsayılanı',
+      alternative: pairingPool.find((x) => x !== typePairing),
+    },
+    {
+      axis: 'lockup',
+      chosen: lockup,
+      because: hints.lockup === lockup ? 'seçilen kart' : personal ? why : axisStep > 0 ? 'varyasyon yürüyüşü' : 'çizginin kendi iskeleti',
+      alternative: lockupsFor(dna).find((x) => x !== lockup),
+    },
+    { axis: 'ornament', chosen: ornament, because: hints.ornament === ornament ? 'fiyat katmanı / his ya da seçilen kart' : 'çizginin varsayılanı' },
+    { axis: 'temperament', chosen: temperament, because: userHoldsTemperament(hints) ? 'seçtiğin ton' : 'ruh hali' },
+  ]
   return {
     surface,
     archetype: dna.id as StudioArchetype,
@@ -954,8 +1198,8 @@ function materializeDirection(
     typePairing,
     temperament,
     frame,
-    lockup: hints.lockup ?? dna.lockup,
     ornament,
+    subjectStyle,
     palette,
     benefits: refineBenefits(brief, bank.benefits, locale).slice(0, 4),
     chips,
@@ -970,7 +1214,16 @@ function materializeDirection(
     volumeLine: volumeLine(input.copy.volume, locale),
     productPrefix,
     rationale,
+    reasons,
     source: hints.source ?? (hints.archetype ? 'llm' : 'heuristic'),
+    /*
+     * The composition is an axis like the other three: the archetype's own skeleton first, the
+     * compositions it may wear after, a hint winning only when the archetype allows it, and the
+     * variation walking the list. Until Phase 2 `lockup` was the one axis that could not move —
+     * the audit measured sixteen of twenty archetypes on the same skeleton and every offer's
+     * eight candidates on one arrangement.
+     */
+    lockup,
     seed,
     lineSeed,
     sector,
@@ -993,6 +1246,14 @@ export function slimDirectionOffer(offer: DirectionOffer): StudioDirectionOffer 
       temperament: row.direction.temperament,
       score: row.score,
       selected: row.selected,
+      /*
+       * The slim row drops the full direction on purpose (it is what the client and the decision
+       * log carry), but that left no way to ask, after the fact, whether the eight rows were eight
+       * designs. The fingerprint is the direction reduced to what a customer can see differ; it
+       * is what the offer-distance instrument measures and what Phase 3's diversity constraint
+       * will read. Eight short strings per row; the face markup is not touched, so no hash moves.
+       */
+      fingerprint: directionFingerprint(row.direction),
     })),
   }
 }
@@ -1037,21 +1298,90 @@ export function directionOffer(
   const ordered = (keep.length >= 2 ? keep : rows.slice(0, 2))
     .slice()
     .sort((a, b) => FAMILY_ORDER.indexOf(familyFor(a.dna.id as StudioArchetype)) - FAMILY_ORDER.indexOf(familyFor(b.dna.id as StudioArchetype)))
+  /*
+   * No two cards share an arrangement when they could differ.
+   *
+   * Phase 0 measured the strip: eight archetypes, one lockup value in 2–3 of them, and the
+   * composition axes identical across all eight. The painted card keeps whatever it was painted
+   * with. Each other card takes the first composition its archetype may wear that no earlier card
+   * has taken — its own skeleton when that is free, a band or a rotated brand when it is not — so
+   * the customer is shown eight arrangements where the table allows it, and choosing a card pins
+   * the arrangement they saw (`brief.studioLockup`), not just the family.
+   */
+  const usedLockups = new Set<string>()
+  const selectedOrnament = { value: '' }
+  const selectedPairing = { value: '' }
+  const selectedBackground = { value: '' }
+  const selectedFrame = { value: '' }
+  let unselectedIndex = 0
   const candidates: DirectionCandidate[] = ordered.map((row, i) => {
     const selected = row.dna.id === winnerId
     const direction = selected
       ? (painted && painted.archetype === winnerId
           ? painted
-          : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, input.variationIndex))
-      : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, 0)
+          : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, input.variationIndex, ranked.personality, ranked.axisStep))
+      : materializeDirection(input, row.dna, ranked.hints, ranked.temperamentGuess, 0, ranked.personality)
+    if (selected) {
+      usedLockups.add(direction.lockup)
+      selectedOrnament.value = direction.ornament
+      selectedPairing.value = direction.typePairing
+      selectedBackground.value = direction.background
+      selectedFrame.value = direction.frame
+    }
     return {
       index: i + 1,
       family: familyFor(direction.archetype),
       direction,
       score: row.score,
       selected,
+      dna: row.dna,
     }
-  })
+  }).map((row) => {
+    if (row.selected) return row
+    const free = lockupsFor(row.dna).find((lockup) => !usedLockups.has(lockup)) ?? row.dna.lockup
+    usedLockups.add(free)
+    /*
+     * The ornament level walks the strip too (Phase 3). Phase 0 measured it at one value across
+     * all eight cards; the archetype's own list is cycled so neighbouring cards are shown quiet,
+     * measured and rich in turn — the painted card keeps the level the brief decided.
+     */
+    const levels = row.dna.ornaments.filter((level) => level !== selectedOrnament.value)
+    const ornament = levels.length ? levels[unselectedIndex % levels.length]! : row.direction.ornament
+    /*
+     * The type system walks the strip too (Phase 4): each other card takes, from the systems its
+     * archetype lists for this wordmark, one the painted card is not wearing — so the strip shows
+     * the behaviours the repertoire has, and choosing a card pins the one the customer saw.
+     */
+    const systems = pairingsFor(row.dna.typePairings, input.brief.brandName).filter((p) => p !== selectedPairing.value)
+    const typePairing = systems.length ? systems[unselectedIndex % systems.length]! : row.direction.typePairing
+    /*
+     * The field walks the strip too (Phase 5): each other card takes, from the fields its archetype
+     * lists, one the painted card is not wearing — the graphic languages are reached from the
+     * strip first, and a picked card carries its field in the fingerprint.
+     */
+    /*
+     * Read at the card's position plus a turn from the brief's own seed. Read at the position
+     * alone, a field or a frame that sits third in its list was shown only to the third unselected
+     * card, and since an archetype ranks about the same for every brief, `blob` reached no strip in
+     * 216 briefs and the two heritage frames none — measured with `measure-graphic-reach.ts`.
+     */
+    const fields = row.dna.backgrounds.filter((b) => b !== selectedBackground.value)
+    const spin = unselectedIndex + (row.direction.seed % 7)
+    const background = fields.length ? fields[spin % fields.length]! : row.direction.background
+    const frames = row.dna.frames.filter((fr) => fr !== selectedFrame.value)
+    const frame = frames.length ? frames[spin % frames.length]! : row.direction.frame
+    unselectedIndex += 1
+    const same =
+      free === row.direction.lockup &&
+      ornament === row.direction.ornament &&
+      typePairing === row.direction.typePairing &&
+      background === row.direction.background &&
+      frame === row.direction.frame
+    if (same) return row
+    // A system that takes no spoken prefix must not keep the one it inherited from the painted card.
+    const productPrefix = typeSystem(typePairing).prefixed ? row.direction.productPrefix : ''
+    return { ...row, direction: { ...row.direction, lockup: free, ornament, typePairing, productPrefix, background, frame } }
+  }).map(({ dna: _dna, ...row }) => row)
   return {
     candidates,
     selectedIndex: candidates.find((row) => row.selected)?.index ?? 1,
@@ -1066,6 +1396,8 @@ export function decideDirection(input: DirectionInput): DirectionDecision {
     ranked.hints,
     ranked.temperamentGuess,
     input.variationIndex,
+    ranked.personality,
+    ranked.axisStep,
   )
   const winner = ranked.scores.find((row) => row.id === direction.archetype) ?? {
     id: direction.archetype,
@@ -1073,10 +1405,25 @@ export function decideDirection(input: DirectionInput): DirectionDecision {
     parts: ranked.pick.parts,
   }
   const runner = ranked.scores.find((row) => row.id !== winner.id)
+  const claims = groundedClaims(input, ranked.hints, winner, runner, ranked.personality)
+  /*
+   * The archetype's reason comes from the claims, which are grounded in the scores — not from
+   * whether the brief *had* a personality. A loud perfume brand still lands on the perfume
+   * language because the sector prior outweighs its personality; saying "kişilik" there would be
+   * a false reason, and the personality shows up honestly on the axes it did decide.
+   */
+  const archetypeWhy =
+    claims.find((c) => c.key === 'userPin') ? 'seçtiğin aile'
+    : claims.find((c) => c.key === 'personality') ? `kişilik — ${personalityTalk(ranked.personality)}`
+    : claims.find((c) => c.key === 'visualOverride') ? "brief'teki görsel kelime"
+    : claims.find((c) => c.key === 'sectorPrior') ? 'sektör alışkanlığı'
+    : claims.find((c) => c.key === 'productFamily') ? 'ürün ailesi'
+    : 'sektör uyumu ve ruh hali'
+  direction.reasons = direction.reasons.map((r) => (r.axis === 'archetype' ? { ...r, because: archetypeWhy } : r))
   return {
     direction,
     scores: ranked.scores,
-    claims: groundedClaims(input, ranked.hints, winner, runner),
+    claims,
     winnerId: direction.archetype,
     offer: directionOffer(input, ranked, direction),
   }

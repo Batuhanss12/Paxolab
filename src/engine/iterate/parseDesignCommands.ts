@@ -39,6 +39,13 @@ const PAIRINGS: [RegExp, TypePairing, string][] = [
   [/serif\s*(?:başlık|marka)|başlık\s*serif|serif\s*display/i, 'serif-display/sans-meta', 'Serif başlık, sans künye.'],
   [/el\s*yazısı|\bscript\b|kaligrafi|imza\s*yazı/i, 'script-accent/sans-heavy', 'El yazısı vurgu, kalın sans ürün.'],
   [/(?:ince|light)\s*(?:ve|\+)?\s*(?:kalın|bold)\s*sans|sans\s*(?:yap|olsun|tip)|serifsiz|modern\s*tip(?:ografi)?/i, 'sans-light/sans-heavy', 'İnce + kalın sans.'],
+  // Phase 4 systems.
+  [/dar\s*serif|condensed\s*serif|sıkışık\s*serif/i, 'condensed-serif/mono', 'Dar serif başlık, mono künye.'],
+  [/dar\s*(?:grotesk|sans)|condensed\s*(?:sans|grotesk)|sıkışık\s*sans/i, 'condensed-grotesk/sans-light', 'Dar grotesk başlık.'],
+  [/yuvarlak\s*(?:başlık|yazı|tip|harf)|retro\s*(?:başlık|yazı)|rounded/i, 'rounded/sans', 'Yuvarlak retro başlık.'],
+  [/(?:aşırı|çok|dev)\s*büyük\s*(?:serif|başlık|marka)|oversized/i, 'display-serif-oversized/sans-meta', 'Aşırı büyük serif başlık.'],
+  [/ağır\s*grotesk|kalın\s*blok|blok\s*(?:başlık|yazı|dizgi)|heavy\s*grotesk/i, 'heavy-grotesk-block/sans', 'Ağır grotesk blok.'],
+  [/(?:çok|geniş)\s*aralıklı\s*(?:ince|sans|başlık)|ince\s*geometrik|wide\s*tracking/i, 'light-geometric/wide', 'İnce geometrik, geniş aralık.'],
 ]
 
 const LOCKUPS: [RegExp, LockupStyle, string][] = [

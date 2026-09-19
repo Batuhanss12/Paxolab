@@ -140,12 +140,29 @@ describe('the round back is its own composition', () => {
     for (const face of [front, markup]) expect(face).toMatch(/<(circle|ellipse)[^>]*fill="none"/)
   })
 
-  it('a food disc still shows the nutrition table the gate reads', () => {
-    // Dropping it for tidiness is what blocked the olive-oil oval's export.
+  it('a food disc draws a whole declaration or none, and says which', () => {
+    /*
+     * This used to assert the disc shows a table, because the table used to be truncated to fit —
+     * and on an oil that dropped **Doymuş yağ**, the one row an oil is required to declare. A
+     * partial nutrition table looks like a declaration and is not one.
+     *
+     * Measured: a complete set needs 18.2 mm at the press floor; a 60 mm lid's legal band is
+     * 12–16 mm. So the honest outcome on a small disc is no table, plus a preflight line telling
+     * the customer to put the full set on the body label — which is where real products carry it.
+     */
     const food = generate(JOBS[1], 'fm-lid-round', { L: 60, W: 60, H: 0 })
     const id = food.dieline.panels.find((p) => p.id === 'labelBack')!.id
     const back = String(food.artwork.layers.find((l) => l.panelId === id)?.markup ?? '')
-    expect(back).toMatch(/100 g/)
+    const rows = [...back.matchAll(/>(Enerji|Yağ|Doymuş[^<]*|Karbonhidrat|Şeker|Protein|Tuz)</g)].length
+    if (/Besin Değerleri/.test(back)) {
+      // Drawn at all → drawn whole. An oil must carry its saturates row.
+      expect(rows, 'beyan kırpılmış').toBeGreaterThanOrEqual(5)
+      expect(back, 'yağda doymuş yağ satırı yok').toMatch(/Doymuş/)
+    } else {
+      expect(rows, 'tablo yok ama satır var').toBe(0)
+      const fit = food.preflight.items.find((i) => i.id === 'ds-nutrition-fit')
+      expect(fit?.status, 'sığmayan beyan sessizce düştü').toBe('warn')
+    }
     expect(food.preflight.blocking).toBe(false)
   })
 })

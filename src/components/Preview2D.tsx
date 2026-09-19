@@ -106,10 +106,12 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
         {languageCaption ? <span>{languageCaption}</span> : null}
         {isLabel && (
           <div className="label-face-toggle" role="group" aria-label="Etiket yüzü">
-            <button type="button" className={labelFace === 'front' ? 'is-active' : ''} onClick={() => setLabelFace('front')}>
+            {/* `is-active` is a colour; `aria-pressed` is the state. Without it the toggle is
+                invisible to a screen reader and to keyboard users, who hear two plain buttons. */}
+            <button type="button" aria-pressed={labelFace === 'front'} className={labelFace === 'front' ? 'is-active' : ''} onClick={() => setLabelFace('front')}>
               Ön
             </button>
-            <button type="button" className={labelFace === 'back' ? 'is-active' : ''} onClick={() => setLabelFace('back')}>
+            <button type="button" aria-pressed={labelFace === 'back'} className={labelFace === 'back' ? 'is-active' : ''} onClick={() => setLabelFace('back')}>
               Arka
             </button>
           </div>
@@ -117,6 +119,7 @@ export function Preview2D({ design, onDims, onCopyChange, onCopyCommit }: Previe
         {onCopyChange ? (
           <button
             type="button"
+            aria-expanded={dockOpen}
             className={`ghost-btn copy-canvas__toggle${dockOpen ? ' is-active' : ''}`}
             data-coach="copy"
             onClick={() => setDockOpen((open) => !open)}

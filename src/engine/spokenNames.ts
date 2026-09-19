@@ -11,8 +11,24 @@ import { namedBefore, spokenField } from './spokenFields'
 import { NAME_STOP_RE, SECTOR_NOUN_RE } from './extractRules'
 import { isGenericProductName, isPaletteName, looksLikeName } from './extractHelpers'
 
-function stop(word: string): boolean {
-  return NAME_STOP_RE.test(word) || SECTOR_NOUN_RE.test(word) || isPaletteName(word) || isGenericProductName(word)
+/**
+ * Where a name ends.
+ *
+ * A category noun normally ends it: "ürün parfüm şişesi etiketi" must not read *parfüm şişesi* as
+ * the product. But a category noun is also frequently the second half of a real product name, and
+ * then this rule cut it off — measured on an ordinary honey brief, "ürün Çiçek Balı" came back as
+ * **Çiçek**, and the jar would have been printed that way. `bal` is a sector noun, so `Balı`
+ * stopped the read one word early.
+ *
+ * The customer distinguishes the two cases themselves, by capitalising: *Çiçek Balı* is a name,
+ * *parfüm şişesi* is a description. So a category noun may continue a name that has already begun
+ * when it is capitalised, and stops it otherwise. Stop words and palette words are unconditional —
+ * "Siyah" is capitalised too, and it is still a colour.
+ */
+function stop(word: string, taken = 0): boolean {
+  if (NAME_STOP_RE.test(word) || isPaletteName(word)) return true
+  if (!SECTOR_NOUN_RE.test(word) && !isGenericProductName(word)) return false
+  return !(taken > 0 && /^[A-ZÇĞİÖŞÜ]/.test(word))
 }
 
 /** A brand the customer labelled — "marka Noctis", "marka: Noctis", "Noctis diye bir marka". */

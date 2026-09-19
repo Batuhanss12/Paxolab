@@ -7,6 +7,7 @@
  */
 import type { CopyLocale, Palette } from '../../types'
 import type { SectorId } from '../designSystem/types'
+import type { Fingerprint } from './fingerprint'
 
 export type StudioSurface = 'label' | 'box'
 
@@ -22,6 +23,20 @@ export type LabelArchetype =
   | 'atelier-plate' // Diako — three-tier type plate: brand / product / attribution, band-hairline edge
   | 'crest-panel' // Azzurra — roundel with a crest mark on a flat arabesque field
   | 'noir-plate' // the dark-luxe family's label: deep field, centred type, tagline above the foot
+  /*
+   * The reference repertoire (`refArchetypes.ts`) — eight skeletons distilled from the reference
+   * folder that none of the ten above can paint. Reached only when the customer presses "show me
+   * other designs"; the ten above are what the engine offers by default and what the frozen faces
+   * were painted with.
+   */
+  | 'arch-crown' // arched crown, layered small-caps tiers, oversized display, dark spec band at the foot
+  | 'collage-plate' // fixed wordmark, an arch window holding the engraved subject, a rotated word up one side, a seal
+  | 'silhouette-foot' // small brand block at the top, one oversized flat silhouette filling the foot
+  | 'ribbon-crest' // cut-silhouette double frame, medallion crown, laurel, a ribbon band carrying the claim
+  | 'grid-mono' // oversized rotated condensed display, flat cut-paper cluster, a monospace body grid
+  | 'pattern-float' // full-bleed pattern, monogram above, the wordmark floating on a quiet plate
+  | 'blob-acid' // acid duotone, one giant blob crossing the face, a heavy grotesk block in the corner
+  | 'inner-card' // quiet face, an inset art card holding the line subject, a vertical icon column
 
 /** Box front archetypes. Back / side / top anatomy follows the same direction. */
 export type BoxArchetype =
@@ -35,11 +50,49 @@ export type BoxArchetype =
   | 'specimen-hero' // drawn subject at the centre, type stacked above and below it
   | 'atelier-plate' // Diako — three-tier type plate on a carton front
   | 'crest-panel' // Azzurra — roundel with a crest mark on a flat arabesque field
+  /* The reference repertoire paints one front for both surfaces — see `LabelArchetype`. */
+  | 'arch-crown'
+  | 'collage-plate'
+  | 'silhouette-foot'
+  | 'ribbon-crest'
+  | 'grid-mono'
+  | 'pattern-float'
+  | 'blob-acid'
+  | 'inner-card'
 
 export type StudioArchetype = LabelArchetype | BoxArchetype
 
+/**
+ * Which repertoire an archetype belongs to.
+ *
+ * `studio` is the ten systems the engine has always offered and the eighteen frozen faces were
+ * painted with. `reference` is the eight distilled in F-32 from the reference folder — a second,
+ * complete set of eight the customer reaches by asking for other designs. The two never mix in
+ * one strip: eight of one, or eight of the other, so "change the designs" means what it says.
+ */
+export type StudioRepertoire = 'studio' | 'reference'
+
 /** Shared visual system across box + label (companion generate keeps this key). */
-export type StudioFamily = 'marble' | 'botanical' | 'line-scene' | 'wave' | 'ink' | 'dark-luxe' | 'tech' | 'specimen' | 'atelier' | 'crest'
+export type StudioFamily =
+  | 'marble'
+  | 'botanical'
+  | 'line-scene'
+  | 'wave'
+  | 'ink'
+  | 'dark-luxe'
+  | 'tech'
+  | 'specimen'
+  | 'atelier'
+  | 'crest'
+  /* The reference repertoire — one family per archetype (F-32). */
+  | 'arch'
+  | 'collage'
+  | 'silhouette'
+  | 'ribbon'
+  | 'grid'
+  | 'pattern'
+  | 'acid'
+  | 'inner-card'
 
 export type BackgroundFamily =
   | 'marble'
@@ -52,12 +105,25 @@ export type BackgroundFamily =
   | 'wave'
   | 'circuit'
   | 'arabesque' // flat interlaced star lattice — the Azzurra field; geometry, not texture
+  /* Phase 5 — the graphic languages the reference set had and the repertoire lacked (`graphicFields.ts`). */
+  | 'blob' // organic flat masses in the palette's colours — R10, R15, R24, R27
+  | 'ogee' // pointed-arch lattice with a feather in each cell — R01
+  | 'celestial' // a crescent, stars, sparks and rings in one line — R07, R16
+  | 'pictogram' // the benefit icons as a staggered repeat — R13
+  | 'toile' // small engraved sprigs of the product's plant, repeated in one ink — R06
 
 export type TypePairing =
   | 'serif-display/sans-meta' // GUESS / Anadolu — serif brand, spaced sans meta
   | 'script-accent/sans-heavy' // woo / Elite Brew — script prefix + heavy sans product
   | 'sans-light/sans-heavy' // Capelli / DNA — light + bold sans title
   | 'spaced-serif/spaced-sans' // Rebull — tracked serif brand, tracked sans product
+  /* Phase 4 — the behaviours the reference set had and the repertoire lacked (`typeSystem.ts`). */
+  | 'condensed-serif/mono' // R02 / R26 — condensed display serif, oversized, over a mono spec line
+  | 'condensed-grotesk/sans-light' // R14 — condensed grotesk display
+  | 'rounded/sans' // R13 / R15 / R27 — rounded retro display
+  | 'display-serif-oversized/sans-meta' // R01 / R09 / R17 / R20 — high-contrast serif, oversized
+  | 'heavy-grotesk-block/sans' // R10 / R23 — heavy grotesk block, tight
+  | 'light-geometric/wide' // R11 / R04 — light geometric sans, very wide tracking
 
 export type Temperament =
   | 'dark-luxe'
@@ -75,7 +141,18 @@ export type Temperament =
  * and one at the top centre, which is how the Heeva plate reads. `bezel` is the metallic rim a
  * disc or oval label carries and is ignored on a rectangular face.
  */
-export type FrameStyle = 'none' | 'thin-double' | 'corner-brackets' | 'rounded-card' | 'band-hairline' | 'fleuron-crown' | 'bezel'
+export type FrameStyle =
+  | 'none'
+  | 'thin-double'
+  | 'corner-brackets'
+  | 'rounded-card'
+  | 'band-hairline'
+  | 'fleuron-crown'
+  | 'bezel'
+  /** Two laurel branches rising along the sides from the foot — the heritage member on R29 / R30. */
+  | 'laurel'
+  /** A cartouche arc at the crown and double-line corners, from the studio's own motif library (R20, R29). */
+  | 'cartouche'
 
 /**
  * How much decoration a face is allowed to carry.
@@ -87,7 +164,40 @@ export type FrameStyle = 'none' | 'thin-double' | 'corner-brackets' | 'rounded-c
  */
 export type OrnamentLevel = 'quiet' | 'measured' | 'rich'
 
-export type LockupStyle = 'stacked-center' | 'top-right-pill' | 'left-column' | 'monogram-right'
+/**
+ * The composition's skeleton — where the weight sits.
+ *
+ * The first four are the skeletons the ten archetypes were distilled with, one each. The audit
+ * measured sixteen of twenty archetypes on `stacked-center` and found the reference set full of
+ * arrangements the engine could not make; the two below are the most frequent of them, painted
+ * as *compositions* that borrow an archetype's field, palette, type pairing and frame rather than
+ * as new archetypes — see `compositions.ts`.
+ *
+ *   - `band-split`: a horizontal band at the foot carries the product and the net quantity, the
+ *     field above carries the brand (Pure Bloom, Pure Life olive oil, Blossome).
+ *   - `rotated-brand`: the brand set at ninety degrees in a strip along the left edge, the field
+ *     beside it carries the product (Xfacio, FORÊT, The Majestic, Amora).
+ */
+export type LockupStyle =
+  | 'stacked-center'
+  | 'top-right-pill'
+  | 'left-column'
+  | 'monogram-right'
+  | 'band-split'
+  | 'rotated-brand'
+  /** Brand and product as a block in the top-left corner, meta at the foot, the field free (OILY, O'live). */
+  | 'top-left-block'
+  /** Carton only: a quiet front, one side carrying the field or the subject at full strength (Matka). */
+  | 'art-panel'
+  /** Carton only: a solid deep front, both sides carrying the subject, mirrored (Lunara). */
+  | 'flanked'
+
+/**
+ * The carton roles whose lead element — the field, the subject — lives on a side panel. A label
+ * cannot list them, and an evaluator reading the front alone would score the design for lacking
+ * the very thing it put next door.
+ */
+export const SIDE_LED_LOCKUPS: readonly LockupStyle[] = ['art-panel', 'flanked']
 
 export type BenefitIcon = 'leaf' | 'drop' | 'sun' | 'mountain' | 'bee' | 'jar' | 'check' | 'shield' | 'bolt' | 'flask' | 'heart' | 'star'
 
@@ -120,6 +230,18 @@ export type StudioPalette = {
 
 export type DirectionSource = 'heuristic' | 'llm' | 'knowledge' | 'user' | 'family'
 
+/**
+ * One decision, structured: which axis, what was chosen, why in the customer's terms, and what
+ * the nearest alternative was. `rationale` stays the spoken list; this is the record a log, a
+ * learning signal or a debugger can read without parsing prose.
+ */
+export type DirectionReason = {
+  axis: 'archetype' | 'typePairing' | 'lockup' | 'ornament' | 'temperament'
+  chosen: string
+  because: string
+  alternative?: string
+}
+
 /** Studio tagline origin. Bank is fallback only. */
 export type CopySource = 'user' | 'brief' | 'bank'
 
@@ -140,6 +262,11 @@ export type DesignDirection = {
   lockup: LockupStyle
   /** Decoration level — scales background intensity and frame weight. */
   ornament: OrnamentLevel
+  /**
+   * How a drawn subject is rendered, where the brief's personality decided it (Phase 5); absent,
+   * the illustrator's own seed rule applies, which is what the frozen faces were painted with.
+   */
+  subjectStyle?: import('./species').HeroStyle
   palette: StudioPalette
   /** Sector benefit icons + short labels (3–4). */
   benefits: BenefitItem[]
@@ -172,6 +299,8 @@ export type DesignDirection = {
   productPrefix: string
   /** TR rationale lines shown to the user. */
   rationale: string[]
+  /** The same decisions, structured — see `DirectionReason`. */
+  reasons: DirectionReason[]
   source: DirectionSource
   seed: number
   /**
@@ -206,6 +335,13 @@ export type DirectionHints = {
   manifesto?: string[]
   chips?: string[]
   rationale?: string[]
+  /**
+   * Which source set each pinned axis, recorded by `mergeHints` from the hint object that set it
+   * (`axisSource` on the object itself first, its `source` second). A pin from the design brain
+   * (`heuristic`) is a prior — a brief that said who the brand is outranks it on the type axis;
+   * a pin from a picked card, a learned rule or the customer's own words is a pin.
+   */
+  axisSource?: Partial<Record<'archetype' | 'background' | 'temperament' | 'typePairing' | 'frame' | 'lockup' | 'ornament', DirectionSource>>
   /** Archetypes / backgrounds to avoid (knowledge or user veto). */
   avoidArchetypes?: StudioArchetype[]
   avoidBackgrounds?: BackgroundFamily[]
@@ -269,6 +405,8 @@ export type StudioDirectionCandidate = {
    * face is a hole in the set. Absent only if the engine could not paint that direction at all.
    */
   face?: string
+  /** The direction reduced to the axes a customer can see differ — see `fingerprint.ts`. */
+  fingerprint?: Fingerprint
 }
 
 export type StudioDirectionOffer = {

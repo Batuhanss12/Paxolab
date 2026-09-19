@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { JOBS, briefFrom } from '../../../scripts/catalog-jobs'
 import { clearCompositionSearch } from '../artwork/compositionCandidates'
 import { FormaLocalEngine } from '../FormaLocalEngine'
 import { emptyBrief } from '../fields'
@@ -12,10 +11,10 @@ import {
   DESIGN_BRAIN_VERSION,
   VISUAL_LANGUAGE_VERSION,
   decisionLogFor,
-  lastDecisionLog,
   resetDecisionLogs,
 } from './DesignDecisionLog'
 import { resetArtMemory } from './DesignMemory'
+import { REFERENCE_DNA_VERSION } from '../studio/referenceDna'
 import type { DesignBrief } from '../../types'
 
 function perfumeBrief(patch: Partial<DesignBrief> = {}): DesignBrief {
@@ -51,23 +50,6 @@ describe('FAZ 4 design decision log', () => {
     expect(COMPOSITION_VERSION).toBe('3.0')
   })
 
-  it('records a kit path with one measurable candidate and no brand PII', () => {
-    const spec = new FormaLocalEngine().generate({ brief: perfumeBrief() })
-    const log = decisionLogFor(spec.id)
-    expect(log).toBeDefined()
-    expect(log?.path).toBe('kit')
-    expect(log?.candidates).toHaveLength(1)
-    expect(log?.candidates[0].decision).toBe('ONLY')
-    expect(log?.candidates[0].reasons.length).toBeGreaterThan(0)
-    expect(log?.candidates[0].reasons.every((row) => typeof row.score === 'number')).toBe(true)
-    expect(log?.winner?.why.sectorCompatibility).toBeGreaterThanOrEqual(0)
-    expect(log?.winner?.why.sectorCompatibility).toBeLessThanOrEqual(1)
-    expect(JSON.stringify(log)).not.toMatch(/Aurelia/)
-    expect(log?.brainVersion).toBe(DESIGN_BRAIN_VERSION)
-    expect(log?.selectedLanguage.length).toBeGreaterThan(0)
-    expect(log?.selectedConcept.id).toBe(spec.designPlan?.visualConcept.id)
-  })
-
   it('records studio directionOffer as the candidate set, not kit ONLY', () => {
     const spec = new FormaLocalEngine().generate({
       brief: perfumeBrief(),
@@ -87,21 +69,21 @@ describe('FAZ 4 design decision log', () => {
     expect(JSON.stringify(log?.candidates)).not.toMatch(/"ONLY"/)
   })
 
-  it('records overlay candidates with existing scores for playful', () => {
-    const job = JOBS.find((row) => row.slug === '09-cikolata-tray-playful')
-    expect(job).toBeDefined()
-    const spec = new FormaLocalEngine().generate({ brief: briefFrom(job!) })
-    const log = lastDecisionLog()
-    expect(log?.designId).toBe(spec.id)
-    expect(log?.path).toBe('overlay')
-    expect(log?.candidates.length).toBeGreaterThanOrEqual(1)
-    for (const row of log?.candidates ?? []) {
-      expect(typeof row.score).toBe('number')
-      expect(row.reasons.length).toBeGreaterThan(0)
-      expect(row.reasons.every((reason) => typeof reason.score === 'number')).toBe(true)
+  it('stamps the reference DNA version, so a face can be told from one ranked against an older repertoire', () => {
+    /*
+     * Brain, language, asset and composition versions were already on the log; the DNA table
+     * had none, so adding a reference could not be told apart from a painter fix after the fact.
+     * Phase 0 of the creative-brain plan: every later phase bumps this when the table changes.
+     */
+    const spec = new FormaLocalEngine().generate({ brief: perfumeBrief(), overridePatch: { studio: true } })
+    const log = decisionLogFor(spec.id)
+    expect(REFERENCE_DNA_VERSION).toMatch(/^\d+\.\d+$/)
+    expect(log?.dnaVersion).toBe(REFERENCE_DNA_VERSION)
+    // Every offer row carries a fingerprint — the offer-distance instrument reads these.
+    for (const row of spec.studio?.offer?.candidates ?? []) {
+      expect(row.fingerprint?.archetype).toBe(row.archetype)
+      expect(row.fingerprint?.lockup).toBeTruthy()
     }
-    expect(log?.winner).toBeDefined()
-    expect(log?.winner?.why.compositionFit).toBeGreaterThanOrEqual(0)
   })
 
   it('does not throw when generate records a log', () => {

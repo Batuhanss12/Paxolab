@@ -13,7 +13,7 @@
  * customer's reference) alongside the text; the provider turns them into multimodal content
  * parts. Text-only tasks are unchanged — `images` is simply absent.
  */
-import { llmComplete, parseLlmJson, type LlmContentPart } from './client'
+import { llmComplete, llmEnabled, llmModelName, parseLlmJson, type LlmContentPart } from './client'
 
 export type LlmTask =
   | 'brief-extract'
@@ -56,9 +56,15 @@ export const PROMPT_VERSION = '2026-09-18'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
 
+/**
+ * The model name is reported by the server, which is the only side that knows it.
+ *
+ * It used to come from `VITE_FORMA_LLM_MODEL` in the bundle, alongside the URL and key. Those are
+ * gone; this value is only ever stamped on a decision log, so before the status probe lands the
+ * default stands in and nothing downstream changes.
+ */
 function configuredModel(): string {
-  const env = import.meta.env as Record<string, string | undefined>
-  return env.VITE_FORMA_LLM_MODEL?.trim() || DEFAULT_MODEL
+  return llmModelName() || DEFAULT_MODEL
 }
 
 /** The user turn as the endpoint expects it: a string, or text + image parts when images travel. */
@@ -85,18 +91,19 @@ export class NullLlmProvider implements LLMProvider {
 }
 
 export class OpenAiCompatibleProvider implements LLMProvider {
-  private readonly model: string
+  private readonly model: string | null
 
-  constructor(model = configuredModel()) {
-    this.model = model
+  constructor(model?: string) {
+    // Resolved per call when not pinned: the status probe may land after this is constructed.
+    this.model = model ?? null
   }
 
   enabled(): boolean {
-    return !!import.meta.env.VITE_FORMA_LLM_URL
+    return llmEnabled()
   }
 
   config(): LlmModelConfig {
-    return { provider: 'openai-compatible', model: this.model, promptVersion: PROMPT_VERSION }
+    return { provider: 'openai-compatible', model: this.model ?? configuredModel(), promptVersion: PROMPT_VERSION }
   }
 
   async generateStructured<T>(request: StructuredRequest): Promise<T | null> {
@@ -106,7 +113,7 @@ export class OpenAiCompatibleProvider implements LLMProvider {
         { role: 'system', content: request.system },
         { role: 'user', content: userContent(request) },
       ],
-      { json: true, timeoutMs: request.timeoutMs ?? 8000, model: this.model },
+      { json: true, timeoutMs: request.timeoutMs ?? 8000, model: this.model ?? undefined },
     )
     if (!content) return null
     return parseLlmJson<T>(content)
@@ -115,9 +122,18 @@ export class OpenAiCompatibleProvider implements LLMProvider {
 
 let active: LLMProvider | null = null
 
+/**
+ * Whether a model is reachable is now the server's answer, and it arrives asynchronously.
+ *
+ * This used to branch on `import.meta.env.VITE_FORMA_LLM_URL` and pick `NullLlmProvider` forever
+ * when it was unset. With the URL on the server there is nothing to read at construction time, so
+ * the compatible provider is always the one returned and `enabled()` carries the question — it
+ * reports false until the status probe lands and whenever nobody is signed in, and every caller
+ * already treats a disabled provider and a null answer the same way.
+ */
 export function getLlmProvider(): LLMProvider {
   if (active) return active
-  active = import.meta.env.VITE_FORMA_LLM_URL ? new OpenAiCompatibleProvider() : new NullLlmProvider()
+  active = new OpenAiCompatibleProvider()
   return active
 }
 

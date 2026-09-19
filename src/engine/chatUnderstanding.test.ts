@@ -75,6 +75,29 @@ describe('a labelled field is read wherever it sits in the sentence', () => {
     expect(extractFields('marka adı Noctis', []).brandName).toBe('Noctis')
   })
 
+  it('a name stops at the comma that ends its clause', () => {
+    /*
+     * The stop list catches category nouns and palette words, but it is a list. "ürün Studio One,
+     * antrasit" put **antrasit** inside the product name — a colour `extractFields` reads
+     * correctly three lines later, which `isPaletteName` happens not to know. The comma is the
+     * boundary the customer already wrote.
+     */
+    expect(extractFields('Lumen kulaklık kutusu, ürün Studio One, antrasit.', []).productName).toBe('Studio One')
+    expect(extractFields('marka Noctis, parfüm etiketi', []).brandName).toBe('Noctis')
+  })
+
+  it('a product name keeps a category word the customer capitalised', () => {
+    /*
+     * A category noun ends a name, which is why "ürün parfüm şişesi etiketi" reads no product. But
+     * it is also half of many real names, and the rule cut them short: measured on an ordinary
+     * honey brief, "ürün Çiçek Balı" came back as **Çiçek** — `bal` is a sector noun — and the jar
+     * would have been printed that way. The customer's own capitalisation tells the two apart.
+     */
+    expect(extractFields('Aura bal kavanozu etiketi, ürün Çiçek Balı, 450 gr', []).productName).toBe('Çiçek Balı')
+    expect(extractFields('Verda krem etiketi, ürün Gece Kremi, 50 ml', []).productName).toBe('Gece Kremi')
+    expect(extractFields('ürün parfüm şişesi etiketi', []).productName ?? '').toBe('')
+  })
+
   it('a spoken barcode answer counts as answered', () => {
     const { brief, asked } = replay(['Noctis parfüm etiketi, ürün Gece Serisi, 50 ml, siyah altın. Barkod örnek.'])
     expect(brief.barcodeDefaulted, 'barkod cevabı görülmedi').toBe(true)

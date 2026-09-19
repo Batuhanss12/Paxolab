@@ -43,12 +43,18 @@ export function studioCriticActions(input: {
   const crowded = input.collisions.length > 0
   const overflow = input.outOfBounds.length > 0
   if (!crowded && !overflow) return []
+  /*
+   * `reason` is read aloud in chat, so it says what is wrong with the design rather than which
+   * structure noticed. "Ledger çarpışma (3)" named an internal data structure and then a raw count
+   * — the customer cannot see the ledger, and the number is only meaningful next to a total they
+   * were never shown. What they *can* see is that things are touching.
+   */
   if (crowded && !ALREADY_QUIET.has(input.temperament)) {
     return [
       {
         kind: 'quieter',
         utterance: 'daha sakin olsun',
-        reason: `Ledger çarpışma (${input.collisions.length})`,
+        reason: 'ön yüzde öğeler birbirine değiyor',
       },
     ]
   }
@@ -56,7 +62,7 @@ export function studioCriticActions(input: {
     {
       kind: 'vary',
       utterance: 'farklılaştır',
-      reason: crowded ? `Ledger çarpışma (${input.collisions.length})` : `Ledger taşma (${input.outOfBounds.length})`,
+      reason: crowded ? 'ön yüzde öğeler birbirine değiyor' : 'bazı öğeler güvenli alanın dışına taşıyor',
     },
   ]
 }
@@ -64,5 +70,5 @@ export function studioCriticActions(input: {
 export function studioCriticOffer(actions: StudioCriticOffer[]): string {
   if (!actions.length) return ''
   const action = actions[0]
-  return `Kritik: ${action.reason} — “${action.utterance}” yaz, mevcut C6 yön düğmesini uygularım.`
+  return `Fark ettim: ${action.reason}. “${action.utterance}” yazarsan düzeltirim.`
 }

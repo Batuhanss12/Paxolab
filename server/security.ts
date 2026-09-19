@@ -13,6 +13,14 @@ const SECRET_KEY_RE = /password|passwd|secret|token|authorization|api[_-]?key|co
 export const DEFAULT_AUTH_RATE_PER_MIN = 20
 export const DEFAULT_CHECKOUT_RATE_PER_MIN = 30
 export const DEFAULT_ADMIN_RATE_PER_MIN = 120
+/**
+ * The model proxy spends someone's money — or a GPU — per call, so it gets its own allowance.
+ *
+ * Two blocking tasks run per generation plus a non-blocking vision critic, and a customer
+ * iterating hard produces a generation every few seconds. 60/min leaves that comfortable while
+ * putting a ceiling on what a single signed-in account can draw from a shared endpoint.
+ */
+export const DEFAULT_LLM_RATE_PER_MIN = 60
 export const DEFAULT_MAX_BODY_BYTES = 2 * 1024 * 1024
 
 /**
@@ -54,6 +62,11 @@ export function checkoutRatePerMinute(): number {
 export function adminRatePerMinute(): number {
   const n = Number(process.env.FORMA_RATE_LIMIT_ADMIN ?? DEFAULT_ADMIN_RATE_PER_MIN)
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_ADMIN_RATE_PER_MIN
+}
+
+export function llmRatePerMinute(): number {
+  const n = Number(process.env.FORMA_RATE_LIMIT_LLM ?? DEFAULT_LLM_RATE_PER_MIN)
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_LLM_RATE_PER_MIN
 }
 
 export function maxBodyBytes(): number {
@@ -182,7 +195,7 @@ export function resetSharedRateLimits(db: FormaDb): void {
  * Pass the database and the allowance is shared across processes; omit it and the counters stay in
  * this process, which is only correct when there is exactly one.
  */
-export function rateLimit(scope: 'auth' | 'checkout' | 'admin', db?: FormaDb): MiddlewareHandler {
+export function rateLimit(scope: 'auth' | 'checkout' | 'admin' | 'llm', db?: FormaDb): MiddlewareHandler {
   return async (c, next) => {
     if (isRateLimitDisabled()) {
       await next()
@@ -193,7 +206,9 @@ export function rateLimit(scope: 'auth' | 'checkout' | 'admin', db?: FormaDb): M
         ? authRatePerMinute()
         : scope === 'checkout'
           ? checkoutRatePerMinute()
-          : adminRatePerMinute()
+          : scope === 'llm'
+            ? llmRatePerMinute()
+            : adminRatePerMinute()
     const ip = clientIp(c)
     const key = `${scope}:${ip}`
     const result = db ? checkRateLimitShared(db, key, limit) : checkRateLimit(key, limit)

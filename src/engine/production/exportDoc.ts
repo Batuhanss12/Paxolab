@@ -1,5 +1,5 @@
 import type { DesignSpec } from '../../types'
-import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/composeArtwork'
+import { artworkMarkup, clipDefs, renderArtworkDoc } from '../artwork/renderArtwork'
 import { isFormaSampleEan, isInventedRegisteredGtin } from '../barcode'
 import { noteDownload, noteExport } from '../brain/OutcomeTracker'
 import { dielineTechMarkup, renderKnifeDoc, renderStructureDoc } from '../dieline/renderDielineSvg'

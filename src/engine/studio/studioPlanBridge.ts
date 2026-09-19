@@ -119,8 +119,14 @@ export function hintsFromPlan(plan: DesignPlan): DirectionHints | null {
   if (intent.frame) said.push(`çerçeve ${intent.frame}`)
   if (intent.ornament) said.push(`süs ${intent.ornament}`)
   if (!said.length) return null
+  // Marked per axis as the brain's own reading, so the director can rank it under the brief's personality.
+  const axisSource: NonNullable<DirectionHints['axisSource']> = {}
+  if (intent.typePairing) axisSource.typePairing = 'heuristic'
+  if (intent.frame) axisSource.frame = 'heuristic'
+  if (intent.ornament) axisSource.ornament = 'heuristic'
   return {
     ...intent,
+    axisSource,
     rationale: [`Tasarım beyni (${plan.positioning} · ${plan.visualIntent} · ${plan.typography.authority}): ${said.join(', ')}.`],
   }
 }

@@ -39,13 +39,17 @@ import {
   type Section,
 } from './anatomy'
 import { ground, paintBackground } from './backgrounds'
+import { paintComposition } from './compositions'
 import { FIELD_INTENSITY, FIELD_MUTE, fieldPalette, secondaryField } from './panelField'
-import { heroAspect, heroLayout, heroStyle, speciesHero } from './species'
+import { heroStyle, speciesHero } from './species'
+import { isReferenceArchetype, paintReferenceFace, paintReferenceRoundFace, paintReferenceSkin, paintReferenceTagFace } from './refArchetypes'
+import { fitSubject } from './subject'
+import { titleFaces } from './typeSystem'
 import { darken, isDark, lighten, mix, readableInk } from './color'
 import { backHeaders, claimLine, liveClaim, nutritionRows, usageCopy } from './copyBank'
 import { fitLabelBarcode } from '../barcode'
 import { cityLine, identOf, isLandscape, isRound, isTiny, marginFor, seamMark, spanAt, withIdent, categoryCaption, type LayoutCtx } from './layoutContext'
-import { Ledger, fitSize, fitsAtFloor, textEl, textWidth, typeSize, wrapByWidth } from './text'
+import { Ledger, fitSize, fitsAtFloor, pairingFaces, textEl, textWidth, typeSize, wrapByWidth } from './text'
 import type { LabelArchetype } from './types'
 
 const f = (n: number) => (Math.round(n * 100) / 100).toString()
@@ -132,14 +136,28 @@ function marbleFrame(ctx: LayoutCtx): string {
   // tiny "HIGH-QUALITY COFFEE" style category under the bracket
   const catSize = 1.5
   const marbleCat = categoryCaption(ctx)
-  if (marbleCat) parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, marbleCat, catSize, ink, bw))
   // product at the foot: script prefix + heavy product
   const volSize = d.volumeLine ? Math.max(2, Math.min(2.8, w * 0.032, h * 0.07)) : 0
   // Tied to the brand that was actually drawn, not to a ceiling beside it — see `secondaryMax`.
   const stackMax = Math.min(secondaryMax(lock.brandSize), w * 0.11, landscape || h < 55 ? Math.max(2.8, h * 0.18) : 8.5)
   const stackH = stackMax * (d.productPrefix ? 1.9 : 1.35) + (volSize ? volSize * 2.4 : 2)
   const productTop = Math.max(lock.bottom + 4, Math.min(h * 0.7, h - m - stackH))
-  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, { color: ink, accent, prefix: d.productPrefix, max: stackMax }))
+  /*
+   * `stackH` is an estimate used to place the stack; it was never enforced, so on a 120 × 50 device
+   * label the caption, the script prefix and the product all landed on top of each other and the
+   * last two ran off the panel. The caption yields when the stack is right behind it, and the stack
+   * is handed the room the net quantity actually leaves it.
+   */
+  if (marbleCat && productTop - (by + bh + catSize * 2.2) > catSize * 3) {
+    parts.push(spacedLine(ledger, w / 2, by + bh + catSize * 2.2, marbleCat, catSize, ink, bw))
+  }
+  const stack = productStack(ledger, d, w / 2, productTop, w - m * 2, copy.product, withIdent(ctx, {
+    color: ink,
+    accent,
+    prefix: d.productPrefix,
+    max: stackMax,
+    room: Math.max(0, h - m - (volSize || 2) * 2.4 - productTop),
+  }))
   parts.push(stack.markup)
   if (d.volumeLine) {
     const size = volSize || Math.max(2, Math.min(2.8, w * 0.032))
@@ -168,16 +186,18 @@ function diagonalSplit(ctx: LayoutCtx): string {
   const first = words.length > 1 ? words.slice(0, -1).join(' ') : ''
   const last = words[words.length - 1] ?? ''
   const titleMax = Math.min(landscape ? 7.5 : 8.5, colW * 0.17) * ctx.titleScale
-  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-light', 0.02), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, 'sans-heavy', 0.02))
+  // The painter's own light + heavy sans on its native pairing; the type system's faces on any other.
+  const tf = titleFaces(d.typePairing, 'sans-light/sans-heavy', { light: 'sans-light', heavy: 'sans-heavy', tracking: 0.02 })
+  const tSize = Math.min(fitSize(first || last, colW, titleMax, 2.8 * ctx.titleScale, tf.light, tf.tracking), fitSize(last, colW, titleMax, 2.8 * ctx.titleScale, tf.heavy, tf.tracking))
   let y = m + tSize
   let productBlock = ''
   if (first) {
-    productBlock += textEl({ x: m, y, text: first, size: tSize, face: 'sans-light', fill: ink, tracking: tSize * 0.02 })
-    ledger.text('product-light', m, y, textWidth(first, tSize, 'sans-light', tSize * 0.02), tSize)
+    productBlock += textEl({ x: m, y, text: first, size: tSize, face: tf.light, fill: ink, tracking: tSize * tf.tracking })
+    ledger.text('product-light', m, y, textWidth(first, tSize, tf.light, tSize * tf.tracking), tSize)
     y += tSize * 1.05
   }
-  productBlock += textEl({ x: m, y, text: last, size: tSize, face: 'sans-heavy', fill: ink, tracking: tSize * 0.02 })
-  ledger.text('product', m, y, textWidth(last, tSize, 'sans-heavy', tSize * 0.02), tSize)
+  productBlock += textEl({ x: m, y, text: last, size: tSize, face: tf.heavy, fill: ink, tracking: tSize * tf.tracking })
+  ledger.text('product', m, y, textWidth(last, tSize, tf.heavy, tSize * tf.tracking), tSize)
   parts.push(`<g data-edit="product">${productBlock}</g>`)
   y += tSize * 0.9
   // sub + chip + gold category
@@ -235,28 +255,31 @@ export function paintLineSceneFace(ctx: LayoutCtx, opts: { rounded?: boolean } =
   const r = Math.min(w * 0.1, 6)
   parts.push(paintMark(markKindFor(d), w / 2, m + r, r, ink, copy.brand, identOf(ctx)))
   ledger.add('element', ctx.logoHref && r >= STUDIO_MIN_LOGO_R ? 'brand-logo' : 'brand-mark', w / 2 - r * 1.4, m, r * 2.8, r * 2)
-  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
+  // The painter's own heavy sans on its native pairing; the type system's faces on any other.
+  const tf = titleFaces(d.typePairing, 'sans-light/sans-heavy', { light: 'sans-light', heavy: 'sans-heavy', tracking: 0.1 })
+  const brandTrack = tf.tracking === 0.1 ? 0.12 : tf.tracking
+  const brandSize = fitSize(copy.brand.toLocaleUpperCase('tr'), w * 0.7, 4.4 * ctx.titleScale, 2.2 * ctx.titleScale, tf.heavy, brandTrack)
   const brandY = m + r * 2 + brandSize * 1.4
-  parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: brandSize * 0.12, extra: 'data-edit="brand"' }))
-  ledger.text('brand', w / 2, brandY, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, 'sans-heavy', brandSize * 0.12), brandSize, 'middle')
+  parts.push(textEl({ x: w / 2, y: brandY, text: copy.brand.toLocaleUpperCase('tr'), size: brandSize, face: tf.heavy, fill: ink, anchor: 'middle', tracking: brandSize * brandTrack, extra: 'data-edit="brand"' }))
+  ledger.text('brand', w / 2, brandY, textWidth(copy.brand.toLocaleUpperCase('tr'), brandSize, tf.heavy, brandSize * brandTrack), brandSize, 'middle')
   // two-tone title
   const words = copy.product.toLocaleUpperCase('tr').split(/\s+/)
   const a = words.length > 1 ? words.slice(0, Math.ceil(words.length / 2)).join(' ') : words[0]
   const b = words.length > 1 ? words.slice(Math.ceil(words.length / 2)).join(' ') : ''
   const titleMax = Math.min(7.5, w * 0.11) * ctx.titleScale
   const full = b ? `${a} ${b}` : a
-  const size = fitSize(full, w - m * 2, titleMax, 2.6 * ctx.titleScale, 'sans-heavy', 0.1)
-  const track = size * 0.1
-  const wa = textWidth(a, size, 'sans-light', track)
-  const wb = b ? textWidth(` ${b}`, size, 'sans-heavy', track) : 0
+  const size = fitSize(full, w - m * 2, titleMax, 2.6 * ctx.titleScale, tf.heavy, tf.tracking)
+  const track = size * tf.tracking
+  const wa = textWidth(a, size, tf.light, track)
+  const wb = b ? textWidth(` ${b}`, size, tf.heavy, track) : 0
   const startX = w / 2 - (wa + wb) / 2
   // Same stack-over-scene skeleton, three rhythms: tight title with a taller scene, standard,
   // airy title with a shallower scene.
   const titleGap = d.variant === 1 ? 1.9 : d.variant === 2 ? 3.4 : 2.6
   const sceneSpan = d.variant === 1 ? 0.52 : d.variant === 2 ? 0.4 : 0.46
   const titleY = brandY + size * titleGap
-  let productBlock = textEl({ x: startX, y: titleY, text: a, size, face: 'sans-light', fill: d.palette.accent2, tracking: track, weight: 400 })
-  if (b) productBlock += textEl({ x: startX + wa, y: titleY, text: ` ${b}`, size, face: 'sans-heavy', fill: ink, tracking: track })
+  let productBlock = textEl({ x: startX, y: titleY, text: a, size, face: tf.light, fill: d.palette.accent2, tracking: track, weight: tf.light === 'sans-light' ? 400 : undefined })
+  if (b) productBlock += textEl({ x: startX + wa, y: titleY, text: ` ${b}`, size, face: tf.heavy, fill: ink, tracking: track })
   parts.push(`<g data-edit="product">${productBlock}</g>`)
   ledger.text('product', w / 2, titleY, wa + wb, size, 'middle')
   const subSize = Math.max(1.6, size * 0.36)
@@ -335,6 +358,8 @@ export function paintWavePanelFace(ctx: LayoutCtx): string {
  * they are deciding to buy it.
  */
 export function paintTagFace(ctx: LayoutCtx): string {
+  // A swing tag of the second repertoire keeps its archetype's field, brand and subject — see `refArchetypes.ts`.
+  if (isReferenceArchetype(ctx.d.archetype)) return paintReferenceTagFace(ctx)
   const { w, h, d, ledger, copy } = ctx
   const m = marginFor(w, h)
   const ink = readableInk(d.palette.ground, d.palette.ink)
@@ -736,6 +761,17 @@ export function paintRoundBack(ctx: LayoutCtx): string {
     return dy >= iy ? 0 : 2 * ix * Math.sqrt(1 - (dy / iy) ** 2)
   }
 
+  /**
+   * The narrowest chord an element spans, for anything with height.
+   *
+   * `chord(y)` answers for one line. A barcode is a block: sized on the chord at its top it fits
+   * there and hangs out at the bottom, where the disc has already curved in. Measured on a 60 mm
+   * lid: the barcode cleared the die by **0.2 mm** — inside the cut, and close enough that the
+   * guillotine would shave it. The ledger could not see it either, because it was checking the
+   * panel's bounding rectangle rather than the round cut.
+   */
+  const chordSpan = (top: number, bottom: number): number => Math.min(chord(top), chord(bottom), chord((top + bottom) / 2))
+
   const vivid = d.temperament === 'vivid-mono'
   const bg = vivid ? d.palette.ground : isDark(d.palette.ground) ? lighten(d.palette.ground, 0.04) : d.palette.card
   const ink = vivid ? '#ffffff' : isDark(bg) ? d.palette.ink : d.palette.cardInk
@@ -771,9 +807,11 @@ export function paintRoundBack(ctx: LayoutCtx): string {
    * the text. A narrow disc has no such width, so it keeps the stack.
    */
   const gap = picS * 0.6
-  const barW = Math.min(chord(barY) * (picW ? 0.56 : 0.7), r * 1.25)
+  // The block's own span, not one line of it — see `chordSpan`.
+  const barBand = chordSpan(barY, barY + barH)
+  const barW = Math.min(barBand * (picW ? 0.56 : 0.7), r * 1.25)
   const rowW = barW + (picW ? picW + gap : 0)
-  const sideBySide = picW > 0 && rowW <= chord(barY) * 0.9
+  const sideBySide = picW > 0 && rowW <= barBand * 0.9
   let marksTop: number
   if (sideBySide) {
     const left = cx - rowW / 2
@@ -927,26 +965,28 @@ export function paintSpecimenHeroFace(ctx: LayoutCtx): string {
 
   const bandTop = top + 2
   const bandBottom = stackY - 2
-  // Sized against what the subject actually fills rather than the square it is drawn inside, so a
-  // wide bough grows to the face's width instead of being capped by a height it never uses.
-  const aspect = heroAspect(ctx.species, d.lineSeed)
-  const size = Math.min(inner * 0.94, Math.max(0, bandBottom - bandTop) / aspect)
-  // Below roughly a fifth of the face the drawing stops being the subject and starts being a
-  // smudge. Better to drop it and let the type own a quiet face than to print a bad one.
-  if (size > w * 0.22) {
-    const cy = (bandTop + bandBottom) / 2
-    const drawnH = size * aspect
-    ledger.add('element', 'specimen', w / 2 - size / 2, cy - drawnH / 2, size, drawnH)
-    /*
-     * Arrangement and render mode come from the *line* seed, jitter from the piece's own. A range
-     * shares its composition; only the subject and the small randomness change per SKU.
-     */
-    parts.push(
-      speciesHero(ctx.species, w / 2, cy, size, heroInk(d.palette), d.seed, {
-        layout: heroLayout(ctx.species, d.lineSeed),
-        style: heroStyle(d.lineSeed),
-      }),
-    )
+  /*
+   * Fitted by what the drawing really reaches (`fitSubject`), not by a nominal size and an aspect
+   * table: measured against the browser, the table said 0.56 for an arch that reaches 0.60–1.04
+   * of its size, so the picture spilled past the box the ledger held for it. Arrangement and
+   * render mode still come from the *line* seed, jitter from the piece's own — a range shares its
+   * composition; only the subject and the small randomness change per SKU. Below roughly a
+   * quarter of the face the drawing stops being the subject and starts being a smudge; better to
+   * drop it and let the type own a quiet face than to print a bad one.
+   */
+  const fit = fitSubject({
+    species: ctx.species,
+    ink: heroInk(d.palette),
+    seed: d.seed,
+    lineSeed: d.lineSeed,
+    style: d.subjectStyle,
+    uid: `${ctx.uid}-hero`,
+    room: { left: w / 2 - inner * 0.47, right: w / 2 + inner * 0.47, top: bandTop, bottom: bandBottom },
+    minWidth: Math.min(w, h) * 0.26,
+  })
+  if (fit) {
+    ledger.add('element', 'specimen', fit.box.x, fit.box.y, fit.box.w, fit.box.h)
+    parts.push(fit.markup)
   }
 
   parts.push(productStack(ledger, d, w / 2, stackY, inner, copy.product, stackOpts).markup)
@@ -1231,7 +1271,17 @@ export function paintLabelFace(ctx: LayoutCtx): string {
    * to hang a diagonal off, so none of the rectangular faces below can be asked to draw one — the
    * round composition is its own thing and the archetype only survives as the background choice.
    */
-  if (isRound(ctx.panel)) return paintRoundFace(ctx)
+  if (isRound(ctx.panel)) return isReferenceArchetype(ctx.d.archetype) ? paintReferenceRoundFace(ctx) : paintRoundFace(ctx)
+  /*
+   * The second repertoire (F-32) paints its own faces — eight skeletons the ten below cannot
+   * make. Reached only when the customer asked for other designs, so the ten and their frozen
+   * faces are untouched by it.
+   */
+  const reference = paintReferenceFace(ctx)
+  if (reference !== null) return reference
+  // A composition borrows the archetype's field and type and supplies the arrangement — see `compositions.ts`.
+  const composed = paintComposition(ctx)
+  if (composed !== null) return composed
 
   switch (ctx.d.archetype as LabelArchetype) {
     case 'card-on-art':
@@ -1268,12 +1318,21 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   const bg = vivid ? d.palette.ground : isDark(d.palette.ground) ? lighten(d.palette.ground, 0.04) : d.palette.card
   const ink = vivid ? '#ffffff' : isDark(bg) ? d.palette.ink : d.palette.cardInk
   const parts: string[] = [ground(w, h, bg), backField(ctx, bg)]
-  parts.push(paintFrame(d, w, h, { inset: m * 0.5, color: d.palette.accent, opacity: 0.7 }))
+  // A reference archetype wears its own outline here, exactly as it does on a carton back.
+  parts.push(paintReferenceSkin(ctx, 'back') ?? paintFrame(d, w, h, { inset: m * 0.5, color: d.palette.accent, opacity: 0.7 }))
   const hdr = backHeaders(d.locale)
   const title = copy.product.toLocaleUpperCase('tr')
-  const tSize = fitSize(title, w - m * 2, 4.2 * ctx.titleScale, 2.2 * ctx.titleScale, 'sans-heavy', 0.12)
-  parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: 'sans-heavy', fill: ink, anchor: 'middle', tracking: tSize * 0.12, extra: 'data-edit="product"' }))
-  ledger.text('back-title', w / 2, m + tSize, textWidth(title, tSize, 'sans-heavy', tSize * 0.12), tSize, 'middle')
+  /*
+   * The design's own product face, not a hardcoded `sans-heavy`.
+   *
+   * Ten type systems decide how every other panel is set and this one ignored all of them, so a
+   * face whose front is a display serif handed the customer a back headed in heavy grotesk — half
+   * of why the owner read the front and the back as two different designs.
+   */
+  const titleFace = pairingFaces(d.typePairing).product
+  const tSize = fitSize(title, w - m * 2, 4.2 * ctx.titleScale, 2.2 * ctx.titleScale, titleFace, 0.12)
+  parts.push(textEl({ x: w / 2, y: m + tSize, text: title, size: tSize, face: titleFace, fill: ink, anchor: 'middle', tracking: tSize * 0.12, extra: 'data-edit="product"' }))
+  ledger.text('back-title', w / 2, m + tSize, textWidth(title, tSize, titleFace, tSize * 0.12), tSize, 'middle')
   parts.push(hairline(m, m + tSize * 1.8, w - m, d.palette.accent, 0.8, 0.22))
   const pics = pictogramsForBack(d).slice(0, 3)
   const vs = Math.max(1.6, Math.min(2.2, w * 0.026))

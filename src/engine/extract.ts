@@ -90,6 +90,31 @@ export function applyExtraction(
     if (labelledBrand) extracted.brandName = labelledBrand
     if (labelledProduct) extracted.productName = labelledProduct
   }
+  /*
+   * A guess may fill an empty field. It may not overwrite one the customer already gave.
+   *
+   * Every guard above is keyed on `awaiting`, and once a design exists `awaiting` is null — so none
+   * of them ran, and `extractFields`' positional fallback (first word = brand, next = product) was
+   * free to rewrite the name on the pack from whatever was typed next. Two measured cases, both
+   * from ordinary use after the first design:
+   *
+   *   - typing `başlat` to re-run set the brand to **başlat** — the start word became the name;
+   *   - "hedef kitle 25-40 yaş, teknoloji meraklısı, online satılacak" set the brand to **hedef**
+   *     and the product to **kitle**, while the audience it was describing landed correctly in
+   *     `brief.audience`. The customer described their buyer and lost their brand.
+   *
+   * The positional reading exists for the opening message, where nothing is known and word order
+   * is the only signal. Past that point the customer has to *say* they are renaming something —
+   * which is what `spokenBrandName` / `spokenProductName` detect, and what already lets "aslında
+   * marka adı Noktis olsun" through at any point in the conversation.
+   */
+  if (brief.brandName.trim() && extracted.brandName && !spokenBrandName(text)) {
+    delete extracted.brandName
+  }
+  if (brief.productName.trim() && extracted.productName && !spokenProductName(text)) {
+    delete extracted.productName
+  }
+
   if (awaiting === 'copyLocale') delete extracted.copyLocale
   if (brief.copyLocale && awaiting !== 'copyLocale') delete extracted.copyLocale
   if (

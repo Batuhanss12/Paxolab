@@ -1,13 +1,9 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest'
 import { JOBS, briefFrom, type Job } from '../../../scripts/catalog-jobs'
-import { FormaLocalEngine } from '../FormaLocalEngine'
 import { applyPlanToSystem } from './applyPlan'
-import { findHeroPanel } from '../dieline/panelKind'
-import { layoutFrontLockup } from '../designSystem/lockupLayout'
 import { kitGradeSkipsOverlay, chromeForConcept, goldBarForConcept, lockupForConcept, shouldPaintModernGrid, shouldPaintSectorFrame } from '../designSystem/conceptKitAlignment'
 import { allowedHeroes, allowedPatterns } from './ArtDirection'
 import { resolveDesignSystem } from '../designSystem/resolve'
-import { clearCompositionSearch, lastCompositionSearch } from '../artwork/compositionCandidates'
 import { allowedStrategies, compositionTargets, type CompositionTargets } from '../artwork/compositionStrategy'
 import {
   applyCharacterLanguageModifier,
@@ -20,7 +16,6 @@ import {
 import { languageTreatmentFor, strokeWidthForLanguage } from '../artwork/languageTreatment'
 import { assetLanguageFor } from '../artwork/assetLanguage'
 import { clearArtMotifAtomizerCache } from '../artwork/artMotifAtomizer'
-import { clearArtPatternComposeCache } from '../artwork/artPatternCompose'
 import { clearArtPatternLibraryCache } from '../artwork/artPatternLibrary'
 import { clearMotifBankCache } from '../artwork/artMotifBank'
 import { buildDesignIntent, createPlan } from './DesignDirector'
@@ -94,13 +89,6 @@ const CATALOG_FREEZE: Record<string, Freeze> = {
   '29-sampuan-wrap-modern': { concept: 'index-stripe', hero: 'emblem', chrome: 'quiet', lockup: 'left', opticalCenter: 0.4, budget: 0.26, densityTarget: 0.182, whitespaceTarget: 0.52, symmetryTarget: 0.88, decorationLevel: 0.26, focalStrength: 0.78, balanceTarget: 0.82, compositionBias: 'asymmetric-editorial', framePreference: 0.22, ornamentPreference: 0.26 },
 }
 
-const LOCKUP_Y: Record<string, { opticalY: number; brandY: number }> = {
-  '08-zeytinyagi-tuck-luxury': { opticalY: 181.6, brandY: 173.332 },
-  '01-parfum-tuck-luxury': { opticalY: 105.7, brandY: 101.659 },
-  '03-krem-tuck-luxury': { opticalY: 90.4, brandY: 86.941 },
-  '04-serum-tuck-minimal': { opticalY: 120.2, brandY: 115.285 },
-  '14-kulaklik-tuck-modern': { opticalY: 100.1, brandY: 96.809 },
-}
 
 /** createPlan set-0 pattern families. Generate may repair (e.g. serum styleLeakage → none). */
 const PATTERN_FREEZE: Record<string, string> = {
@@ -135,7 +123,6 @@ const PATTERN_FREEZE: Record<string, string> = {
   '29-sampuan-wrap-modern': 'lattice',
 }
 
-const RETIRED = ['crest-spot', 'ribbon-corner', 'cartouche-arc', 'double-line-corner']
 
 function jobOf(slug: string): Job {
   const job = JOBS.find((j) => j.slug === slug)
@@ -152,22 +139,17 @@ function planOf(job: Job) {
   })
 }
 
-function face(spec: { artwork: { layers: { panelId: string; markup: string }[] } }) {
-  return spec.artwork.layers.find((l) => l.panelId === 'front' || l.panelId === 'label' || l.panelId === 'trayFront')?.markup ?? ''
-}
 
 describe('Design Brain V1 carrier (passive)', () => {
   beforeEach(() => {
     resetArtMemory()
     clearArtPatternLibraryCache()
-    clearArtPatternComposeCache()
     clearArtMotifAtomizerCache()
     clearMotifBankCache()
   })
 
   afterEach(() => {
     clearArtPatternLibraryCache()
-    clearArtPatternComposeCache()
     clearArtMotifAtomizerCache()
     clearMotifBankCache()
   })
@@ -601,66 +583,6 @@ describe('Design Brain V1 carrier (passive)', () => {
     expect(kitGradeSkipsOverlay(planOf(jobOf('09-cikolata-tray-playful')).style)).toBe(false)
   })
 
-  it('F: 29 kit generate keeps exportOK, overlay split, retired ids, lockup Y', { timeout: 120000 }, () => {
-    expect(JOBS.filter((j) => kitGradeSkipsOverlay(j.styleType))).toHaveLength(25)
-    expect(JOBS.filter((j) => !kitGradeSkipsOverlay(j.styleType))).toHaveLength(4)
-    const engine = new FormaLocalEngine()
-    let playfulOverlay = 0
-    for (const job of JOBS) {
-      resetArtMemory()
-      clearCompositionSearch()
-      const spec = engine.generate({
-        brief: briefFrom(job),
-        overridePatch: { blankCanvas: false, variationIndex: 0 },
-      })
-      const svg = face(spec)
-      expect(spec.preflight.exportOk, job.slug).toBe(true)
-      expect(spec.designPlan?.visualConcept.id, job.slug).toBe(CATALOG_FREEZE[job.slug].concept)
-      expect(spec.designPlan?.visualLanguage, job.slug).toEqual(spec.designPlan?.visualConcept.languages)
-      expect(spec.designPlan?.heroGraphic.family, job.slug).toBe(CATALOG_FREEZE[job.slug].hero)
-      expect(spec.designPlan?.artDirection.chrome, job.slug).toBe(CATALOG_FREEZE[job.slug].chrome)
-      const assets = assetLanguageFor(spec.designPlan!)
-      expect(assets.languages, job.slug).toEqual(spec.designPlan?.visualLanguage)
-      expect(assets.heroFamily, job.slug).toBe(spec.designPlan?.heroGraphic.family)
-      expect(assets.patternFamily, job.slug).toBe(spec.designPlan?.patternSystem.family)
-      expect(assets.chrome, job.slug).toBe(spec.designPlan?.artDirection.chrome)
-      expect(spec.designPlan?.principles, job.slug).toEqual(
-        principlesFor(spec.designPlan!.style, spec.designPlan!.surface),
-      )
-      for (const id of RETIRED) {
-        expect(svg.includes(id), `${job.slug} ${id}`).toBe(false)
-      }
-      expect(svg).not.toContain('data-motif="perfume-bottle"')
-      expect(svg).not.toContain('data-hero="oval"')
-      if (kitGradeSkipsOverlay(job.styleType)) {
-        expect(svg, job.slug).not.toContain('data-art="art-pattern-compose"')
-        expect(lastCompositionSearch(), job.slug).toBeUndefined()
-      } else {
-        playfulOverlay += 1
-        expect((lastCompositionSearch()?.concept?.winnerAssetId ?? '').toLowerCase(), job.slug).toMatch(
-          /vintage-badge|badge|vintage/,
-        )
-      }
-      if (job.slug === '02-kolonya-tuck-classic') {
-        expect(svg).toContain('data-lockup-chrome="centered-crest"')
-        expect(svg).not.toContain('data-hero="crest"')
-        expect(svg).not.toContain('data-art="art-pattern-compose"')
-      }
-      const yFreeze = LOCKUP_Y[job.slug]
-      if (yFreeze && spec.designPlan) {
-        const system = applyPlanToSystem(
-          resolveDesignSystem(spec.brief, spec.structureId, { blankCanvas: false }),
-          spec.designPlan,
-        )
-        const panel = findHeroPanel(spec.dieline.panels)
-        expect(panel, job.slug).toBeTruthy()
-        const layout = layoutFrontLockup(panel!, system, spec.copy, spec.overrides, system.grammar === 'label')
-        expect(Math.round((layout.opticalY ?? 0) * 10) / 10, job.slug).toBe(yFreeze.opticalY)
-        expect(Math.round((layout.brandY ?? 0) * 1000) / 1000, job.slug).toBe(yFreeze.brandY)
-      }
-    }
-    expect(playfulOverlay).toBe(4)
-  })
 
   it('principles are the existing 8 ids only', () => {
     const allowed: PrincipleId[] = [

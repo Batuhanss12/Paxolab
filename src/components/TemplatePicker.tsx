@@ -75,6 +75,7 @@ export function TemplatePicker({ brief, onSelect, onPick, onDims, livePreview = 
             <button
               key={t.id}
               type="button"
+              aria-pressed={brief.templateId === t.id}
               className={`tcard ${brief.templateId === t.id ? 'is-active' : ''}`}
               onClick={() => onSelect(t.id, cardDims)}
             >

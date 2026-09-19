@@ -95,6 +95,7 @@ import { recordLlmCost, listLlmCosts, llmCostSummary } from './credit/llmCost.ts
 import { recordEvent, listUserEvents } from './credit/events.ts'
 import { bodyLimit } from 'hono/body-limit'
 import { ExportBlocked, buildDeliveryZip } from './exportBundle.ts'
+import { forwardToProvider, llmMaxBodyBytes, llmStatus } from './llmProxy.ts'
 import {
   BODY_TOO_LARGE_TR,
   corsOriginChecker,
@@ -937,6 +938,35 @@ export function createApp(db: FormaDb): Hono<AppEnv> {
     const usage = projectUsage(db, projectId)
     return c.json({ usage })
   })
+
+  /*
+   * The model runs behind the API, not in the page.
+   *
+   * `/status` is public because it carries no secret and the studio has to know, before its first
+   * task, whether to try the model or go straight to the deterministic engine. `/complete` is the
+   * one that spends money or GPU time, so it is behind `requireAuth` — otherwise the endpoint is a
+   * free model API for anyone who finds the URL — and behind its own rate bucket, so one account
+   * cannot drain a shared endpoint. The body cap is larger than the default because vision tasks
+   * carry rendered faces as data URLs.
+   */
+  app.get('/api/llm/status', (c) => llmStatus(c))
+  app.post(
+    '/api/llm/complete',
+    rateLimit('llm', db),
+    requireAuth(db),
+    bodyLimit({ maxSize: llmMaxBodyBytes(), onError: (c) => c.json({ error: BODY_TOO_LARGE_TR }, 413) }),
+    async (c) => {
+      let body: Parameters<typeof forwardToProvider>[0]
+      try {
+        body = await c.req.json()
+      } catch {
+        return c.json({ error: 'Geçersiz JSON.' }, 400)
+      }
+      const outcome = await forwardToProvider(body)
+      if (!outcome.ok) return c.json({ error: outcome.error }, outcome.status)
+      return c.json({ content: outcome.content })
+    },
+  )
 
   // Record LLM cost (internal, called by design engine)
   app.post('/api/internal/llm-cost', requireAuth(db), async (c) => {

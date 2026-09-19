@@ -17,7 +17,7 @@ const ASK: Partial<Record<AwaitingKey, string>> = {
     'Barkod / GTIN nedir (8–14 hane)? Yazmazsan “örnek” de; örnek barkod çizerim — GS1 değildir.',
   manufacturerName: 'Üretici veya ithalatçı unvanı nedir? Bilmiyorsanız “örnek” yazın.',
   manufacturerAddress: 'Üretici adresi nedir (ilçe, şehir, ülke)? Bilmiyorsanız “örnek” yazın.',
-  styleType: 'Soldaki ruh hali çipleri ipucu: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik. Kostüm şablonu değil — renk ve motifler brief’ten kurulur.',
+  styleType: 'Soldaki ruh hali çipleri ipucu: Lüks, Modern, Minimal, Eco, Eğlenceli, Klasik. Hazır kalıp değil — renk ve motifler anlattıklarından kurulur.',
   colors:
     'Renk, duruş veya hikâye — bir cümle yeter (ör. siyah · altın, editorial, sessiz yoğunluk). Yoksa paleti üründen kurarım; “örnek” yaz.',
   templateId:
@@ -72,7 +72,7 @@ export function askRetryCopy(brief: DesignBrief, key: AwaitingKey, lastAnswer: s
     return `${said} yüzeyi belirlemedi. “kutu”, “etiket” ya da “kutu ve etiket” yaz; şişe/kavanoz için etiket, karton için kutu doğru seçim.`
   }
   if (key === 'productName') {
-    return `${said} ürün adı olarak oturmadı. Markadan ayrı yaz — örn. “Noir”, “Serum 30 ml”. “örnek” dersen lockup’ta yalnız marka kalır.`
+    return `${said} ürün adı olarak oturmadı. Markadan ayrı yaz — örn. “Noir”, “Serum 30 ml”. “örnek” dersen ön yüzde yalnız marka kalır.`
   }
   if (key === 'barcode') {
     return `${said} barkod olarak okunmadı. 8–14 hane GTIN yaz veya “örnek” de.`

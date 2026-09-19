@@ -1,9 +1,14 @@
-Three font families are vendored in this folder, all under the SIL Open Font License 1.1.
-The notices below are taken from the `name` table of the subsetted files themselves.
+Seven font families are vendored in this folder, all under the SIL Open Font License 1.1.
+The notices below are taken from the `name` table of the subsetted files themselves, or from
+the OFL.txt shipped beside each family in the google/fonts repository.
 
 Copyright 2024 The Montserrat.Git Project Authors (https://github.com/JulietaUla/Montserrat.git)
 Copyright 2015 The Cormorant Project Authors (https://github.com/CatharsisFonts/Cormorant)
 Copyright 2010 The Great Vibes Pro Project Authors (https://github.com/googlefonts/great-vibes)
+Copyright 2022 The Instrument Serif Project Authors (https://github.com/Instrument/instrument-serif)
+Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+Copyright (c) 2011 by Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com), with Reserved Font Name "Righteous"
+Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
 
 These files are build-time input only: `scripts/build-font-outlines.py` reads them to produce
 `src/engine/studio/fontOutlines.json` and `fontMetrics.json`. No font binary is served to the

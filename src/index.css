@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@300;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Righteous&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
   --bg: #000000;
@@ -347,7 +348,9 @@ h2 {
 }
 
 .workspace__body.has-preview {
-  grid-template-columns: var(--left) 1fr;
+  /* `minmax(0, …)`, not a bare `var(--left)`: a fixed grid track refuses to shrink, so below
+     ~780 px the layout stopped fitting and the viewport scrolled sideways instead. */
+  grid-template-columns: minmax(0, var(--left)) minmax(0, 1fr);
 }
 
 .workspace__body.has-preview.has-copy-canvas {
@@ -3005,6 +3008,45 @@ h2 {
   color: var(--muted);
 }
 
+/*
+ * Two ways out of the offer, and they are not the same weight.
+ *
+ * "Şu ankiyle devam et" accepts what is on screen; "Tasarımları değiştir" throws all eight away
+ * and asks for the other repertoire. The swap is the rarer, larger decision, so it reads as the
+ * quieter control of the two — filled would make it look like the primary action on a screen
+ * whose primary action is choosing a card.
+ */
+.dirchoice__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dirchoice__swap {
+  flex: 0 0 auto;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.dirchoice__swap:hover:not(:disabled) {
+  border-color: #3a3a3a;
+  color: var(--fg);
+}
+
+.dirchoice__swap:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .dirchoice__keep {
   flex: 0 0 auto;
   border: 1px solid var(--line);
@@ -3422,4 +3464,79 @@ h2 {
 
 .prod__proof.is-on strong {
   color: #9bd2a8;
+}
+
+/* ------------------------------------------------------------ responsive
+ * Measured before this section existed, on a design-open workspace:
+ *
+ *   1440 / 1280 / 1100 / 1024 / 900 px — clean, no horizontal scroll
+ *   768 px  — the top bar's right cluster ran 15 px past the edge
+ *   390 px  — the page stayed 782 px wide and scrolled sideways at every width
+ *
+ * So the break was never at 1280; it starts just under 800. Two causes, both
+ * here: the top bar was told never to wrap, and the workspace's left track was
+ * a hard `460px` — a fixed grid track does not shrink, so below ~780 px the
+ * layout simply stopped fitting and the viewport scrolled instead.
+ *
+ * This is a desktop studio: a carton dieline and a chat thread side by side
+ * want room. The goal is not a phone-first rebuild, it is that nothing is
+ * clipped, overlapped or sideways-scrolled on the way down.
+ */
+
+@media (max-width: 1100px) {
+  :root {
+    /* Still comfortable at 1024, no longer half the screen at 820. */
+    --left: min(460px, 44vw);
+  }
+}
+
+@media (max-width: 820px) {
+  /* Below this the two columns are both too narrow to work in, so they stack:
+     the design first — it is what the customer came to look at — chat under it.
+     The body scrolls here, which it cannot do while `body` is `overflow: hidden`. */
+  .workspace__body.has-preview,
+  .workspace__body.has-preview.has-copy-canvas {
+    /* Two stacked panes that each scroll inside themselves, rather than one long
+       page. Letting the content flow instead put a 2611 px production checklist
+       inside a 591 px row and printed it straight over the chat. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .workspace__left {
+    order: 2;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    overflow: hidden;
+  }
+
+  .workspace__right {
+    order: 1;
+    overflow: auto;
+  }
+
+  /* The top bar is a row of controls, not a single line: let it wrap — and let the
+     bar itself grow when it does, or the second row lands on the workspace. */
+  .topbar {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-block: 8px;
+  }
+
+  .topbar__right {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    row-gap: 6px;
+  }
+
+  .tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
 }

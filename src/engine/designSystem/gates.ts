@@ -144,7 +144,9 @@ export function evaluateDesignGates(
   const wrapMissingSeam = system.wrapSeam && !/>SEAM</.test(faceArt) && !faceArt.includes('SEAM') && !faceArt.includes('data-art="seam"')
   const labelMissingBack = spec.kind === 'label' && !kitPiece && !labelBackArt
   const faceBarcode = /data-mark="barcode"/.test(faceArt)
-  const labelSpine = spec.kind === 'label' && /rotate\(-90\)/.test(faceArt)
+  // Carton spine anatomy on a label — not any rotated word, which is a design element the
+  // reference shelf uses on labels constantly (a turned product name, a turned range word).
+  const labelSpine = spec.kind === 'label' && /data-art="spine"/.test(faceArt)
   const boxHasSeam = spec.kind !== 'label' && system.grammar === 'box' && faceArt.includes('SEAM')
   const boxMissingBack =
     spec.kind !== 'label' && system.grammar === 'box' && !!faceArt && !REGULATORY_BACK.test(backArt)
@@ -153,7 +155,8 @@ export function evaluateDesignGates(
     system.grammar === 'box' &&
     /tuck-end/.test(spec.structureId) &&
     !!sideArt &&
-    !/rotate\(-90\)/.test(sideArt)
+    // Rotated up a tall side, or set along a squat one and marked — either is the carton's spine.
+    !/rotate\(-90\)|data-art="spine"/.test(sideArt)
 
   const surfaceFail =
     labelTuck ||
@@ -180,7 +183,9 @@ export function evaluateDesignGates(
               ? 'Barkod ön yüzde'
               : boxHasSeam
               ? 'Kutu yüzünde SEAM'
-              : boxMissingBack
+              : labelSpine
+                ? 'Etiket karton omurgası taşıyor'
+                : boxMissingBack
                 ? 'Kutu sırtı legal yığın yok'
                 : boxMissingSpine
                   ? 'Kutu omurga yok'
@@ -289,8 +294,25 @@ export function evaluateDesignGates(
     const family = foodFamilyFromBlob(`${spec.brief.subProduct} ${spec.brief.productName} ${spec.copy.product}`)
     const foodArt = `${spec.copy.ingredients}\n${backArt}\n${labelBackArt}`
     const bakeryLeak = family !== 'biscuit' && /Buğday unu|Wheat flour/.test(foodArt)
-    const oilZeroFat = family === 'oil' && !/>100 g</.test(foodArt)
-    const foodFail = bakeryLeak || oilZeroFat
+    /*
+     * This asked for `>100 g<` — the fat figure the old nutrition bank printed for an oil. It was
+     * enforcing an invented number: the gate passed because the engine had typed "100 g" into the
+     * table, not because anything about the product was true. Values are now blanks a producer
+     * fills in, so what a gate can honestly check is that an oil's declaration carries the row an
+     * oil must declare.
+     */
+    /*
+     * …and only when there *is* a declaration to check.
+     *
+     * The first version asked an oil for its saturates row unconditionally, so a face too small to
+     * carry a nutrition table at all failed for the one thing it could not have done differently —
+     * measured on a 70 × 45 oval olive-oil label, which draws no table and was blocked from export
+     * because of it. A gate that demands a row of a table that is not there is testing the label's
+     * size, not its honesty.
+     */
+    const table = /(Besin Değerleri|Nutrition)[^<]*/.exec(foodArt)?.[0]
+    const oilRow = family === 'oil' && !!table && !/Doymuş|Saturates/.test(foodArt)
+    const foodFail = bakeryLeak || oilRow
     items.push(
       item(
         'ds-food-family',
@@ -298,11 +320,51 @@ export function evaluateDesignGates(
         foodFail
           ? bakeryLeak
             ? 'Fırın içeriği yanlış SKU’da'
-            : 'Yağ ailesinde yağ 0 g'
+            : 'Yağ ailesinde doymuş yağ satırı yok'
           : `${family} · besin + içerik`,
         foodFail ? 'fail' : 'pass',
       ),
     )
+
+    /*
+     * A nutrition declaration is a legal statement about food, and nothing in the brief can supply
+     * one yet. The engine used to print convincing figures for honey, olive oil and coffee anyway.
+     * The table is now blank and marked, and the customer is told so before they download, exactly
+     * as they are told the barcode is not a real GTIN.
+     */
+    if (!table) {
+      /*
+       * Say it rather than letting it vanish.
+       *
+       * A complete declaration needs 18.2 mm at the press floor and a 60 mm lid's legal band is
+       * 12–16 mm, so on a small disc the honest outcome is no table at all — a clipped one would
+       * be a false statement about food. But silence is its own trap: the customer sends the file
+       * believing the declaration is on it. Real products put the full set on the body label, and
+       * this is where they are told to.
+       */
+      items.push(
+        item(
+          'ds-nutrition-fit',
+          'Besin beyanı',
+          'Bu yüze tam beyan sığmadı — gövde etiketine koyun',
+          'warn',
+        ),
+      )
+    }
+    if (table) {
+      // Anchored to the table's own header on purpose: the back panel also carries "Örnek /
+      // düzenlenebilir" for the legal block, and a loose search for "örnek" anywhere in the
+      // artwork would let a table of invented figures through on somebody else's disclaimer.
+      const marked = /ÖRNEK|SAMPLE/.test(table)
+      items.push(
+        item(
+          'ds-nutrition-sample',
+          'Besin beyanı',
+          marked ? 'Örnek tablo — değerleri üretici doldurur' : 'Tablo örnek olarak işaretlenmemiş',
+          marked ? 'warn' : 'fail',
+        ),
+      )
+    }
   }
 
   return items

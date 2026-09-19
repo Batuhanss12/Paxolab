@@ -46,7 +46,7 @@ function boundedAlternation(labels: string[]): string {
  * Runs until something that cannot be part of a name: a stop word, a category noun, a palette word
  * or punctuation. Three words at most — a brand is not a sentence.
  */
-export function spokenField(text: string, labels: string[], stop: (word: string) => boolean): string {
+export function spokenField(text: string, labels: string[], stop: (word: string, taken: number) => boolean): string {
   const re = new RegExp(
     `${TR_BEFORE}(?:${boundedAlternation(labels)})${TAIL}${TR_AFTER}\\s*(?:${CONNECTOR})?\\s*[:\uFF1A]?\\s*`,
     'i',
@@ -57,9 +57,20 @@ export function spokenField(text: string, labels: string[], stop: (word: string)
   const out: string[] = []
   for (const word of rest.split(/\s+/).slice(0, 4)) {
     const clean = word.replace(/^[«"“'(]+/, '').replace(/[,.;:!?»"”')]+$/, '')
-    if (!clean || stop(clean) || !looksLikeName(clean)) break
+    // `out.length` lets the stop rule tell "the first word of a name" from "a word continuing one".
+    if (!clean || stop(clean, out.length) || !looksLikeName(clean)) break
     out.push(clean)
     if (out.length >= 3) break
+    /*
+     * A comma ends the name.
+     *
+     * The stop list catches category nouns and palette words, but it is a list, and the sentence
+     * this reads is a chain of clauses: "ürün Studio One, antrasit" put **antrasit** inside the
+     * product name — `isPaletteName` happens not to know that word, though `extractFields` reads
+     * it as a colour three lines later. Widening the list fixes one word; the clause boundary is
+     * the actual rule, and the customer already wrote it. A product name does not span a comma.
+     */
+    if (/[,;.!?]$/.test(word)) break
   }
   return out.join(' ')
 }

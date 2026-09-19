@@ -10,6 +10,7 @@ import type {
   StudioArchetype,
   StudioFamily,
   StudioSurface,
+  StudioRepertoire,
 } from './types'
 
 export type FamilyPair = {
@@ -34,6 +35,34 @@ export const STUDIO_FAMILIES: Record<StudioFamily, FamilyPair> = {
   // carton front as on a bottle label, so neither needs a box sibling.
   atelier: { box: 'atelier-plate', label: 'atelier-plate', background: 'paper' },
   crest: { box: 'crest-panel', label: 'crest-panel', background: 'arabesque' },
+  /*
+   * The reference repertoire (F-32). Each paints one front for both surfaces, the way `specimen`,
+   * `atelier` and `crest` already do: these eight are arrangements of the whole face, and a face
+   * is a face whether it is printed on a carton or wrapped round a jar.
+   */
+  arch: { box: 'arch-crown', label: 'arch-crown', background: 'paper' },
+  collage: { box: 'collage-plate', label: 'collage-plate', background: 'paper' },
+  silhouette: { box: 'silhouette-foot', label: 'silhouette-foot', background: 'paper' },
+  ribbon: { box: 'ribbon-crest', label: 'ribbon-crest', background: 'arabesque' },
+  grid: { box: 'grid-mono', label: 'grid-mono', background: 'paper' },
+  pattern: { box: 'pattern-float', label: 'pattern-float', background: 'toile' },
+  acid: { box: 'blob-acid', label: 'blob-acid', background: 'blob' },
+  'inner-card': { box: 'inner-card', label: 'inner-card', background: 'paper' },
+}
+
+/**
+ * The families of the second repertoire (F-32).
+ *
+ * A brief that pinned one of these is asking for that set, so the pool follows the pin even when
+ * nothing set the flag — otherwise a pinned family that is not in the pool is dropped in silence
+ * and the customer gets a design they did not choose.
+ */
+export const REFERENCE_FAMILIES: readonly StudioFamily[] = ['arch', 'collage', 'silhouette', 'ribbon', 'grid', 'pattern', 'acid', 'inner-card']
+
+/** Which repertoire a family belongs to; undefined when the family is not one we know. */
+export function familyRepertoire(family: StudioFamily | string | undefined | null): StudioRepertoire | undefined {
+  if (!family || !isStudioFamily(family)) return undefined
+  return REFERENCE_FAMILIES.includes(family) ? 'reference' : 'studio'
 }
 
 const ARCHETYPE_FAMILY: Partial<Record<StudioArchetype, StudioFamily>> = {
@@ -51,6 +80,14 @@ const ARCHETYPE_FAMILY: Partial<Record<StudioArchetype, StudioFamily>> = {
   'specimen-hero': 'specimen',
   'atelier-plate': 'atelier',
   'crest-panel': 'crest',
+  'arch-crown': 'arch',
+  'collage-plate': 'collage',
+  'silhouette-foot': 'silhouette',
+  'ribbon-crest': 'ribbon',
+  'grid-mono': 'grid',
+  'pattern-float': 'pattern',
+  'blob-acid': 'acid',
+  'inner-card': 'inner-card',
 }
 
 /**
@@ -74,6 +111,14 @@ export const FAMILY_TALK: Record<StudioFamily, string> = {
   specimen: 'illüstrasyon',
   atelier: 'atölye plakası',
   crest: 'arma',
+  arch: 'kemer taç',
+  collage: 'gravür kolaj',
+  silhouette: 'düz silüet',
+  ribbon: 'kurdele arma',
+  grid: 'mono ızgara',
+  pattern: 'desen zemin',
+  acid: 'asit blob',
+  'inner-card': 'iç sanat kartı',
 }
 
 export function familyTalk(family: StudioFamily | string | undefined | null): string {
