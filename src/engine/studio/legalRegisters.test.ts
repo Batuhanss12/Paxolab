@@ -169,6 +169,28 @@ describe('the footer registers say why they are absent too', () => {
     }
   })
 
+  it('storage is attempted in the column, not structurally excluded from it', () => {
+    /*
+     * Storage rides beside the nutrition table like ingredients do, and like them it used to have
+     * nowhere else to go — the painter recorded `no-space` without the column ever being asked.
+     * It is in the fallback list now, so the record comes from the column actually running out of
+     * room. Measured, no face gained a storage line from this: the backs that lose the table are
+     * the backs with no room for anything. What changed is that the attempt is real, so a roomier
+     * back gets it without another edit here.
+     */
+    const tray = activeTemplates(true).find((t) => t.id === 'fm-food-tray-snack' || t.id === 'fm-box-tray-glued')
+    if (!tray) return
+    const spec = build({
+      sector: 'gıda', subProduct: 'bal', productName: 'Çiçek Balı', volume: '250 gr',
+      packagingMode: tray.packagingMode, templateId: tray.id, dimensionsMm: tray.defaultsMm,
+    })
+    const placed = spec.studio!.panels.flatMap((p) => p.placed).map((b) => b.id.split('#')[0] ?? b.id)
+    if (placed.includes('nutrition-table')) return
+    const drawn = placed.filter((i) => i.startsWith('legal-title:')).map((i) => i.slice('legal-title:'.length))
+    const recorded = skips(spec).map((x) => x.id)
+    expect(drawn.includes('storage') || recorded.includes('storage'), 'saklama ne çizildi ne kaydedildi').toBe(true)
+  })
+
   it('a swing tag names every register it does not carry', () => {
     /*
      * The net quantity is the telling one: the brief supplies it and the surface still does not

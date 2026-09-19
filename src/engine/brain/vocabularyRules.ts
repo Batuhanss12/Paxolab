@@ -5,7 +5,7 @@
 import type { StyleType } from '../../types'
 import type { SectorId } from '../designSystem/types'
 import type { BackgroundTreatment, HeroFamily, PatternFamily } from './DesignPlan'
-import { VOCAB, type SubProductId, type VocabularyRow } from './vocabularyTable'
+import { VOCAB, resolveSubProduct, type SubProductId, type VocabularyRow } from './vocabularyTable'
 
 // ── Lookup ──────────────────────────────────────────────────────────
 
@@ -21,12 +21,64 @@ export function lookupVocabulary(sector: SectorId, subProduct: SubProductId): Vo
   return INDEX.get(`${sector}:${subProduct}`) ?? fallback(sector)
 }
 
+/**
+ * Which required-information set a product needs — nutrition, INCI, a spec block, a composition
+ * list, directions, or nothing in particular.
+ *
+ * This is a fact about the product, not a design decision, and until now nothing owned it: every
+ * studio back painter re-derived it as `d.sector === 'food' || d.sector === 'beverage'` written
+ * inline, and the craft detector did the same. The table has said it all along — `nutrition` on
+ * five food rows and beverage, `inci` on cream and serum, `spec` on the three device rows,
+ * `composition` on perfume, `directions` on health, baby and cleaning.
+ *
+ * Wiring it changes no behaviour: measured across 581 faces, the table and the inline condition
+ * disagreed **zero** times. What it changes is where a sixth painter would look.
+ */
+export function legalKitFor(sector: SectorId, subProduct?: string): VocabularyRow['legalKitId'] {
+  return lookupVocabulary(sector, resolveSubProduct(sector, subProduct || sector)).legalKitId
+}
+
+/** The register set a back has to carry. `nutrition-table` is the one that needs a declaration. */
+export function backRoleFor(sector: SectorId, subProduct?: string): VocabularyRow['backRole'] {
+  return lookupVocabulary(sector, resolveSubProduct(sector, subProduct || sector)).backRole
+}
+
 // ── Validation ──────────────────────────────────────────────────────
 
 export type BleedFault = {
   code: string
   severity: 'error' | 'warn'
   detail: string
+}
+
+/**
+ * How a forbidden motif shows up in painted markup.
+ *
+ * The four hand-written branches this replaced covered three sectors with hand-picked strings, and
+ * one of them was wrong: `sector !== 'food'` flagged every beverage face for carrying its own
+ * nutrition declaration — 24 false positives measured across the sweep, on faces the table itself
+ * gives a nutrition kit to. Reading `forbiddenMotifs` covers all sixteen rows instead, and covers
+ * them with the product's own list.
+ *
+ * Only motifs the studio marks unambiguously are probed, and only by that marker. The replaced code
+ * also matched the viewBox numbers of perfume assets (`2004.78`, `986.01`); measured, `986.01` is
+ * the artboard of a pictogram every cosmetic face carries, so carrying it forward flagged 78 clean
+ * cream, serum and baby faces. A shared artboard is not evidence of anything.
+ *
+ * `bee`, `mountain`, `meadow` and `honey` are the illustrator's species, and the species a face was
+ * drawn with leaves no marker in the markup — measured, `data-species` appears on 0 of 599 faces.
+ * Matching them on raw words would be guessing, so they are left unchecked until it is declared.
+ */
+const MOTIF_PROBES: Record<string, RegExp> = {
+  flammable: /data-picto="flammable"/,
+  'flammable-perfume': /data-picto="flammable"/,
+  pao: /data-picto="pao"|PAO|12\s*M/,
+  weee: /data-picto="weee"/,
+  glassfork: /data-picto="glassfork"/,
+  'nutrition-table': /Besin Değerleri|Nutrition Facts|nutrition-table/,
+  inci: /INCI/,
+  'alcohol-denat': /Alcohol Denat/i,
+  'eau-de-parfum': /EAU DE PARFUM/i,
 }
 
 /** Checks plan tokens against the vocabulary. Returns faults (empty = clean). */
@@ -51,19 +103,14 @@ export function detectCrossSectorBleed(
   }
 
   if (markup) {
-    if (sector !== 'perfume' && /EAU DE PARFUM|Alcohol Denat/.test(markup)) {
-      faults.push({ code: 'CROSS_SECTOR_BLEED', severity: 'error', detail: 'Perfume copy on non-perfume face' })
-    }
-    if (sector !== 'food' && /Besin Değerleri|nutrition-table|glassfork/.test(markup)) {
-      faults.push({ code: 'CROSS_SECTOR_BLEED', severity: 'error', detail: 'Food copy on non-food face' })
-    }
-    if (sector === 'food' && /flammable|2004\.78|986\.01|EAU DE PARFUM/.test(markup)) {
-      faults.push({ code: 'CROSS_SECTOR_BLEED', severity: 'error', detail: 'Perfume marks/assets on food face' })
-    }
-    if (sector === 'electronics' && /EAU DE PARFUM|12\s*M|PAO|flammable/.test(markup)) {
-      faults.push({ code: 'CROSS_SECTOR_BLEED', severity: 'error', detail: 'Perfume/cosmetic marks on electronics' })
+    for (const motif of vocab.forbiddenMotifs) {
+      const probe = MOTIF_PROBES[motif]
+      if (probe?.test(markup)) {
+        faults.push({ code: 'CROSS_SECTOR_BLEED', severity: 'error', detail: `"${motif}" forbidden in ${vocab.id}` })
+      }
     }
   }
+  void sector
 
   return faults
 }

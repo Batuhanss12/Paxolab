@@ -28,6 +28,7 @@
  * every dimension below is measured against the golden set in `measure-craft-distribution.ts`
  * and the floor test in `craftGate.test.ts` proves no frozen face is re-routed.
  */
+import { legalKitFor } from './vocabularyRules'
 import { raise, type BlockerSink } from './designBlockers'
 import type { DesignBrief, DesignSpec, DielineModel } from '../../types'
 import { COMPOSITION_AXES, fingerprintDistance, type Fingerprint } from '../studio/fingerprint'
@@ -427,8 +428,12 @@ export function studioFocal(ctx: StudioCraftCtx): number {
 export type RequiredInfoState = 'NOT_REQUIRED' | 'REQUIRED_AND_RENDERED' | 'REQUIRED_BUT_NO_SPACE' | 'REQUIRED_BUT_NOT_RENDERED'
 
 export function nutritionState(ctx: StudioCraftCtx): RequiredInfoState {
-  const sector = ctx.plan.sector
-  if (sector !== 'food' && sector !== 'beverage') return 'NOT_REQUIRED'
+  /*
+   * Required is the canonical answer, not a sector check spelled out here. `legalKitFor` reads the
+   * same table the painters now read, so the detector and the renderer cannot drift apart — which
+   * they could while both wrote `sector === 'food' || sector === 'beverage'` by hand.
+   */
+  if (legalKitFor(ctx.plan.sector, ctx.plan.subProduct) !== 'nutrition') return 'NOT_REQUIRED'
   const panels = ctx.report.panels
   if (panels.some((p) => p.placed.some((b) => baseId(b) === 'nutrition-table'))) return 'REQUIRED_AND_RENDERED'
   const skips = panels.flatMap((p) => p.skipped ?? []).filter((s) => s.id === 'nutrition-table')

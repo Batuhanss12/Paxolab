@@ -2,6 +2,7 @@
  * Label archetypes — six full-anatomy label faces + one shared utility back.
  * Panel-local coordinates; every element goes through the ledger.
  */
+import { legalKitFor } from '../brain/vocabularyRules'
 import {
   barcodeBlock,
   benefitRow,
@@ -905,7 +906,7 @@ export function paintRoundBack(ctx: LayoutCtx): string {
   const legalTop = ruleY + tSize * 0.7
   const legalBottom = marksTop - vs * 0.5
   const legalW = Math.min(chord(legalTop), chord(legalBottom), rx * 1.5)
-  const food = d.sector === 'food' || d.sector === 'beverage'
+  const food = legalKitFor(d.sector, ctx.brief.subProduct) === 'nutrition'
   if (legalBottom > legalTop + 2) {
     if (food) {
       /*
@@ -1404,7 +1405,7 @@ export function paintLabelBack(ctx: LayoutCtx): string {
   let legalTop = m + tSize * 2.4
   let legalX = m
   let legalW = w - m * 2
-  const food = d.sector === 'food' || d.sector === 'beverage'
+  const food = legalKitFor(d.sector, ctx.brief.subProduct) === 'nutrition'
   if (food) {
     const blob = `${ctx.brief.subProduct} ${ctx.brief.productName} ${ctx.brief.sector}`.toLocaleLowerCase('tr')
     const tableSize = typeSize(Math.min(1.55, w * 0.018))

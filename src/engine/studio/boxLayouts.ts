@@ -2,6 +2,7 @@
  * Box archetypes — front hero + back information + side manifesto + top/bottom brand + flaps.
  * Panel-local coordinates; every element goes through the ledger.
  */
+import { legalKitFor } from '../brain/vocabularyRules'
 import {
   barcodeBlock,
   benefitRow,
@@ -404,7 +405,16 @@ export function paintBoxBack(ctx: LayoutCtx): string {
    *
    * So the mandatory block is reserved first and the story takes what is genuinely spare.
    */
-  const sectionCount = d.sector === 'food' || d.sector === 'beverage' ? 2 : 3
+  // The canonical answer to "does this product need a declaration" — see `vocabularyRules.ts`.
+  const needsNutrition = legalKitFor(d.sector, ctx.brief.subProduct) === 'nutrition'
+  /*
+   * A nutrition back carries two sections in the column below, because its ingredients ride beside
+   * the table. When the table cannot be drawn they fall back into the column and it carries three —
+   * the reserve is computed before that is known, so the column takes what is left and records what
+   * it could not hold. Reserving three for every food back instead would squeeze the table itself
+   * on the 132 faces that do have room for one.
+   */
+  const sectionCount = needsNutrition ? 2 : 3
   const legalFloor = typeSize(1.5)
   const perSection = legalFloor * 4.06 // title + one body line + the gap after it
   const legalReserve = Math.min(perSection * sectionCount, Math.max(perSection, (footTop - y) * 0.55))
@@ -429,6 +439,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
    * The column takes them back whenever the table did not.
    */
   let ingredientsBesideTable = false
+  let storageBesideTable = false
   if (d.sector === 'perfume') {
     const pyramid = scentPyramid(ctx.brief)
     if (pyramid && blockLimit - y > 22) {
@@ -437,10 +448,10 @@ export function paintBoxBack(ctx: LayoutCtx): string {
       parts.push(notes.markup)
       y = notes.bottom + 1.5
     }
-  } else if ((d.sector === 'food' || d.sector === 'beverage') && blockLimit - y <= 26) {
+  } else if (needsNutrition && blockLimit - y <= 26) {
     // The food register never opens: not a renderer fault, a back with no room left for it.
-    for (const reg of ['nutrition-table', 'storage'] as const) ledger.skip(reg, 'no-space')
-  } else if (d.sector === 'food' || d.sector === 'beverage') {
+    ledger.skip('nutrition-table', 'no-space')
+  } else if (needsNutrition) {
     const row = benefitRow(ledger, d, m, y, w - m * 2, d.benefits.slice(0, 4), accent, { labelColor: ink, r: Math.min(3.6, w * 0.06) })
     parts.push(row.markup)
     y = row.bottom + 2.5
@@ -449,8 +460,6 @@ export function paintBoxBack(ctx: LayoutCtx): string {
     const tableLimit = Math.min(blockLimit, footTop - Math.max(14, (footTop - y) * 0.42))
     if (y + nutritionTableHeight(3, tableSize) >= tableLimit) {
       ledger.skip('nutrition-table', 'no-space')
-      // Storage rides with the table and has no second home; ingredients fall back to the column.
-      ledger.skip('storage', 'no-space')
     }
     if (y + nutritionTableHeight(3, tableSize) < tableLimit) {
       const tableW = Math.min(w - m * 2, Math.max(28, (w - m * 2) * 0.58))
@@ -465,10 +474,10 @@ export function paintBoxBack(ctx: LayoutCtx): string {
         ], ink, { size: legalTypeSize(w, table.bottom - y, 'aside'), titleColor: ink })
         parts.push(right.markup)
         ingredientsBesideTable = true
+        storageBesideTable = true
         y = Math.max(table.bottom, right.bottom) + 1.5
       } else {
-        // No room beside the table: storage has no second home, ingredients fall back below.
-        ledger.skip('storage', 'no-space')
+        // No room beside the table: both fall back into the column below.
         y = table.bottom + 1.5
       }
     }
@@ -490,6 +499,7 @@ export function paintBoxBack(ctx: LayoutCtx): string {
   // legal sections (the gate reads KULLANIM / INGREDIENTS / DIRECTIONS here)
   const sections: Section[] = [
     ...(ingredientsBesideTable ? [] : [{ title: hdr.ingredients, body: copy.ingredients, edit: 'ingredients' }]),
+    ...(!needsNutrition || storageBesideTable ? [] : [{ title: hdr.storage, body: usageLine('food', d.locale), id: 'storage' }]),
     { title: hdr.usage, body: usageCopy(copy, d.sector, d.locale), edit: 'usage' },
     { title: hdr.warnings, body: copy.warnings, edit: 'warnings' },
   ]
